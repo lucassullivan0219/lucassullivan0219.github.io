@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEL EEG 借用系統</title>
+
+<!--
+  ===========================================================================
+   NEL EEG 借用系統 — 前端 (Index.html)
+  ===========================================================================
+   注意：狀態的「文字」與「顏色」不在這個檔案裡。
+   它們定義在 Code.gs 的 CONFIG.STATUS，網頁載入時自動套用。
+   要改狀態顯示，請改 Code.gs，不要改這裡。
+
+   這個檔案的結構：
+     1. 樣式（CSS）
+     2. 版面（HTML）
+     3. 共用狀態與工具
+     4. 借用流程
+     5. 我的借用：查詢 / 取消 / 歸還
+     6. 初始化
+  ===========================================================================
+-->
+
+<style>
+  /* ---------- 1. 樣式 ---------- */
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 720px; margin: 24px auto; padding: 0 16px; color: #1a1a1a; }
+  h2 { font-size: 18px; font-weight: 500; margin: 0 0 4px; }
+  h3 { font-size: 15px; font-weight: 500; margin: 24px 0 8px; }
+  .legend { font-size: 12px; color: #888; margin-bottom: 16px; }
+
+  /* 設備卡片 */
+  .device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 8px; }
+  .device-card { background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: all 0.15s; }
+  .device-card:hover { border-color: rgba(0,0,0,0.25); }
+  .device-card.selected { border: 2px solid #378ADD; padding: 11px 13px; }
+  .device-card.disabled { opacity: 0.5; cursor: not-allowed; }
+  .device-id { font-weight: 500; font-size: 14px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .device-meta { font-size: 12px; color: #666; margin-top: 4px; }
+  .device-next { font-size: 12px; color: #999; margin-top: 6px; }
+
+  /* 狀態標籤：顏色由 Code.gs 的 CONFIG.STATUS 動態產生 */
+  .status-pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
+
+  /* 表單 */
+  .form-section { background: #f7f5ee; border-radius: 12px; padding: 14px 16px; margin-top: 8px; }
+  .form-row { display: grid; grid-template-columns: 90px 1fr; gap: 12px; align-items: center; margin-bottom: 10px; }
+  .form-row label { font-size: 13px; color: #666; }
+  .form-row input, .form-row select, .form-row textarea { width: 100%; padding: 6px 8px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
+  .form-row textarea { resize: vertical; min-height: 60px; }
+
+  /* 提示訊息 */
+  .validation-msg { font-size: 12px; margin-top: 6px; padding: 8px 10px; border-radius: 6px; }
+  .v-ok { background: #EAF3DE; color: #3B6D11; }
+  .v-bad { background: #FCEBEB; color: #A32D2D; }
+  .v-neutral { background: #f0f0f0; color: #666; }
+  .success-banner { background: #EAF3DE; color: #3B6D11; padding: 12px 14px; border-radius: 8px; font-size: 13px; margin-top: 8px; }
+  .error-banner { background: #FCEBEB; color: #A32D2D; padding: 12px 14px; border-radius: 8px; font-size: 13px; margin-top: 8px; }
+  .warn-banner { background: #FAEEDA; color: #854F0B; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; }
+  .loading { text-align: center; color: #888; padding: 24px; font-size: 14px; }
+  .empty-hint { font-size: 13px; color: #999; padding: 16px; text-align: center; background: #fafafa; border-radius: 8px; }
+
+  .conflicts { font-size: 12px; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.1); }
+  .conflicts ul { margin: 4px 0 0; padding-left: 18px; }
+
+  /* 按鈕 */
+  button { background: transparent; border: 1px solid rgba(0,0,0,0.3); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  button:hover { background: #f0f0f0; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .submit-btn { width: 100%; margin-top: 12px; padding: 10px; font-weight: 500; }
+  .primary-btn { background: #378ADD; color: white; border: none; }
+  .primary-btn:hover { background: #2868a8; }
+  .danger-btn { border-color: #A32D2D; color: #A32D2D; }
+  .danger-btn:hover { background: #FCEBEB; }
+
+  /* 我的借用 */
+  .my-booking-card { background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .my-booking-card.overdue { border-color: #A32D2D; background: #FFF9F9; }
+  .mb-info { flex: 1; }
+  .mb-title { font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .mb-detail { font-size: 12px; color: #666; margin-top: 2px; }
+  .mb-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .return-form { background: #fff; border: 1px solid rgba(0,0,0,0.15); border-radius: 10px; padding: 14px; margin-top: 8px; margin-bottom: 8px; }
+
+  .email-bar { background: #f7f5ee; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; display: flex; gap: 10px; align-items: center; font-size: 13px; }
+  .email-bar input { flex: 1; padding: 6px 8px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; font-size: 13px; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.1); }
+  .tab { padding: 8px 16px; cursor: pointer; font-size: 14px; color: #666; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: #1a1a1a; border-bottom-color: #378ADD; font-weight: 500; }
+
+  .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .refresh-btn { font-size: 12px; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ---------- 2. 版面 ---------- -->
+
+<p style="margin:0 0 8px;font-size:12px;"><a href="../" style="color:#888;text-decoration:none;">← All projects</a></p>
+<div class="header-row">
+  <h2>NEL EEG 借用</h2>
+  <button class="refresh-btn" onclick="loadAll()">重新整理</button>
+</div>
+<p class="legend">點設備預約借用 · 或在「我的借用」取消預約 / 歸還</p>
+
+<div class="tabs">
+  <div class="tab active" data-tab="borrow" onclick="switchTab('borrow')">借用</div>
+  <div class="tab" data-tab="return" onclick="switchTab('return')">我的借用 / 歸還</div>
+</div>
+
+<!-- 借用分頁 -->
+<div id="tab-borrow">
+  <div id="devices-area"><div class="loading">載入中…</div></div>
+  <div id="booking-area"></div>
+</div>
+
+<!-- 我的借用分頁 -->
+<div id="tab-return" style="display: none;">
+  <div class="email-bar">
+    <span>查詢 email：</span>
+    <input type="email" id="my-email" placeholder="your@email.com"
+           onkeydown="if(event.key==='Enter') loadMyBookings()" />
+    <button onclick="loadMyBookings()">查詢</button>
+  </div>
+  <div id="my-bookings-area">
+    <div class="empty-hint">輸入 email 後查詢您目前的借用紀錄</div>
+  </div>
+</div>
+
+
+<script>
+// ===========================================================================
+//  API 轉接層
+//  原本在 Apps Script 內用 google.script.run 呼叫後端；搬到 GitHub Pages 後，
+//  改成用 fetch 呼叫 Apps Script 的網頁應用程式網址。
+//  下面這層模擬 google.script.run 的用法，所以其餘程式碼不必修改。
+// ===========================================================================
+
+// 部署 Apps Script 後，把「網頁應用程式」的 /exec 網址貼在這裡
+const API_URL = 'PASTE_YOUR_APPS_SCRIPT_EXEC_URL_HERE';
+
+async function callApi(fn, args) {
+  // 用 text/plain 可避免瀏覽器送出 CORS 預檢請求（Apps Script 不支援預檢）
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ fn, args })
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || '未知錯誤');
+  return json.data;
+}
+
+function makeRunner(ok, fail) {
+  return new Proxy({}, {
+    get(_, name) {
+      if (name === 'withSuccessHandler') return f => makeRunner(f, fail);
+      if (name === 'withFailureHandler') return f => makeRunner(ok, f);
+      return (...args) => {
+        callApi(name, args).then(
+          data => ok(data),
+          err => fail(err)
+        );
+      };
+    }
+  });
+}
+
+const google = { script: { run: makeRunner(() => {}, e => console.error(e)) } };
+
+
+// ===========================================================================
+//  3. 共用狀態與工具
+// ===========================================================================
+
+let APP_CONFIG = null;     // 由後端 getClientConfig() 取得
+let devicesCache = [];     // 所有設備
+let bookingsCache = [];    // 目前選取設備的未來預約
+let myBookingsCache = [];  // 我的借用
+let selectedId = null;     // 目前選取的設備
+let currentEmail = '';     // 目前使用者的 email
+
+/** 日期格式化（顯示用，例：3/5） */
+const fmt = (iso) => new Date(iso).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
+
+/** 日期轉成 <input type="date"> 需要的格式 */
+const toInputVal = (date) => {
+  const pad = n => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+};
+
+/** 取得某狀態的設定，找不到時回傳安全的預設值 */
+function statusDef(key) {
+  if (APP_CONFIG && APP_CONFIG.status && APP_CONFIG.status[key]) return APP_CONFIG.status[key];
+  return { label: key, bg: '#eee', fg: '#666', borrowable: false, hint: '' };
+}
+
+/** 依 CONFIG.STATUS 產生 .s-xxx 的 CSS，讓顏色可以從後端統一管理 */
+function applyStatusStyles() {
+  if (!APP_CONFIG || !APP_CONFIG.status) return;
+  const css = Object.keys(APP_CONFIG.status).map(key => {
+    const s = APP_CONFIG.status[key];
+    return `.s-${key} { background: ${s.bg}; color: ${s.fg}; }`;
+  }).join('\n');
+  const el = document.createElement('style');
+  el.textContent = css;
+  document.head.appendChild(el);
+}
+
+/** 切換分頁 */
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.getElementById('tab-borrow').style.display = name === 'borrow' ? 'block' : 'none';
+  document.getElementById('tab-return').style.display = name === 'return' ? 'block' : 'none';
+  if (name === 'return' && currentEmail) loadMyBookings();
+}
+
+
+// ===========================================================================
+//  4. 借用流程
+// ===========================================================================
+
+/** 載入設備清單 */
+function loadAll() {
+  document.getElementById('devices-area').innerHTML = '<div class="loading">載入中…</div>';
+  document.getElementById('booking-area').innerHTML = '';
+  google.script.run
+    .withSuccessHandler(devices => {
+      devicesCache = devices;
+      renderDevices();
+    })
+    .withFailureHandler(err => {
+      document.getElementById('devices-area').innerHTML =
+        `<div class="error-banner">載入失敗：${err.message}</div>`;
+    })
+    .getDevices();
+}
+
+/** 畫出設備卡片 */
+function renderDevices() {
+  const html = `<div class="device-grid">${devicesCache.map(d => {
+    const def = statusDef(d.status);
+    const disabled = !def.borrowable;
+
+    // 借用人資訊
+    const userLine = d.current_user
+      ? `<div class="device-meta">借用人：${d.current_user}${d.current_purpose ? ` · ${d.current_purpose}` : ''}</div>`
+      : '';
+
+    // 卡片下方的小字：優先用 CONFIG 的 hint，沒設定就自動判斷
+    let nextLine = def.hint || '';
+    if (!nextLine) {
+      if (d.status === 'in_use' && d.current_until) nextLine = `${fmt(d.current_until)} 後可借`;
+    }
+    if (d.status === 'overdue' && d.overdue_days) {
+      nextLine = `逾期 ${d.overdue_days} 天未還`;
+    }
+
+    return `
+      <div class="device-card ${selectedId === d.device_id ? 'selected' : ''} ${disabled ? 'disabled' : ''}"
+           data-id="${d.device_id}" data-disabled="${disabled}">
+        <div class="device-id">
+          <span>${d.device_id}</span>
+          <span class="status-pill s-${d.status}">${def.label}</span>
+        </div>
+        <div class="device-meta">${d.version || ''} · ${d.channels || '?'}ch · ${d.builder || ''}製</div>
+        ${userLine}
+        <div class="device-next">${nextLine}</div>
+      </div>`;
+  }).join('')}</div>`;
+
+  document.getElementById('devices-area').innerHTML = html;
+
+  document.querySelectorAll('.device-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (card.dataset.disabled === 'true') return;
+      selectedId = card.dataset.id;
+      renderDevices();
+      loadBookingsAndForm();
+    });
+  });
+}
+
+/** 載入該設備的既有預約，然後畫出表單 */
+function loadBookingsAndForm() {
+  document.getElementById('booking-area').innerHTML = '<div class="loading">載入預約資料…</div>';
+  google.script.run
+    .withSuccessHandler(bookings => {
+      bookingsCache = bookings;
+      renderForm();
+    })
+    .withFailureHandler(err => {
+      document.getElementById('booking-area').innerHTML =
+        `<div class="error-banner">${err.message}</div>`;
+    })
+    .getBookingsForDevice(selectedId);
+}
+
+/** 畫出預約表單 */
+function renderForm() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const device = devicesCache.find(d => d.device_id === selectedId);
+  const earliest = new Date(device.next_available); earliest.setHours(0,0,0,0);
+  const defaultStart = new Date(Math.max(earliest.getTime(), today.getTime()));
+  const defaultEnd = new Date(defaultStart);
+
+  const maxDays = (APP_CONFIG && APP_CONFIG.rules) ? APP_CONFIG.rules.maxBorrowDays : 0;
+  const maxDaysHint = maxDays > 0 ? `（單次最多 ${maxDays} 天）` : '';
+
+  const conflictHtml = bookingsCache.length === 0 ? '' : `
+    <div class="conflicts">
+      <div style="font-weight: 500;">該設備未來預約：</div>
+      <ul>${bookingsCache.map(b =>
+        `<li>${fmt(b.start_time)} – ${fmt(b.end_time)}（${b.user_name}）</li>`
+      ).join('')}</ul>
+    </div>`;
+
+  document.getElementById('booking-area').innerHTML = `
+    <div class="form-section">
+      <div style="font-weight: 500; margin-bottom: 10px; font-size: 14px;">預約 ${selectedId}${maxDaysHint}</div>
+      <div class="form-row">
+        <label>姓名 *</label>
+        <input type="text" id="user-name" />
+      </div>
+      <div class="form-row">
+        <label>Email *</label>
+        <input type="email" id="user-email" value="${currentEmail}" />
+      </div>
+      <div class="form-row">
+        <label>開始日 *</label>
+        <input type="date" id="start-date" value="${toInputVal(defaultStart)}" />
+      </div>
+      <div class="form-row">
+        <label>結束日 *</label>
+        <input type="date" id="end-date" value="${toInputVal(defaultEnd)}" />
+      </div>
+      <div class="form-row">
+        <label>用途</label>
+        <input type="text" id="purpose" placeholder="例：受試者 S023 SSVEP 實驗" />
+      </div>
+      <div id="validation"></div>
+      ${conflictHtml}
+      <button class="submit-btn" id="submit-btn">送出預約</button>
+    </div>
+    <div id="result-area"></div>`;
+
+  ['start-date', 'end-date', 'user-name', 'user-email'].forEach(id => {
+    document.getElementById(id).addEventListener('input', validate);
+  });
+  document.getElementById('submit-btn').addEventListener('click', submit);
+  validate();
+}
+
+/**
+ * 表單即時驗證。
+ * 這裡只是為了讓使用者早點看到問題，真正的把關在後端 createBooking()。
+ */
+function validate() {
+  const startStr = document.getElementById('start-date').value;
+  const endStr = document.getElementById('end-date').value;
+  const name = document.getElementById('user-name').value.trim();
+  const email = document.getElementById('user-email').value.trim();
+  const v = document.getElementById('validation');
+  const btn = document.getElementById('submit-btn');
+
+  const fail = (cls, text) => {
+    v.className = 'validation-msg ' + cls;
+    v.textContent = text;
+    btn.disabled = true;
+  };
+
+  if (!name)  return fail('v-neutral', '請填入姓名');
+  if (!email) return fail('v-neutral', '請填入 email（歸還與通知需要）');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('v-bad', 'email 格式看起來不正確');
+  if (!startStr || !endStr) return fail('v-neutral', '請選擇日期');
+
+  const start = new Date(startStr);
+  const end = new Date(endStr);
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  if (end < start) return fail('v-bad', '結束日不能早於開始日');
+  if (start < today) return fail('v-bad', '開始日不能是過去');
+
+  // 借用天數上限（規則來自 Code.gs 的 CONFIG.RULES.MAX_BORROW_DAYS）
+  const maxDays = (APP_CONFIG && APP_CONFIG.rules) ? APP_CONFIG.rules.maxBorrowDays : 0;
+  const days = Math.round((end - start) / 86400000) + 1;
+  if (maxDays > 0 && days > maxDays) {
+    return fail('v-bad', `單次借用最多 ${maxDays} 天（目前選了 ${days} 天）`);
+  }
+
+  // 與既有預約衝突
+  const conflict = bookingsCache.find(b => {
+    const bs = new Date(b.start_time); bs.setHours(0,0,0,0);
+    const be = new Date(b.end_time); be.setHours(0,0,0,0);
+    return start <= be && bs <= end;
+  });
+  if (conflict) {
+    return fail('v-bad',
+      `日期衝突：與 ${conflict.user_name} 的 ${fmt(conflict.start_time)}–${fmt(conflict.end_time)} 重疊`);
+  }
+
+  v.className = 'validation-msg v-ok';
+  v.textContent = `日期可用，共 ${days} 天，可送出`;
+  btn.disabled = false;
+}
+
+/** 送出預約 */
+function submit() {
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = '送出中…';
+
+  const payload = {
+    device_id: selectedId,
+    user_name: document.getElementById('user-name').value.trim(),
+    user_email: document.getElementById('user-email').value.trim(),
+    start_date: document.getElementById('start-date').value,
+    end_date: document.getElementById('end-date').value,
+    purpose: document.getElementById('purpose').value.trim()
+  };
+  currentEmail = payload.user_email;
+  document.getElementById('my-email').value = currentEmail;
+
+  google.script.run
+    .withSuccessHandler(result => {
+      if (result.success) {
+        document.getElementById('result-area').innerHTML =
+          `<div class="success-banner">預約成功！</div>`;
+        setTimeout(() => { selectedId = null; loadAll(); }, 1200);
+      } else {
+        document.getElementById('result-area').innerHTML =
+          `<div class="error-banner">送出失敗：${result.error}</div>`;
+        btn.disabled = false; btn.textContent = '送出預約';
+      }
+    })
+    .withFailureHandler(err => {
+      document.getElementById('result-area').innerHTML =
+        `<div class="error-banner">系統錯誤：${err.message}</div>`;
+      btn.disabled = false; btn.textContent = '送出預約';
+    })
+    .createBooking(payload);
+}
+
+
+// ===========================================================================
+//  5. 我的借用：查詢 / 取消 / 歸還
+// ===========================================================================
+
+/** 查詢我的借用 */
+function loadMyBookings() {
+  const email = document.getElementById('my-email').value.trim();
+  if (!email) {
+    document.getElementById('my-bookings-area').innerHTML =
+      '<div class="empty-hint">請先輸入 email</div>';
+    return;
+  }
+  currentEmail = email;
+  document.getElementById('my-bookings-area').innerHTML = '<div class="loading">查詢中…</div>';
+
+  google.script.run
+    .withSuccessHandler(bookings => {
+      myBookingsCache = bookings;
+      renderMyBookings();
+    })
+    .withFailureHandler(err => {
+      document.getElementById('my-bookings-area').innerHTML =
+        `<div class="error-banner">${err.message}</div>`;
+    })
+    .getMyBookings(email);
+}
+
+/** 畫出我的借用清單 */
+function renderMyBookings() {
+  if (myBookingsCache.length === 0) {
+    document.getElementById('my-bookings-area').innerHTML =
+      '<div class="empty-hint">查無進行中的借用紀錄</div>';
+    return;
+  }
+
+  // 有逾期的話，在最上面放一條提醒
+  const overdueCount = myBookingsCache.filter(b => b.is_overdue).length;
+  const warnHtml = overdueCount
+    ? `<div class="warn-banner">您有 ${overdueCount} 筆逾期未歸還，請儘快處理或聯繫管理者。</div>`
+    : '';
+
+  const html = warnHtml + myBookingsCache.map(b => {
+    const overdueTag = b.is_overdue
+      ? `<span class="status-pill s-overdue">逾期 ${b.overdue_days} 天</span>` : '';
+
+    // 取消按鈕是否顯示，由後端的 can_cancel 決定（規則集中在 Code.gs）
+    const cancelBtn = b.can_cancel
+      ? `<button class="danger-btn" onclick="cancelBooking('${b.booking_id}')">取消預約</button>` : '';
+
+    return `
+      <div class="my-booking-card ${b.is_overdue ? 'overdue' : ''}" id="card-${b.booking_id}">
+        <div class="mb-info">
+          <div class="mb-title"><span>${b.device_id}</span>${overdueTag}</div>
+          <div class="mb-detail">
+            ${fmt(b.start_time)} – ${fmt(b.end_time)} · ${b.purpose || '（未填用途）'}
+          </div>
+        </div>
+        <div class="mb-actions">
+          ${cancelBtn}
+          <button class="primary-btn" onclick="showReturnForm('${b.booking_id}')">歸還</button>
+        </div>
+      </div>
+      <div id="return-form-${b.booking_id}"></div>`;
+  }).join('');
+
+  document.getElementById('my-bookings-area').innerHTML = html;
+}
+
+/** 取消預約 */
+function cancelBooking(bookingId) {
+  const b = myBookingsCache.find(x => x.booking_id === bookingId);
+  const label = b ? `${b.device_id}（${fmt(b.start_time)}–${fmt(b.end_time)}）` : '這筆預約';
+  if (!confirm(`確定要取消 ${label} 嗎？\n取消後日期會立刻釋放給其他人，且無法復原。`)) return;
+
+  const card = document.getElementById(`card-${bookingId}`);
+  card.querySelectorAll('button').forEach(btn => btn.disabled = true);
+
+  google.script.run
+    .withSuccessHandler(result => {
+      if (result.success) {
+        card.innerHTML = '<div class="success-banner" style="margin:0; flex:1;">已取消預約</div>';
+        setTimeout(loadMyBookings, 1200);
+      } else {
+        alert('取消失敗：' + result.error);
+        card.querySelectorAll('button').forEach(btn => btn.disabled = false);
+      }
+    })
+    .withFailureHandler(err => {
+      alert('系統錯誤：' + err.message);
+      card.querySelectorAll('button').forEach(btn => btn.disabled = false);
+    })
+    .cancelBooking(bookingId, currentEmail);
+}
+
+/** 展開 / 收合歸還表單 */
+function showReturnForm(bookingId) {
+  const container = document.getElementById(`return-form-${bookingId}`);
+  if (container.innerHTML) { container.innerHTML = ''; return; }   // 再按一次收合
+
+  container.innerHTML = `
+    <div class="return-form">
+      <div style="font-weight: 500; font-size: 14px; margin-bottom: 10px;">歸還狀況回報</div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="issue-${bookingId}" onchange="toggleIssue('${bookingId}')" />
+        <label for="issue-${bookingId}">有異常狀況需要回報</label>
+      </div>
+      <div id="issue-detail-${bookingId}" style="display:none;">
+        <div class="form-row">
+          <label>嚴重程度</label>
+          <select id="severity-${bookingId}">
+            <option value="low">輕微（不影響使用）</option>
+            <option value="medium">中等（部分功能異常）</option>
+            <option value="high">嚴重（無法使用）</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>描述</label>
+          <textarea id="description-${bookingId}" placeholder="例：第 5 號電極阻抗偏高，可能接觸不良"></textarea>
+        </div>
+        <div style="font-size:12px; color:#888;">
+          送出後該設備會標記為「待評估」暫停出借，並通知管理者。
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 12px;">
+        <button onclick="confirmReturn('${bookingId}')" class="primary-btn" style="flex:1;">確認歸還</button>
+        <button onclick="document.getElementById('return-form-${bookingId}').innerHTML=''">取消</button>
+      </div>
+      <div id="return-result-${bookingId}"></div>
+    </div>`;
+}
+
+function toggleIssue(bookingId) {
+  const checked = document.getElementById(`issue-${bookingId}`).checked;
+  document.getElementById(`issue-detail-${bookingId}`).style.display = checked ? 'block' : 'none';
+}
+
+/** 送出歸還 */
+function confirmReturn(bookingId) {
+  const hasIssue = document.getElementById(`issue-${bookingId}`).checked;
+  const returnInfo = {
+    condition: hasIssue ? '異常' : '正常',
+    has_issue: hasIssue,
+    severity: hasIssue ? document.getElementById(`severity-${bookingId}`).value : '',
+    issue_description: hasIssue ? document.getElementById(`description-${bookingId}`).value : ''
+  };
+
+  if (hasIssue && !returnInfo.issue_description.trim()) {
+    document.getElementById(`return-result-${bookingId}`).innerHTML =
+      '<div class="error-banner">請描述異常狀況</div>';
+    return;
+  }
+
+  document.getElementById(`return-result-${bookingId}`).innerHTML =
+    '<div class="loading">處理中…</div>';
+
+  google.script.run
+    .withSuccessHandler(result => {
+      if (result.success) {
+        document.getElementById(`card-${bookingId}`).innerHTML =
+          `<div class="success-banner" style="margin:0; flex:1;">已歸還${hasIssue ? '（狀況回報已建立維修紀錄）' : ''}</div>`;
+        document.getElementById(`return-form-${bookingId}`).innerHTML = '';
+        setTimeout(loadMyBookings, 1500);
+      } else {
+        document.getElementById(`return-result-${bookingId}`).innerHTML =
+          `<div class="error-banner">${result.error}</div>`;
+      }
+    })
+    .withFailureHandler(err => {
+      document.getElementById(`return-result-${bookingId}`).innerHTML =
+        `<div class="error-banner">系統錯誤：${err.message}</div>`;
+    })
+    .returnBooking(bookingId, returnInfo);
+}
+
+
+// ===========================================================================
+//  6. 初始化
+//  先取得後端設定（狀態顏色、借用規則），再載入設備清單
+// ===========================================================================
+
+function init() {
+  google.script.run
+    .withSuccessHandler(cfg => {
+      APP_CONFIG = cfg;
+      applyStatusStyles();
+      loadAll();
+    })
+    .withFailureHandler(err => {
+      // 設定載入失敗仍要能用，只是狀態標籤會是灰色的英文代號
+      console.error('取得設定失敗：', err);
+      loadAll();
+    })
+    .getClientConfig();
+}
+
+init();
+</script>
+</body>
+</html>
