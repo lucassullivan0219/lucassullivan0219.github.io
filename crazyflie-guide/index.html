@@ -942,7 +942,7 @@ flowchart TD
 <div class="flow big">
 <pre class="mermaid">
 flowchart LR
-  subgraph PC["電腦端"]
+  subgraph PC4["電腦端"]
     BCI["EEG / BCI 分類器<br/>（選配）"]:::opt
     PY["Python 腳本"]:::free
     CFC["cfclient<br/>韌體更新 · 參數 · log"]:::free
@@ -1199,10 +1199,24 @@ with SyncCrazyflie(URI, cf=Crazyflie(rw_cache='./cache')) as scf:
       themeVariables:{fontFamily:'"Noto Sans TC", system-ui, sans-serif', fontSize:'14px'}});
     ready = true;
   }catch(e){ console.error(e); }
+  /* mermaid.run ids diagrams by Date.now(), so parallel calls collide and
+     diagrams bleed into each other; render one at a time with our own ids */
+  var seq = 0, queue = Promise.resolve();
   function renderIn(sec){
     if(!ready || !sec.open) return;
-    var nodes = Array.prototype.slice.call(sec.querySelectorAll('pre.mermaid:not([data-processed])'));
-    if(nodes.length){ try{ mermaid.run({nodes:nodes}); }catch(e){ console.error(e); } }
+    sec.querySelectorAll('pre.mermaid:not([data-queued])').forEach(function(pre){
+      pre.setAttribute('data-queued', '1');
+      var id = 'cf-mmd-' + (++seq);
+      var ta = document.createElement('textarea'); ta.innerHTML = pre.innerHTML;
+      var src = ta.value.trim();
+      queue = queue.then(function(){ return mermaid.render(id, src); })
+        .then(function(r){
+          pre.innerHTML = r.svg;
+          if(r.bindFunctions) r.bindFunctions(pre);
+          pre.setAttribute('data-processed', 'true');
+        })
+        .catch(function(e){ console.error(e); });
+    });
   }
   secs.forEach(function(s){ s.addEventListener('toggle', function(){ renderIn(s); }); renderIn(s); });
 
