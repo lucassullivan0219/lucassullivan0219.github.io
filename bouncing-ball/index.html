@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bouncing Ball</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<main>
+  <a class="back" href="../">← All projects</a>
+  <h1>Bouncing Ball</h1>
+  <p class="lead">Click the canvas to drop the ball from a new spot.</p>
+  <canvas id="c" width="800" height="400"></canvas>
+  <div class="panel">
+    <label>Gravity: <b id="gv">0.5</b></label><input id="grav" type="range" min="0.1" max="2" step="0.1" value="0.5">
+    <label>Bounciness: <b id="bv">0.8</b></label><input id="bounce" type="range" min="0.1" max="1" step="0.05" value="0.8">
+  </div>
+</main>
+<script>
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const grav = document.getElementById('grav'), bounce = document.getElementById('bounce');
+let x = 400, y = 50, vy = 0, R = 18;
+grav.oninput = () => document.getElementById('gv').textContent = grav.value;
+bounce.oninput = () => document.getElementById('bv').textContent = bounce.value;
+cv.addEventListener('click', e => {
+  const rect = cv.getBoundingClientRect();
+  x = (e.clientX - rect.left) * cv.width / rect.width;
+  y = (e.clientY - rect.top) * cv.height / rect.height;
+  vy = 0;
+});
+function frame() {
+  vy += +grav.value;
+  y += vy;
+  if (y > cv.height - R) { y = cv.height - R; vy = -vy * +bounce.value; if (Math.abs(vy) < 0.5) vy = 0; }
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#2f6fed';
+  ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.fill();
+  requestAnimationFrame(frame);
+}
+frame();
+</script>
+</body>
+</html>

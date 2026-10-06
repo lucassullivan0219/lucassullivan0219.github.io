@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Color Mixer</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<main>
+  <a class="back" href="../">← All projects</a>
+  <h1>Color Mixer</h1>
+  <p class="lead">Mix red, green and blue light.</p>
+  <div id="swatch" style="height:140px;border-radius:10px;border:1px solid var(--line)"></div>
+  <div class="panel">
+    <label>Red: <b id="rv">120</b></label><input id="r" type="range" min="0" max="255" value="120">
+    <label>Green: <b id="gv">180</b></label><input id="g" type="range" min="0" max="255" value="180">
+    <label>Blue: <b id="bv">240</b></label><input id="b" type="range" min="0" max="255" value="240">
+    <p>Hex: <code id="hex"></code></p>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+function update() {
+  const [r, g, b] = ['r', 'g', 'b'].map(k => +$(k).value);
+  ['r', 'g', 'b'].forEach((k, i) => $(k + 'v').textContent = [r, g, b][i]);
+  const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+  $('swatch').style.background = hex;
+  $('hex').textContent = hex;
+}
+['r', 'g', 'b'].forEach(k => $(k).addEventListener('input', update));
+update();
+</script>
+</body>
+</html>
