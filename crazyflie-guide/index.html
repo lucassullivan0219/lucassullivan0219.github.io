@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crazyflie 2.1+ × Python：採購、進口、Demo、擴充與 Q&amp;A</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F1; --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72;
+  --link:#1F5FA8; --req:#2F5D3A; --opt:#8A6100; --infer:#7A3E8F; --warn:#A33A2B; --rule:#CCD3CE;
+  --grid:rgba(47,93,58,.07);
+  --ch-off:#2F5D3A; --ch-rs:#1F5FA8; --ch-tw:#A33A2B; --ch-own:#5F6B72;
+  --side:260px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+    --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+    --grid:rgba(127,176,137,.08);
+    --ch-off:#7FB089; --ch-rs:#7DB3F0; --ch-tw:#E8826F; --ch-own:#9AA5A0;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+  --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+  --grid:rgba(127,176,137,.08);
+  --ch-off:#7FB089; --ch-rs:#7DB3F0; --ch-tw:#E8826F; --ch-own:#9AA5A0;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px);scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  font-size:16.5px;line-height:1.8}
+a{color:var(--link);text-underline-offset:3px}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--link);outline-offset:2px;border-radius:3px}
+code,pre{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:14px}
+p{margin:0 0 14px;max-width:46em}
+
+/* ---------- sidebar ---------- */
+.side{position:fixed;top:0;left:0;bottom:0;width:var(--side);background:var(--surface);border-right:1.5px solid var(--ink);
+  padding:calc(env(safe-area-inset-top,0px) + 20px) 16px 24px;overflow-y:auto;z-index:30;transition:transform .2s ease}
+.side-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.side .brand{font-weight:900;font-size:16px;line-height:1.3;margin:0}
+.side nav ul{list-style:none;margin:0;padding:0}
+.side nav > ul > li{margin-bottom:4px}
+.side nav a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:15px;line-height:1.4}
+.side nav a:hover{background:var(--grid)}
+.side nav > ul > li > a{font-weight:700}
+.side nav ul ul a{padding-left:22px;font-size:13.5px;color:var(--muted);font-weight:400}
+.side nav a.active{background:var(--grid);box-shadow:inset 3px 0 0 var(--req)}
+.side .tools{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.btn{font:inherit;font-size:13.5px;padding:4px 12px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:999px;cursor:pointer;line-height:1.5}
+.btn:hover{background:var(--grid)}
+.fab{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:25;display:none;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+main{margin-left:var(--side);transition:margin-left .2s ease}
+body.side-closed .side{transform:translateX(-102%)}
+body.side-closed main{margin-left:0}
+body.side-closed .fab{display:inline-block}
+.scrim{display:none}
+@media (max-width:1000px){
+  main{margin-left:0}
+  body:not(.side-closed) .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:28}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.side,main{transition:none}}
+.wrap{max-width:940px;margin:0 auto;padding:44px 26px 80px}
+body.side-closed .wrap{padding-top:64px}
+
+/* ---------- header ---------- */
+h1{font-weight:900;font-size:clamp(28px,5vw,42px);line-height:1.2;letter-spacing:-.01em;margin:0 0 14px}
+.lede{font-size:18px;color:var(--muted);max-width:40em}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--muted);margin:14px 0 0}
+
+/* ---------- sections ---------- */
+details.sec{border-top:2px solid var(--ink);margin-top:36px}
+details.sec > summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:14px;padding:16px 0 6px}
+details.sec > summary::-webkit-details-marker{display:none}
+details.sec > summary .no{font-weight:900;font-size:30px;line-height:1;color:var(--req);font-variant-numeric:tabular-nums;min-width:1.2em}
+details.sec > summary h2{font-weight:900;font-size:26px;margin:0;line-height:1.3;flex:1}
+details.sec > summary .hint{font-size:13px;color:var(--muted);white-space:nowrap}
+details.sec[open] > summary .hint .c{display:none}
+details.sec:not([open]) > summary .hint .o{display:none}
+.body{padding:6px 0 4px}
+h3{font-weight:900;font-size:20px;margin:36px 0 10px;padding-top:4px}
+h3:first-child{margin-top:8px}
+h4{font-weight:700;font-size:17px;margin:20px 0 6px}
+
+/* ---------- atoms ---------- */
+.src{font-size:13px;white-space:nowrap}
+.src::before{content:"↗ "}
+q{font-style:italic}
+blockquote{margin:8px 0 12px;padding:3px 0 3px 12px;border-left:3px solid var(--rule);font-size:15px}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:0 7px;border-radius:999px;border:1.5px solid currentColor;vertical-align:2px;margin-right:5px;white-space:nowrap;line-height:1.6}
+.req{color:var(--req)} .opt{color:var(--opt)} .inf{color:var(--infer)} .warn{color:var(--warn)}
+.ch{display:inline-block;font-size:12px;font-weight:700;padding:0 7px;border-radius:4px;color:var(--paper);white-space:nowrap;line-height:1.6;vertical-align:2px}
+.ch.off{background:var(--ch-off)} .ch.rs{background:var(--ch-rs)} .ch.tw{background:var(--ch-tw)} .ch.own{background:var(--ch-own)}
+.note-inf{border-left:3px solid var(--infer);padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.note-warn{border-left:3px solid var(--warn);padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.muted{color:var(--muted)} .small{font-size:14.5px}
+ul.specs,ol.specs{margin:6px 0 10px;padding-left:1.2em;font-size:15px}
+.specs li{margin:2px 0}
+
+/* tables */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px 0 6px;border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14.5px;background:var(--surface)}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:700;font-size:13px;color:var(--muted);background:var(--paper);position:sticky;top:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.grp td{background:var(--grid);font-weight:700;font-size:14px}
+tr.sub td:first-child{padding-left:22px}
+tfoot td{font-weight:900;border-bottom:none;font-size:15.5px}
+td.ph{width:96px}
+td.ph img{width:84px;height:84px;object-fit:contain;background:#fff;border:1px solid var(--rule);display:block}
+td.ph .noimg{width:84px;height:84px;border:1px dashed var(--rule);display:grid;place-items:center;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.3;padding:4px}
+td ul{margin:0;padding-left:1.1em} td li{margin:1px 0}
+td .name{font-weight:700;display:block}
+
+/* paths */
+.paths{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));border:1.5px solid var(--ink);margin:14px 0 8px}
+.path{padding:18px;background:var(--surface)}
+.path + .path{border-left:1.5px solid var(--ink)}
+@media (max-width:560px){.path + .path{border-left:none;border-top:1.5px solid var(--ink)}}
+.path h4{margin:0 0 6px}
+.path .price{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}
+.path .price small{font-size:15px;font-weight:500;color:var(--muted)}
+.path p{font-size:15px;margin:8px 0 0}
+.path.pick{background:var(--grid)}
+
+/* flow */
+.flow{margin:14px -26px 0;padding:22px;background:
+  linear-gradient(var(--grid) 1px,transparent 1px) 0 0/22px 22px,
+  linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/22px 22px,var(--surface);
+  border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);overflow-x:auto}
+.flow pre.mermaid{background:transparent;margin:0;text-align:center;min-width:620px}
+.flow.big pre.mermaid{min-width:980px}
+.keys{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;margin:12px 0 0}
+.key{display:inline-flex;align-items:center;gap:7px}
+.sw{width:18px;height:14px;border-radius:3px;border:2px solid}
+.sw.buy{background:#DCEFD9;border-color:#2F5D3A}
+.sw.opt{background:#FBEFD2;border-color:#8A6100}
+.sw.own{background:#E3ECF7;border-color:#1F5FA8}
+.sw.free{background:#F4F4F2;border-color:#8A9399}
+.hops{counter-reset:hop;list-style:none;padding:0;margin:18px 0 0}
+.hops li{counter-increment:hop;position:relative;padding:9px 0 9px 44px;border-bottom:1px solid var(--rule);font-size:15px}
+.hops li::before{content:counter(hop);position:absolute;left:0;top:9px;width:28px;height:28px;border-radius:50%;
+  border:1.5px solid var(--ink);display:grid;place-items:center;font-weight:700;font-size:13.5px}
+
+/* items (expansion) */
+.item{display:grid;grid-template-columns:170px 1fr;gap:20px;padding:22px 0;border-bottom:1px solid var(--rule)}
+@media (max-width:620px){.item{grid-template-columns:1fr}}
+.item figure{margin:0}
+.item img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff;border:1px solid var(--rule)}
+.item .yt{aspect-ratio:16/9;object-fit:cover}
+.item figcaption{font-size:12px;color:var(--muted);margin-top:4px}
+.item h4{margin-top:0}
+
+/* incidents */
+.inc{padding:18px 0;border-bottom:1px solid var(--rule)}
+.inc h4{margin:0 0 8px}
+.inc dl{margin:8px 0 0;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15px}
+.inc dt{font-weight:700;color:var(--muted);white-space:nowrap}
+.inc dd{margin:0}
+.vid-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,300px));gap:16px;margin:10px 0 4px}
+
+pre.code{background:var(--surface);border:1px solid var(--rule);padding:14px 16px;overflow-x:auto;line-height:1.55;margin:10px 0 14px}
+
+/* videos */
+.vids{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px;margin-top:10px}
+.vid a.thumb{display:block;position:relative}
+.vid img{width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--rule);background:#000;display:block}
+.vid a.thumb::after{content:"▶";position:absolute;inset:0;display:grid;place-items:center;font-size:38px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.vid h5{font-size:16px;margin:10px 0 4px}
+.vid p{font-size:14.5px;margin:0 0 6px}
+.who{font-size:12.5px;font-weight:700;color:var(--muted);margin:6px 0 0}
+
+/* steps */
+ol.steps{counter-reset:st;list-style:none;padding:0;margin:12px 0}
+ol.steps > li{counter-increment:st;position:relative;padding:12px 0 12px 52px;border-bottom:1px solid var(--rule)}
+ol.steps > li::before{content:counter(st);position:absolute;left:0;top:12px;width:34px;height:34px;border-radius:6px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-weight:900}
+ol.steps b.t{display:block;font-size:16.5px;margin-bottom:2px}
+
+/* qa */
+.qa{border-left:4px solid var(--req);padding:2px 0 2px 16px;margin:30px 0 8px}
+.qa h3{margin:0}
+footer{margin-top:50px;font-size:13.5px;color:var(--muted)}
+</style>
+</head>
+<body class="">
+<aside class="side" id="side" aria-label="目錄">
+  <p style="margin:0 0 10px;font-size:13px"><a href="../" style="color:var(--muted);text-decoration:none">← All projects</a></p>
+  <div class="side-head">
+    <p class="brand">Crazyflie 2.1+ × Python</p>
+    <button class="btn" id="sideClose" type="button" aria-label="收合目錄">收合 ‹</button>
+  </div>
+  <nav>
+    <ul>
+      <li><a href="#s1">1 結論</a>
+        <ul>
+          <li><a href="#s1-bom">採購規格表</a></li>
+          <li><a href="#s1-flow">資訊流</a></li>
+        </ul></li>
+      <li><a href="#s2">2 進口方法與法規</a>
+        <ul>
+          <li><a href="#s2-flow-a">路線 A workflow</a></li>
+          <li><a href="#s2-flow-b">路線 B workflow</a></li>
+          <li><a href="#s2-docs">文件與申請清單</a></li>
+          <li><a href="#s2-why">依據與出處</a></li>
+          <li><a href="#s2-checkout">結帳畫面欄位</a></li>
+          <li><a href="#s2-routes">兩條路線比較</a></li>
+          <li><a href="#s2-credit">大學 30 天賒帳</a></li>
+          <li><a href="#s2-nycu">陽明交大規範</a></li>
+          <li><a href="#s2-address">地址怎麼填</a></li>
+          <li><a href="#s2-law">法規統整</a></li>
+        </ul></li>
+      <li><a href="#s3">3 Demo 與第三方開發</a>
+        <ul>
+          <li><a href="#s3-official">官方 demo</a></li>
+          <li><a href="#s3-dev">開發者 demo</a></li>
+          <li><a href="#s3-fail">論壇災情</a></li>
+        </ul></li>
+      <li><a href="#s4">4 擴充</a>
+        <ul>
+          <li><a href="#s4-items">擴充品項</a></li>
+          <li><a href="#s4-flow">完整資訊流</a></li>
+          <li><a href="#s4-table">擴充統整表</a></li>
+        </ul></li>
+      <li><a href="#s5">5 Q&amp;A</a>
+        <ul>
+          <li><a href="#q-battery">電池替代方案</a></li>
+          <li><a href="#q-sw">軟體與最小腳本</a></li>
+          <li><a href="#q-bci">BCI 結合範例</a></li>
+          <li><a href="#q-multi">多架互相干擾？</a></li>
+          <li><a href="#q-env">大型機台干擾？</a></li>
+        </ul></li>
+    </ul>
+  </nav>
+  <div class="tools">
+    <button class="btn" id="openAll" type="button">全部展開</button>
+    <button class="btn" id="closeAll" type="button">全部收合</button>
+  </div>
+</aside>
+<div class="scrim" id="scrim"></div>
+<button class="btn fab" id="sideOpen" type="button" aria-controls="side">› 目錄</button>
+
+<main>
+<div class="wrap">
+<header>
+  <h1>用 Python 控制 Crazyflie 2.1+</h1>
+  <p class="lede">一台 Crazyflie 2.1+ 加一支 Crazyradio 2.0，Python 就能連上無人機；要讓腳本說「往前 1 公尺」就真的飛過去，還需要一塊定位擴充板（最便宜的是 Flow deck v2）。價格與規格取自官方頁面，查詢日 2026-10-06，以美元計、未含運費與稅。</p>
+  <div class="legend">
+    <span><span class="tag req">必要</span>沒有就無法用 Python 自主飛行</span>
+    <span><span class="tag opt">建議／選配</span>能飛，但實務上會需要</span>
+    <span><span class="tag inf">推論</span>我自己的判斷，非來源原文</span>
+    <span><span class="tag warn">未查到</span>查不到可靠來源</span>
+  </div>
+  <div class="legend">
+    <span><span class="ch off">官方商店</span> Bitcraze Store</span>
+    <span><span class="ch rs">RobotShop</span> 海外經銷</span>
+    <span><span class="ch tw">台灣在地</span> 國內管道</span>
+    <span><span class="ch own">自備</span> 不用買</span>
+  </div>
+</header>
+<!-- ===================== 1 結論 ===================== -->
+<details class="sec" id="s1" open>
+<summary><span class="no">1</span><h2>結論</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<div class="paths" style="grid-template-columns:1fr">
+  <div class="path pick">
+    <h4>確定採購：STEM drone bundle ＋ 350mAh LiPo 電池 ×2</h4>
+    <div class="price">$344.00 <small>商品小計，未含 FedEx 運費與稅</small></div>
+    <p>$320（套組）＋ 2 × $12（電池）。<a class="src" href="https://store.bitcraze.io/products/stem-drone-bundle">STEM drone bundle</a> <a class="src" href="https://store.bitcraze.io/products/350mah-lipo-battery">350mAh 電池</a> 2 顆剛好是官方「每台最多 2 顆備用電池」的上限，不會加收特殊運費。<a class="src" href="https://store.bitcraze.io/pages/faq">商店 FAQ</a></p>
+  </div>
+</div>
+<h3 id="s1-bom">採購規格表</h3>
+<p>套組內每一件都拆開介紹，Crazyflie 盒內附件也列出來。</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>照片</th><th>品項</th><th>規格</th><th class="num">價格</th><th>購買處</th><th>注意事項</th></tr></thead>
+  <tbody>
+    <tr class="grp"><td colspan="6">A. STEM drone bundle（$320，一次買齊三件必要品）<a class="src" href="https://store.bitcraze.io/products/stem-drone-bundle">商店頁</a></td></tr>
+    <tr>
+      <td class="ph"><img src="https://store.bitcraze.io/cdn/shop/files/Stembundle2.1_-2400px_grande.jpg?v=1719389258" alt="STEM drone bundle" loading="lazy"></td>
+      <td><span class="name">STEM drone bundle</span><span class="tag req">必要</span></td>
+      <td>內含 Crazyflie 2.1+、Crazyradio 2.0、Flow deck v2 各 1；官方附專屬入門教學。<a class="src" href="https://www.bitcraze.io/documentation/tutorials/getting-started-with-stem-drone-bundle/">教學</a></td>
+      <td class="num">$320.00<br><span class="muted small">原價 $338</span></td>
+      <td><span class="ch off">官方商店</span><br><span class="ch rs">RobotShop</span> <a class="src" href="https://ca.robotshop.com/products/bitcraze-stem-drone-bundle-crazyflie-2-1plus">CA 站</a></td>
+      <td><q>commands like "move forward 1 meter"</q> <a class="src" href="https://store.bitcraze.io/products/stem-drone-bundle">商店</a></td>
+    </tr>
+    <tr class="sub">
+      <td class="ph"><img src="https://store.bitcraze.io/cdn/shop/files/Crazyflie_2.1__01_2000x2000_89f5176c-775a-449e-ab1a-b309abe4b9c4_grande.jpg?v=1790341242" alt="Crazyflie 2.1+" loading="lazy"></td>
+      <td><span class="name">└ Crazyflie 2.1+</span>機體</td>
+      <td><ul>
+        <li>29 g；92 × 92 × 29 mm</li>
+        <li>STM32F405 ＋ nRF51822</li>
+        <li>BMI088 IMU、BMP388 氣壓計</li>
+        <li>續航 7 分、充電 40 分、酬載 15 g</li>
+        <li>機上 LiPo 充電器，micro-USB</li>
+      </ul><a class="src" href="https://bitcraze.io/products/crazyflie-2-1-plus/">產品頁</a></td>
+      <td class="num">單買 $240</td>
+      <td><span class="ch off">官方商店</span><br><span class="ch rs">RobotShop</span> <a class="src" href="https://www.robotshop.com/products/bitcraze-crazyflie-21">US 站</a></td>
+      <td><q>only weighs 29g and fits in the palm of your hand</q> <a class="src" href="https://store.bitcraze.io/products/crazyflie-2-1-plus">商店</a><br>需自行組裝馬達、槳與電池，不需焊接。</td>
+    </tr>
+    <tr class="sub">
+      <td class="ph"><div class="noimg">盒內附件<br>（見商店頁）</div></td>
+      <td><span class="name">└└ Crazyflie 盒內附件</span></td>
+      <td><ul>
+        <li>250mAh LiPo ×1</li>
+        <li>7 mm 馬達 ×5（含 1 備用）</li>
+        <li>馬達座 ×6（含 2 備用）</li>
+        <li>CCW 槳 ×5、CW 槳 ×5（各含 3 備用）</li>
+        <li>電池座 deck、長短排針各 2、micro-USB 線 48 cm</li>
+      </ul><a class="src" href="https://store.bitcraze.io/products/crazyflie-2-1-plus">內容物清單</a></td>
+      <td class="num">含在機體內</td>
+      <td>—</td>
+      <td>已含 1 顆備用馬達、2 個備用馬達座、6 支備用槳。長排針是否達 9 mm 請到貨後量測（見下方 350mAh 注意事項）。</td>
+    </tr>
+    <tr class="sub">
+      <td class="ph"><img src="https://store.bitcraze.io/cdn/shop/files/CRazyflie_Crazyradio_2.0_01_2000x2000_2ac1766c-6ffb-4a9b-a7aa-a62e9c3c63ec_grande.jpg?v=1790952452" alt="Crazyradio 2.0" loading="lazy"></td>
+      <td><span class="name">└ Crazyradio 2.0</span>USB 無線電</td>
+      <td><ul>
+        <li>nRF52840（Cortex-M4F 64 MHz）</li>
+        <li>20 dBm、LNA、RP-SMA，附 2 dBi 天線</li>
+        <li>USB-A；7 g；63 × 18 × 8 mm</li>
+      </ul><a class="src" href="https://www.bitcraze.io/documentation/hardware/crazyradio_2_0/crazyradio_2_0-datasheet.pdf">Datasheet</a></td>
+      <td class="num">單買 $43</td>
+      <td><span class="ch off">官方商店</span></td>
+      <td><q>Using our Python library it's quick to create a low latency link</q> <a class="src" href="https://store.bitcraze.io/products/crazyradio-2-0">商店</a><br>同一時間只能被一個程式使用（見 Q&amp;A）。</td>
+    </tr>
+    <tr class="sub">
+      <td class="ph"><img src="https://store.bitcraze.io/cdn/shop/files/Crazyflie_Flow_Deck_v2_01_2000x2000_47fffd18-24ce-406e-bcfa-d7e81f9c47b2_grande.jpg?v=1790951442" alt="Flow deck v2" loading="lazy"></td>
+      <td><span class="name">└ Flow deck v2</span>光流＋測高</td>
+      <td><ul>
+        <li>VL53L1x ToF，最遠 4 m</li>
+        <li>PMW3901 光流（霧面地板最佳）</li>
+        <li>1.6 g；21 × 28 × 4 mm；裝機身底部</li>
+      </ul><a class="src" href="https://www.bitcraze.io/products/flow-deck-v2/">產品頁</a></td>
+      <td class="num">單買 $55</td>
+      <td><span class="ch off">官方商店</span></td>
+      <td><q>measures the distance to the ground with high precision</q> <a class="src" href="https://store.bitcraze.io/products/flow-deck-v2">商店</a><br>只有相對位置，誤差隨時間累積；地面要有紋理（見論壇災情）。</td>
+    </tr>
+
+    <tr class="grp"><td colspan="6">B. 加購電池</td></tr>
+    <tr>
+      <td class="ph"><img src="https://store.bitcraze.io/cdn/shop/files/Crazyflie_350mAh_battery_01_2000x2000_f17bfa1f-315f-4363-98e8-0a212738fc59_grande.jpg?v=1790952334" alt="350mAh LiPo 電池" loading="lazy"></td>
+      <td><span class="name">350mAh LiPo 電池 ×2</span><span class="tag opt">加購</span></td>
+      <td><ul>
+        <li>Tattu 350mAh 30C 1S1P 電芯，含保護電路（PCM）</li>
+        <li>3.7 V；15C 持續／30C 瞬間；建議 1–3C 充電</li>
+        <li>9.1 g；20 × 8 × 33 mm；線長 35 mm、22 AWG</li>
+        <li>Molex 51005-2P，Pin 1 正極（與原廠 250mAh 同接頭）</li>
+      </ul><a class="src" href="https://store.bitcraze.io/products/350mah-lipo-battery">商店規格</a></td>
+      <td class="num">$12.00 × 2<br>＝ $24.00</td>
+      <td><span class="ch off">官方商店</span></td>
+      <td><q>The 350 mAh battery boosts the hover-time to above 10 min.</q> <a class="src" href="https://store.bitcraze.io/products/350mah-lipo-battery">商店</a>
+        <p class="small" style="margin:6px 0 0">經銷商頁加註：電池約厚 1 mm，和部分 deck 不好搭，建議用至少 9 mm 的長排針。<a class="src" href="https://www.unmannedtechshop.co.uk/products/spare-350mah-1s-lipo-battery-for-crazyflie">Unmanned Tech</a></p>
+        <p class="small" style="margin:6px 0 0"><span class="tag inf">推論</span>沒買外接充電器，只能裝在機上用 micro-USB 一次充一顆；機上充電器有 500 mA 模式，約 1.4C，在建議範圍內。</p></td>
+    </tr>
+
+    <tr class="grp"><td colspan="6">C. 不用買</td></tr>
+    <tr>
+      <td class="ph"><div class="noimg">自備</div></td>
+      <td><span class="name">電腦</span><span class="tag req">必要</span></td>
+      <td>Windows / macOS / Linux；Python 3.10 以上</td>
+      <td class="num">—</td>
+      <td><span class="ch own">自備</span></td>
+      <td>Windows 需 Zadig 驅動；Linux 需 udev（見 Q&amp;A）。<a class="src" href="https://bitcraze.io/documentation/repository/crazyflie-lib-python/master/installation/install">cflib 安裝</a></td>
+    </tr>
+    <tr>
+      <td class="ph"><div class="noimg">自備</div></td>
+      <td><span class="name">飛行場地</span><span class="tag req">必要</span></td>
+      <td>霧面、有紋理、光線充足的地板</td>
+      <td class="num">—</td>
+      <td><span class="ch own">自備</span></td>
+      <td>反光或單色地板會讓 Flow deck 失效（見第 3 段）。</td>
+    </tr>
+  </tbody>
+  <tfoot><tr><td colspan="3">合計 <span class="tag inf">推論：我的加總</span></td><td class="num">$344.00</td><td colspan="2" class="small muted">另加 FedEx 運費、關稅、營業稅（第 2 段）</td></tr></tfoot>
+</table>
+</div>
+
+<h3 id="s1-flow">資訊流：從一行 Python 到四顆馬達</h3>
+<p>實線是指令往無人機的方向；虛線是 log 回傳。綠色是推薦路線要買的硬體，藍色是自備，灰色是免費軟體／韌體。包含所有擴充的大圖在第 4 段。</p>
+<div class="flow">
+<pre class="mermaid">
+flowchart TB
+  subgraph PC["你的電腦"]
+    PCH["電腦本體<br/>Windows · macOS · Linux"]:::own
+    A["Python 腳本<br/>mc.forward(1.0)"]:::free --> B["cflib<br/>MotionCommander / Commander"]:::free
+    B --> C["CRTP 封包"]:::free
+    C --> D["USB 驅動<br/>libusb · Zadig(Win) · udev(Linux)"]:::free
+  end
+  subgraph DG["USB 無線電"]
+    E["Crazyradio 2.0<br/>nRF52840 · 20 dBm"]:::buy
+  end
+  subgraph CF["Crazyflie 2.1+"]
+    BAT["350mAh LiPo ×2<br/>＋盒內 250mAh"]:::buy -->|"供電"| F
+    F["nRF51822<br/>無線電與電源管理"]:::buy -->|"syslink · UART 1 Mbaud"| G["STM32F405<br/>主韌體"]:::buy
+    G --> H["Commander<br/>取得 setpoint"]:::free
+    S1["BMI088 IMU<br/>BMP388 氣壓計"]:::buy --> I
+    S2["Flow deck v2<br/>VL53L1x · PMW3901"]:::buy --> I
+    I["State estimator<br/>擴展卡爾曼濾波"]:::free --> J
+    H --> J["State controller<br/>預設 PID"]:::free
+    J --> K["Power distribution"]:::free
+    K --> L["4 × 7 mm 有刷馬達"]:::buy
+  end
+  PCH -.- A
+  D -->|USB| E
+  E -->|"2.4 GHz · CRTP"| F
+  L --> M(("飛行"))
+  G -.->|"log 回傳"| F -.-> E -.-> B
+  classDef buy fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2.5px,color:#16301C
+  classDef own fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef free fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+</pre>
+</div>
+<div class="keys">
+  <span class="key"><span class="sw buy"></span>推薦路線要買的硬體</span>
+  <span class="key"><span class="sw own"></span>自備</span>
+  <span class="key"><span class="sw free"></span>免費軟體／韌體</span>
+</div>
+<ol class="hops">
+  <li><b>Python → cflib。</b>cflib 是電腦端的 Python API，cfclient 也建立在它上面。<a class="src" href="https://www.bitcraze.io/2021/11/where-do-i-add-my-code/">Bitcraze 部落格</a> MotionCommander 需要定位：<q>Some sort of positioning support is required, for instance the Flow deck.</q> <a class="src" href="https://www.bitcraze.io/documentation/repository/crazyflie-lib-python/master/api/cflib/positioning/motion_commander/">API</a></li>
+  <li><b>cflib → USB 驅動。</b>Python 3.10+；Linux 用 udev、Windows 用 Zadig、macOS 用 Homebrew 裝 libusb。<a class="src" href="https://bitcraze.io/documentation/repository/crazyflie-lib-python/master/installation/install">安裝文件</a></li>
+  <li><b>USB → Crazyradio 2.0。</b>PA 模擬韌體讓它相容支援 Crazyradio PA 的軟體。<a class="src" href="https://www.bitcraze.io/products/crazyradio-2-0/">產品頁</a></li>
+  <li><b>Crazyradio → Crazyflie。</b><q>it provides a 2Mbit/seconds data link with low latency</q> <a class="src" href="https://wiki.bitcraze.io/projects:crazyflie2:architecture:index">系統架構</a></li>
+  <li><b>nRF51 → STM32。</b><q>syslink is transmitted on serial port at 1MBaud</q> <a class="src" href="https://www.bitcraze.io/documentation/repository/crazyflie2-nrf-firmware/master/protocols/syslink/">Syslink</a></li>
+  <li><b>Stabilizer 迴圈。</b><q>sensor measurements go to the state estimators to the controllers</q>，再由 power distribution 分到馬達。<a class="src" href="https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/functional-areas/sensor-to-control/">Sensor to control</a> Flow deck 的量測融合進 EKF。<a class="src" href="https://www.bitcraze.io/products/flow-deck-v2/">Flow deck 產品頁</a></li>
+</ol>
+</div>
+</details>
+<!-- ===================== 2 進口 ===================== -->
+<details class="sec" id="s2" open>
+<summary><span class="no">2</span><h2>進口方法與法規</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+<p class="note-warn"><span class="tag warn">非法律意見</span>以下整理自法規原文、官方商店條款與新聞報導；實際報關以海關、NCC 當下認定為準。</p>
+
+<h3 id="s2-flow-a">路線 A：個人信用卡 workflow</h3>
+<p>適合：經費允許個人刷卡墊付外幣、想最快拿到貨。不能申請教育研究用品免稅。原因與出處見本段後半。</p>
+<div class="flow">
+<pre class="mermaid">
+flowchart TD
+  subgraph P0["① 事前確認"]
+    A0(["開始：個人信用卡路線"]):::ok
+    A1{"經費允許個人刷卡<br/>墊付外幣再核銷？<br/>問系辦／主計室"}:::chk
+    A2{"結帳頁國家選單<br/>有 Taiwan？"}:::chk
+    A3{"收件人：本國籍或持居留證、<br/>年滿 18 歲、手機門號為本人？"}:::chk
+    A4{"收件人今年用自用切結<br/>進口的無線電器材<br/>加上本單 2 部，會超過 10 部？"}:::chk
+  end
+  A0 --> A1
+  A1 -->|否| XB["改走路線 B"]:::risk
+  A1 -->|是| A2
+  A2 -->|否| X2["寫信 contact@bitcraze.io<br/>或改向經銷商購買"]:::risk
+  A2 -->|是| A3
+  A3 -->|否| X3["改由符合條件的人<br/>當收件人，例如老師"]:::risk
+  A3 -->|是| A4
+  A4 -->|會| X4["向 NCC 申請進口核准證<br/>每證 600 元，或改走路線 B"]:::gov
+  A4 -->|不會| D1
+  subgraph P1["② 先準備文件"]
+    D1["EZ WAY 易利委：下載 → 會員註冊<br/>→ 實名認證（電信或簡訊認證）"]:::doc
+    D2["NCC 自用切結書內容先備好：<br/>Crazyflie 2.1+ ／ Bitcraze ／ 2.4 GHz ／ 20 dBm ／ 1<br/>Crazyradio 2.0 ／ Bitcraze ／ 2.4 GHz ／ 20 dBm ／ 1"]:::doc
+    D3["規格書 PDF 存手機：<br/>Crazyflie 2.1+、Crazyradio 2.0 datasheet<br/>NCC 可能要求上傳比對"]:::doc
+    D4["問主計室核銷要附什麼：<br/>Invoice、刷卡明細、匯率、<br/>進口稅單、事前簽呈？"]:::doc
+    D1 --> D2 --> D3 --> D4
+  end
+  subgraph P2["③ 下單"]
+    O1["建帳號、填地址<br/>收件人＝完成實名認證的人"]:::act
+    O2["購物車：STEM drone bundle ×1<br/>350mAh LiPo battery ×2"]:::act
+    O3["EU VAT ID 欄位留空"]:::act
+    O4{"下一步總金額<br/>有 VAT 一行？"}:::chk
+    O5["運送 FedEx International Priority<br/>信用卡付款"]:::act
+    O6["保存訂單確認信與 Invoice"]:::doc
+    O1 --> O2 --> O3 --> O4
+    O4 -->|有| X5["先別付款，寫信問 Bitcraze"]:::risk
+    O4 -->|沒有| O5 --> O6
+  end
+  D4 --> O1
+  subgraph P3["④ 運送與抵台報關"]
+    S1["Bitcraze 約 2–3 工作天出貨<br/>取得 FedEx 追蹤號碼"]:::act
+    S2{"EZ WAY 推播的<br/>品名、金額與訂單相符？"}:::chk
+    S3["點「申報相符」完成委任"]:::gov
+    X6["點「申報不符」<br/>聯絡 FedEx 更正後再確認"]:::risk
+    S4["依 FedEx／EZ WAY 通知<br/>填寫 NCC 自用切結書"]:::gov
+    S5{"NCC 要求補規格？"}:::chk
+    S6["NCC 會員入口 → 單證比對<br/>→ 上傳規格書，約 1–2 工作天"]:::gov
+    S7{"NCC 比對通過？"}:::chk
+    X7["依 NCC 指示補件，或改申請<br/>進口核准證；不行就退運"]:::risk
+    S8["繳關稅＋5% 營業稅<br/>完稅價格超過 NT$2,000 必課<br/>稅單在 EZ WAY／海關網站查"]:::gov
+    S9["放行送件<br/>到台後 15 日內要清關<br/>FedEx 15 日內免倉租"]:::act
+    S1 --> S2
+    S2 -->|是| S3
+    S2 -->|否| X6 --> S2
+    S3 --> S4 --> S5
+    S5 -->|否| S8
+    S5 -->|是| S6 --> S7
+    S7 -->|是| S8
+    S7 -->|否| X7
+    S8 --> S9
+  end
+  O6 --> S1
+  subgraph P4["⑤ 收貨與核銷"]
+    R1["開箱點收：機體、Crazyradio、Flow deck、<br/>350mAh ×2、盒內附件"]:::act
+    R2["依主計規定核銷<br/>Invoice＋刷卡明細＋稅單"]:::doc
+    E1(["完成"]):::ok
+    R1 --> R2 --> E1
+  end
+  S9 --> R1
+  classDef chk fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef doc fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2B00
+  classDef gov fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef act fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+  classDef risk fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+  classDef ok fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2.5px,color:#16301C
+</pre>
+</div>
+
+<h3 id="s2-flow-b">路線 B：學校報價單／PO workflow</h3>
+<p>適合：要用學校名義採購、想申請教育研究用品免稅、或經費不允許個人刷卡。流程較長，關鍵是<b>免稅令與 NCC 文件要在貨到海關前辦好</b>。</p>
+<div class="flow">
+<pre class="mermaid">
+flowchart TD
+  subgraph Q0["① 事前確認：先問人"]
+    B0(["開始：學校報價單／PO 路線"]):::ok
+    B1{"經費屬科研採購？<br/>國科會等補助計畫"}:::chk
+    B1a["是：15 萬以下可逕洽廠商採購<br/>國外要結匯或免稅 → 請購單核定後送採購組"]:::act
+    B1b["否：依政府採購法<br/>10 萬以下小額國外直購流程"]:::act
+    B2["問採購組承辦人<br/>光復分機 52103 ／ 陽明分機 62060"]:::chk
+    B2q["要問清楚：<br/>1. 付款：結匯電匯流程與所需時間<br/>2. NCC：學校名義郵寄 2 部可否切結，或須進口核准證<br/>3. FedEx 報關：委任書用印、是否正式報關<br/>4. 免稅令由誰送件、要幾天"]:::chk
+    B3["寫信 sales@bitcraze.io 確認：<br/>a. 可否等通知再出貨<br/>b. Invoice 品名與報價單一致<br/>c. 電匯銀行資料與廠商文件<br/>d. 大學 30 天賒帳：貨到後 30 天內付款"]:::chk
+  end
+  B0 --> B1
+  B1 -->|是| B1a --> B2
+  B1 -->|否| B1b --> B2
+  B2 --> B2q --> B3
+  subgraph Q1["② 準備文件"]
+    C1["Bitcraze 帳號地址改成學校<br/>Company＝NYCU，收件人＝老師"]:::doc
+    C2["購物車 → Request quote<br/>→ 下載報價單 PDF"]:::doc
+    C3["主計經費報支系統填請購單<br/>附計畫核定清單、報價單<br/>10 萬以下附國外直購紀錄表"]:::doc
+    C4["預算以外幣計，匯率要高估"]:::doc
+    C5["免稅申請：公文系統<br/>總務類定型稿 → 免稅令申請簽辦<br/>附件一 進口教育研究用品免稅申請書<br/>附件二 Quotation 或 Invoice<br/>＋ 進口教育用品明細表"]:::doc
+    C6["明細表英文品名<br/>與 Invoice Description 逐字相同"]:::doc
+    C1 --> C2 --> C3 --> C4 --> C5 --> C6
+  end
+  B3 --> C1
+  subgraph Q2["③ 政府申請：貨到前完成"]
+    G1["海關免稅令<br/>採購組送件到核發約 10–14 天<br/>核准後 6 個月內有效"]:::gov
+    G2{"採購組說 NCC<br/>要怎麼辦？"}:::chk
+    G3["自用切結書<br/>法人須蓋機關關防"]:::gov
+    G4["NCC 進口核准證<br/>申請書＋法人設立證明＋型錄規格＋切結書<br/>規費每證 600 元"]:::gov
+    G5["NCC 文件 email 給採購組承辦人"]:::doc
+    G2 -->|切結| G3 --> G5
+    G2 -->|核准證| G4 --> G5
+  end
+  C6 --> G1
+  C6 --> G2
+  subgraph Q3["④ 下單與出貨"]
+    H1["PO＋報價單寄 sales@bitcraze.io<br/>註明：等我方通知再出貨"]:::act
+    H2{"免稅令與 NCC<br/>都已核准？"}:::chk
+    X8["先不要通知出貨"]:::risk
+    H3["通知 Bitcraze 出貨<br/>FedEx International Priority"]:::act
+    H1 --> H2
+    H2 -->|否| X8 --> H2
+    H2 -->|是| H3
+  end
+  G1 --> H1
+  G5 --> H1
+  subgraph Q4["⑤ 抵台報關"]
+    K1["FedEx 聯絡收件人<br/>機關件：個案委任書 POA 用印<br/>必要時填報關方式指定書，指定正式報關"]:::doc
+    K2{"免稅令已核准<br/>且 Invoice 品名相符？"}:::chk
+    K3["請 FedEx 報關人員聯絡採購組<br/>取得免稅令 → 正式報單免稅報關"]:::gov
+    K4{"遇到哪種狀況？"}:::chk
+    K5["Invoice 不符：<br/>請原廠重開品名一致、有簽名的 Invoice"]:::risk
+    K6["急用：押款提貨<br/>簽核押款提貨報關申請書<br/>約 3–7 天到貨，退押金約 60–90 天"]:::risk
+    K7["不申請免稅：<br/>直接繳關稅＋營業稅"]:::risk
+    K8["清關期限：到台後 15 日<br/>逾期滯報費每日 200 元<br/>FedEx 15 日內免倉租"]:::act
+    K1 --> K2
+    K2 -->|是| K3 --> K8
+    K2 -->|否| K4
+    K4 -->|Invoice 不符| K5 --> K2
+    K4 -->|免稅令未下來且急用| K6 --> K8
+    K4 -->|放棄免稅| K7 --> K8
+  end
+  H3 --> K1
+  subgraph Q5["⑥ 驗收、付款、核銷"]
+    M1["驗收：系所、院或一級單位主管<br/>擔任驗收人核章"]:::doc
+    M2["學校登記免稅進口教育研究用品專簿"]:::doc
+    M3["貨到後 30 天內電匯付款<br/>經採購組辦理結匯"]:::act
+    M4["核銷：Invoice、驗收紀錄、原請購案<br/>國外採購核銷回採購組"]:::doc
+    E2(["完成"]):::ok
+    M1 --> M2 --> M3 --> M4 --> E2
+  end
+  K8 --> M1
+  classDef chk fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef doc fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2B00
+  classDef gov fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef act fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+  classDef risk fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+  classDef ok fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2.5px,color:#16301C
+</pre>
+</div>
+<div class="keys">
+  <span class="key"><span class="sw" style="background:#E3ECF7;border-color:#1F5FA8"></span>要先確認的事</span>
+  <span class="key"><span class="sw" style="background:#FBEFD2;border-color:#8A6100"></span>要準備的文件</span>
+  <span class="key"><span class="sw" style="background:#F3E1F7;border-color:#7A3E8F"></span>向政府申請／申報</span>
+  <span class="key"><span class="sw" style="background:#FBE3DE;border-color:#A33A2B"></span>出狀況時的備案</span>
+  <span class="key"><span class="sw" style="background:#F4F4F2;border-color:#8A9399"></span>一般動作</span>
+</div>
+
+<h3 id="s2-docs">兩條路線的文件與申請清單</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>項目</th><th>路線 A：個人信用卡</th><th>路線 B：學校 PO</th><th>向誰／在哪</th></tr></thead>
+  <tbody>
+    <tr class="grp"><td colspan="4">要向政府申請或申報</td></tr>
+    <tr><td>EZ WAY 實名認證＋預先委任</td><td><span class="tag req">必要</span>收件人本人</td><td>— 機關件改用委任書</td><td>關務署 EZ WAY App</td></tr>
+    <tr><td>NCC 自用切結書</td><td><span class="tag req">必要</span>自然人</td><td>依採購組指示（法人蓋關防）</td><td>FedEx／EZ WAY 通知、NCC</td></tr>
+    <tr><td>NCC 單證比對上傳規格書</td><td>NCC 要求時</td><td>NCC 要求時</td><td>NCC 會員入口</td></tr>
+    <tr><td>NCC 進口核准證（600 元／證）</td><td>超過 2 部或被要求時</td><td>依採購組指示</td><td>NCC</td></tr>
+    <tr><td>海關教育研究用品免稅令</td><td>不適用</td><td><span class="tag req">必要</span>（要免稅時）</td><td>採購組 → 關務署</td></tr>
+    <tr><td>關稅＋5% 營業稅</td><td><span class="tag req">必繳</span></td><td>有免稅令則免</td><td>海關（FedEx 代收）</td></tr>
+    <tr class="grp"><td colspan="4">要準備的文件</td></tr>
+    <tr><td>Bitcraze 報價單（Request quote）</td><td>選用（給主計看）</td><td><span class="tag req">必要</span></td><td>Bitcraze 購物車頁</td></tr>
+    <tr><td>Invoice</td><td>訂單確認信／Invoice</td><td>隨貨 Invoice，品名須與明細表一致</td><td>Bitcraze</td></tr>
+    <tr><td>Crazyflie 2.1+、Crazyradio 2.0 規格書</td><td><span class="tag req">建議先存</span></td><td><span class="tag req">建議先存</span></td><td><a class="src" href="https://www.bitcraze.io/documentation/hardware/crazyflie_2_1_plus/crazyflie_2_1_plus-datasheet.pdf">CF Datasheet</a> <a class="src" href="https://www.bitcraze.io/documentation/hardware/crazyradio_2_0/crazyradio_2_0-datasheet.pdf">CR Datasheet</a></td></tr>
+    <tr><td>請購單＋計畫核定清單</td><td>依主計要求</td><td><span class="tag req">必要</span></td><td>主計經費報支系統</td></tr>
+    <tr><td>國外直購紀錄表（10 萬以下）</td><td>—</td><td>依採購組要求</td><td>購運組表單下載</td></tr>
+    <tr><td>進口教育研究用品免稅申請書＋明細表</td><td>—</td><td><span class="tag req">必要</span></td><td>採購組表單、公文系統</td></tr>
+    <tr><td>個案委任書（POA）／報關方式指定書</td><td>—</td><td>依 FedEx 要求</td><td>FedEx 清關文件頁</td></tr>
+    <tr><td>押款提貨報關申請書</td><td>—</td><td>免稅令來不及時</td><td>購運組表單下載</td></tr>
+    <tr><td>刷卡明細、稅單</td><td><span class="tag req">核銷用</span></td><td>稅單（若有繳稅）</td><td>發卡銀行、EZ WAY／海關網站</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="s2-why">為什麼這樣排：依據與出處</h3>
+<p class="small muted">以下逐項說明上面兩張圖每一步的來源；未標來源的節點是我的推論。</p>
+<ul class="specs">
+  <li><b>EZ WAY 必須事先委任：</b>2026 年 3 月 1 日起，個人進口快遞貨物全面實施實名認證與預先確認委任，未在 App 點「申報相符」海關不受理報關；資訊有誤要點「申報不符」並聯絡報關業者。<a class="src" href="https://www.businesstoday.com.tw/article/category/183030/post/202602260003/">今周刊</a> 實名認證可選電信認證或簡訊認證（後者要上傳身分證），適用對象是設籍本國或持居留證的個人。<a class="src" href="https://www.fedex.com/content/dam/fedex/apac-asia-pacific/downloads/fedex-import-RNA-app-guide-zh-tw.pdf">FedEx EZ WAY 說明</a></li>
+  <li><b>機關件改用委任書：</b>FedEx 說明公司貨件使用長期或個案委任書並蓋大小章；也可用「報關方式指定書」指定完稅 NT$2,000 以上的貨件走正式報關。<a class="src" href="https://www.fedex.com/zh-tw/customs-tools/clearance/how-to-clear-customs/import.html">FedEx 進口清關指南</a> <span class="tag inf">推論</span>學校應蓋機關關防，實際請問採購組。</li>
+  <li><b>NCC 自用切結書欄位：</b>申請人（自然人填身分證與戶籍地址；法人填統一編號、負責人）、器材名稱、廠牌、型號、工作頻率、輸出功率、數量；僅具 Wi-Fi 或藍牙的用戶端器材可免填頻率與功率。<a class="src" href="https://www.dhl.com/discover/content/dam/taiwan/shipping-with-dhl/start-shipping-with-dhl/b2c-cross-border-ecommerce/ncc%E8%87%AA%E7%94%A8%E5%88%87%E7%B5%90%E6%9B%B8-%E5%A1%AB%E5%AF%AB%E7%AF%84%E4%BE%8B201802.pdf">DHL 提供的切結書範例（2018 年版）</a> Crazyflie 與 Crazyradio 用的是 Nordic 專有協定，不只是 Wi-Fi／藍牙，<span class="tag inf">推論</span>應填頻率與功率：兩者都是 2.4 GHz ISM、20 dBm 功率放大器。<a class="src" href="https://bitcraze.io/products/crazyflie-2-1-plus/">Crazyflie 規格</a> <a class="src" href="https://www.bitcraze.io/documentation/hardware/crazyradio_2_0/crazyradio_2_0-datasheet.pdf">Crazyradio 規格</a></li>
+  <li><b>NCC 單證比對：</b>有使用者範例顯示，在 EZ WAY 完成委任與自用切結後，快遞仍可能通知補規格書，要到 NCC 會員入口的「單證比對進度查詢」上傳，審核約 1–2 個工作天。<a class="src" href="https://support.spaceshipapp.com/zh-hk/%E5%AF%84%E8%97%8D%E8%8A%BDwi-fi%E5%8A%9F%E8%83%BD%E9%9B%BB%E5%AD%90%E7%94%A2%E5%93%81%E5%88%B0%E5%8F%B0%E7%81%A3%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A0%85">Spaceship 說明</a></li>
+  <li><b>NCC 數量與核准證：</b>郵寄一次最多 2 部可切結，3–10 部要申請進口核准證；一年 10 部、自然人須滿 18 歲。<a class="src" href="https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=K0060146">全國法規資料庫</a> 第二級進口核准證規費每證 600 元，自然人、法人皆可申請。<a class="src" href="https://www.gov.tw/News_Content_2_558731">我的E政府</a> 未經核准進口可處 10 萬至 100 萬元罰鍰。<a class="src" href="https://memf.ncc.gov.tw/files/site_node_content_file/755/1121109-%E9%9B%BB%E4%BF%A1%E7%AE%A1%E5%88%B6%E5%B0%84%E9%A0%BB%E5%99%A8%E6%9D%90%E7%9A%84%E9%80%B2%E5%8F%A3%E3%80%81%E9%8A%B7%E5%94%AE%E8%88%87%E6%8C%81%E6%9C%89%EF%BC%9A%E7%9B%B8%E9%97%9C%E6%B3%95%E4%BB%A4%E5%AE%A3%E5%B0%8E.pdf">NCC 宣導簡報</a></li>
+  <li><b>陽明交大把無線電器材列為特殊管制品：</b>採購組文件列出 Wi-Fi、藍牙等通訊設備由 NCC 管轄，要在進口前取得許可並 email 給採購組承辦人。<a class="src" href="https://ga.nycu.edu.tw/userfiles/gach/files/20250508105332249.pdf">免稅申請＆報關注意事項</a> 所以路線 B 的 NCC 做法以採購組說法為準。</li>
+  <li><b>預算以外幣高估匯率：</b>購運組 Q&amp;A 指出國外採購以外幣報價計，並應考量匯率波動高估。<a class="src" href="https://www.ga.nctu.edu.tw/procurement-division/qa">購運組 Q&amp;A</a></li>
+  <li><b>其餘節點：</b>科研採購分級、免稅令文件與時程、押款提貨、清關期限、驗收與核銷的出處，見下方「陽明交大規範」；Request quote、30 天賒帳、EU VAT 欄位見「結帳畫面」與「30 天賒帳」。</li>
+</ul>
+
+<h3 id="s2-checkout">結帳畫面的兩個欄位是什麼</h3>
+<h4>「EU VAT ID validation (VAT will be deducted at next step)」</h4>
+<p>這是 Shopify 結帳頁給<b>歐盟企業買家</b>填寫歐盟增值稅號（VAT ID）的欄位。填入有效稅號後，系統會即時向歐盟的 VIES 資料庫驗證；驗證通過且符合跨境 B2B 條件時，訂單不收 VAT，改由買方在自己國家申報（reverse charge，逆向課徵）。<a class="src" href="https://help.shopify.com/en/manual/taxes/shopify-tax/vat-validate">Shopify Help Center</a> 適用情況是從歐盟出貨到另一個歐盟國家、或歐盟與英國之間的訂單。<a class="src" href="https://changelog.shopify.com/posts/vat-number-validation-available-in-checkout">Shopify Changelog</a> Bitcraze 本身是瑞典公司，稅號為 SE556866995501。<a class="src" href="https://store.bitcraze.io/pages/faq">商店頁尾</a></p>
+<p class="note-inf"><span class="tag inf">推論：你該怎麼做</span>寄到台灣、學校也沒有歐盟 VAT 稅號，這欄<b>留空</b>即可。貨物出口到歐盟以外，一般不會被收瑞典 VAT；請在下一步看總金額是否有 VAT 一行，若有再寫信問 Bitcraze。台灣這邊的關稅與 5% 營業稅是到貨時另外課，和這欄無關。</p>
+
+<h4>「Request quote」</h4>
+<p>給<b>不能直接刷卡、需要報價單走採購流程</b>的學校或公司用。官方步驟：建立帳號 → 把商品放進購物車 → 在購物車頁按「Request quote」，系統直接產生報價單。<a class="src" href="https://store.bitcraze.io/pages/purchase-orders-and-invoices">Purchase orders and invoices</a></p>
+<ul class="specs">
+  <li>報價單上的地址取自帳號資料；按下去看不到地址的話，要先到「My Account」新增地址。</li>
+  <li>拿到報價單後，把採購單（PO）或報價單寄到 sales@bitcraze.io 下單。</li>
+  <li>學校若要求廠商填各種文件（廠商資料表、銀行資料等），也寄到同一信箱。</li>
+  <li>網路商店只收美元；走發票付款時可選 USD、EUR、SEK。</li>
+</ul>
+<p class="note-inf"><span class="tag inf">推論</span>陽明交大的免稅申請需要附 Quotation 或 Invoice（見下方），這張報價單可以直接拿來用。</p>
+
+<h3 id="s2-routes">兩條路線比較</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th></th><th>A. 個人信用卡（網站直接結帳）</th><th>B. 學校報價單／PO＋匯款</th></tr></thead>
+  <tbody>
+    <tr><td><b>怎麼下單</b></td><td>網站結帳，Visa／Mastercard</td><td>Request quote → 學校請購 → PO 寄 sales@bitcraze.io</td></tr>
+    <tr><td><b>何時付款</b></td><td>下單當下</td><td>貨到後 30 天內匯款（見下節）</td></tr>
+    <tr><td><b>買方名義</b></td><td>個人（之後找學校核銷）</td><td>學校</td></tr>
+    <tr><td><b>能否申請免稅</b></td><td><span class="tag inf">推論</span>報價／發票抬頭是個人時，以學校名義申請免稅可能有困難</td><td>可以，學校為進口人</td></tr>
+    <tr><td><b>速度</b></td><td>最快；2–3 個工作天出貨</td><td>較慢；要等校內簽核與免稅令</td></tr>
+    <tr><td><b>要先確認</b></td><td>你的經費是否允許個人刷卡墊付外幣（<span class="tag warn">未查到</span>陽明交大明文規定，請問系辦或主計室）</td><td>採購組承辦人</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small">運送不論哪條路線都一樣：含鋰電池只能走 <q>FedEx International Priority</q> <a class="src" href="https://store.bitcraze.io/pages/faq">商店 FAQ</a>；貨從瑞典出、下單後通常 2–3 個工作天出貨，運費、稅與清關費由買方負擔。<a class="src" href="https://store.bitcraze.io/pages/terms-and-conditions">Terms</a></p>
+
+<h3 id="s2-credit">大學 30 天賒帳是什麼</h3>
+<p>原文：<q>For universities we offer a 30-day credit from when the goods have arrived.</q> <a class="src" href="https://store.bitcraze.io/pages/purchase-orders-and-invoices">Purchase orders and invoices</a></p>
+<ul class="specs">
+  <li><b>意思：</b>大學用報價單／PO 下單時，可以<b>先出貨、後付款</b>，付款期限是<b>貨物送達後 30 天</b>，不是下單後 30 天。</li>
+  <li><b>付款方式：</b>銀行電匯（wire transfer）；官方不收支票。<a class="src" href="https://store.bitcraze.io/pages/faq">商店 FAQ</a></li>
+  <li><b>對象：</b>大學可直接適用；公司要另外申請、逐案決定。</li>
+  <li><b>不適用：</b>網站直接刷卡結帳（那是下單即付款）。</li>
+</ul>
+<p class="note-inf"><span class="tag inf">推論：為什麼對你有用</span>學校走國外匯款通常要經過簽核與結匯，很難在下單當下付款；30 天賒帳讓 Bitcraze 先出貨，學校在貨到、驗收後再匯款。但要注意「先出貨」會撞上免稅令時程（見下節第 4 點）。</p>
+
+<h3 id="s2-nycu">國立陽明交通大學：實驗室海外採購規範</h3>
+<p>以下整理自陽明交大總務處公開文件；實際以採購組承辦人說明為準。</p>
+<ol class="steps">
+  <li><b class="t">確認走哪種採購</b>國科會等補助計畫可適用「科研採購」：<b>15 萬元（含）以下逕洽廠商採購後核銷</b>；15–100 萬元要上主計經費報支系統填請購單、附報價單與議價紀錄。<b>國外採購須辦結匯、進口免稅者，請購單核定後送採購組辦理後續作業。</b><a class="src" href="https://www.nycu.edu.tw/ga/ch/app/data/doc?module=nycu0143&amp;detailNo=1415528239299825664&amp;type=s">科研採購作業流程</a>
+    <p class="small" style="margin:6px 0 0"><span class="tag inf">推論</span>本單商品約 $344＋運費，換算約新臺幣 1.2–1.5 萬元（依當日匯率），落在 15 萬以下小額。</p></li>
+  <li><b class="t">特殊管制品先查：無線電器材要 NCC</b>採購組說明列出「通訊設備、Wifi、Bluetooth」屬國家通訊傳播委員會管轄，要在進口前取得許可並 email 給採購組承辦人，以免退運、銷毀或罰鍰。<a class="src" href="https://ga.nycu.edu.tw/userfiles/gach/files/20250508105332249.pdf">免稅申請＆報關注意事項</a>
+    <p class="small" style="margin:6px 0 0"><span class="tag inf">推論</span>Crazyflie（2.4 GHz＋BLE）和 Crazyradio 都屬這類；以學校名義郵寄 2 部是否可以切結免證，或要申請進口核准證，請直接問採購組。</p></li>
+  <li><b class="t">申請進口免稅令</b>在公文簽核系統選「總務類定型稿」→「免稅令申請簽辦」，附 <b>進口教育研究用品免稅申請書</b> 與 <b>Quotation 或 Invoice</b>。研究及實驗用儀器設備在免稅品目內。<a class="src" href="https://ga.nycu.edu.tw/userfiles/gach/files/20250508105332249.pdf">同上</a>
+    <ul class="specs">
+      <li>明細表上的英文品名要和廠商隨貨 Invoice 的 Description <b>完全一致</b>。</li>
+      <li>採購組收件到海關核發免稅令約 <b>10–14 天</b>；<q>免稅令自關稅局核准日起六個月內有效</q></li>
+      <li>學校小額進口次數多，半年超過 6 次後即使未滿 2,000 元也要課稅，所以小額也建議辦免稅令。</li>
+    </ul></li>
+  <li><b class="t">協調出貨時間</b>免稅令要在<b>貨到海關前</b>核准。<span class="tag inf">推論</span>Bitcraze 下單後 2–3 天就出貨，FedEx 很快到台灣，建議下 PO 時請 Bitcraze 等你通知（免稅令核發）後再出貨；其他學校實驗室的外購流程也是這樣做。<a class="src" href="https://sites.google.com/g2.nctu.edu.tw/nuu-lpl/%E9%A6%96%E9%A0%81/guideline-for-lab-%E5%AF%A6%E9%A9%97%E5%AE%A4%E6%93%8D%E4%BD%9C%E7%B6%AD%E8%AD%B7%E7%AE%A1%E7%90%86%E4%BB%8B%E7%B4%B9/overseas-purchasing-%E5%9C%8B%E5%A4%96%E6%8E%A1%E8%B3%BC%E6%B5%81%E7%A8%8B">聯合大學實驗室外購心得</a></li>
+  <li><b class="t">報關提貨</b>清關期限是貨到後 15 日，逾期每日滯報費 200 元；<b>FedEx 15 日內免倉租</b>。免稅令已核准時，請 FedEx 的報關人員聯絡採購組取得免稅令。<a class="src" href="https://ga.nycu.edu.tw/userfiles/gach/files/20250508105332249.pdf">同上</a>
+    <ul class="specs">
+      <li>貨到了但免稅令還沒好、或 Invoice 品名不符：可「押款提貨」（約 3–7 天收到貨，押金退還約 60–90 天），或直接繳關稅與營業稅。</li>
+    </ul></li>
+  <li><b class="t">核銷</b>100 萬以下小額由請購單位檢附證明文件及發票依經費程序核銷，驗收人由系所、院或一級單位主管核章；國外採購核銷要回採購組。<a class="src" href="https://www.nycu.edu.tw/ga/ch/app/data/doc?module=nycu0143&amp;detailNo=1415528239299825664&amp;type=s">科研採購作業流程</a> 免稅進口的用品學校須登記在專簿並保存十年。<a class="src" href="https://ga.ntu.edu.tw/upload/cont_att/c9d51fa5-570f-4f19-a939-98ba66da4111.pdf">教育研究用品進口免稅辦法第 9 條（台大簡報引用）</a></li>
+</ol>
+<p class="small">表單（國外直購紀錄表、10 萬元以下國外結匯流程、進口教育用品明細表、押款提貨報關申請書）在購運組「表單下載」頁。<a class="src" href="https://www.ga.nctu.edu.tw/procurement-division/download">表單下載</a> 採購組聯絡窗口：光復校區分機 52103、陽明校區分機 62060（2024 年公告）。<a class="src" href="https://infonews.nycu.edu.tw/index.php?SuperType=5&amp;SuperTypeNo=5&amp;action=detail&amp;id=20240800397&amp;topflag=1&amp;type=%EF%BF%BD%EF%BF%BDF%EF%BF%BD%EF%BF%BD%EF%BF%BDi">校園公告</a></p>
+
+<h3 id="s2-address">地址怎麼填</h3>
+<p>採購組的提醒：<b>收貨人資訊（系所、館室、電話分機、手機等）請完整提供給國外廠商，並盡量以老師為收貨人</b>，以免報關時找不到人。<a class="src" href="https://ga.nycu.edu.tw/userfiles/gach/files/20250508105332249.pdf">免稅申請＆報關注意事項</a></p>
+<p>學校英文地址（取自陽明交大官方網站）：</p>
+<ul class="specs">
+  <li><b>光復校區（新竹）：</b>1001, Daxue Rd. East Dist., Hsinchu City 300093, Taiwan</li>
+  <li><b>陽明校區（台北）：</b>155, Sec. 2, Linong St. Beitou Dist., Taipei City 112304, Taiwan</li>
+</ul>
+<p class="small"><a class="src" href="https://deptexpo.aa.nycu.edu.tw/en/">NYCU 系所博覽會</a> <a class="src" href="https://ord.nycu.edu.tw/ord/en/app/folder/1982">研發處英文頁</a>　舊式寫法「1001 University Road」仍見於部分頁面 <a class="src" href="https://sec.nycu.edu.tw/sec/en/app/folder/174">秘書室</a>，兩者指同一地址。</p>
+<h4>對應到 Bitcraze 結帳表單（以光復校區為例）</h4>
+<div class="scroll">
+<table>
+  <thead><tr><th>欄位</th><th>填法</th><th>說明</th></tr></thead>
+  <tbody>
+    <tr><td>First / Last name</td><td>指導教授英文姓名</td><td>採購組建議以老師為收貨人</td></tr>
+    <tr><td>Company</td><td>National Yang Ming Chiao Tung University</td><td>學校為買方與進口人</td></tr>
+    <tr><td>Address line 1</td><td>Room ___, ___ Building, Dept. of ___ (Lab name)</td><td><span class="tag inf">推論</span>實驗室房號、館名、系所放這行，快遞送件才找得到人</td></tr>
+    <tr><td>Address line 2</td><td>1001, Daxue Rd., East Dist.</td><td>陽明校區改為 155, Sec. 2, Linong St., Beitou Dist.</td></tr>
+    <tr><td>City</td><td>Hsinchu City</td><td>陽明校區：Taipei City</td></tr>
+    <tr><td>Postal code</td><td>300093</td><td>陽明校區：112304</td></tr>
+    <tr><td>Country</td><td>Taiwan</td><td>先確認下拉選單有台灣</td></tr>
+    <tr><td>Phone</td><td>+886-3-571-2121 ext. _____ 或收件人手機 +886-9xx-xxx-xxx</td><td>總機號碼見 <a class="src" href="https://oia.nycu.edu.tw/oia/en/app/folder/829">國際處頁面</a>；<span class="tag inf">推論</span>FedEx 報關常打手機，建議填手機</td></tr>
+    <tr><td>EU VAT ID</td><td>留空</td><td>見上方說明</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note-inf"><span class="tag inf">推論</span>Request quote 產生的報價單會帶出帳號裡的地址，所以<b>先把帳號地址填成學校</b>再按 Request quote，報價單抬頭才會是學校，後續免稅申請的 Invoice 也比較容易對得上。</p>
+
+<h3>粗估總成本</h3>
+<p class="note-inf"><span class="tag inf">推論</span>$344 商品 ＋ FedEx 運費（結帳時才顯示；舊論壇有使用者回報寄到法國約 $60，官方回覆預期 $40–50）<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=2473">論壇 t=2473</a> ＋ 關稅與 5% 營業稅（學校辦妥免稅令則免）。完稅價格超過 NT$2,000 就會課稅。<a class="src" href="https://www.etax.nat.gov.tw/etwmain/tax-info/network-transaction-taxtation-area/consumer/oversea-online-shopping-notice">財政部稅務入口網</a> 台灣的稅則號列與稅率我沒查到；海外經銷商標示為 HS 9023（教學示範用儀器）。<a class="src" href="https://www.pakronics.com.au/products/crazyflie-2-1-version-open-source-mirco-quadcopter-drone-support-bluetooth5-le-robotics-suitable-for-indoor-small-space-high-density-ss114993295-1">Pakronics</a></p>
+
+<h3 id="s2-law">法規統整</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>項目</th><th>規定（來源原文或摘要）</th><th>套用到推薦訂單</th><th>來源</th></tr></thead>
+  <tbody>
+    <tr><td><b>NCC 郵寄自用上限</b></td><td><q>郵寄輸入或其他非自行攜帶方式輸入者，一次至多不得逾二部。</q>同一自然人或法人一年 10 部，自然人須滿 18 歲。</td><td><span class="tag inf">推論</span>Crazyflie、Crazyradio 各算 1 部＝2 部，剛好在上限。Flow deck、電池、槳不是無線電器材。</td><td><a class="src" href="https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=K0060146">全國法規資料庫</a></td></tr>
+    <tr><td><b>NCC 超過上限</b></td><td>郵寄 3–10 部需向 NCC 申請進口核准證。</td><td><span class="tag inf">推論</span>多一支 Crazyradio 或第二台機體就要申請；可拆單分批寄。</td><td><a class="src" href="https://memf.ncc.gov.tw/files/site_node_content_file/755/1121109-%E9%9B%BB%E4%BF%A1%E7%AE%A1%E5%88%B6%E5%B0%84%E9%A0%BB%E5%99%A8%E6%9D%90%E7%9A%84%E9%80%B2%E5%8F%A3%E3%80%81%E9%8A%B7%E5%94%AE%E8%88%87%E6%8C%81%E6%9C%89%EF%BC%9A%E7%9B%B8%E9%97%9C%E6%B3%95%E4%BB%A4%E5%AE%A3%E5%B0%8E.pdf">NCC 宣導簡報</a></td></tr>
+    <tr><td><b>NCC 750 元審查費</b></td><td>2025 年 2 月曾收取後停徵；NCC 官員 2026 年 1 月表示 <q>此條文已依法失效，政策上定調不收取</q></td><td>不用繳。</td><td><a class="src" href="https://www.cna.com.tw/news/afe/202601290195.aspx">中央社</a></td></tr>
+    <tr><td><b>鋰電池航空運送</b></td><td>ICAO／IATA PI966：和設備一起包裝的電池＝設備所需數量＋兩組備用。</td><td>與 Bitcraze「每台最多 2 顆備用電池」一致。</td><td><a class="src" href="https://www.icao.int:443/safety/DangerousGoods/DGP26/DGP.26.WP.022.2.en.pdf">ICAO</a> <a class="src" href="https://store.bitcraze.io/pages/faq">Bitcraze FAQ</a></td></tr>
+    <tr><td><b>Bitcraze 電池加購</b></td><td>電池＋充電器頁寫只能與機身同單、每台限 2 顆；FAQ 與單買電池頁寫超過 2 顆加收約 $45。</td><td>本單 2 顆 350mAh，剛好在上限內。</td><td><a class="src" href="https://store.bitcraze.io/products/250mah-lipo-battery-including-500ma-usb-charger">電池＋充電器</a> <a class="src" href="https://store.bitcraze.io/products/250mah-lipo-battery">單買電池</a></td></tr>
+    <tr><td><b>關稅免稅門檻</b></td><td>完稅價格 NT$2,000 以內免稅；同一納稅義務人半年內免稅放行逾 6 次，第 7 次起照課。</td><td>本單超過門檻，必課稅。</td><td><a class="src" href="https://www.etax.nat.gov.tw/etwmain/tax-info/network-transaction-taxtation-area/seller/import-notice">財政部稅務入口網</a></td></tr>
+    <tr><td><b>教育研究用品免稅</b></td><td>學校為進口人，事先申請免稅令，可免關稅與營業稅。</td><td>走學校路線（B）時適用。</td><td><a class="src" href="https://ga.nycu.edu.tw/userfiles/gach/files/20250508105332249.pdf">陽明交大</a></td></tr>
+    <tr><td><b>BSMI 商品檢驗</b></td><td>鋰電池相關商品自 103 年起列入強制應施檢驗。</td><td><span class="tag warn">未查到</span>這顆 250 mAh 無人機電池是否在品目內、自用能否免驗，查不到明確條文。</td><td><a class="src" href="https://m.cnyes.com/news/id/6220149">鉅亨網</a></td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note-inf"><span class="tag inf">推論：無線電頻道</span>Crazyflie 的無線電頻道涵蓋 2400–2525 MHz <a class="src" href="https://wiki.bitcraze.io/_export/xhtml/doc:crazyflie:syslink:index">Syslink 文件</a>，但 2.4 GHz ISM 頻段一般只到 2483.5 MHz。依我的理解，在台灣使用 83 以上的頻道可能超出低功率射頻器材允許的頻段；這點我沒有找到 NCC 原文確認，建議只用 0–83 之間的頻道。</p>
+</div>
+</details>
+<!-- ===================== 3 Demo ===================== -->
+<details class="sec" id="s3" open>
+<summary><span class="no">3</span><h2>Demo 與第三方開發</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s3-official">官方 demo</h3>
+<div class="vids">
+  <div class="vid">
+    <a class="thumb" href="https://www.youtube.com/watch?v=90Eho7ocZfg" aria-label="觀看 Flow deck v2 官方影片"><img src="https://i.ytimg.com/vi/90Eho7ocZfg/hqdefault.jpg" alt="" loading="lazy"></a>
+    <p class="who">Bitcraze 官方</p>
+    <h5>Flow deck v2：腳本化自主飛行</h5>
+    <p>嵌在 Flow deck v2 與 STEM drone bundle 商店頁上，就是推薦組合。<a class="src" href="https://store.bitcraze.io/products/flow-deck-v2">出處</a></p>
+  </div>
+  <div class="vid">
+    <a class="thumb" href="https://www.youtube.com/watch?v=BggnSDj3baE" aria-label="觀看 Move-in AW 2019 demo"><img src="https://i.ytimg.com/vi/BggnSDj3baE/hqdefault.jpg" alt="" loading="lazy"></a>
+    <p class="who">Bitcraze 官方</p>
+    <h5>Move-in AW 2019 demo</h5>
+    <p><q>Synchronized swarm of 9 Crazyflie 2.1 flying with lighthouse positioning</q> <a class="src" href="https://www.youtube.com/watch?v=BggnSDj3baE">YouTube</a></p>
+  </div>
+</div>
+
+<h3 id="s3-dev">開發者 demo</h3>
+<div class="vids">
+  <div class="vid">
+    <a class="thumb" href="https://www.youtube.com/watch?v=D0CrjoYDt9w" aria-label="觀看 Crazyswarm 影片"><img src="https://i.ytimg.com/vi/D0CrjoYDt9w/hqdefault.jpg" alt="" loading="lazy"></a>
+    <p class="who">USC ACT Lab（學術團隊）</p>
+    <h5>Crazyswarm：大型奈米四軸機群</h5>
+    <p>作者在 2021 年演講投影片中引用此影片作為 2016 年成果。<a class="src" href="https://www.bitcraze.io/about/events/documents/bam2021/hoenig_crazyswarm_bam2021.pdf">BAM 2021 投影片</a> 提供 Python 函式庫 pycrazyswarm，但需要動作捕捉系統。<a class="src" href="https://crazyswarm.readthedocs.io/en/latest/overview.html">Crazyswarm 文件</a></p>
+  </div>
+  <div class="vid">
+    <a class="thumb" href="https://www.youtube.com/watch?v=mWhnf0rtpcg" aria-label="觀看 Crazyflie 2.1 automatic flight"><img src="https://i.ytimg.com/vi/mWhnf0rtpcg/hqdefault.jpg" alt="" loading="lazy"></a>
+    <p class="who">個人上傳（上傳者未確認）</p>
+    <h5>Crazyflie 2.1 automatic flight (multi-ranger deck)</h5>
+    <p>說明欄寫的配置是 Crazyflie 2.1＋Flow deck＋Multi-ranger deck。<a class="src" href="https://www.youtube.com/watch?v=mWhnf0rtpcg">YouTube</a></p>
+    <p class="small"><span class="tag inf">推論</span>標題格式不同於官方，判斷為非官方。</p>
+  </div>
+</div>
+<p class="small muted" style="margin-top:12px">縮圖連到 YouTube，未直接嵌入（本機開啟 HTML 時內嵌播放器常失敗）。更多：<a class="src" href="https://www.youtube.com/user/BitcrazeVideos">Bitcraze YouTube</a></p>
+
+<h3 id="s3-fail">論壇災情：新手最常翻車的地方</h3>
+<p>舊論壇已轉為唯讀：<q>please start new threads on the Bitcraze discussions page instead</q> <a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=4437">Bitcraze Forum</a>，新問題在 <a href="https://github.com/orgs/bitcraze/discussions">GitHub Discussions</a>。有影片的放前面。</p>
+<p class="note-inf"><span class="tag inf">推論</span>排序依論壇出現頻率與 Python 自主飛行的相關性判斷，不是統計結果。論壇附件照片多需登入或已失效，所以以 YouTube 影片為主。</p>
+
+<div class="inc">
+  <h4>起飛後原地打轉、飛不起來</h4>
+  <div class="vid-row"><div class="vid">
+    <a class="thumb" href="https://www.youtube.com/watch?v=sldY38y4aIA" aria-label="觀看：Crazyflie 2.1 無法起飛"><img src="https://i.ytimg.com/vi/sldY38y4aIA/hqdefault.jpg" alt="" loading="lazy"></a>
+    <p class="who">使用者上傳｜論壇貼文附影片</p>
+  </div></div>
+  <dl>
+    <dt>狀況</dt><dd>全油門仍無法起飛、繞一顆馬達轉；螺旋槳測試顯示 M4 異常。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=4920">論壇 t=4920</a></dd>
+    <dt>官方回覆</dt><dd>槳平衡或換槳無效時，下一步換馬達；同串也指出 Flow deck 裝反方向。</dd>
+    <dt>類似案例</dt><dd>4 台新機頻繁墜機，換上正常機的馬達座、槳、馬達就好了。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=5191">論壇 t=5191</a></dd>
+  </dl>
+</div>
+
+<div class="inc">
+  <h4>Flow deck 一起飛就往一邊衝、撞牆或衝上天花板</h4>
+  <div class="vid-row"><div class="vid">
+    <a class="thumb" href="https://www.youtube.com/watch?v=qXTAszrpZHY" aria-label="觀看：在管道內飛行失敗"><img src="https://i.ytimg.com/vi/qXTAszrpZHY/hqdefault.jpg" alt="" loading="lazy"></a>
+    <p class="who">使用者上傳｜200 mm 管道內飛行失敗</p>
+  </div></div>
+  <dl>
+    <dt>狀況</dt><dd>Hover 模式一給油門就橫衝撞牆。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=4781">論壇 t=4781</a> 跑 MotionCommander 直衝 3 m 天花板，原因是 Flow deck 沒被辨識。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?p=18863">論壇 p=18863</a></dd>
+    <dt>官方回覆</dt><dd><q>The flow deck must be able to see patterns in order to track its movement</q> <a class="src" href="https://forum.bitcraze.io/viewtopic.php?p=15393">論壇 p=15393</a></dd>
+    <dt>官方部落格</dt><dd>低紋理地面會搖晃翻覆，後來韌體改成「滑走」而非翻覆。<a class="src" href="https://www.bitcraze.io/2020/08/flow-and-lps-deck-improvements-in-progress/">Bitcraze 2020</a></dd>
+    <dt>管道案例</dt><dd>官方指出管內太暗、材質反光，光流難以處理。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=3556&amp;p=16947">論壇 t=3556</a></dd>
+  </dl>
+</div>
+
+<div class="inc">
+  <h4>加了擴充板後飛不直</h4>
+  <dl><dt>狀況</dt><dd>Crazyflie 2.1+＋Flow deck＋AI deck 跑 sbs_motion_commander 無法直線飛，拔掉 AI deck 就正常；貼文附影片。<a class="src" href="https://github.com/orgs/bitcraze/discussions/2057">Discussion #2057</a></dd></dl>
+</div>
+
+<div class="inc">
+  <h4>「Cannot find a Crazyradio Dongle」</h4>
+  <dl><dt>常見原因</dt><dd>Windows 未用 Zadig 裝驅動 <a class="src" href="https://forum.bitcraze.io/viewtopic.php?p=5708">p=5708</a>；在 WSL 裡跑但 USB 沒轉進去 <a class="src" href="https://github.com/orgs/bitcraze/discussions/1067">#1067</a>；USB 接到 VM 或被其他程式佔用 <a class="src" href="https://forum.bitcraze.io/viewtopic.php?p=5867">p=5867</a>；Linux 沒設 udev <a class="src" href="https://forum.bitcraze.io/viewtopic.php?p=14213">p=14213</a>。</dd></dl>
+</div>
+
+<div class="inc">
+  <h4>硬體損壞</h4>
+  <dl>
+    <dt>機臂斷裂</dt><dd>撞天花板掉到桌緣，機臂從馬達座處斷掉。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=137">t=137</a></dd>
+    <dt>單顆馬達不轉</dt><dd>官方判斷可能是 MOSFET 或電阻燒毀。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=4661">t=4661</a></dd>
+    <dt>IMU 異常</dt><dd>換槳換馬達仍不穩，官方判定硬體問題並換控制板。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=5007">t=5007</a></dd>
+  </dl>
+</div>
+</div>
+</details>
+<!-- ===================== 4 擴充 ===================== -->
+<details class="sec" id="s4" open>
+<summary><span class="no">4</span><h2>擴充</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+<p>Flow deck 只知道「自己移動了多少」，誤差會累積。要知道「自己在房間的哪裡」或多機編隊，需要外部定位系統。官方把三種方案整理成：Loco（UWB，分米級）、Lighthouse（紅外線，毫米級）、動作捕捉（毫米級、需外部電腦計算）。<a class="src" href="https://www.bitcraze.io/documentation/system/positioning/">Positioning overview</a></p>
+
+<h3 id="s4-items">擴充品項</h3>
+
+<article class="item">
+  <figure><img src="https://store.bitcraze.io/cdn/shop/files/Crazyflie_Lighthouse_Deck_01_2000x2000_5a19bccd-6509-47bd-9c39-979cbeaa7062_grande.jpg?v=1790951549" alt="Lighthouse positioning deck" loading="lazy"><figcaption>圖片：<a href="https://store.bitcraze.io/products/lighthouse-positioning-deck">Bitcraze Store</a></figcaption></figure>
+  <div>
+    <h4>Lighthouse positioning deck　<span class="muted">$95</span></h4>
+    <blockquote><q>The position and pose is calculated directly in the Crazyflie</q> <a class="src" href="https://store.bitcraze.io/products/lighthouse-positioning-deck">Bitcraze Store</a></blockquote>
+    <ul class="specs">
+      <li>4 個紅外線接收器，可得完整姿態；板上 FPGA 處理訊號</li>
+      <li>支援 HTC Vive 基地台（V1）與 SteamVR Base Station 2.0（V2）</li>
+    </ul>
+    <p class="small"><b>注意：</b>deck 只有水平感測器，<q>you should fly at least 40cm bellow the base-stations</q> <a class="src" href="https://www.bitcraze.io/documentation/repository/crazyflie-firmware/2022.09/functional-areas/lighthouse/limitations">Lighthouse limitations</a>；怕反光。<a class="src" href="https://www.bitcraze.io/about/events/documents/bam2021/Positioning_systems_overview_bam2021.pdf">BAM 2021 投影片</a></p>
+  </div>
+</article>
+
+<article class="item">
+  <figure><img src="https://store.bitcraze.io/cdn/shop/files/Crazyflie_Lighthouse_Base_Station_v2_01_2000x2000_7f20e23e-b90e-47c4-a03f-66c0eb304b55_grande.jpg?v=1790952030" alt="Lighthouse V2 基地台" loading="lazy"><figcaption>圖片：<a href="https://store.bitcraze.io/products/lighthouse-v2-base-station">Bitcraze Store</a></figcaption></figure>
+  <div>
+    <h4>Lighthouse V2 基地台　<span class="muted">$240／台，需 2 台</span></h4>
+    <ul class="specs">
+      <li>內含 SteamVR Base Station 2.0；最大範圍 5 m</li>
+      <li>266 g；80 × 74 × 63 mm；1/4 吋螺絲孔</li>
+      <li>附 12 V 變壓器（3 m 線，含 US/EU/JP/UK/AU 插頭）與壁掛架</li>
+    </ul>
+    <p class="small">規格：<a class="src" href="https://store.bitcraze.io/products/lighthouse-v2-base-station">商店頁</a>　產地標示為台灣。V2 基地台須設定為頻道 1 與 2。<a class="src" href="https://www.bitcraze.io/documentation/repository/crazyflie-firmware/2022.09/functional-areas/lighthouse/limitations">limitations</a></p>
+  </div>
+</article>
+
+<article class="item">
+  <figure><img src="https://store.bitcraze.io/cdn/shop/products/Loco-deck-400px-1_grande.JPG?v=1480518543" alt="Loco positioning deck" loading="lazy"><figcaption>圖片：<a href="https://store.bitcraze.io/products/loco-positioning-deck">Bitcraze Store</a></figcaption></figure>
+  <div>
+    <h4>Loco positioning deck　<span class="muted">$95</span></h4>
+    <blockquote>需搭配 Loco 節點，<q>can not be used standalone</q> <a class="src" href="https://store.bitcraze.io/products/loco-positioning-deck">Bitcraze Store</a></blockquote>
+    <ul class="specs">
+      <li>UWB 測距 tag，3.2–7 GHz、頻寬 500 MHz；4 個狀態 LED</li>
+      <li>3.3 g；28 × 35 × 4 mm</li>
+    </ul>
+    <p class="small">規格：<a class="src" href="https://www.robotshop.com/products/bitcraze-loco-positioning-deck">RobotShop</a>　優點是 <q>Not sensitive to sunlight</q> <a class="src" href="https://www.bitcraze.io/about/events/documents/bam2021/Positioning_systems_overview_bam2021.pdf">BAM 2021</a></p>
+  </div>
+</article>
+
+<article class="item">
+  <figure><img src="https://store.bitcraze.io/cdn/shop/files/Crazyflie_Loco_Node_01_2000x2000_a11581a3-dee3-4976-b86f-d7d30edc069e_grande.jpg?v=1790951982" alt="Loco positioning node" loading="lazy"><figcaption>圖片：<a href="https://store.bitcraze.io/products/loco-positioning-node">Bitcraze Store</a></figcaption></figure>
+  <div>
+    <h4>Loco positioning node　<span class="muted">$180／個，至少 4、建議 8 個</span></h4>
+    <ul class="specs">
+      <li>主要當錨點（Anchor），也支援 Sniffer 與有限的 TWR Tag 模式</li>
+      <li>多種供電方式、板上 MCU</li>
+    </ul>
+    <p class="small">規格：<a class="src" href="https://store.bitcraze.io/products/loco-positioning-node">商店頁</a>　數量建議：<a class="src" href="https://www.bitcraze.io/documentation/system/positioning/">Positioning overview</a></p>
+  </div>
+</article>
+
+<article class="item">
+  <figure><a href="https://www.youtube.com/watch?v=-P_GfMqpRFw"><img class="yt" src="https://i.ytimg.com/vi/-P_GfMqpRFw/hqdefault.jpg" alt="Multi-ranger 點雲 demo 影片縮圖" loading="lazy"></a><figcaption>影片縮圖：點雲 demo（<a href="https://www.youtube.com/watch?v=-P_GfMqpRFw">YouTube</a>）</figcaption></figure>
+  <div>
+    <h4>Multi-ranger deck　<span class="muted">$95</span></h4>
+    <blockquote><q>No collision avoidance or obstacle reaction is enabled by default.</q> <a class="src" href="https://www.bitcraze.io/products/multi-ranger-deck/">產品頁</a></blockquote>
+    <ul class="specs">
+      <li>5 顆 VL53L1x，前後左右上 5 方向、最遠 4 m</li>
+      <li>2.3 g；35 × 35 × 5 mm；裝在機身上方</li>
+      <li>官方範例需同時裝 Flow deck</li>
+    </ul>
+    <p class="small">價格：<a class="src" href="https://store.bitcraze.io/collections/decks">Decks</a>　範例：<a class="src" href="https://www.bitcraze.io/?p=7423">Multiranger 發表文</a></p>
+  </div>
+</article>
+
+<article class="item">
+  <figure><img src="https://store.bitcraze.io/cdn/shop/products/ai-deck-pins-side-585px_a9a88c77-bc7a-4962-bc8c-bc554884d44a_grande.jpg?v=1613571657" alt="AI-deck 1.1" loading="lazy"><figcaption>圖片：<a href="https://store.bitcraze.io/products/ai-deck-1-1">Bitcraze Store</a></figcaption></figure>
+  <div>
+    <h4>AI-deck 1.1　<span class="muted">$240，查詢時暫時缺貨</span></h4>
+    <blockquote><q>The GreenWaves Technologies website is down</q>，影響 gap_sdk 的 autotiler；官方建議改用 DORY。<a class="src" href="https://store.bitcraze.io/products/ai-deck-1-1">Bitcraze Store</a></blockquote>
+    <ul class="specs">
+      <li>GAP8（8＋1 核 RISC-V）、Himax 320 × 320 灰階相機</li>
+      <li>ESP32（NINA-W102）Wi-Fi；512 Mbit HyperFlash、64 Mbit HyperRAM</li>
+      <li>需另備 JTAG 燒錄器，官方推薦 Olimex ARM-USB-TINY-H</li>
+    </ul>
+  </div>
+</article>
+
+<h3 id="s4-flow">完整資訊流（含所有擴充）</h3>
+<p>綠色是推薦路線已買的；琥珀色是選配擴充；灰色是免費軟體；虛線是選配或無線訊號。圖很寬，可左右捲動。</p>
+<div class="flow big">
+<pre class="mermaid">
+flowchart LR
+  subgraph PC["電腦端"]
+    BCI["EEG / BCI 分類器<br/>（選配）"]:::opt
+    PY["Python 腳本"]:::free
+    CFC["cfclient<br/>韌體更新 · 參數 · log"]:::free
+    ROS["Crazyswarm2 / ROS 2<br/>（選配）"]:::free
+    MOSW["動捕軟體<br/>Qualisys · OptiTrack · Vicon"]:::opt
+    LIB["cflib<br/>MotionCommander · HighLevelCommander · Swarm"]:::free
+    BCI -.->|"解碼指令"| PY
+    PY --> LIB
+    CFC --> LIB
+    ROS -.-> LIB
+    MOSW -->|"外部位置"| LIB
+  end
+  subgraph RADIO["USB 無線電"]
+    R1["Crazyradio 2.0 #1"]:::buy
+    R2["Crazyradio 2.0 #2…<br/>多機時加購"]:::opt
+  end
+  subgraph INFRA["外部定位基礎設施（擇一或組合）"]
+    LHB["Lighthouse V2 基地台 ×2<br/>紅外線掃描"]:::opt
+    LPN["Loco 節點 ×4–8<br/>UWB"]:::opt
+    CAM["動捕攝影機<br/>紅外線"]:::opt
+  end
+  subgraph CF1["Crazyflie 2.1+"]
+    NRF["nRF51822<br/>無線電"]:::buy
+    STM["STM32F405"]:::buy
+    IMU["BMI088 · BMP388"]:::buy
+    subgraph DECKS["擴充板（deck）"]
+      FLOW["Flow deck v2<br/>相對位移＋高度"]:::buy
+      LHD["Lighthouse deck"]:::opt
+      LOCO["Loco deck"]:::opt
+      MR["Multi-ranger<br/>5 向測距"]:::opt
+      AIX["AI-deck 1.1<br/>GAP8 · 相機 · ESP32"]:::opt
+      MARK["Mocap marker deck"]:::opt
+    end
+    HLC["Commander / High-level commander<br/>setpoint · 軌跡 · go_to"]:::free
+    EST["EKF 估測器"]:::free
+    CTRL["控制器<br/>PID · Mellinger · INDI"]:::free
+    PD["Power distribution"]:::free
+    MOT["4 × 有刷馬達"]:::buy
+    NRF -->|"syslink"| STM
+    STM --> HLC
+    IMU --> EST
+    FLOW --> EST
+    LHD --> EST
+    LOCO --> EST
+    MR -->|"距離資料 → log"| STM
+    HLC --> CTRL
+    EST --> CTRL
+    CTRL --> PD --> MOT
+  end
+  LIB -->|USB| R1
+  LIB -.->|USB| R2
+  R1 -->|"2.4 GHz · CRTP"| NRF
+  R2 -.->|"另一頻道"| NRF
+  LHB -.->|"IR 掃描"| LHD
+  LPN -.->|"UWB 測距"| LOCO
+  CAM -.->|"IR 反光"| MARK
+  CAM --> MOSW
+  AIX -.->|"Wi-Fi 影像串流"| PY
+  NRF -.->|"P2P 廣播"| OTHER["其他 Crazyflie"]:::opt
+  MOT --> FLY(("飛行"))
+  classDef buy fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2.5px,color:#16301C
+  classDef opt fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2B00
+  classDef free fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+</pre>
+</div>
+<div class="keys">
+  <span class="key"><span class="sw buy"></span>推薦路線已買</span>
+  <span class="key"><span class="sw opt"></span>選配擴充</span>
+  <span class="key"><span class="sw free"></span>免費軟體／韌體</span>
+</div>
+<p class="note-inf"><span class="tag inf">推論</span>這張圖的分支依各產品頁與官方文件整理；動捕的外部位置是由電腦透過 cflib 送回 Crazyflie，而 Lighthouse／Loco 是機上自己算。同時裝多塊 deck 有相容性限制，例如 Loco（TWR 模式）與 Flow deck 共用 SPI 曾有問題。<a class="src" href="https://www.bitcraze.io/2020/08/flow-and-lps-deck-improvements-in-progress/">Bitcraze 2020</a> 組合前請查官方的 deck 相容性表。<a class="src" href="https://store.bitcraze.io/collections/decks">Decks 頁</a></p>
+
+<h3 id="s4-table">擴充統整表</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>擴充</th><th>用途</th><th>定位類型／精度</th><th>環境需求</th><th class="num">最低加購</th><th>NCC 計數 <span class="tag inf">推論</span></th><th>注意事項</th></tr></thead>
+  <tbody>
+    <tr><td><b>Flow deck v2</b><br><span class="muted small">已含在推薦套組</span></td><td>懸停、腳本移動</td><td>相對位移；高度 4 m</td><td>有紋理、光線足的地板</td><td class="num">$55</td><td>0</td><td>誤差隨時間累積</td></tr>
+    <tr><td><b>Multi-ranger</b></td><td>避障、建圖、互動</td><td>5 向測距 4 m（非定位）</td><td>需搭 Flow deck</td><td class="num">$95</td><td>0</td><td>預設不會自動避障，要自己寫</td></tr>
+    <tr><td><b>Lighthouse</b></td><td>絕對定位、編隊</td><td>機上計算；毫米級；最大 8×8×3 m</td><td>視線無遮蔽、無玻璃鏡面、少陽光；飛在基地台下方 40 cm 以上</td><td class="num">$575<br><span class="small muted">deck＋2 基地台</span></td><td>deck 0；基地台 <span class="tag warn">未查到</span></td><td>最多 4 台基地台；套組 $810 含機體</td></tr>
+    <tr><td><b>Loco</b></td><td>大範圍絕對定位</td><td>機上計算；分米級；50×50 m（未測）</td><td>視線較佳；不怕陽光</td><td class="num">$1,535<br><span class="small muted">deck＋8 節點</span></td><td>9（節點 8＋deck 1）</td><td>手動量測錨點位置；超過郵寄免證上限</td></tr>
+    <tr><td><b>動作捕捉</b></td><td>高精度、研究用</td><td>外部電腦計算；毫米級</td><td>攝影機視線</td><td class="num">$6.50–150<br><span class="small muted">marker deck；不含攝影機</span></td><td>0（marker）</td><td>攝影機系統另購、最貴</td></tr>
+    <tr><td><b>AI-deck 1.1</b></td><td>機上影像、AI</td><td>—</td><td>—</td><td class="num">$240<br><span class="small muted">＋JTAG 燒錄器</span></td><td>1（ESP32 Wi-Fi）</td><td>缺貨；autotiler 下載中斷</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small muted">範圍、精度、可擴充性取自 <a class="src" href="https://www.bitcraze.io/documentation/system/positioning/">Positioning overview</a>；價格取自 <a class="src" href="https://store.bitcraze.io/collections/positioning">Positioning</a> 與 <a class="src" href="https://store.bitcraze.io/collections/decks">Decks</a>；Lighthouse 限制見 <a class="src" href="https://www.bitcraze.io/documentation/repository/crazyflie-firmware/2022.09/functional-areas/lighthouse/limitations">limitations</a>。「最低加購」是我的加總，不含 Crazyflie 本體。</p>
+</div>
+</details>
+<!-- ===================== 5 Q&A ===================== -->
+<details class="sec" id="s5" open>
+<summary><span class="no">5</span><h2>Q&amp;A</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<!-- Q1 -->
+<div class="qa" id="q-battery"><h3>電池有沒有替代方案？（新竹）</h3></div>
+<p class="note-warn"><span class="tag warn">未查到</span>我沒有找到能確認「新竹某間實體店有 Crazyflie 相容電池」的來源，也沒找到 Bitcraze 台灣代理。以下是可查證的規格條件與我建議的找法。</p>
+<h4>相容電池要符合的條件</h4>
+<ul class="specs">
+  <li><b>接頭：</b>Molex 51005-2P，<q>Pin 1 positive</q> <a class="src" href="https://www.bitcraze.io/documentation/hardware/250mah_battery/250mah_battery-datasheet.pdf">電池 Datasheet</a>；機上母座 51005-0200。<a class="src" href="https://wiki.bitcraze.io/projects:crazyflie2:hardware:spareparts">Wiki 零件表</a></li>
+  <li><b>電氣與尺寸：</b>1S、3.7 V；原廠 250mAh 是 20 × 7 × 30 mm、7.1 g，350mAh 是 20 × 8 × 33 mm、9.1 g，都塞在兩排排針之間。<a class="src" href="https://store.bitcraze.io/products/350mah-lipo-battery">350mAh 規格</a></li>
+  <li><b>重量上限：</b>機體建議最大酬載 15 g。<a class="src" href="https://bitcraze.io/products/crazyflie-2-1-plus/">產品頁</a></li>
+</ul>
+<h4>市面上同接頭的電池</h4>
+<p>51005 是玩具空拍機常見接頭，例如 Syma X5C 系列；但這類電池多半 500–800 mAh、16–17 g。<a class="src" href="https://www.amazon.com/Accessory-600mAh-Battery-Charger-Control/dp/B091NN6VM4">600mAh 例</a> <a class="src" href="https://www.amazon.com/Sea-jump-Battery-Quadcopter-Charger/dp/B071XYC6FF">800mAh 例</a> 歐洲有 250 mAh、8 g、51005 接頭的款式，但尺寸 32 × 21 × 8 mm。<a class="src" href="https://rc-est.eu/en/shop/electronics/batteries-and-charging/batteries/flitezone-lipo-battery-1s-37v-250mah-molex-51005-connector/">FliteZone 250mAh</a> 本單加購的官方 350mAh 是 9.1 g、20 × 8 × 33 mm。<a class="src" href="https://store.bitcraze.io/collections/spare-parts-crazyflie-2-0">備品列表</a></p>
+<p class="note-inf"><span class="tag inf">推論：怎麼找</span>網購用「1S 250mAh 51005」「MX2.0 3.7V 250mAh」搜尋蝦皮、露天，篩 8 g 以下、寬約 20 mm；實體店可帶原廠電池去新竹的遙控模型店比尺寸。本單已加購 2 顆官方 350mAh；在地電池是之後補充用。</p>
+<p class="note-warn"><span class="tag warn">安全</span>副廠接頭的正負極方向不一定與 Bitcraze 相同，插上前先用電錶量極性。<span class="tag inf">推論</span> 充電不必另買充電器：Crazyflie 有機上 LiPo 充電電路，插 micro-USB 即可。<a class="src" href="https://bitcraze.io/products/crazyflie-2-1-plus/">產品頁</a></p>
+
+<!-- Q2 -->
+<div class="qa" id="q-sw"><h3>軟體要裝什麼？最小可飛腳本？</h3></div>
+<p><b>cflib（必要）。</b><q>This project requires Python 3.10+.</q> <a class="src" href="https://bitcraze.io/documentation/repository/crazyflie-lib-python/master/installation/install">cflib 安裝文件</a> Windows＋Python 3.13 需裝 Visual Studio「Desktop Development with C++」。</p>
+<pre class="code">pip install cflib</pre>
+<p><b>USB 驅動。</b>Windows 用 Zadig；Linux 設 udev 規則（Crazyradio vendor ID 1915）。<a class="src" href="https://www.bitcraze.io/documentation/repository/crazyflie-lib-python/0.1.19/installation/install/">舊版安裝文件</a></p>
+<pre class="code"># /etc/udev/rules.d/99-crazyradio.rules
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1915", ATTRS{idProduct}=="7777", MODE="0664", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1915", ATTRS{idProduct}=="0101", MODE="0664", GROUP="plugdev"</pre>
+<p><b>cfclient（建議）。</b>更新韌體、設參數、看 log，用 pip 安裝。<a class="src" href="https://bitcraze.io/support/downloads/">Downloads</a> 更新韌體時要把 deck 裝上。<a class="src" href="https://www.bitcraze.io/documentation/repository/crazyflie-clients-python/master/userguides/userguide_client">cfclient 手冊</a> 跑腳本前先在 cfclient 斷線：<q>The Crazyradio does not support connections from multiple programs simultaneously</q> <a class="src" href="https://www.bitcraze.io/documentation/tutorials/getting-started-with-stem-drone-bundle/">STEM 教學</a></p>
+<h4>最小可飛腳本</h4>
+<p>依官方 MotionCommander 範例簡化。<a class="src" href="https://github.com/bitcraze/crazyflie-lib-python/blob/master/examples/autonomy/motion_commander_demo.py">官方範例</a> <a class="src" href="https://www.bitcraze.io/documentation/repository/crazyflie-lib-python/master/user-guides/sbs_motion_commander/">Step-by-Step</a></p>
+<pre class="code">import time
+import cflib.crtp
+from cflib.crazyflie import Crazyflie
+from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
+from cflib.positioning.motion_commander import MotionCommander
+
+URI = 'radio://0/80/2M/E7E7E7E7E7'   # 依 cfclient 掃描結果修改
+
+cflib.crtp.init_drivers()
+with SyncCrazyflie(URI, cf=Crazyflie(rw_cache='./cache')) as scf:
+    with MotionCommander(scf, default_height=0.3) as mc:  # 進入時起飛
+        time.sleep(1)
+        mc.forward(0.5)
+        mc.turn_left(90)
+        time.sleep(1)
+    # 離開 with 區塊時自動降落</pre>
+<p class="note-inf"><span class="tag inf">推論</span>URI 末段位址格式來自我的知識，未在來源中逐字確認；以 cfclient 掃描結果為準。</p>
+
+<!-- Q3 -->
+<div class="qa" id="q-bci"><h3>有沒有和 BCI 結合的範例？</h3></div>
+<p>有，而且有直接用 Crazyflie 的研究。</p>
+<ul class="specs">
+  <li><b>Crazyflie＋消費級 EEG：</b>評估消費級 EEG 頭戴裝置做無人機控制，偵測到使用者專注時增加推力、不專注或接觸不良時減少；平台是 Crazyflie 2.0，論文提到它支援即時參數設定。<a class="src" href="https://www.researchgate.net/publication/323692301_Evaluation_of_Consumer-Grade_EEG_Headsets_for_BCI_Drone_Control">ResearchGate</a></li>
+  <li><b>MI＋SSVEP 多模態控制實體四軸：</b>結合運動想像、SSVEP 與眨眼，在三維實體空間控制四軸飛行器（非 Crazyflie 專屬）。<a class="src" href="https://www.frontiersin.org/articles/10.3389/fnbot.2019.00023/full">Frontiers in Neurorobotics 2019</a></li>
+  <li><b>群體控制：</b>高麗大學以視覺想像等內源性範式，在模擬器中做無人機群控制的 EEG 分類原型。<a class="src" href="https://arxiv.org/pdf/2002.00519">arXiv 2002.00519</a> <a class="src" href="https://arxiv.org/pdf/2012.03507">arXiv 2012.03507</a></li>
+  <li><b>綜述：</b>BCI 控制無人機的系統性回顧，指出 MI 是最常見範式、其次是 SSVEP。<a class="src" href="https://www.researchgate.net/publication/380022162_Brain-Computer_Interface_Controlled_Drones_A_Systematic_Review">ResearchGate</a></li>
+  <li><b>串接工具：</b>OpenBCI 建議用 BrainFlow 與裝置溝通 <a class="src" href="https://github.com/masoodkamandy/neurofeedback">GitHub 範例</a>；也有專案用 Lab Streaming Layer（LSL）把 EEG 串到 Python 分類器。<a class="src" href="https://github.com/mateouma/CruX-Team2">CruX VROOM</a></li>
+</ul>
+<h4>串接架構</h4>
+<div class="flow">
+<pre class="mermaid">
+flowchart LR
+  E["EEG 放大器"]:::own --> S["串流<br/>LSL / BrainFlow"]:::free --> C["Python 分類器<br/>MI · SSVEP"]:::free --> G["指令映射<br/>＋安全閘門"]:::free --> L["cflib<br/>MotionCommander"]:::free --> R["Crazyradio"]:::buy --> D(("Crazyflie<br/>＋Flow deck")):::buy
+  G -.->|"信心不足 / 逾時"| H["停住懸停<br/>或降落"]:::free
+  classDef buy fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2.5px,color:#16301C
+  classDef own fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef free fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+</pre>
+</div>
+<h4>骨架程式 <span class="tag inf">推論：未實測</span></h4>
+<p class="small">以速度指令控制，分類結果逾時或信心不足就停住。<code>get_decoded_command()</code> 留給你接自己的 BCI 輸出；<code>start_linear_motion</code> 與 <code>stop</code> 是 MotionCommander 的非阻塞指令。<a class="src" href="https://www.bitcraze.io/documentation/repository/crazyflie-lib-python/master/api/cflib/positioning/motion_commander/">API</a></p>
+<pre class="code">import time
+import cflib.crtp
+from cflib.crazyflie import Crazyflie
+from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
+from cflib.positioning.motion_commander import MotionCommander
+
+URI = 'radio://0/80/2M/E7E7E7E7E7'
+V = 0.2                                   # m/s，先用慢速
+CMD = {'forward': (V, 0), 'left': (0, V), 'right': (0, -V), 'rest': (0, 0)}
+
+def get_decoded_command(timeout=0.5):
+    """接你的 BCI 輸出（LSL marker、socket…），回傳 (label, confidence) 或 None"""
+    raise NotImplementedError
+
+cflib.crtp.init_drivers()
+with SyncCrazyflie(URI, cf=Crazyflie(rw_cache='./cache')) as scf:
+    with MotionCommander(scf, default_height=0.4) as mc:
+        t_end = time.time() + 60              # 最長飛 60 秒
+        while time.time() &lt; t_end:
+            out = get_decoded_command()
+            if out is None or out[1] &lt; 0.7:   # 逾時或信心不足 → 停住
+                mc.stop()
+                continue
+            vx, vy = CMD.get(out[0], (0, 0))
+            mc.start_linear_motion(vx, vy, 0)
+            time.sleep(0.1)
+    # 離開 with 自動降落</pre>
+<p class="note-inf"><span class="tag inf">推論：實驗注意</span>受試者附近有高速旋轉的有刷馬達與 2.4 GHz 發射，可能在 EEG 上產生雜訊或讓受試者分心；建議先在無人機運轉、受試者靜止的條件下錄一段基線，確認頻譜沒有新增干擾。這點我沒有找到直接量測的文獻。</p>
+
+<!-- Q4 -->
+<div class="qa" id="q-multi"><h3>同一空間多架一起飛，會不會互相干擾？</h3></div>
+<p>會，分成無線電與氣流兩種。</p>
+<h4>無線電</h4>
+<ul class="specs">
+  <li><b>同一支 Crazyradio：</b>所有機用同頻道、不同位址最有效率，也避免串音（鄰近頻道有時聽得到封包）。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=3933">論壇 t=3933</a></li>
+  <li><b>多支 Crazyradio：</b>一支一個頻道，<q>Do not use the same channel on both radios</q>，否則掉封包。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=5325">論壇 t=5325</a> 鄰近頻道約有 −20 dB 洩漏，頻道之間隔幾格即可。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=624">論壇 t=624</a></li>
+  <li><b>每支 radio 帶幾台：</b><q>We recommend 3-4 Crazyflies per radio</q>，理想狀況最多 15 台。<a class="src" href="https://bitcraze.io/category/lighthouse">Bitcraze 部落格</a> Python 端在多機時的延遲是已知瓶頸；Crazyswarm 用廣播封包可做到每支約 15 台。<a class="src" href="https://github.com/bitcraze/crazyflie-firmware/issues/434">GitHub #434</a> <a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=3439">論壇 t=3439</a></li>
+</ul>
+<h4>氣流</h4>
+<p>官方測過「一台飛在另一台上方」對 Flow deck 的影響 <a class="src" href="https://bitcraze.io/category/video/page/10">Bitcraze 2017</a>；Crazyswarm 團隊也有專門處理下洗氣流的軌跡規劃研究。<a class="src" href="https://www.bitcraze.io/?p=6805">Bitcraze 部落格</a></p>
+<p class="note-inf"><span class="tag inf">推論</span>實務上不要讓兩台上下重疊飛行，水平間距至少留幾個機身寬；用 Flow deck 的多機各自用航位推算，彼此不知道對方位置，起飛位置擺錯就會相撞（官方 swarm demo 留言也提到這點）。<a class="src" href="https://www.bitcraze.io/2017/08/playing-with-the-flow-deck/">Playing with the Flow deck</a></p>
+
+<!-- Q5 -->
+<div class="qa" id="q-env"><h3>附近有很多大型機台，會不會干擾？</h3></div>
+<p>依干擾源分開看；有來源的標來源，其餘是我的判斷。</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>干擾源</th><th>影響誰</th><th>說明</th><th>對策</th></tr></thead>
+  <tbody>
+    <tr><td>Wi-Fi、藍牙等 2.4 GHz 設備</td><td>Crazyradio 連線</td><td>Crazyradio 連線不良可能來自其他網路干擾；Wi-Fi 會跳頻，今天好用的頻道明天可能不行。<a class="src" href="https://forum.bitcraze.io/viewtopic.php?t=1943">論壇 t=1943</a></td><td>換頻道、縮短距離；注意 83 以上頻道的法規疑慮（第 2 段）</td></tr>
+    <tr><td>陽光、紅外線光源、玻璃與鏡面</td><td>Lighthouse</td><td>官方表格列出不能有玻璃或鏡子；投影片指出對反光敏感。<a class="src" href="https://www.bitcraze.io/documentation/system/positioning/">Positioning overview</a> <a class="src" href="https://www.bitcraze.io/about/events/documents/bam2021/Positioning_systems_overview_bam2021.pdf">BAM 2021</a></td><td>遮窗、蓋住反光面</td></tr>
+    <tr><td>金屬機台、遮蔽</td><td>Loco（UWB）</td><td>官方表格寫視線無遮蔽較準。<a class="src" href="https://www.bitcraze.io/documentation/system/positioning/">Positioning overview</a></td><td>錨點裝高、避開機台遮擋</td></tr>
+    <tr><td>反光、單色、太暗的地板</td><td>Flow deck</td><td>光流需要地面紋理（第 3 段災情）。</td><td>鋪有圖案的霧面地墊</td></tr>
+    <tr><td>強磁場（大型馬達、電磁鐵）</td><td>姿態估測</td><td><span class="tag inf">推論</span>Crazyflie 2.1+ 規格只列 BMI088 與 BMP388，沒有磁力計 <a class="src" href="https://bitcraze.io/products/crazyflie-2-1-plus/">產品頁</a>，所以不靠地磁定方向；強磁場對它的影響應小於有羅盤的無人機。</td><td>仍保持距離</td></tr>
+    <tr><td>變頻器、大電流設備的電磁雜訊</td><td>IMU、無線電</td><td><span class="tag warn">未查到</span>沒有找到針對 Crazyflie 的量測。</td><td>先在機台運轉時測懸停穩定度與掉包率</td></tr>
+    <tr><td>空調出風、排風扇</td><td>飛行穩定</td><td><span class="tag inf">推論</span>29 g 的機體很容易被氣流推走，Flow deck 只能修正位移、不能抵抗持續強風。</td><td>避開出風口</td></tr>
+    <tr><td>MRI 等強磁設備室</td><td>人與設備安全</td><td><span class="tag inf">推論</span>機體含鐵磁性零件與鋰電池，不應帶入 MRI 室。</td><td>嚴禁進入</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note-inf"><span class="tag inf">推論：反方向也要考慮</span>如果附近是 EEG、EMG 等生理訊號量測設備，無人機的馬達與 2.4 GHz 發射可能反過來干擾量測；建議兩邊都先做空白測試。</p>
+</div>
+</details>
+
+<footer>查詢日期 2026-10-06。價格、庫存、法規隨時變動，下單與報關前請以官方頁面為準。圖片與影片縮圖直接引用原始網址，需連網才會顯示。</footer>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>
+(function(){
+  var body = document.body;
+  var secs = Array.prototype.slice.call(document.querySelectorAll('details.sec'));
+  var mq = window.matchMedia('(max-width:1000px)');
+
+  /* ---- sidebar open / close ---- */
+  function setSide(open){
+    body.classList.toggle('side-closed', !open);
+    document.getElementById('sideOpen').setAttribute('aria-expanded', open ? 'true' : 'false');
+    try{ if(!mq.matches) localStorage.setItem('cfSide', open ? '1' : '0'); }catch(e){}
+  }
+  var saved = null; try{ saved = localStorage.getItem('cfSide'); }catch(e){}
+  setSide(mq.matches ? false : saved !== '0');
+  document.getElementById('sideClose').addEventListener('click', function(){ setSide(false); });
+  document.getElementById('sideOpen').addEventListener('click', function(){ setSide(true); });
+  document.getElementById('scrim').addEventListener('click', function(){ setSide(false); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && mq.matches) setSide(false); });
+
+  /* ---- mermaid: render only when visible ---- */
+  var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var ready = false;
+  try{
+    mermaid.initialize({startOnLoad:false, theme: dark ? 'dark' : 'neutral', securityLevel:'loose',
+      flowchart:{htmlLabels:true, curve:'basis'},
+      themeVariables:{fontFamily:'"Noto Sans TC", system-ui, sans-serif', fontSize:'14px'}});
+    ready = true;
+  }catch(e){ console.error(e); }
+  function renderIn(sec){
+    if(!ready || !sec.open) return;
+    var nodes = Array.prototype.slice.call(sec.querySelectorAll('pre.mermaid:not([data-processed])'));
+    if(nodes.length){ try{ mermaid.run({nodes:nodes}); }catch(e){ console.error(e); } }
+  }
+  secs.forEach(function(s){ s.addEventListener('toggle', function(){ renderIn(s); }); renderIn(s); });
+
+  /* ---- links open their section ---- */
+  function openFor(hash){
+    if(!hash || hash.length < 2) return;
+    var t = document.getElementById(hash.slice(1));
+    if(!t) return;
+    var d = t.tagName === 'DETAILS' ? t : t.closest('details.sec');
+    if(d && !d.open){ d.open = true; }
+    if(t.tagName !== 'DETAILS'){ setTimeout(function(){ t.scrollIntoView({block:'start'}); }, 30); }
+  }
+  document.querySelectorAll('.side nav a').forEach(function(a){
+    a.addEventListener('click', function(){ openFor(a.getAttribute('href')); if(mq.matches) setSide(false); });
+  });
+  openFor(location.hash);
+  window.addEventListener('hashchange', function(){ openFor(location.hash); });
+
+  document.getElementById('openAll').addEventListener('click', function(){ secs.forEach(function(d){ d.open = true; }); });
+  document.getElementById('closeAll').addEventListener('click', function(){ secs.forEach(function(d){ d.open = false; }); });
+
+  /* ---- highlight current position ---- */
+  if('IntersectionObserver' in window){
+    var links = {};
+    document.querySelectorAll('.side nav a').forEach(function(a){ links[a.getAttribute('href').slice(1)] = a; });
+    var targets = Object.keys(links).map(function(id){ return document.getElementById(id); }).filter(Boolean);
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting && links[en.target.id]){
+          Object.keys(links).forEach(function(k){ links[k].classList.remove('active'); });
+          links[en.target.id].classList.add('active');
+        }
+      });
+    }, {rootMargin:'-15% 0px -75% 0px'});
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+</body>
+</html>
