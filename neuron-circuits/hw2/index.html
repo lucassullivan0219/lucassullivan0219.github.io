@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Homework 2：Passive &amp; Active Membrane 實驗講解</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F1; --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72;
+  --link:#1F5FA8; --req:#2F5D3A; --opt:#8A6100; --infer:#7A3E8F; --warn:#A33A2B; --rule:#CCD3CE;
+  --grid:rgba(47,93,58,.07);
+  --side:260px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+    --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+    --grid:rgba(127,176,137,.08);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+  --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+  --grid:rgba(127,176,137,.08);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px);scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  font-size:16.5px;line-height:1.8}
+a{color:var(--link);text-underline-offset:3px}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--link);outline-offset:2px;border-radius:3px}
+code,pre{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:14px}
+p{margin:0 0 14px;max-width:46em}
+
+/* ---------- sidebar ---------- */
+.side{position:fixed;top:0;left:0;bottom:0;width:var(--side);background:var(--surface);border-right:1.5px solid var(--ink);
+  padding:calc(env(safe-area-inset-top,0px) + 20px) 16px 24px;overflow-y:auto;z-index:30;transition:transform .2s ease}
+.side-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.side .brand{font-weight:900;font-size:16px;line-height:1.3;margin:0}
+.side nav ul{list-style:none;margin:0;padding:0}
+.side nav > ul > li{margin-bottom:4px}
+.side nav a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:15px;line-height:1.4}
+.side nav a:hover{background:var(--grid)}
+.side nav > ul > li > a{font-weight:700}
+.side nav ul ul a{padding-left:22px;font-size:13.5px;color:var(--muted);font-weight:400}
+.side nav a.active{background:var(--grid);box-shadow:inset 3px 0 0 var(--req)}
+.side .tools{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.btn{font:inherit;font-size:13.5px;padding:4px 12px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:999px;cursor:pointer;line-height:1.5}
+.btn:hover{background:var(--grid)}
+.fab{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:25;display:none;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+main{margin-left:var(--side);transition:margin-left .2s ease}
+body.side-closed .side{transform:translateX(-102%)}
+body.side-closed main{margin-left:0}
+body.side-closed .fab{display:inline-block}
+.scrim{display:none}
+@media (max-width:1000px){
+  main{margin-left:0}
+  body:not(.side-closed) .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:28}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.side,main{transition:none}}
+.wrap{max-width:940px;margin:0 auto;padding:44px 26px 80px}
+body.side-closed .wrap{padding-top:64px}
+@media (max-width:560px){.wrap{padding-left:16px;padding-right:16px}}
+
+/* ---------- header ---------- */
+h1{font-weight:900;font-size:clamp(28px,5vw,42px);line-height:1.2;letter-spacing:-.01em;margin:0 0 14px}
+.lede{font-size:18px;color:var(--muted);max-width:40em}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--muted);margin:14px 0 0}
+
+/* ---------- sections ---------- */
+details.sec{border-top:2px solid var(--ink);margin-top:36px}
+details.sec > summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:14px;padding:16px 0 6px}
+details.sec > summary::-webkit-details-marker{display:none}
+details.sec > summary .no{font-weight:900;font-size:30px;line-height:1;color:var(--req);font-variant-numeric:tabular-nums;min-width:1.2em}
+details.sec > summary h2{font-weight:900;font-size:26px;margin:0;line-height:1.3;flex:1}
+details.sec > summary .hint{font-size:13px;color:var(--muted);white-space:nowrap}
+details.sec[open] > summary .hint .c{display:none}
+details.sec:not([open]) > summary .hint .o{display:none}
+.body{padding:6px 0 4px}
+h3{font-weight:900;font-size:20px;margin:36px 0 10px;padding-top:4px}
+h3:first-child{margin-top:8px}
+h4{font-weight:700;font-size:17px;margin:20px 0 6px}
+
+/* ---------- atoms ---------- */
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:0 7px;border-radius:999px;border:1.5px solid currentColor;vertical-align:2px;margin-right:5px;white-space:nowrap;line-height:1.6}
+.req{color:var(--req)} .opt{color:var(--opt)} .inf{color:var(--infer)} .warn{color:var(--warn)}
+.note{border-left:3px solid var(--req);padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.note-inf{border-left:3px solid var(--infer);padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.note-warn{border-left:3px solid var(--warn);padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.note p,.note-inf p,.note-warn p{margin:0 0 6px}
+.muted{color:var(--muted)} .small{font-size:14.5px}
+ul.specs,ol.specs{margin:6px 0 10px;padding-left:1.2em;font-size:15.5px}
+.specs li{margin:3px 0}
+.formula{display:inline-block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:15px;background:var(--surface);border:1px solid var(--rule);padding:4px 12px;margin:4px 0 12px}
+
+/* tables */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px 0 6px;border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;min-width:680px;font-size:14.5px;background:var(--surface)}
+table.narrow{min-width:520px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:700;font-size:13px;color:var(--muted);background:var(--paper)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.grp td{background:var(--grid);font-weight:700;font-size:14px}
+td ul{margin:0;padding-left:1.1em} td li{margin:1px 0}
+td .name{font-weight:700;display:block}
+td.blank{color:var(--rule)}
+
+/* flow */
+.flow{margin:14px -26px 0;padding:22px;background:
+  linear-gradient(var(--grid) 1px,transparent 1px) 0 0/22px 22px,
+  linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/22px 22px,var(--surface);
+  border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);overflow-x:auto}
+@media (max-width:560px){.flow{margin-left:-16px;margin-right:-16px;padding:16px}}
+.flow pre.mermaid{background:transparent;margin:0;text-align:center;min-width:620px}
+.flow.big pre.mermaid{min-width:900px}
+.keys{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;margin:12px 0 0}
+.key{display:inline-flex;align-items:center;gap:7px}
+.sw{width:18px;height:14px;border-radius:3px;border:2px solid}
+.sw.stim{background:#E3ECF7;border-color:#1F5FA8}
+.sw.pas{background:#DCEFD9;border-color:#2F5D3A}
+.sw.inw{background:#FBE3DE;border-color:#A33A2B}
+.sw.outw{background:#F3E1F7;border-color:#7A3E8F}
+.sw.scope{background:#FBEFD2;border-color:#8A6100}
+
+/* waveform figure */
+figure.wave{margin:14px 0 6px;background:var(--surface);border:1px solid var(--rule);padding:12px}
+figure.wave svg{width:100%;height:auto;display:block}
+figure.wave figcaption{font-size:13.5px;color:var(--muted);margin-top:6px}
+.wave .trace{fill:none;stroke:var(--link);stroke-width:2.6}
+.wave .stim{fill:none;stroke:var(--opt);stroke-width:2}
+.wave .base{stroke:var(--muted);stroke-dasharray:4 4;stroke-width:1.2}
+.wave .guide{stroke:var(--muted);stroke-dasharray:2 4;stroke-width:1}
+.wave .dim{stroke:var(--ink);stroke-width:1.4}
+.wave .dim63{stroke:var(--req);stroke-width:1.8}
+.wave .dim50{stroke:var(--infer);stroke-width:1.8}
+.wave .dim37{stroke:var(--warn);stroke-width:1.8}
+.wave text{fill:var(--ink);font-size:13px;font-family:"Noto Sans TC",system-ui,sans-serif}
+.wave text.m{fill:var(--muted);font-size:12px}
+.wave .dot{fill:var(--link)}
+.wave .ah{fill:var(--ink)}
+
+/* steps */
+ol.steps{counter-reset:st;list-style:none;padding:0;margin:12px 0}
+ol.steps > li{counter-increment:st;position:relative;padding:12px 0 12px 52px;border-bottom:1px solid var(--rule)}
+ol.steps > li::before{content:counter(st);position:absolute;left:0;top:12px;width:34px;height:34px;border-radius:6px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-weight:900}
+ol.steps b.t{display:block;font-size:16.5px;margin-bottom:2px}
+ol.steps ul{margin:4px 0 0;padding-left:1.2em;font-size:15.5px}
+
+/* questions */
+.qa{border-left:4px solid var(--req);padding:2px 0 2px 16px;margin:28px 0 8px}
+.qa h4{margin:0 0 6px}
+.qa .en{font-size:14px;color:var(--muted);font-style:italic;margin:0 0 8px}
+.qa dl{margin:6px 0 0;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15.5px}
+.qa dt{font-weight:700;color:var(--muted);white-space:nowrap}
+.qa dd{margin:0}
+@media (max-width:620px){.qa dl{grid-template-columns:1fr}.qa dt{margin-top:6px}}
+
+ul.check{list-style:none;padding:0;margin:8px 0}
+ul.check li{position:relative;padding:6px 0 6px 30px;border-bottom:1px solid var(--rule);font-size:15.5px}
+ul.check li::before{content:"";position:absolute;left:2px;top:11px;width:16px;height:16px;border:1.8px solid var(--ink);border-radius:3px}
+footer{margin-top:50px;font-size:13.5px;color:var(--muted)}
+</style>
+</head>
+<body class="">
+<aside class="side" id="side" aria-label="目錄">
+  <p style="margin:0 0 10px;font-size:13px"><a href="../" style="color:var(--muted);text-decoration:none">← Neuron Circuits</a></p>
+  <div class="side-head">
+    <p class="brand">Homework 2</p>
+    <button class="btn" id="sideClose" type="button" aria-label="收合目錄">收合 ‹</button>
+  </div>
+  <nav>
+    <ul>
+      <li><a href="#s0">0 總覽</a>
+        <ul>
+          <li><a href="#s0-map">三個實驗的關係</a></li>
+          <li><a href="#s0-submit">繳交規定</a></li>
+          <li><a href="#s0-terms">名詞對照</a></li>
+        </ul></li>
+      <li><a href="#s1">1 開始前的準備</a>
+        <ul>
+          <li><a href="#s1-boards">板子與元件</a></li>
+          <li><a href="#s1-stim">Neuron Stimulator</a></li>
+          <li><a href="#s1-current">量 stimulation current</a></li>
+          <li><a href="#s1-scope">示波器設定</a></li>
+          <li><a href="#s1-params">五個參數怎麼量</a></li>
+        </ul></li>
+      <li><a href="#s2">2 #2-1 Passive membrane</a>
+        <ul>
+          <li><a href="#s2-circuit">電路架構</a></li>
+          <li><a href="#s2-flow">實驗流程</a></li>
+          <li><a href="#s2-steps">逐步操作</a></li>
+          <li><a href="#s2-expect">預期結果</a></li>
+          <li><a href="#s2-q">題目對應</a></li>
+        </ul></li>
+      <li><a href="#s3">3 #2-2 Active membrane</a>
+        <ul>
+          <li><a href="#s3-circuit">電路架構</a></li>
+          <li><a href="#s3-channels">兩個 channel 的接法</a></li>
+          <li><a href="#s3-ap">AP 怎麼產生</a></li>
+          <li><a href="#s3-flow">實驗流程</a></li>
+          <li><a href="#s3-steps">逐步操作</a></li>
+          <li><a href="#s3-expect">預期趨勢</a></li>
+          <li><a href="#s3-q">題目對應</a></li>
+        </ul></li>
+      <li><a href="#s4">4 #2-3 Passive to active</a>
+        <ul>
+          <li><a href="#s4-circuit">電路架構</a></li>
+          <li><a href="#s4-flow">實驗流程</a></li>
+          <li><a href="#s4-steps">逐步操作</a></li>
+          <li><a href="#s4-expect">預期趨勢</a></li>
+          <li><a href="#s4-q">題目對應</a></li>
+        </ul></li>
+      <li><a href="#s5">5 報告整理與除錯</a>
+        <ul>
+          <li><a href="#s5-check">交件前檢查</a></li>
+          <li><a href="#s5-debug">常見問題</a></li>
+        </ul></li>
+    </ul>
+  </nav>
+  <div class="tools">
+    <button class="btn" id="openAll" type="button">全部展開</button>
+    <button class="btn" id="closeAll" type="button">全部收合</button>
+  </div>
+</aside>
+<div class="scrim" id="scrim"></div>
+<button class="btn fab" id="sideOpen" type="button" aria-controls="side">› 目錄</button>
+
+<main>
+<div class="wrap">
+<header>
+  <h1>Homework 2：Passive &amp; Active Membrane</h1>
+  <p class="lede">用電阻、電容和電晶體做出神經元的膜，再用示波器量它的反應。這頁把三個實驗（#2-1、#2-2、#2-3）拆成電路架構、實驗流程與逐步操作，第一次碰電路也能照著做。</p>
+  <div class="legend">
+    <span><span class="tag req">重點</span>一定要做到</span>
+    <span><span class="tag opt">提示</span>做起來比較順的方法</span>
+    <span><span class="tag inf">推論</span>依電路圖分析或模擬推得，實測為準</span>
+    <span><span class="tag warn">注意</span>容易出錯或與講義不一致</span>
+  </div>
+  <div class="legend">
+    <span class="key"><span class="sw stim"></span>Stimulator</span>
+    <span class="key"><span class="sw pas"></span>Passive／Leak</span>
+    <span class="key"><span class="sw inw"></span>Fast inward</span>
+    <span class="key"><span class="sw outw"></span>Slow outward</span>
+    <span class="key"><span class="sw scope"></span>量測</span>
+  </div>
+</header>
+
+<!-- ===================== 0 總覽 ===================== -->
+<details class="sec" id="s0" open>
+<summary><span class="no">0</span><h2>總覽</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s0-map">三個實驗的關係</h3>
+<p>三個實驗一步步疊上去：先看訊號在<b>被動的膜</b>上怎麼傳（#2-1），再看<b>主動的膜</b>怎麼產生 action potential（#2-2），最後把兩者接起來，看被動膜如何影響主動膜被觸發（#2-3）。</p>
+<div class="flow big">
+<pre class="mermaid">
+flowchart LR
+  subgraph E1["2-1 Passive membrane"]
+    direction TB
+    A1["Neuron Stimulator"]:::stim --> A2["5 個 Passive unit<br/>每個 1 µF ∥ 100 kΩ<br/>彼此以 10 kΩ 串接"]:::pas
+  end
+  subgraph E2["2-2 Active membrane"]
+    direction TB
+    B1["Neuron Stimulator"]:::stim --> B0(("Vm"))
+    B0 --- B2["Leak channel"]:::pas
+    B0 --- B3["Fast inward channel"]:::inw
+    B0 --- B4["Slow outward channel"]:::outw
+  end
+  subgraph E3["2-3 Passive to active"]
+    direction TB
+    C1["Neuron Stimulator"]:::stim --> C2["n 個 Passive unit"]:::pas --> C3["Active membrane"]:::inw
+  end
+  E1 -->|"學到：訊號沿被動膜<br/>變小、變慢"| E2
+  E2 -->|"學到：主動膜產生<br/>action potential"| E3
+  classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef pas fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef inw fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+  classDef outw fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+</pre>
+</div>
+
+<h3 id="s0-submit">繳交規定</h3>
+<p>講義開頭的 Notes，交件前逐條對過：</p>
+<ul class="check">
+  <li><b>答案全部用英文寫</b>（All answers must be written in English）。這頁用中文講解，專有名詞保留英文，寫報告時可以直接沿用。</li>
+  <li>檔名：<code>HW02_學號_姓名.pdf</code>（講義原文 <code>HW02_Your Student ID_Your Name.pdf</code>）。</li>
+  <li>字型 Times New Roman，大小 12。</li>
+  <li>用<b>有標註的照片</b>輔助說明（labeled pictures）。</li>
+  <li>示波器截圖要<b>標出格子大小</b>，也就是每格幾伏特（V/div）、每格幾秒（s/div）。</li>
+  <li>波形圖上一定要畫出<b>量測的點、範圍或長度</b>（points/areas of measurements）。</li>
+  <li>#2-0：全組合照一張，以及組員名單。</li>
+  <li>不可抄襲（No Plagiary）。這頁只講方法和概念，數據與文字要用你們自己量到、自己寫的。</li>
+</ul>
+
+<h3 id="s0-terms">名詞對照</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>英文（報告用）</th><th>中文</th><th>在這份作業裡指的是</th></tr></thead>
+  <tbody>
+    <tr><td>Intracellular / Extracellular</td><td>細胞內／細胞外</td><td>PCB 上方那條線代表細胞內，下方那條線代表細胞外。Extracellular 接地（GND），當作 0 V 參考點。</td></tr>
+    <tr><td>Membrane potential（Vm）</td><td>膜電位</td><td>Intracellular 相對 Extracellular 的電壓，示波器量的就是它。</td></tr>
+    <tr><td>Passive unit</td><td>被動單元</td><td>一塊小板：1 µF 電容並聯 100 kΩ 電阻，代表一小段細胞膜。</td></tr>
+    <tr><td>Leak channel</td><td>漏電通道</td><td>Active membrane 裡的那個 1 µF ∥ 100 kΩ（就是一個 Passive unit）。</td></tr>
+    <tr><td>Fast inward channel</td><td>快速內向電流通道</td><td>Vm 超過門檻就把電流灌進細胞內，類比 voltage-gated Na⁺ channel。</td></tr>
+    <tr><td>Slow outward channel</td><td>慢速外向電流通道</td><td>延遲一段時間後把 Vm 拉回 0 V，類比 delayed-rectifier K⁺ channel。</td></tr>
+    <tr><td>Neuron Stimulator</td><td>刺激器</td><td>按住 SW 時輸出固定電流，用旋鈕調電流大小。</td></tr>
+    <tr><td>Stimulation current</td><td>刺激電流</td><td>刺激器輸出的電流，單位 A（實際約數十 µA）。</td></tr>
+    <tr><td>Stimulation duration</td><td>刺激時間</td><td>SW 按住多久。</td></tr>
+    <tr><td>Peak amplitude</td><td>波峰振幅</td><td>波峰減掉基線（baseline）的電壓。</td></tr>
+    <tr><td>Delay of peak</td><td>波峰延遲</td><td>從刺激開始到波峰出現的時間。</td></tr>
+    <tr><td>Half-width</td><td>半高寬</td><td>波形在一半振幅高度時的寬度。</td></tr>
+    <tr><td>Rise time constant（τ<sub>rise</sub>）</td><td>上升時間常數</td><td>從刺激開始到上升至 63% 振幅的時間。</td></tr>
+    <tr><td>Decay time constant（τ<sub>decay</sub>）</td><td>衰減時間常數</td><td>從波峰下降到剩 37% 振幅的時間。講義寫成 “decade time constants”，從上下文看應該就是 decay <span class="tag inf">推論</span></td></tr>
+    <tr><td>Action potential（AP）</td><td>動作電位</td><td>Active membrane 被觸發後，Vm 快速衝高再回落的波形。</td></tr>
+    <tr><td>Resting membrane potential</td><td>靜止膜電位</td><td>沒有刺激時的 Vm。</td></tr>
+    <tr><td>Reversal potential</td><td>反轉電位</td><td>某個電流會把 Vm 推向的電壓；Vm 到了這裡，那個電流就不再流。</td></tr>
+    <tr><td>Minimum stimulation current（rheobase）</td><td>最小刺激電流（基強度）</td><td>長時間刺激下，剛好能觸發 AP 的最小電流。</td></tr>
+    <tr><td>TTX（tetrodotoxin）／TEA（tetraethylammonium）</td><td>河豚毒素／四乙基銨</td><td>TTX 阻斷 Na⁺ channel，TEA 阻斷 K⁺ channel。這裡用「拔掉對應的板子」來模擬。</td></tr>
+  </tbody>
+</table>
+</div>
+</div>
+</details>
+
+<!-- ===================== 1 準備 ===================== -->
+<details class="sec" id="s1" open>
+<summary><span class="no">1</span><h2>開始前的準備</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s1-boards">板子與元件</h3>
+<p>三個實驗都由下面幾種板子組成，Q1 要在照片上標註元件，就照這張表標。板子上的元件代號（R1、Q1…）印在 PCB 上，直接抄下來。</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>板子</th><th>板上元件（PCB 標示）</th><th>在電路中的角色</th><th>對應的神經生理</th></tr></thead>
+  <tbody>
+    <tr><td><span class="name">Neuron Stimulator</span></td><td><ul><li>103K-ROTARY 可變電阻（10 kΩ）</li><li>7K-R1、7K-R2</li><li>2N4403TA-Q1、Q2（PNP 電晶體）</li><li>SW 按鈕、12V 電源端子</li></ul></td><td>按住 SW 時輸出固定電流；旋鈕決定電流大小。</td><td>微電極注入電流（current injection）</td></tr>
+    <tr><td><span class="name">Passive Unit</span></td><td><ul><li>1UF-C1（1 µF 電容）</li><li>100K-R1（100 kΩ 電阻）</li></ul></td><td>電容與電阻並聯，跨在 Intracellular 與 Extracellular 之間。</td><td>一小段膜：C = 膜電容（membrane capacitance），R = 膜電阻（leak）</td></tr>
+    <tr><td><span class="name">Passive membrane PCB</span><span class="muted small">（底板）</span></td><td><ul><li>上排 R2、R5、R9、R6（Intracellular Solution）</li><li>下排 R3、R4、R8、R7（Extracellular Solution）</li><li>5 組插槽</li></ul></td><td>把 Passive unit 串起來。上排電阻 10 kΩ，下排 100 Ω（依講義電路圖）。</td><td>上排 = 細胞質的軸向電阻（axial resistance）；下排 = 細胞外液電阻</td></tr>
+    <tr><td><span class="name">Fast Inward</span></td><td><ul><li>2N4403TA-Q1（PNP）</li><li>2N3904-Q2（NPN）</li><li>1N4148-D1（二極體）</li><li>3M-R1、100K-R2、100K-R13</li></ul></td><td>Vm 超過門檻後把電流灌進細胞內，而且越灌越多（正回饋）。</td><td>Voltage-gated Na⁺ channel</td></tr>
+    <tr><td><span class="name">Fast Inward（DIP 版）</span></td><td><ul><li>同上，但其中一顆電阻換成 5 顆電阻＋DIP 開關（可見 820K-R3）</li></ul></td><td>#2-2 Q4 用：撥 DIP 開關切換紅箭頭電阻的值。</td><td>改變 Na⁺ channel 的強度</td></tr>
+    <tr><td><span class="name">Slow Out</span></td><td><ul><li>2N4403TA-Q1（PNP）</li><li>2N3904-Q2（NPN）</li><li>1N4148-D1</li><li>100K-R1、3M-R2、1K-R3</li><li>1UF-C1</li></ul></td><td>Vm 升高一段時間後，把 Vm 拉回 0 V。</td><td>Delayed-rectifier K⁺ channel</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="note-warn">
+  <p><span class="tag warn">注意</span>實體 PCB 和模擬器電路圖有幾處不一樣，報告裡請用<b>實體板子上的值</b>：</p>
+  <ul class="specs">
+    <li>刺激器電源：PCB 是 12 V 端子，模擬器畫的是 9 V 電池；可變電阻 PCB 是 103K（10 kΩ），模擬器是 23 kΩ。</li>
+    <li>Fast inward：PCB 上是 3M、100K、100K 三顆電阻，模擬器是 3 MΩ、100 kΩ、1 kΩ，而且模擬器有一顆 9 V 電池，PCB 上沒有。<span class="tag inf">推論</span>實體板子應該是從 PCB 的電源線取電，請用三用電表量實際電壓。</li>
+    <li>講義在 Slow Out 板的照片旁標了「1MΩ →」，但 PCB 上印的是 3M-R2。可能代表實際使用的 Slow Out 板有一顆 1 MΩ，請看電阻色碼（1 MΩ 是棕黑綠，3 MΩ 是橙黑綠）或問助教。</li>
+  </ul>
+</div>
+
+<h3 id="s1-stim">Neuron Stimulator：怎麼輸出固定電流</h3>
+<p>刺激器是一個<b>定電流源</b>（constant current source）：不管後面接幾個單元，按住 SW 時輸出的電流都一樣。旋鈕轉到電阻越小，電流越大。</p>
+<div class="flow">
+<pre class="mermaid">
+flowchart LR
+  P["電源 +<br/>PCB：12 V 端子<br/>模擬器：9 V 電池"]:::node --> SW["SW 按鈕<br/>模擬器按 Space 鍵"]:::stim
+  SW --> A(("A"))
+  A --> R["R_set<br/>103K 旋鈕 + 7 kΩ"]:::stim
+  R --> B(("B"))
+  B -->|"emitter → collector"| QP["Q_pass<br/>2N4403"]:::stim
+  QP -->|"I_stim"| OUT["Intracellular<br/>接到第 1 個單元"]:::pas
+  QS["Q_sense 2N4403<br/>emitter 接 A，base 接 B"]:::stim -->|"collector：電流太大時<br/>把 Q_pass 的 base 拉高"| QP
+  RB["7 kΩ 到 GND<br/>平常把 Q_pass 的 base 拉低"]:::node --> QP
+  classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef pas fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef node fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+</pre>
+</div>
+<ol class="specs">
+  <li>按下 SW，電流從 A 經過 R_set 流到 B，再經 Q_pass 流出到 Intracellular。</li>
+  <li>R_set 兩端的電壓剛好就是 Q_sense 的 V<sub>EB</sub>。電流一大，這個電壓到 0.6–0.7 V 時 Q_sense 導通，把 Q_pass 關小一點。</li>
+  <li>結果 R_set 兩端被鎖在約 0.65 V，所以：</li>
+</ol>
+<p><span class="formula">I_stim ≈ 0.65 V ÷ (R_旋鈕 + 7 kΩ)</span></p>
+<p class="note-inf"><span class="tag inf">推論</span>依電路圖估算：PCB（10 kΩ 旋鈕）約 38–93 µA；模擬器（23 kΩ）約 22–93 µA。V<sub>EB</sub> 會隨溫度與電晶體不同而變，報告裡的電流一定要用量的，不要用這個式子算。</p>
+
+<h3 id="s1-current">量 stimulation current（三種方法）</h3>
+<p>每個題目都要寫出 stimulation current。按可靠程度排序：</p>
+<ol class="steps">
+  <li><b class="t">方法 A：三用電表直接量（最準）</b>
+    <ul>
+      <li>三用電表切到 DC 電流檔（µA 或 mA），紅棒插到 mA/µA 孔。</li>
+      <li>紅棒接刺激器的 Intracellular 輸出，黑棒接 Extracellular（GND），電表就是刺激器唯一的負載。</li>
+      <li>按住 SW，讀數就是 I_stim。因為是定電流源，換成真正的電路負載，電流也幾乎一樣。</li>
+      <li><span class="tag warn">注意</span>量完把紅棒插回電壓孔、切回電壓檔，否則下次量電壓時會把電表的保險絲燒掉。</li>
+    </ul></li>
+  <li><b class="t">方法 B：用一個 Passive unit 換算</b>
+    <ul>
+      <li>只接刺激器 + 1 個 Passive unit，按住 SW 超過 0.5 秒，等 Vm 變平。</li>
+      <li>平台電壓 V<sub>ss</sub> = I × 100 kΩ，所以 I = V<sub>ss</sub> ÷ 100 kΩ。例如 V<sub>ss</sub> = 5 V → I = 50 µA。</li>
+      <li><span class="tag warn">注意</span>只能用在單一個 Passive unit。串了 5 個單元時，第 1 個單元看到的等效電阻只有約 30 kΩ（電流會流到後面的單元），不能直接除以 100 kΩ。</li>
+    </ul></li>
+  <li><b class="t">方法 C：量電阻估算（最粗略）</b>
+    <ul>
+      <li>關掉電源，用三用電表的電阻檔量旋鈕 + 7 kΩ 的總電阻 R_set。</li>
+      <li>I ≈ 0.65 V ÷ R_set。只能當作參考值。</li>
+    </ul></li>
+</ol>
+<p class="note"><span class="tag req">重點</span>同一題裡如果要「固定電流」，量好電流以後就<b>不要再轉旋鈕</b>。可以在旋鈕上貼一小段膠帶標記位置。</p>
+
+<h3 id="s1-scope">示波器設定</h3>
+<ol class="steps">
+  <li><b class="t">探棒接法</b>
+    <ul>
+      <li>探棒的鱷魚夾（ground clip）夾 Extracellular（GND），探針勾要量的 Intracellular 點。</li>
+      <li>兩個通道的鱷魚夾都夾在同一個 GND，不要夾到其他節點。</li>
+      <li><span class="tag inf">推論</span>建議探棒切到 <b>×10</b>，示波器通道也設成 ×10。×1 時探棒輸入阻抗只有 1 MΩ，和 100 kΩ 的膜電阻並聯，會讓膜電阻少掉約 9%；×10 是 10 MΩ，影響只剩約 1%。</li>
+    </ul></li>
+  <li><b class="t">垂直（Vertical）</b>
+    <ul>
+      <li>Coupling 設 <b>DC</b>（AC 會把慢的波形扭曲）。</li>
+      <li>Passive membrane：0.2–0.5 V/div；Active membrane：1–2 V/div；Extracellular（#2-3 Q5）：10–50 mV/div 起試。</li>
+      <li>把 0 V 基線移到畫面下方約第 1 格的位置，讓波形有空間往上長。</li>
+    </ul></li>
+  <li><b class="t">水平（Horizontal）</b>
+    <ul>
+      <li>Passive membrane 的時間常數約 100 ms，先用 100–200 ms/div。</li>
+      <li>Active membrane 先用 20–50 ms/div，看到 AP 後再調整到一個 AP 佔畫面一半左右。</li>
+    </ul></li>
+  <li><b class="t">觸發（Trigger）</b>
+    <ul>
+      <li>Source 選有接刺激點的通道（通常是 CH1），Slope 選 Rising，Level 設在 0.1–0.3 V。</li>
+      <li>Mode 選 <b>Single</b>（或 Normal）：按一次 SW 就抓一張波形並停住，方便量測。</li>
+      <li>把觸發點放在畫面左邊約 1–2 格，才看得到刺激前的基線。</li>
+    </ul></li>
+  <li><b class="t">量測與存檔</b>
+    <ul>
+      <li>用 Cursor（游標）量：Y 游標量電壓、X 游標量時間。示波器的 Measure 功能也能直接顯示 Max、Width 等數值。</li>
+      <li>用 USB 存截圖最清楚。用手機拍要正對螢幕，畫面上要看得到 V/div 和 s/div。</li>
+      <li>每張圖存檔時順便記下：哪一題、電流多少、刺激多久、CH1/CH2 夾哪裡。</li>
+    </ul></li>
+</ol>
+
+<h3 id="s1-params">五個參數怎麼量</h3>
+<p>三個實驗都要量同一組參數。下圖是一個 Passive unit 對方波電流的典型反應，標出每個參數的量法；報告裡的每張波形圖都要畫上類似的標記。</p>
+<figure class="wave">
+<svg viewBox="0 0 640 280" role="img" aria-label="波形量測示意：標出 baseline、peak amplitude、delay of peak、half-width、rise time constant 與 decay time constant">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+  <!-- stimulus -->
+  <path class="stim" d="M23,40 L70,40 L70,22 L210.9,22 L210.9,40 L610,40"/>
+  <text x="218" y="28">刺激（按住 SW）</text>
+  <!-- guides -->
+  <line class="base" x1="23" y1="220" x2="610" y2="220"/>
+  <text class="m" x="560" y="212">baseline</text>
+  <line class="guide" x1="70" y1="40" x2="70" y2="250"/>
+  <line class="guide" x1="210.9" y1="40" x2="210.9" y2="250"/>
+  <line class="guide" x1="210.9" y1="70" x2="480" y2="70"/>
+  <!-- trace -->
+  <path class="trace" d="M23.0,220.0 L28.9,220.0 L34.8,220.0 L40.7,220.0 L46.5,220.0 L52.4,220.0 L58.3,220.0 L64.1,220.0 L70.0,220.0 L75.9,204.3 L81.7,190.1 L87.6,177.2 L93.5,165.6 L99.3,155.1 L105.2,145.6 L111.1,137.0 L117.0,129.2 L122.8,122.1 L128.7,115.7 L134.6,109.9 L140.4,104.7 L146.3,100.0 L152.2,95.7 L158.0,91.8 L163.9,88.3 L169.8,85.2 L175.7,82.3 L181.5,79.7 L187.4,77.4 L193.3,75.2 L199.1,73.3 L205.0,71.6 L210.9,70.0 L216.7,84.3 L222.6,97.2 L228.5,108.9 L234.3,119.5 L240.2,129.0 L246.1,137.7 L252.0,145.5 L257.8,152.6 L263.7,159.0 L269.6,164.8 L275.4,170.1 L281.3,174.8 L287.2,179.1 L293.0,183.0 L298.9,186.5 L304.8,189.7 L310.7,192.6 L316.5,195.2 L322.4,197.6 L328.3,199.7 L334.1,201.6 L340.0,203.4 L345.9,205.0 L351.7,206.4 L357.6,207.7 L363.5,208.9 L369.3,209.9 L375.2,210.9 L381.1,211.7 L387.0,212.5 L392.8,213.2 L398.7,213.9 L404.6,214.5 L410.4,215.0 L416.3,215.5 L422.2,215.9 L428.0,216.3 L433.9,216.6 L439.8,217.0 L445.7,217.3 L451.5,217.5 L457.4,217.8 L463.3,218.0 L469.1,218.2 L475.0,218.3 L480.9,218.5 L486.7,218.6 L492.6,218.8 L498.5,218.9 L504.3,219.0 L510.2,219.1 L516.1,219.2 L522.0,219.3 L527.8,219.3 L533.7,219.4 L539.6,219.4 L545.4,219.5 L551.3,219.5 L557.2,219.6 L563.0,219.6 L568.9,219.7 L574.8,219.7 L580.7,219.7 L586.5,219.8 L592.4,219.8 L598.3,219.8 L604.1,219.8 L610.0,219.8"/>
+  <circle class="dot" cx="210.9" cy="70" r="4.5"/>
+  <text x="200" y="62" text-anchor="end">peak</text>
+  <!-- peak amplitude -->
+  <line class="dim" x1="470" y1="216" x2="470" y2="74" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <text x="478" y="140">Peak amplitude</text>
+  <text class="m" x="478" y="157">= peak − baseline</text>
+  <!-- rise 63% -->
+  <line class="dim63" x1="72" y1="125.2" x2="118" y2="125.2" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <text x="64" y="121" text-anchor="end">τ rise</text>
+  <text class="m" x="64" y="136" text-anchor="end">到 63%</text>
+  <!-- half width -->
+  <line class="dim50" x1="107.6" y1="145" x2="249.6" y2="145" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <text x="160" y="164" text-anchor="middle">Half-width（50%）</text>
+  <!-- decay 37% -->
+  <line class="dim37" x1="212.9" y1="186" x2="267.6" y2="186" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <line class="guide" x1="269.6" y1="164.8" x2="269.6" y2="192"/>
+  <text x="276" y="200">τ decay（降到 37%）</text>
+  <!-- delay of peak -->
+  <line class="dim" x1="72" y1="242" x2="208.9" y2="242" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <text x="140" y="266" text-anchor="middle">Delay of peak</text>
+</svg>
+<figcaption>示意圖，非實測數據。Passive membrane 的波峰出現在刺激結束的瞬間；AP 的波形不同，但參數量法一樣。</figcaption>
+</figure>
+<div class="scroll">
+<table>
+  <thead><tr><th>參數</th><th>怎麼量（示波器操作）</th><th>為什麼這樣定義</th></tr></thead>
+  <tbody>
+    <tr><td><span class="name">Peak amplitude</span></td><td>一條 Y 游標放基線，一條放波峰，讀 ΔV。</td><td>扣掉基線，才不會受零點偏移影響。</td></tr>
+    <tr><td><span class="name">Delay of peak</span></td><td>X 游標一條放刺激開始（波形開始上升處），一條放波峰，讀 ΔT。</td><td>看訊號花多久才到最高點。</td></tr>
+    <tr><td><span class="name">Half-width</span></td><td>先算 50% 高度 = 基線 + 0.5 × amplitude，在上升段和下降段各找一個交點，讀兩點的 ΔT。</td><td>描述波形「胖瘦」，不受振幅大小影響。</td></tr>
+    <tr><td><span class="name">Rise time constant</span></td><td>算 63% 高度 = 基線 + 0.632 × amplitude，從刺激開始量到上升段碰到這個高度的 ΔT。</td><td>RC 充電 V(t) = A(1 − e<sup>−t/τ</sup>)，t = τ 時剛好到 63.2%。</td></tr>
+    <tr><td><span class="name">Decay time constant</span></td><td>算 37% 高度 = 基線 + 0.368 × amplitude，從波峰量到下降段碰到這個高度的 ΔT。</td><td>RC 放電 V(t) = A·e<sup>−t/τ</sup>，t = τ 時剩 36.8%。</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note-inf"><span class="tag inf">推論</span>AP 的上升段不是單純的指數曲線，用 63%／37% 的定義量出來的是「等效」時間常數。這沒有問題，只要在報告裡寫清楚定義，所有數據都用同一個定義就好。有些人會改用 10%–90% rise time，也可以，但同樣要寫明。</p>
+</div>
+</details>
+
+<!-- ===================== 2 Passive ===================== -->
+<details class="sec" id="s2" open>
+<summary><span class="no">2</span><h2>#2-1 Passive membrane</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s2-circuit">電路架構</h3>
+<p>5 個 Passive unit 一字排開，上排每兩個之間隔 10 kΩ（細胞內的軸向電阻），下排隔 100 Ω（細胞外液）。電流只從第 1 個單元注入，然後看它怎麼一路傳到第 5 個。</p>
+<div class="flow big">
+<pre class="mermaid">
+flowchart LR
+  ST["Neuron Stimulator"]:::stim -->|"I_stim"| S1
+  subgraph S1["單元 1"]
+    direction TB
+    N1(("節點 1<br/>CH1")):::probe --- U1["1 µF ∥ 100 kΩ"]:::pas --- E1["Extracellular"]:::node
+  end
+  subgraph S2["單元 2"]
+    direction TB
+    N2(("節點 2")) --- U2["1 µF ∥ 100 kΩ"]:::pas --- E2["Extracellular"]:::node
+  end
+  subgraph S3["單元 3"]
+    direction TB
+    N3(("節點 3<br/>CH2 之後")):::probe --- U3["1 µF ∥ 100 kΩ"]:::pas --- E3["Extracellular"]:::node
+  end
+  subgraph S4["單元 4"]
+    direction TB
+    N4(("節點 4")) --- U4["1 µF ∥ 100 kΩ"]:::pas --- E4["Extracellular"]:::node
+  end
+  subgraph S5["單元 5：Leak channel 位置"]
+    direction TB
+    N5(("節點 5<br/>CH2")):::probe --- U5["1 µF ∥ 100 kΩ"]:::pas --- E5["Extracellular"]:::node
+  end
+  S1 ---|"10 kΩ"| S2 ---|"10 kΩ"| S3 ---|"10 kΩ"| S4 ---|"10 kΩ"| S5
+  classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef pas fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef node fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+  classDef probe fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2B00
+</pre>
+</div>
+<ul class="specs">
+  <li>黃色節點是探棒位置：CH1 夾節點 1，CH2 先夾節點 5、之後改夾節點 3；兩支探棒的鱷魚夾都夾 Extracellular。下排每個單元的 Extracellular 之間各隔 100 Ω，最後接回 GND。</li>
+  <li>每個單元的時間常數 τ<sub>m</sub> = R × C = 100 kΩ × 1 µF = <b>100 ms</b>。</li>
+  <li>電流進到第 1 個單元後分成兩路：一路對自己的電容充電、從 100 kΩ 漏掉；另一路經 10 kΩ 流到下一個單元。越往後，剩下的電流越少，電容也要等前面充上去才會跟著充電。</li>
+  <li>講義電路圖右邊的 Fast inward、Slow outward 標著 “Removed”：#2-1 只用被動元件。</li>
+  <li><span class="tag inf">推論</span>刺激器是定電流源，所以它插在哪個槽、和第 1 個單元之間有沒有隔一顆 10 kΩ，都不影響注入的電流。照講義照片或助教指定的位置插即可。</li>
+</ul>
+
+<h3 id="s2-flow">實驗流程</h3>
+<div class="flow">
+<pre class="mermaid">
+flowchart TD
+  S0(["開始"]):::ok --> S1["關電源，插上 Stimulator<br/>與 5 個 Passive unit"]:::node
+  S1 --> S2["拍電路照片<br/>之後在照片上標元件"]:::node
+  S2 --> S3["選一個電流並量出 I_stim<br/>之後整個 2-1 不再轉旋鈕"]:::stim
+  S3 --> S4["示波器：CH1 夾第 1 個單元<br/>CH2 夾第 5 個單元<br/>鱷魚夾都夾 Extracellular"]:::scope
+  S4 --> S5["按住 SW 一段時間<br/>Single 模式抓兩通道波形"]:::stim
+  S5 --> S6{"畫面裡有基線、波峰<br/>和回到基線的尾巴？"}:::chk
+  S6 -->|否| S7["調 V/div、s/div<br/>或觸發位置"]:::risk
+  S7 --> S5
+  S6 -->|是| S8["存圖，量五個參數<br/>記下 V/div、s/div、刺激多久"]:::scope
+  S8 --> S9{"5 種 duration<br/>都做了？"}:::chk
+  S9 -->|"否：換一個按壓時間"| S5
+  S9 -->|是| S10["CH2 改夾第 3 個單元<br/>補一組中間單元的波形"]:::scope
+  S10 --> S11["作 4 張圖<br/>第 1 個 vs 最後一個"]:::node
+  S11 --> S12(["回答 Q3 到 Q5"]):::ok
+  classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef node fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+  classDef scope fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2B00
+  classDef chk fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef risk fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+  classDef ok fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2.5px,color:#16301C
+</pre>
+</div>
+
+<h3 id="s2-steps">逐步操作</h3>
+<ol class="steps">
+  <li><b class="t">組裝並拍照（Q1）</b>
+    <ul>
+      <li>電源先不要接。把 Stimulator 和 5 個 Passive unit 插到 Passive membrane PCB 上，注意每塊板子的 Intracellular 朝上排、Extracellular 朝下排。</li>
+      <li>從正上方拍一張清楚的照片。之後在照片上標出：Neuron Stimulator、Passive unit 1–5、每個單元的 C1（1 µF）與 R1（100 kΩ）、上排 10 kΩ（R2、R5、R9、R6）、下排 100 Ω（R3、R4、R8、R7）、探棒夾的位置。</li>
+    </ul></li>
+  <li><b class="t">設定並量 stimulation current</b>
+    <ul>
+      <li>接上電源，用 <a href="#s1-current">方法 A</a> 量電流，建議選 40–60 µA 左右。</li>
+      <li>記下數值（例如 “stimulation current: 52 µA = 5.2 × 10⁻⁵ A”），Q3 的空格要填這個。</li>
+    </ul></li>
+  <li><b class="t">接探棒、設示波器</b>
+    <ul>
+      <li>CH1 → 第 1 個單元的 Intracellular，CH2 → 第 5 個單元的 Intracellular，鱷魚夾都夾 Extracellular。</li>
+      <li>0.2–0.5 V/div、100–200 ms/div、Trigger CH1 Rising 0.1 V、Single。</li>
+    </ul></li>
+  <li><b class="t">第一次刺激（Q2）</b>
+    <ul>
+      <li>按 Single 等待觸發，按住 SW 約 0.5 秒再放開。</li>
+      <li>確認兩條波形都完整：刺激前的基線、上升、波峰、下降回到基線。</li>
+      <li>存圖，在圖上標出五個參數的量測位置（參考<a href="#s1-params">上面的示意圖</a>）。</li>
+    </ul></li>
+  <li><b class="t">五種刺激時間（Q3）</b>
+    <ul>
+      <li>電流不變，只改按住 SW 的時間。建議從很短的點按（約 0.1 秒）到約 2 秒，例如：點一下、約 0.2 秒、約 0.5 秒、約 1 秒、約 2 秒。</li>
+      <li>手按的時間不準沒關係，<b>實際時間從波形讀</b>：第 1 個單元的波峰就出現在放開 SW 的瞬間，所以「刺激開始到 CH1 波峰」就是刺激時間。</li>
+      <li>每種時間各量：第 1 個和最後一個單元的 amplitude、delay of peak、rise time constant、decay time constant。</li>
+      <li><span class="tag opt">提示</span>每種時間多按 2–3 次取平均，數據會比較漂亮。</li>
+    </ul></li>
+  <li><b class="t">補中間單元</b>
+    <ul>
+      <li>Q3 問的是第 1 個、中間、最後一個的差別，但作圖只要第 1 個 vs 最後一個。</li>
+      <li>把 CH2 改夾第 3 個單元，用其中一種刺激時間（例如約 0.5 秒）再記錄一次，報告裡三條波形放在一起比較。</li>
+      <li>如果示波器有 4 個通道，可以一次夾第 1、3、5 個。</li>
+    </ul></li>
+  <li><b class="t">作圖</b>
+    <ul>
+      <li>四張圖：橫軸 = stimulation duration，縱軸分別是 amplitude、delay of peak、rise τ、decay τ。</li>
+      <li>每張圖畫兩條線：第 1 個單元與最後一個單元，用不同顏色或符號，加圖例。</li>
+      <li>圖說寫上 stimulation current。</li>
+    </ul></li>
+</ol>
+<h4>記錄表格範本</h4>
+<div class="scroll">
+<table>
+  <thead><tr><th>Duration（ms，從波形讀）</th><th>單元</th><th class="num">Amplitude（V）</th><th class="num">Delay of peak（ms）</th><th class="num">Rise τ（ms）</th><th class="num">Decay τ（ms）</th><th class="num">Half-width（ms）</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="2">__</td><td>第 1 個</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td></tr>
+    <tr><td>最後一個</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td></tr>
+    <tr><td colspan="7" class="muted small">⋯ 共 5 種 duration，每種兩列 ⋯</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="s2-expect">預期結果</h3>
+<p>下表是用理想元件模擬的數值，條件：電流 50 µA，5 個單元，忽略 100 Ω 的細胞外電阻（只比 10 kΩ 小 1%）。你的實測值會因為元件誤差、探棒負載和實際電流不同而有差，但<b>趨勢</b>應該一樣。</p>
+<div class="scroll">
+<table>
+  <thead><tr><th class="num">刺激時間</th><th>單元</th><th class="num">Amplitude</th><th class="num">Delay of peak</th><th class="num">Rise τ</th><th class="num">Decay τ</th><th class="num">Half-width</th></tr></thead>
+  <tbody>
+    <tr><td class="num" rowspan="3">100 ms</td><td>第 1 個</td><td class="num">1.12 V</td><td class="num">100 ms</td><td class="num">34 ms</td><td class="num">51 ms</td><td class="num">107 ms</td></tr>
+    <tr><td>第 3 個</td><td class="num">0.55 V</td><td class="num">106 ms</td><td class="num">58 ms</td><td class="num">107 ms</td><td class="num">137 ms</td></tr>
+    <tr><td>第 5 個</td><td class="num">0.38 V</td><td class="num">126 ms</td><td class="num">78 ms</td><td class="num">124 ms</td><td class="num">153 ms</td></tr>
+    <tr><td class="num" rowspan="3">200 ms</td><td>第 1 個</td><td class="num">1.36 V</td><td class="num">200 ms</td><td class="num">51 ms</td><td class="num">59 ms</td><td class="num">204 ms</td></tr>
+    <tr><td>第 3 個</td><td class="num">0.78 V</td><td class="num">203 ms</td><td class="num">87 ms</td><td class="num">108 ms</td><td class="num">215 ms</td></tr>
+    <tr><td>第 5 個</td><td class="num">0.57 V</td><td class="num">215 ms</td><td class="num">110 ms</td><td class="num">126 ms</td><td class="num">222 ms</td></tr>
+    <tr><td class="num" rowspan="3">500 ms</td><td>第 1 個</td><td class="num">1.49 V</td><td class="num">500 ms</td><td class="num">62 ms</td><td class="num">63 ms</td><td class="num">500 ms</td></tr>
+    <tr><td>第 3 個</td><td class="num">0.90 V</td><td class="num">501 ms</td><td class="num">108 ms</td><td class="num">109 ms</td><td class="num">501 ms</td></tr>
+    <tr><td>第 5 個</td><td class="num">0.69 V</td><td class="num">505 ms</td><td class="num">135 ms</td><td class="num">132 ms</td><td class="num">501 ms</td></tr>
+    <tr><td class="num" rowspan="2">1000 ms</td><td>第 1 個</td><td class="num">1.49 V</td><td class="num">1000 ms</td><td class="num">63 ms</td><td class="num">63 ms</td><td class="num">1000 ms</td></tr>
+    <tr><td>第 5 個</td><td class="num">0.69 V</td><td class="num">1001 ms</td><td class="num">137 ms</td><td class="num">135 ms</td><td class="num">1000 ms</td></tr>
+  </tbody>
+</table>
+</div>
+<p>從表中可以讀出幾個趨勢：</p>
+<ul class="specs">
+  <li><b>越後面越小</b>：長刺激時，第 5 個約只有第 1 個的 46%。</li>
+  <li><b>刺激越短，衰減越嚴重</b>：100 ms 時第 5 個只剩 34%。短而快的訊號被濾掉得更多，這就是低通濾波（low-pass filtering）。</li>
+  <li><b>越後面越慢</b>：rise τ 與 decay τ 都變長，波峰也晚到；刺激越短，延遲差距越明顯（100 ms 時差 26 ms，1 秒時只差約 1 ms）。</li>
+  <li><b>刺激夠長，波形會變平</b>：超過約 5 倍時間常數（約 0.5 秒）以後，amplitude 不再增加，達到穩態（steady state）。</li>
+  <li>第 1 個單元長刺激時的 rise τ 約 63 ms，比單一單元的 100 ms 短，因為電流同時流向後面的單元，等效電阻變小了。</li>
+</ul>
+
+<h3 id="s2-q">題目對應</h3>
+<div class="qa">
+  <h4>Q1 電路照片並標註元件</h4>
+  <dl><dt>要交</dt><dd>一張標註好的照片，標註項目見<a href="#s2-steps">步驟 1</a>。</dd></dl>
+</div>
+<div class="qa">
+  <h4>Q2 量 response 的性質</h4>
+  <dl>
+    <dt>要交</dt><dd>一張波形截圖，標出 stimulation current、peak amplitude、half-width、rise τ、decay τ 的量測點與範圍，並寫出格子大小。</dd>
+    <dt>提示</dt><dd>用第 1 個單元的波形最清楚。數值列成表放在圖旁邊。</dd>
+  </dl>
+</div>
+<div class="qa">
+  <h4>Q3 第一個、中間、最後一個 RC circuit 有什麼不同</h4>
+  <dl>
+    <dt>要交</dt><dd>填上 stimulation current；5 種 duration 的四張圖（amplitude、delay of peak、rise τ、decay τ，第 1 個 vs 最後一個）；再加一張第 1、3、5 個單元疊在一起的波形。</dd>
+    <dt>要描述</dt><dd>越遠的單元 amplitude 越小、peak 越晚、上升與衰減越慢；duration 變短時這些差距如何變化。</dd>
+  </dl>
+</div>
+<div class="qa">
+  <h4>Q4 造成差異的原因</h4>
+  <p class="en">Keywords: axial resistance, membrane resistance, membrane capacitance, current leak, length constant (λ), time constant (τ), low-pass filter</p>
+  <dl>
+    <dt>空間上</dt><dd>電流每經過一個單元，就有一部分從 100 kΩ 漏到細胞外，往下傳的電流越來越少，所以電壓隨距離衰減。衰減快慢由膜電阻與軸向電阻的比值決定：length constant λ ∝ √(R<sub>m</sub>/R<sub>i</sub>)。這裡約 √(100 kΩ / 10 kΩ) ≈ 3 個單元 <span class="tag inf">推論：離散近似</span>。</dd>
+    <dt>時間上</dt><dd>後面的電容要經過一串 10 kΩ 才能充電，等於多了幾層 RC 濾波，所以上升變慢、波峰變晚、短刺激被削得更多。</dd>
+  </dl>
+</div>
+<div class="qa">
+  <h4>Q5 生理意義</h4>
+  <p class="en">Keywords: passive (electrotonic) propagation, cable theory, dendrite, decremental conduction, spatial and temporal filtering</p>
+  <dl>
+    <dt>代表什麼</dt><dd>一段沒有 voltage-gated channel 的神經突（dendrite 或 axon）。每個 Passive unit 是一小段膜，10 kΩ 是細胞質，整串就是 cable theory 的電路模型。</dd>
+    <dt>可以談</dt><dd>離 soma 越遠的 synaptic input，傳到 soma 時越小、越慢、越平；被動傳導會遞減（decremental），所以長距離傳遞需要 action potential。</dd>
+  </dl>
+</div>
+</div>
+</details>
+
+<!-- ===================== 3 Active ===================== -->
+<details class="sec" id="s3" open>
+<summary><span class="no">3</span><h2>#2-2 Active membrane</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s3-circuit">電路架構</h3>
+<p>這次只有一個膜電位節點 Vm，三種 channel 和刺激器全部並聯在 Vm 與 Extracellular 之間。講義指定用 1 塊 active membrane PCB。</p>
+<div class="flow">
+<pre class="mermaid">
+flowchart LR
+  ST["Neuron Stimulator"]:::stim -->|"I_stim 流入"| VM(("Vm<br/>Intracellular"))
+  VM --- LK["Leak channel<br/>1 µF ∥ 100 kΩ<br/>膜電容與漏電"]:::pas
+  VM --- FI["Fast inward channel<br/>從電源把電流灌入 Vm<br/>把 Vm 往上推"]:::inw
+  VM --- SO["Slow outward channel<br/>把 Vm 的電流放到 Extracellular<br/>把 Vm 拉回 0 V"]:::outw
+  LK & FI & SO --- EX["Extracellular（GND）"]:::node
+  CH["CH1 探棒"]:::scope -.-> VM
+  classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef pas fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef inw fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+  classDef outw fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef node fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+  classDef scope fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2B00
+</pre>
+</div>
+
+<h3 id="s3-channels">兩個 channel 的接法</h3>
+<p>依講義的模擬器電路圖整理。兩塊板子結構很像，差別在「門檻前面有沒有一個 RC 延遲」，以及「電流往哪裡流」。</p>
+<h4>Fast inward channel（類比 Na⁺ channel）</h4>
+<div class="flow">
+<pre class="mermaid">
+flowchart TB
+  VM(("Vm")) -->|"anode → cathode"| D["1N4148 二極體"]:::inw
+  D --> X(("X"))
+  X --> R3["3 MΩ 到 Extracellular<br/>沒觸發時把 X 拉回 0 V"]:::node
+  X -->|"base"| Q2["2N3904（NPN）"]:::inw
+  Q2 -->|"emitter"| RE["100 kΩ 到 Extracellular<br/>講義紅色箭頭指的電阻"]:::risk
+  Q2 -->|"collector 把 base 拉低"| Q1["2N4403（PNP）"]:::inw
+  PS["電源 +<br/>模擬器：9 V 經 1 kΩ"]:::node -->|"emitter"| Q1
+  Q1 -->|"collector：inward current"| VM
+  classDef inw fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+  classDef risk fill:#FBE3DE,stroke:#A33A2B,stroke-width:3px,color:#4A120A,stroke-dasharray:6 3
+  classDef node fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+</pre>
+</div>
+<ul class="specs">
+  <li>Vm 要先超過「二極體壓降 + 2N3904 的 V<sub>BE</sub>」，2N3904 才會導通。<span class="tag inf">推論</span>這就是門檻（threshold），約 1 V 上下，實際值請從波形量。</li>
+  <li>2N3904 一導通，就把 2N4403 的 base 拉低，2N4403 打開，電流從電源灌進 Vm。Vm 更高 → 2N3904 更開 → 灌更多：這是<b>正回饋</b>，所以 AP 的上升很快。</li>
+  <li>紅箭頭電阻（2N3904 的 emitter 電阻）限制 2N3904 的電流，等於決定正回饋有多強。#2-2 Q4 就是改這顆。</li>
+</ul>
+<h4>Slow outward channel（類比 K⁺ channel）</h4>
+<div class="flow">
+<pre class="mermaid">
+flowchart TB
+  VM(("Vm")) --> R1["100 kΩ"]:::outw
+  R1 --> Y(("Y"))
+  Y --> C["1 µF 到 Extracellular<br/>Y 跟著 Vm 慢慢充電"]:::outw
+  Y -->|"anode → cathode"| D["1N4148 二極體"]:::outw
+  D --> Z(("Z"))
+  Z --> R3["3 MΩ 到 Extracellular"]:::node
+  Z -->|"base"| Q2["2N3904（NPN）<br/>emitter 直接接 Extracellular"]:::outw
+  Q2 -->|"collector 把 base 拉低"| Q1["2N4403（PNP）"]:::outw
+  VM -->|"emitter"| Q1
+  Q1 -->|"collector：outward current"| RL["1 kΩ 到 Extracellular"]:::outw
+  classDef outw fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef node fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+</pre>
+</div>
+<ul class="specs">
+  <li>門檻前面多了一組 100 kΩ + 1 µF（時間常數 100 ms）：Vm 升高後，Y 要慢慢充電才會到門檻，所以這個 channel 會<b>延遲</b>打開。</li>
+  <li>打開後，電流從 Vm 經 2N4403 和 1 kΩ 流到 Extracellular，把 Vm 拉回接近 0 V。這是<b>負回饋</b>。</li>
+  <li>Vm 回到 0 V 以後，1 µF 還要一段時間才放完電，這段時間 outward 仍然開著。</li>
+</ul>
+
+<h3 id="s3-ap">Action potential 怎麼產生</h3>
+<div class="flow">
+<pre class="mermaid">
+flowchart TD
+  A["① 靜止：Vm ≈ 0 V<br/>兩個 channel 都關著"]:::node --> B["② 按住 SW<br/>I_stim 對 1 µF 充電<br/>Vm 沿 RC 曲線上升"]:::stim
+  B --> C{"Vm 超過門檻？<br/>約 1 V：二極體 + V_BE"}:::chk
+  C -->|"否：放開 SW 後<br/>Vm 沿 RC 曲線回到 0"| A
+  C -->|是| D["③ Fast inward 打開<br/>電源電流灌入，Vm 再升高<br/>2N3904 開更大（正回饋）"]:::inw
+  D --> E["④ Vm 快速衝向電源電壓<br/>上升相 depolarization"]:::inw
+  E --> F["⑤ Slow outward 的 1 µF<br/>經 100 kΩ 慢慢充到門檻後打開"]:::outw
+  F --> G["⑥ Vm 經 1 kΩ 被拉回 0 V<br/>Vm 低於門檻，fast inward 關閉<br/>下降相 repolarization"]:::outw
+  G --> H["⑦ 1 µF 還沒放完電，outward 仍開著<br/>這段時間很難再觸發<br/>refractory period"]:::outw
+  H --> A
+  classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef inw fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+  classDef outw fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef node fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+  classDef chk fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+</pre>
+</div>
+<p class="note-inf"><span class="tag inf">推論</span>依電路圖分析的運作順序。如果 SW 一直按著，⑦ 結束後 Vm 會再被充到門檻，出現<b>連續發放</b>（repetitive firing）；電流越大，發放越快。</p>
+
+<h3 id="s3-flow">實驗流程</h3>
+<div class="flow">
+<pre class="mermaid">
+flowchart TD
+  S0(["開始"]):::ok --> S1["組 active membrane PCB<br/>Stimulator + Leak + Fast inward + Slow outward"]:::node
+  S1 --> S2["Q1：拍照、標元件"]:::node
+  S2 --> S3["CH1 夾 Vm，鱷魚夾夾 Extracellular<br/>不按 SW，先讀靜止電位"]:::scope
+  S3 --> S4["旋鈕從小電流開始慢慢加大<br/>找到剛好能觸發 AP 的電流"]:::stim
+  S4 --> S5["Q2：選一個電流記錄一個 AP<br/>量五個參數"]:::scope
+  S5 --> S6["Q3：從門檻往上取 5 個電流<br/>每個都量 I_stim 與五個參數"]:::scope
+  S6 --> S7["Q4：紅箭頭電阻換成<br/>50k、100k、300k、820k、3M<br/>電流固定並記下"]:::inw
+  S7 --> S8["Q5：靜止電位與兩個 reversal potential"]:::scope
+  S8 --> S9["Q6：拔掉 Fast inward 模擬 TTX<br/>或拔掉 Slow outward 模擬 TEA"]:::risk
+  S9 --> S10(["作圖、回答 Q7"]):::ok
+  classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef inw fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+  classDef node fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+  classDef scope fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2B00
+  classDef risk fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+  classDef ok fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2.5px,color:#16301C
+</pre>
+</div>
+
+<h3 id="s3-steps">逐步操作</h3>
+<ol class="steps">
+  <li><b class="t">組裝並拍照（Q1）</b>
+    <ul>
+      <li>在 active membrane PCB 上插：Neuron Stimulator、1 個 Passive unit（當 Leak channel）、Fast Inward、Slow Out。</li>
+      <li>拍照並標出每塊板子的名稱，以及 Fast Inward、Slow Out 上的 2N4403、2N3904、1N4148、各電阻與電容。紅箭頭電阻要特別標出來。</li>
+    </ul></li>
+  <li><b class="t">讀靜止電位</b>
+    <ul>
+      <li>CH1 夾 Vm，1–2 V/div、20–50 ms/div，Trigger CH1 Rising，Level 先設 0.5 V。</li>
+      <li>不按 SW，記下基線電壓。應該接近 0 V。</li>
+    </ul></li>
+  <li><b class="t">找門檻電流</b>
+    <ul>
+      <li>旋鈕轉到電流最小，按住 SW 約 1 秒，看有沒有 AP（Vm 突然往上衝）。</li>
+      <li>沒有就把電流加大一點再按，直到剛好出現 AP。記下這個電流，Q3 就從這裡往上取。</li>
+      <li><span class="tag warn">注意</span>如果旋鈕轉到最小還是會觸發，代表門檻比最小電流還低；直接從最小電流開始取 5 個點即可，報告裡註明。</li>
+    </ul></li>
+  <li><b class="t">記錄一個 AP（Q2）</b>
+    <ul>
+      <li>選一個比門檻稍大的電流，用 Single 抓一個完整 AP。</li>
+      <li>調 s/div 讓 AP 佔畫面約一半，量五個參數並在圖上標出。</li>
+      <li>如果按太久出現好幾個 AP，量第一個就好；或縮短按壓時間。</li>
+    </ul></li>
+  <li><b class="t">五個刺激電流（Q3）</b>
+    <ul>
+      <li>從門檻到旋鈕最大之間平均取 5 個電流，每個都用方法 A 量出實際值。</li>
+      <li>每個電流記錄一個 AP，量 peak amplitude、half-width、rise τ、decay τ。</li>
+      <li>四張圖，橫軸都是 stimulation current。</li>
+      <li><span class="tag opt">提示</span>同時記下「按下 SW 到 AP 波峰」的時間（latency），討論時很好用。</li>
+    </ul></li>
+  <li><b class="t">換紅箭頭電阻（Q4）</b>
+    <ul>
+      <li>換上 DIP 版的 Fast Inward 板（或助教提供的換法），用 DIP 開關依序切到 50k、100k、300k、820k、3M。</li>
+      <li><b>電流固定</b>，寫下用的 stimulation current。建議選一個在 100k 時能穩定觸發的電流。</li>
+      <li>每個電阻值記錄一次。如果某個值完全沒有 AP，那個點記錄為「no AP」，並把 Vm 的波形也存下來。</li>
+      <li>四張圖，橫軸是電阻值。電阻跨 50k 到 3M，<span class="tag opt">提示</span>橫軸用對數刻度（log scale）比較好看。</li>
+    </ul></li>
+  <li><b class="t">靜止電位與 reversal potential（Q5）</b>
+    <ul>
+      <li>Resting membrane potential：步驟 2 讀到的基線。</li>
+      <li>Inward current 的 reversal potential：inward current 會把 Vm 推向的上限。用三用電表量 Fast inward 的電源電壓；AP 的波峰會接近但略低於它。</li>
+      <li>Outward current 的 reversal potential：outward current 把 Vm 拉向的電壓，也就是 Extracellular（0 V）。看 AP 結束後 Vm 被拉到哪裡。</li>
+    </ul></li>
+  <li><b class="t">模擬 TTX 或 TEA（Q6）</b>
+    <ul>
+      <li>題目是 (1) <b>或</b> (2)，選一個做即可；時間夠可以兩個都做來比較。</li>
+      <li>先關電源。TTX：拔掉 Fast Inward 板；TEA：拔掉 Slow Out 板。</li>
+      <li>用跟 Q2 一樣的電流刺激，記錄波形並量五個參數，和 Q2 的 AP 放在一起比較。</li>
+      <li><span class="tag warn">注意</span>TEA 情況下 Vm 衝上去後可能下不來（見下方預期趨勢）。記錄完拔掉電源，讓電路歸零再繼續。</li>
+    </ul></li>
+</ol>
+
+<h3 id="s3-expect">預期趨勢</h3>
+<p><span class="tag inf">推論</span>以下由電路圖分析推得，沒有實測數值；請以你們量到的為準，量到不一樣的趨勢也是好的討論材料。</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>改變</th><th>Peak amplitude</th><th>Half-width</th><th>Rise τ</th><th>Decay τ</th><th>其他現象</th></tr></thead>
+  <tbody>
+    <tr><td><span class="name">加大 stimulation current</span>（Q3）</td><td>幾乎不變（all-or-none，上限由電源決定）</td><td>大致不變</td><td>變短：更快到門檻</td><td>大致不變：由 slow outward 決定</td><td>Latency 變短；長按時發放頻率變高</td></tr>
+    <tr><td><span class="name">加大紅箭頭電阻</span>（Q4）</td><td>可能變小</td><td>可能改變，看實測</td><td>變長：正回饋變弱</td><td>看實測</td><td>門檻電流變高；820k、3M 可能不再觸發 AP</td></tr>
+    <tr><td><span class="name">TTX：拔 Fast inward</span>（Q6）</td><td>小很多，約 I × R</td><td>由刺激時間決定</td><td>接近 RC 充電</td><td>接近 RC 放電</td><td>沒有 AP，只剩被動反應；Vm 夠高時 slow outward 仍可能把它往下拉</td></tr>
+    <tr><td><span class="name">TEA：拔 Slow outward</span>（Q6）</td><td>接近或略高於正常 AP</td><td>大幅變長</td><td>和正常 AP 相近</td><td>很長，甚至不回落</td><td>沒有東西把 Vm 拉回來，Vm 可能卡在高電位，要斷電才會重置</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="s3-q">題目對應</h3>
+<div class="qa">
+  <h4>Q1 電路照片並標註元件</h4>
+  <dl><dt>要交</dt><dd>標好四塊板子與主要元件的照片，紅箭頭電阻要標出來。</dd></dl>
+</div>
+<div class="qa">
+  <h4>Q2 量 action potential 的性質</h4>
+  <dl><dt>要交</dt><dd>一張 AP 截圖，標出 stimulation current、peak amplitude、half-width、rise τ、decay τ 的量測點與格子大小。</dd></dl>
+</div>
+<div class="qa">
+  <h4>Q3 五個刺激電流</h4>
+  <p class="en">Keywords: threshold, all-or-none, latency, repetitive firing</p>
+  <dl>
+    <dt>要交</dt><dd>四張圖（current vs amplitude、half-width、rise τ、decay τ）與觀察說明。</dd>
+    <dt>想法</dt><dd>電流只負責把 Vm 推到門檻；過了門檻，AP 的形狀由 channel 自己決定。所以哪些參數會跟著電流變、哪些不會？</dd>
+  </dl>
+</div>
+<div class="qa">
+  <h4>Q4 加大紅箭頭電阻</h4>
+  <p class="en">Keywords: positive feedback, conductance, channel density, threshold</p>
+  <dl>
+    <dt>要交</dt><dd>stimulation current，以及四張圖（resistor vs amplitude、half-width、rise τ、decay τ）。</dd>
+    <dt>想法</dt><dd>這顆電阻越大，2N3904 能流的電流越小，2N4403 被打開得越少，inward current 越弱。可以類比為 Na⁺ channel 變少或導電度（conductance）變小。</dd>
+  </dl>
+</div>
+<div class="qa">
+  <h4>Q5 Resting potential 與 reversal potential</h4>
+  <dl>
+    <dt>要交</dt><dd>三個電壓值，以及怎麼量到的。</dd>
+    <dt>想法</dt><dd>Leak 只接到 Extracellular，沒有電池，所以靜止時 Vm 停在 0 V。Inward 的電流來自電源，最多把 Vm 推到接近電源電壓；outward 的電流流到 Extracellular，最多把 Vm 拉回 0 V。可以和真實神經元比較：真實的靜止電位約 −70 mV、E<sub>Na</sub> 約 +50 mV、E<sub>K</sub> 約 −90 mV；這個電路把整個範圍平移成 0 V 以上，而且 outward 的反轉電位等於靜止電位，所以不會有 after-hyperpolarization。</dd>
+  </dl>
+</div>
+<div class="qa">
+  <h4>Q6 模擬 TTX 或 TEA</h4>
+  <p class="en">Keywords: TTX blocks voltage-gated Na⁺ channels; TEA blocks K⁺ channels</p>
+  <dl>
+    <dt>為什麼這樣做</dt><dd>TTX 讓 Na⁺ channel 完全不導通，等於把 fast inward channel 從電路中拿掉；TEA 對 K⁺ channel 也一樣，對應 slow outward channel。拔板子就是 100% 阻斷。部分阻斷可以用加大紅箭頭電阻來模擬（就是 Q4）。</dd>
+    <dt>要交</dt><dd>stimulation current、阻斷前後的波形對照、五個參數的比較表。</dd>
+  </dl>
+</div>
+<div class="qa">
+  <h4>Q7 生理意義</h4>
+  <p class="en">Keywords: Hodgkin–Huxley model, action potential generation, depolarization, repolarization, refractory period</p>
+  <dl><dt>代表什麼</dt><dd>一小塊具有 voltage-gated channel 的膜，例如 axon initial segment 或 node of Ranvier。Leak、Na⁺（快、正回饋）、K⁺（慢、負回饋）三種電流合起來，產生有門檻、all-or-none、有不反應期的 action potential，對應 Hodgkin–Huxley model 的概念。</dd></dl>
+</div>
+</div>
+</details>
+
+<!-- ===================== 4 Passive to active ===================== -->
+<details class="sec" id="s4" open>
+<summary><span class="no">4</span><h2>#2-3 Passive to active membrane</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s4-circuit">電路架構</h3>
+<p>把 #2-1 的被動鏈接到 #2-2 的主動膜前面：電流從被動鏈的一端注入，要經過 n 個 Passive unit（n = 0 到 4）才到得了 active membrane。講義指定 1 塊 passive PCB + 1 塊 active PCB。</p>
+<div class="flow big">
+<pre class="mermaid">
+flowchart LR
+  ST["Neuron Stimulator"]:::stim -->|"I_stim"| P1
+  subgraph PP["Passive membrane PCB"]
+    P1(("1")):::pas ---|"10 kΩ"| P2(("2")):::pas ---|"10 kΩ ⋯"| PN(("n")):::pas
+  end
+  subgraph AA["Active membrane PCB"]
+    VM(("Vm")) --- LK["Leak"]:::pas
+    VM --- FI["Fast inward"]:::inw
+    VM --- SO["Slow outward"]:::outw
+    LK & FI & SO --- EXA(("Extracellular<br/>active 端"))
+  end
+  PN ---|"10 kΩ"| VM
+  EXA ---|"100 Ω × 段數"| GND["GND<br/>Stimulator 端"]:::node
+  CH1["CH1：intracellular<br/>講義上方紅箭頭"]:::scope -.-> VM
+  CH2["CH2：extracellular<br/>講義下方紅箭頭"]:::scope -.-> EXA
+  classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef pas fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef inw fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+  classDef outw fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef node fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+  classDef scope fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2B00
+</pre>
+</div>
+<ul class="specs">
+  <li>講義電路圖的兩個紅箭頭都在 active membrane 那一端：上面那個在 Vm（Fast inward 上方的 Intracellular 線），下面那個在同一位置的 Extracellular 線。</li>
+  <li>兩個探棒的鱷魚夾都夾 Stimulator 那端的 GND。Extracellular 線上的 100 Ω 串起來，電流流過會產生很小的電壓，CH2 量的就是它。</li>
+</ul>
+<div class="note-warn">
+  <p><span class="tag warn">注意</span>「改變 passive unit 數量」時，要讓<b>刺激點到 active membrane 之間的單元數</b>真的變少：把 Stimulator 往 active 那端移，或依助教指定的接法。<span class="tag inf">推論</span>如果只是把中間的 Passive unit 拔掉，底板上的 10 kΩ 還在，電流仍要經過同樣多的軸向電阻，結果會和題目想問的不同。不論用哪種接法，報告裡都要寫清楚。</p>
+</div>
+
+<h3 id="s4-flow">實驗流程</h3>
+<div class="flow">
+<pre class="mermaid">
+flowchart TD
+  S0(["開始"]):::ok --> S1["接好 Stimulator + 4 個 Passive unit<br/>+ Active membrane PCB<br/>Q1：拍照、標元件"]:::node
+  S1 --> S2["Q2：記錄一個 AP，量五個參數"]:::scope
+  S2 --> S3["Q3：長按 SW 約 1 秒"]:::stim
+  S3 --> S4["旋鈕從小電流慢慢加大<br/>直到剛好出現 AP"]:::stim
+  S4 --> S5["量出並記下 I_min"]:::scope
+  S5 --> S6{"n = 4、3、2、1、0<br/>都做了？"}:::chk
+  S6 -->|"否：少一個 Passive unit"| S3
+  S6 -->|是| S7["Q4：電流固定在 I_min（n = 4）<br/>n = 4、3、2、1、0 各記錄一次"]:::stim
+  S7 --> S8["量刺激開始到第一個 AP 波峰的 delay"]:::scope
+  S8 --> S9["Q5：改成 2 Passive + Active<br/>CH1 intracellular、CH2 extracellular 同時記錄"]:::scope
+  S9 --> S10(["作圖、回答 Q6"]):::ok
+  classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef node fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+  classDef scope fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2B00
+  classDef chk fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef ok fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2.5px,color:#16301C
+</pre>
+</div>
+
+<h3 id="s4-steps">逐步操作</h3>
+<ol class="steps">
+  <li><b class="t">組裝並拍照（Q1）</b>
+    <ul>
+      <li>Passive PCB 上：Stimulator + 4 個 Passive unit；Active PCB 上：Leak（第 5 個 Passive unit）、Fast Inward、Slow Out。兩塊 PCB 照講義照片接起來。</li>
+      <li>拍照並標出兩塊 PCB、每塊板子、上下排電阻，以及 CH1、CH2 的量測點。</li>
+    </ul></li>
+  <li><b class="t">記錄一個 AP（Q2）</b>
+    <ul>
+      <li>CH1 夾 active 端的 Vm，加大電流直到能穩定觸發，記錄一個 AP 並量五個參數。</li>
+      <li>和 #2-2 Q2 的 AP 比較（同一塊 active membrane，只是前面多了被動鏈）。</li>
+    </ul></li>
+  <li><b class="t">最小刺激電流 vs 單元數（Q3）</b>
+    <ul>
+      <li>題目要 <b>long pulse</b>：每次按住 SW 約 1 秒以上（超過 5 倍時間常數），讓 Vm 有時間到穩態。</li>
+      <li>n = 4 開始：電流從最小慢慢加大，每加一點按一次，直到剛好出現 AP。用方法 A 量出這個電流，就是 I<sub>min</sub>(4)。</li>
+      <li>減少一個單元，重複，一路做到 n = 0（Stimulator 直接接 active membrane）。</li>
+      <li>作圖：橫軸 number of passive units，縱軸 minimum stimulation current。</li>
+      <li><span class="tag warn">注意</span>n = 4 時 I<sub>min</sub> 可能已經接近旋鈕的最大電流。如果轉到最大都觸發不了，就記錄「&gt; 最大電流」並在報告中說明。</li>
+    </ul></li>
+  <li><b class="t">固定電流下的 delay（Q4）</b>
+    <ul>
+      <li>電流固定在 I<sub>min</sub>(4)，之後不要再轉旋鈕。</li>
+      <li>CH1 夾刺激點（第一個單元，用來標刺激開始時間），CH2 夾 active 端的 Vm。</li>
+      <li>n = 4、3、2、1、0 各按一次（每次按住同樣長、夠長），量 CH1 開始上升到 CH2 第一個 AP 波峰的時間。</li>
+      <li>作圖：橫軸 number of passive units，縱軸 delay of first peak。</li>
+    </ul></li>
+  <li><b class="t">Intracellular vs extracellular（Q5）</b>
+    <ul>
+      <li>接成 2 Passive + 1 Active。CH1 夾上方紅箭頭（active 端 Vm），CH2 夾下方紅箭頭（active 端的 Extracellular 線）。</li>
+      <li>CH2 的訊號很小，先用 10–50 mV/div，Coupling 維持 DC；Trigger 用 CH1。</li>
+      <li>兩通道同時記錄一個 AP，分別量 peak amplitude、half-width、rise τ、decay τ，列表比較。</li>
+      <li><span class="tag opt">提示</span>同時注意 CH2 的極性（正或負）、形狀是否像 CH1 的變化率，以及 CH2 的峰出現在 CH1 的哪個階段。</li>
+    </ul></li>
+</ol>
+
+<h3 id="s4-expect">預期趨勢</h3>
+<p><span class="tag inf">推論</span>只用被動部分做的線性模擬（每個單元 1 µF ∥ 100 kΩ，以 10 kΩ 串接，active 端 Vm 碰到門檻就算觸發），可以預期單元數的影響：</p>
+<div class="scroll">
+<table class="narrow">
+  <thead><tr><th class="num">Passive unit 數 n</th><th class="num">刺激點到 Vm 的轉移電阻</th><th class="num">I<sub>min</sub>（相對於 n = 0）</th><th class="num">用 1.05 × I<sub>min</sub>(4) 刺激時，到門檻的時間</th></tr></thead>
+  <tbody>
+    <tr><td class="num">0</td><td class="num">100 kΩ</td><td class="num">1.0 ×</td><td class="num">14 ms</td></tr>
+    <tr><td class="num">1</td><td class="num">47.6 kΩ</td><td class="num">2.1 ×</td><td class="num">37 ms</td></tr>
+    <tr><td class="num">2</td><td class="num">29.3 kΩ</td><td class="num">3.4 ×</td><td class="num">73 ms</td></tr>
+    <tr><td class="num">3</td><td class="num">19.8 kΩ</td><td class="num">5.1 ×</td><td class="num">134 ms</td></tr>
+    <tr><td class="num">4</td><td class="num">13.9 kΩ</td><td class="num">7.2 ×</td><td class="num">341 ms</td></tr>
+  </tbody>
+</table>
+</div>
+<ul class="specs">
+  <li><b>Q3</b>：單元越多，注入的電流在路上漏掉越多，要更大的電流才能把遠端的 Vm 推到門檻，I<sub>min</sub> 隨 n 上升。</li>
+  <li><b>Q4</b>：電流固定時，單元越多，Vm 爬得越慢，第一個 AP 越晚出現；n = 4 時因為電流只比門檻大一點點，delay 特別長。表中的時間是「到門檻」，實際波峰還要再加上 AP 上升的時間。</li>
+  <li><span class="tag inf">推論</span>單元很多時 Vm 爬得很慢，Slow outward 的 1 µF 可能跟著充電，在 fast inward 觸發前就先打開，讓 AP 變得更難觸發（類似 accommodation）。如果 n = 4 時結果不穩定，這可能是原因之一。</li>
+  <li><b>Q5</b>：Extracellular 訊號應該比 intracellular 小很多（mV 等級），形狀比較像膜電流（和 Vm 的變化率有關），可能是雙相（biphasic），極性也可能相反。這是教科書上 extracellular recording 的典型特徵，實際形狀以你的示波器為準。</li>
+</ul>
+
+<h3 id="s4-q">題目對應</h3>
+<div class="qa">
+  <h4>Q1–Q2 照片與 AP 性質</h4>
+  <dl><dt>要交</dt><dd>標註好的照片；一張 AP 截圖，標出五個參數與格子大小。</dd></dl>
+</div>
+<div class="qa">
+  <h4>Q3 單元數 vs 最小刺激電流</h4>
+  <p class="en">Keywords: rheobase, current leak, transfer resistance, length constant</p>
+  <dl>
+    <dt>要交</dt><dd>一張圖（number of passive units vs minimum stimulation current）與解釋。</dd>
+    <dt>想法</dt><dd>和 #2-1 一樣：電流每經過一個單元就漏掉一部分，所以注入點離 active membrane 越遠，需要的電流越大。</dd>
+  </dl>
+</div>
+<div class="qa">
+  <h4>Q4 單元數 vs 第一個波峰的 delay</h4>
+  <p class="en">Keywords: latency, time constant, charging time, conduction delay</p>
+  <dl>
+    <dt>要交</dt><dd>寫出使用的電流 I<sub>min</sub>(4)，一張圖（number of passive units vs delay of first peak）與解釋。</dd>
+    <dt>想法</dt><dd>遠端的 Vm 需要更長時間才能被充到門檻，這和 #2-1 看到「越遠越慢」是同一件事。</dd>
+  </dl>
+</div>
+<div class="qa">
+  <h4>Q5 Intracellular vs extracellular recording</h4>
+  <p class="en">Keywords: extracellular recording, membrane current, field potential, signal amplitude</p>
+  <dl>
+    <dt>要交</dt><dd>兩通道同時記錄的截圖（標出各自的 V/div），以及四個參數的比較表。</dd>
+    <dt>想法</dt><dd>Intracellular 直接量膜兩側的電壓；extracellular 量的是膜電流流過細胞外電阻（這裡是 100 Ω）造成的壓降，所以小很多，形狀也不一樣。</dd>
+  </dl>
+</div>
+<div class="qa">
+  <h4>Q6 生理意義</h4>
+  <p class="en">Keywords: dendritic integration, axon initial segment, trigger zone, myelinated axon, node of Ranvier</p>
+  <dl><dt>代表什麼</dt><dd>可以從兩個角度寫：(1) 輸入從 dendrite 被動傳到 soma／axon initial segment，在那裡決定要不要發 AP，距離越遠越難觸發也越慢；(2) 有 myelin 的 axon：被動的 internode 接主動的 node of Ranvier。</dd></dl>
+</div>
+</div>
+</details>
+
+<!-- ===================== 5 報告與除錯 ===================== -->
+<details class="sec" id="s5" open>
+<summary><span class="no">5</span><h2>報告整理與除錯</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s5-check">交件前檢查</h3>
+<ul class="check">
+  <li>每張示波器圖都寫了 V/div 與 s/div，並標出量測點、範圍或長度。</li>
+  <li>每題都寫了 stimulation current（單位 A，例如 5.2 × 10⁻⁵ A）。</li>
+  <li>每張圖都有座標軸名稱與單位、圖例；#2-1 Q3 每張圖都有第 1 個與最後一個單元兩條線。</li>
+  <li>每張電路照片都有標註。</li>
+  <li>寫明 rise／decay time constant 的定義（63%／37%）；講義的 “decade” 已理解為 decay。</li>
+  <li>和講義電路圖不一樣的地方（電阻值、電源電壓、接法）都寫清楚。</li>
+  <li>全英文、Times New Roman 12、檔名 <code>HW02_學號_姓名.pdf</code>。</li>
+  <li>#2-0 合照與組員名單。</li>
+</ul>
+
+<h3 id="s5-debug">常見問題</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>現象</th><th>可能原因</th><th>怎麼處理</th></tr></thead>
+  <tbody>
+    <tr><td>按 SW 示波器沒反應</td><td>電源沒接、Trigger Level 太高、探棒鱷魚夾沒夾 GND</td><td>Mode 先改 Auto 看有沒有基線；Level 調低到 0.1 V；檢查鱷魚夾</td></tr>
+    <tr><td>波形一直跑、停不下來</td><td>Trigger Mode 在 Auto</td><td>改 Single 或 Normal</td></tr>
+    <tr><td>波形被切掉（頂到畫面上緣）</td><td>V/div 太小</td><td>調大 V/div，或把基線往下移</td></tr>
+    <tr><td>Passive 波形看起來像斜線，沒有彎</td><td>s/div 太小，只看到一小段</td><td>調到 100–200 ms/div</td></tr>
+    <tr><td>基線一直抖、雜訊很大</td><td>探棒鱷魚夾太長或沒夾好、旁邊有手機等干擾</td><td>夾好 GND、縮短接線；示波器可開 averaging 或 bandwidth limit</td></tr>
+    <tr><td>Active membrane 一按就連續發放很多 AP</td><td>電流大且按太久</td><td>縮短按壓時間，或只量第一個 AP</td></tr>
+    <tr><td>Active membrane 怎麼按都沒有 AP</td><td>電流太小、板子插反、Fast Inward 沒有電源</td><td>旋鈕轉大；檢查 Intracellular／Extracellular 方向；用電表量 Fast inward 的電源</td></tr>
+    <tr><td>Vm 衝上去後下不來</td><td>Slow Out 沒插好或被拔掉（TEA 情況）</td><td>斷電重置；正常實驗時檢查 Slow Out 是否插好</td></tr>
+    <tr><td>Extracellular 訊號完全看不到</td><td>V/div 太大，或夾錯點</td><td>用 10 mV/div 以下；確認夾的是 active 端的 Extracellular 線</td></tr>
+    <tr><td>同一個條件每次量的不一樣</td><td>手按時間不同、電容還沒放完電就再按</td><td>每次刺激間隔至少 1 秒；同一條件量 2–3 次取平均</td></tr>
+  </tbody>
+</table>
+</div>
+</div>
+</details>
+
+<footer>依據 Homework 2 講義（2026）的題目與電路圖整理。標示「推論」的內容來自電路分析或理想元件模擬，不是實測數據；元件值以實體 PCB 為準。</footer>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="../../diagrams.js"></script>
+<script>
+(function(){
+  var body = document.body;
+  var secs = Array.prototype.slice.call(document.querySelectorAll('details.sec'));
+  var mq = window.matchMedia('(max-width:1000px)');
+
+  /* ---- sidebar open / close ---- */
+  function setSide(open){
+    body.classList.toggle('side-closed', !open);
+    document.getElementById('sideOpen').setAttribute('aria-expanded', open ? 'true' : 'false');
+    try{ if(!mq.matches) localStorage.setItem('ncSide', open ? '1' : '0'); }catch(e){}
+  }
+  var saved = null; try{ saved = localStorage.getItem('ncSide'); }catch(e){}
+  setSide(mq.matches ? false : saved !== '0');
+  document.getElementById('sideClose').addEventListener('click', function(){ setSide(false); });
+  document.getElementById('sideOpen').addEventListener('click', function(){ setSide(true); });
+  document.getElementById('scrim').addEventListener('click', function(){ setSide(false); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && mq.matches) setSide(false); });
+
+  /* ---- links open their section ---- */
+  function openFor(hash){
+    if(!hash || hash.length < 2) return;
+    var t = document.getElementById(hash.slice(1));
+    if(!t) return;
+    var d = t.tagName === 'DETAILS' ? t : t.closest('details.sec');
+    if(d && !d.open){ d.open = true; }
+    if(t.tagName !== 'DETAILS'){ setTimeout(function(){ t.scrollIntoView({block:'start'}); }, 30); }
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(){ openFor(a.getAttribute('href')); if(mq.matches && a.closest('.side')) setSide(false); });
+  });
+  openFor(location.hash);
+  window.addEventListener('hashchange', function(){ openFor(location.hash); });
+
+  document.getElementById('openAll').addEventListener('click', function(){ secs.forEach(function(d){ d.open = true; }); });
+  document.getElementById('closeAll').addEventListener('click', function(){ secs.forEach(function(d){ d.open = false; }); });
+
+  /* ---- highlight current position ---- */
+  if('IntersectionObserver' in window){
+    var links = {};
+    document.querySelectorAll('.side nav a').forEach(function(a){ links[a.getAttribute('href').slice(1)] = a; });
+    var targets = Object.keys(links).map(function(id){ return document.getElementById(id); }).filter(Boolean);
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting && links[en.target.id]){
+          Object.keys(links).forEach(function(k){ links[k].classList.remove('active'); });
+          links[en.target.id].classList.add('active');
+        }
+      });
+    }, {rootMargin:'-15% 0px -75% 0px'});
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+</body>
+</html>
