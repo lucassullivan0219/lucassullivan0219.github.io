@@ -1,4 +1,4 @@
-/* Shared mermaid handling for the UAV pages.
+/* Shared mermaid handling for the long guide pages (UAV, Neuron Circuits).
    - Renders diagrams one at a time with unique ids. mermaid.run ids diagrams
      by Date.now(), so parallel calls collide and diagrams bleed into each other.
    - Renders only inside open <details class="sec">, since hidden text can't be measured.
