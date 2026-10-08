@@ -13,6 +13,7 @@ export const JDY_CHARACTERISTIC = '0000ffe1-0000-1000-8000-00805f9b34fb';
 
 const SCAN_MS = 20000;
 const RECONNECT_TRIES = 10, RECONNECT_DELAY_MS = 2000;
+const OPEN_TRIES = 3, OPEN_RETRY_MS = 700;
 
 export function bleCapabilities() {
   const bt = navigator.bluetooth;
@@ -38,6 +39,8 @@ export class BleTransport extends EventTarget {
   #service; #characteristic; #namePrefix;
   #char = null; #scan = null; #scanTimer = 0;
   #userDisconnect = false;
+  #opening = false;
+  #droppedAt = null;
   #watched = new WeakSet();
   #onNotify = e => {
     const v = e.target.value;
@@ -159,8 +162,16 @@ export class BleTransport extends EventTarget {
         return;
       }
       const noService = e.name === 'NotFoundError';
+      const dropped = e.name === 'NetworkError' && !entry.device.gatt.connected;
       if (noService) this.#log('this device has no FFE0/FFE1 service; it is not the headset module');
-      this.#state('error', { reason: noService ? 'Not a JDY module (no FFE0)' : e.message });
+      if (dropped) {
+        this.#log('the link keeps dropping right after connecting. Check: (1) the ESP32 dongle is unplugged ' +
+          '(it reconnects to the headset every second); (2) on Windows, the JDY-23 is not paired under ' +
+          'Settings › Bluetooth & devices (remove it if it is); then try again.');
+      }
+      this.#state('error', {
+        reason: noService ? 'Not a JDY module (no FFE0)' : dropped ? 'Link dropped right after connecting (see Log)' : e.message,
+      });
     }
   }
 
@@ -177,20 +188,47 @@ export class BleTransport extends EventTarget {
     this.#emit('devices');
     dev.removeEventListener('gattserverdisconnected', this.#onDisconnected);
     dev.addEventListener('gattserverdisconnected', this.#onDisconnected);
-    const server = await dev.gatt.connect();
-    this.#log('GATT connected');
-    const service = await server.getPrimaryService(this.#service);
-    this.#char = await service.getCharacteristic(this.#characteristic);
-    const p = this.#char.properties;
-    this.#log('characteristic properties: ' + ['read', 'write', 'writeWithoutResponse', 'notify', 'indicate'].filter(k => p[k]).join(', '));
-    this.#char.addEventListener('characteristicvaluechanged', this.#onNotify);
-    await this.#char.startNotifications();
-    this.#log('notifications started');
+    // Seen on Windows Chrome: gatt.connect() resolves, then the link drops before service
+    // discovery ("GATT Server is disconnected"). Retry that specific case a few times and log
+    // the timings, so the log shows whether the drop is transient or happens every time.
+    this.#opening = true;
+    try {
+      for (let attempt = 1; ; attempt++) {
+        this.#droppedAt = null;
+        const t0 = performance.now();
+        try {
+          await this.#setup(dev, t0);
+          break;
+        } catch (e) {
+          const dropped = e.name === 'NetworkError' && !dev.gatt.connected;
+          const dropMs = this.#droppedAt != null ? ` (link dropped ${Math.round(this.#droppedAt - t0)} ms after connect started)` : '';
+          this.#log(`open attempt ${attempt}/${OPEN_TRIES} failed after ${Math.round(performance.now() - t0)} ms: ${e.name}: ${e.message}${dropMs}`);
+          if (!dropped || attempt >= OPEN_TRIES) throw e;
+          await new Promise(r => setTimeout(r, OPEN_RETRY_MS * attempt));
+        }
+      }
+    } finally {
+      this.#opening = false;
+    }
     this.connected = true;
     const e = this.known.get(dev.id);
     if (e) e.ffe0 = true;
     this.#state('connected', { reconnect });
     this.#emit('devices');
+  }
+
+  async #setup(dev, t0) {
+    const ms = () => `${Math.round(performance.now() - t0)} ms`;
+    const server = await dev.gatt.connect();
+    this.#log(`GATT connected (${ms()})`);
+    const service = await server.getPrimaryService(this.#service);
+    this.#log(`service found (${ms()})`);
+    this.#char = await service.getCharacteristic(this.#characteristic);
+    const p = this.#char.properties;
+    this.#log('characteristic properties: ' + ['read', 'write', 'writeWithoutResponse', 'notify', 'indicate'].filter(k => p[k]).join(', '));
+    this.#char.addEventListener('characteristicvaluechanged', this.#onNotify);
+    await this.#char.startNotifications();
+    this.#log(`notifications started (${ms()})`);
   }
 
   #closeQuietly() {
@@ -205,6 +243,11 @@ export class BleTransport extends EventTarget {
   }
 
   async #handleDrop() {
+    if (this.#opening) { // a drop during #open(); its retry loop handles it
+      this.#droppedAt = performance.now();
+      this.#char?.removeEventListener('characteristicvaluechanged', this.#onNotify);
+      return;
+    }
     const wasConnected = this.connected;
     this.connected = false;
     this.#char?.removeEventListener('characteristicvaluechanged', this.#onNotify);
