@@ -4,687 +4,150 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NEEG-2 · Lucas Sullivan</title>
-<meta name="description" content="NEEG-2 EEG headset: browser receiver over Web Bluetooth. Step 0: connection test.">
+<meta name="description" content="NEEG-2 EEG headset: browser receiver over Web Bluetooth.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="../style.css">
 <style>
-  button{font:inherit;font-size:.92rem;padding:.45em 1em;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
+  main{padding:12px 12px 0}
+  .back{margin-bottom:.4em;font-size:.85rem}
+  h1{font-size:1.35rem;margin:0}
+  button{font:inherit;font-size:.88rem;padding:.38em .85em;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
   button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
   button:disabled{opacity:.45;cursor:default}
-  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-  .check{display:flex;gap:.4em;align-items:center;margin:.8em 0 0;color:var(--muted);font-size:.88rem}
-  .notice{padding:12px 14px;border-radius:10px;border:1px solid #d64545;color:var(--fg);margin-top:16px;font-size:.92rem}
+  .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .check{display:flex;gap:.4em;align-items:center;margin:.5em 0 0;color:var(--muted);font-size:.84rem}
+  .notice{padding:8px 10px;border-radius:8px;border:1px solid #d64545;color:var(--fg);margin-top:8px;font-size:.88rem}
   .notice[hidden]{display:none}
-  .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px 16px;margin:0}
-  .stats div{min-width:0}
-  .stats dt{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-  .stats dd{margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .panel{padding:10px 12px;margin-top:8px}
+  h3{font-size:.9rem;margin:0}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:.5em}
+
+  .tabbar{position:sticky;top:0;z-index:5;background:var(--bg);margin:6px -12px 0;padding:6px 12px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 10px}
+  .tabs{display:flex;gap:2px}
+  .tabs button{border:0;background:none;color:var(--muted);padding:.35em .8em;border-radius:6px}
+  .tabs button[aria-selected=true]{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line),inset 0 -2px 0 var(--accent)}
+  .live{font-size:.82rem;display:flex;gap:.7em;color:var(--muted);font-variant-numeric:tabular-nums}
   #status[data-s=connected]{color:#2e9d5b}
   #status[data-s=stalled],#status[data-s=error]{color:#d64545}
-  h3{font-size:.95rem;margin:0 0 .5em}
-  .tabbar{position:sticky;top:0;z-index:5;background:var(--bg);margin:16px -20px 0;padding:8px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}
-  .tabs{display:flex;gap:4px}
-  .tabs button{border:0;background:none;color:var(--muted);padding:.4em .9em;border-radius:6px}
-  .tabs button[aria-selected=true]{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line),inset 0 -2px 0 var(--accent)}
-  .live{font-size:.85rem;display:flex;gap:.7em;color:var(--muted);font-variant-numeric:tabular-nums}
-  .pager{height:calc(100vh - var(--bar-h,52px));height:calc(100dvh - var(--bar-h,52px));overflow:hidden;margin:0 -20px}
+  .pager{height:calc(100vh - var(--bar-h,44px));height:calc(100dvh - var(--bar-h,44px));overflow:hidden;margin:0 -12px}
   .track{display:flex;height:100%;transition:transform .28s ease}
   .track.dragging{transition:none}
-  .page{flex:0 0 100%;min-width:0;overflow-y:auto;overscroll-behavior-x:none;touch-action:pan-y;padding:0 20px 16px}
-  pre{margin:0;max-height:38vh;overflow:auto;font:12px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px}
-  .panel-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:.6em}
-  .panel-head h3{margin:0}
+  .page{flex:0 0 100%;min-width:0;overflow-y:auto;overscroll-behavior-x:none;touch-action:pan-y;padding:0 12px 12px}
+
   .devices{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:8px}
-  .devices li{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--line)}
+  .devices li{display:flex;align-items:center;gap:8px;padding:7px 10px;border-top:1px solid var(--line)}
   .devices li:first-child{border-top:0}
-  .devices li.empty{color:var(--muted);font-size:.9rem;display:block}
+  .devices li.empty{color:var(--muted);font-size:.86rem;display:block}
   .devices .info{flex:1;min-width:0}
   .devices button{flex:none}
-  .devices .edit{padding:.45em .65em}
-  .devices .name{font-weight:500;overflow-wrap:anywhere}
-  .devices .meta{font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
-  .tag{display:inline-block;font-size:.72rem;padding:0 .45em;border-radius:4px;border:1px solid var(--accent);color:var(--accent);margin-left:.4em;vertical-align:1px}
-  .caps{font-size:.8rem;color:var(--muted);margin-top:.8em}
+  .devices .edit{padding:.38em .6em}
+  .devices .name{font-weight:500;font-size:.9rem;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+  .devices .meta{font-size:.76rem;color:var(--muted);overflow-wrap:anywhere}
+  .tag{display:inline-block;font-size:.7rem;padding:0 .4em;border-radius:4px;border:1px solid var(--accent);color:var(--accent);margin-left:.4em;vertical-align:1px;font-weight:400}
+  .caps{font-size:.76rem;color:var(--muted);margin-top:.4em}
   .caps b{font-weight:500;color:var(--fg)}
-  .help{margin-top:.8em;font-size:.88rem}
-  .help summary{cursor:pointer;color:var(--accent)}
-  .help ul{margin:.5em 0 0;padding-left:1.2em;color:var(--muted)}
-  .help li{margin:.3em 0}
+  details{font-size:.84rem;margin-top:.5em}
+  details summary{cursor:pointer;color:var(--accent)}
+  .help ul{margin:.4em 0 0;padding-left:1.2em;color:var(--muted)}
+  .help li{margin:.25em 0}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:6px 12px;margin:0}
+  .stats div{min-width:0}
+  .stats dt{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .stats dd{margin:0;font-size:.9rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  pre{margin:.4em 0 0;max-height:40vh;overflow:auto;font:11.5px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+  small.note{display:block;color:var(--muted);margin-top:.5em;font-size:.76rem}
   code{overflow-wrap:anywhere}
-  small.note{display:block;color:var(--muted);margin-top:.8em;font-size:.82rem}
 </style>
 </head>
 <body>
 <main>
   <a class="back" href="../">← All projects</a>
   <h1>NEEG-2 Receiver</h1>
-  <p class="lead">Browser receiver for the NEEG-2 headset over Web Bluetooth. Step 0: connection test.</p>
 
   <div class="tabbar">
     <div class="tabs" role="tablist">
-      <button role="tab" id="tab-0" aria-controls="page-device">Device</button>
-      <button role="tab" id="tab-1" aria-controls="page-data">Data</button>
-      <button role="tab" id="tab-2" aria-controls="page-log">Log</button>
+      <button role="tab" id="tab-device" aria-controls="page-device">Device</button>
+      <button role="tab" id="tab-log" aria-controls="page-log">Log</button>
     </div>
     <div class="live"><span id="status" data-s="idle">Not connected</span><span id="liveRate"></span></div>
   </div>
 
   <div class="pager" id="pager"><div class="track" id="track">
-  <section class="page" id="page-device" role="tabpanel" aria-labelledby="tab-0">
-  <div class="notice" id="support" hidden></div>
 
-  <div class="panel">
-    <div class="panel-head">
-      <h3>Devices</h3>
-      <div class="row">
-        <button class="primary" id="scan" hidden>Scan</button>
-        <button id="add">Add device…</button>
-        <button id="simulate">Simulate</button>
-        <button id="disconnect" disabled>Disconnect</button>
+  <section class="page" id="page-device" role="tabpanel" aria-labelledby="tab-device">
+    <div class="notice" id="support" hidden></div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Devices</h3>
+        <div class="row">
+          <button class="primary" id="scan" hidden>Scan</button>
+          <button id="add">Add device…</button>
+          <button id="simulate">Simulate</button>
+        </div>
       </div>
+      <ul class="devices" id="devices"></ul>
+      <label class="check"><input type="checkbox" id="pickAll"> List every nearby device in the picker (only if the headset is missing)</label>
+      <div class="caps" id="caps"></div>
+      <details class="help">
+        <summary>How connecting works / headset not found?</summary>
+        <ul>
+          <li>No pairing is needed. The phone's own Bluetooth settings cannot connect to the JDY-23; that is expected. Connect from this page.</li>
+          <li>Browsers only let a page use a Bluetooth device after you pick it once in the browser's own picker ("Add device…"). The picker lists only JDY-style modules (FFE0 service, or a name starting with JDY).</li>
+          <li>Devices are listed by the id the browser gives them. A device that sends valid NEEG-2 frames is tagged <b>NEEG-2 ✓</b>; use ✎ to give it a name such as "Headset 07".</li>
+          <li>With "List every nearby device", most entries are unnamed. Hold the phone next to the headset (strongest signal) or switch the headset off and on and watch which entry disappears and returns.</li>
+          <li>Remembered devices and in-page scanning ("Scan") are experimental browser features. In Chrome, try <code>chrome://flags/#enable-experimental-web-platform-features</code>. Brave may not offer them.</li>
+          <li>Brave turns Web Bluetooth off by default. Enable it at <code>brave://flags</code> (search "Bluetooth"), or use Chrome.</li>
+          <li>The JDY-23 accepts one connection at a time and stops advertising while connected. Unplug the ESP32 dongle and close other BLE apps first.</li>
+          <li>Android: turn on Location, and allow the browser "Nearby devices" (Android 12+) or Location (Android 11 and older).</li>
+        </ul>
+      </details>
     </div>
-    <ul class="devices" id="devices"></ul>
-    <label class="check"><input type="checkbox" id="pickAll"> List every nearby device in the picker (only if the headset is missing)</label>
-    <div class="caps" id="caps"></div>
-    <details class="help">
-      <summary>How connecting works / headset not found?</summary>
-      <ul>
-        <li>No pairing is needed. The phone's own Bluetooth settings cannot connect to the JDY-23; that is expected. Connect from this page.</li>
-        <li>Browsers only let a page use a Bluetooth device after you pick it once in the browser's own device picker ("Add device…"). The picker lists only JDY-style modules (FFE0 service, or a name starting with JDY).</li>
-        <li>Telling headsets apart: once a device sends valid NEEG-2 packets it is tagged <b>NEEG-2 ✓</b> and kept in this browser. Use ✎ to give it a name such as "Headset 07".</li>
-        <li>With "List every nearby device", most entries are unnamed. Hold the phone next to the headset (strongest signal) or switch the headset off and on and watch which entry disappears and returns.</li>
-        <li>Remembered devices and in-page scanning ("Scan") are experimental browser features. In Chrome, try <code>chrome://flags/#enable-experimental-web-platform-features</code>, set it to Enabled and relaunch. Brave may not offer them at all.</li>
-        <li>Brave turns Web Bluetooth off by default. Enable it at <code>brave://flags</code> (search "Bluetooth"), or use Chrome.</li>
-        <li>The JDY-23 accepts one connection at a time and stops advertising while connected. Unplug the ESP32 dongle and close other BLE apps first.</li>
-        <li>Android: turn on Location, and allow the browser the "Nearby devices" permission (Android 12+) or Location (Android 11 and older).</li>
-      </ul>
-    </details>
-  </div>
+
+    <div class="panel">
+      <dl class="stats" id="stats">
+        <div><dt>Device</dt><dd id="device">–</dd></div>
+        <div><dt>Rate (Hz)</dt><dd id="rate">–</dd></div>
+        <div><dt>Packets</dt><dd id="packets">0</dd></div>
+        <div><dt>Notifications</dt><dd id="notifs">0</dd></div>
+        <div><dt>Bytes</dt><dd id="bytes">0</dd></div>
+        <div><dt>Chunk</dt><dd id="chunk">–</dd></div>
+        <div><dt>Bad frames</dt><dd id="rejected">0</dd></div>
+        <div><dt>Skipped B</dt><dd id="skipped">0</dd></div>
+        <div><dt>Battery</dt><dd id="battery">–</dd></div>
+      </dl>
+      <details>
+        <summary>Decoded samples</summary>
+        <pre id="samples"></pre>
+      </details>
+      <small class="note">Rate: decoded samples per second (expected <span id="fsNote">125</span>). Bad frames: a header byte followed by invalid fields. Skipped: bytes dropped while looking for a header.</small>
+    </div>
   </section>
 
-  <section class="page" id="page-data" role="tabpanel" aria-labelledby="tab-1">
-  <div class="panel">
-    <dl class="stats">
-      <div><dt>Device</dt><dd id="device">–</dd></div>
-      <div><dt>Rate (Hz)</dt><dd id="rate">–</dd></div>
-      <div><dt>Packets</dt><dd id="packets">0</dd></div>
-      <div><dt>Notifications</dt><dd id="notifs">0</dd></div>
-      <div><dt>Bytes</dt><dd id="bytes">0</dd></div>
-      <div><dt>Chunk size</dt><dd id="chunk">–</dd></div>
-      <div><dt>Bad sub-header</dt><dd id="rejected">0</dd></div>
-      <div><dt>Skipped bytes</dt><dd id="skipped">0</dd></div>
-      <div><dt>Battery byte</dt><dd id="battery">–</dd></div>
-      <div><dt>ch0</dt><dd id="ch0">–</dd></div>
-      <div><dt>ch1</dt><dd id="ch1">–</dd></div>
-    </dl>
-    <small class="note">Rate counts decoded packets per second (expected 125). Skipped bytes are bytes dropped while searching for the 0xAA header. Simulate feeds synthetic packets, split into random-sized chunks, through the same decoder.</small>
-  </div>
-
-  <div class="panel">
-    <h3>Decoded samples</h3>
-    <pre id="samples"></pre>
-    <small class="note">µV = count / 8388607 × 2.39 V / 24 (gain). Last 200 lines are kept.</small>
-  </div>
-  </section>
-
-  <section class="page" id="page-log" role="tabpanel" aria-labelledby="tab-2">
-  <div class="panel">
-    <div class="panel-head">
-      <h3>Log</h3>
-      <div class="row">
-        <label class="check" style="margin:0"><input type="checkbox" id="pause"> Pause</label>
-        <button id="copy">Copy</button>
-        <button id="clear">Clear</button>
+  <section class="page" id="page-log" role="tabpanel" aria-labelledby="tab-log">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Events</h3>
+        <div class="row">
+          <label class="check" style="margin:0"><input type="checkbox" id="pause"> Pause</label>
+          <button id="copy">Copy</button>
+          <button id="clear">Clear</button>
+        </div>
       </div>
+      <pre id="events"></pre>
     </div>
-    <pre id="events"></pre>
-  </div>
-
-  <div class="panel">
-    <h3>Raw notifications (hex)</h3>
-    <pre id="hex"></pre>
-  </div>
-
-  <p><a href="test.html">Decoder tests</a></p>
+    <div class="panel">
+      <h3>Raw notifications (hex)</h3>
+      <pre id="hex"></pre>
+    </div>
+    <p><a href="test.html">Tests</a></p>
   </section>
+
   </div></div>
-
-  <footer>© 2026 Lucas Sullivan</footer>
 </main>
-
-<script type="module">
-import { createAaDecoder, countsToMicrovolts, encodeAaPacket, FS } from './decoder.js';
-
-const SERVICE = '0000ffe0-0000-1000-8000-00805f9b34fb';
-const CHARACTERISTIC = '0000ffe1-0000-1000-8000-00805f9b34fb';
-const MAX_LINES = 200;
-const STALL_MS = 2000;
-const SCAN_MS = 20000;
-const RECONNECT_TRIES = 10, RECONNECT_DELAY_MS = 2000;
-
-const $ = id => document.getElementById(id);
-const ui = {
-  scan: $('scan'), add: $('add'), disconnect: $('disconnect'), simulate: $('simulate'),
-  pause: $('pause'), support: $('support'), devices: $('devices'),
-};
-
-let decoder = createAaDecoder();
-let device = null, characteristic = null, simTimer = null;
-let notifs = 0, sampleIndex = 0, lastChunk = 0, lastSample = null;
-let lastDataAt = 0, t0 = performance.now(), connected = false;
-let rateCount = 0, rate = null;
-let userDisconnect = false, reconnecting = false, linkVerified = false;
-const VERIFY_PACKETS = 50;
-const lines = { events: [], hex: [], samples: [] };
-const dirty = new Set();
-
-// ---------- swipeable pages ----------
-// A transform-based track moved by touch swipes. (CSS scroll-snap was tried first, but the
-// live data updates made Chrome re-snap and cancel page changes mid-animation.)
-// Each page scrolls vertically on its own inside a fixed-height pager.
-const pager = $('pager');
-const track = $('track');
-const pages = [...track.children];
-const tabs = pages.map((_, i) => $('tab-' + i));
-const tabbar = document.querySelector('.tabbar');
-let currentPage = 0;
-
-new ResizeObserver(() => document.documentElement.style.setProperty('--bar-h', tabbar.offsetHeight + 'px')).observe(tabbar);
-
-function goToPage(i) {
-  currentPage = Math.max(0, Math.min(pages.length - 1, i));
-  track.style.transform = `translateX(${-100 * currentPage}%)`;
-  tabs.forEach((t, k) => { t.setAttribute('aria-selected', k === currentPage); t.tabIndex = k === currentPage ? 0 : -1; });
-  pages.forEach((p, k) => { p.inert = k !== currentPage; });
-  try { localStorage.setItem('neeg.page', currentPage); } catch {}
-}
-
-// Horizontal swipe on touch/pen; vertical movement is left to the page's own scrolling.
-let swipe = null;
-track.addEventListener('pointerdown', e => {
-  if (e.pointerType === 'mouse') return;
-  swipe = { x: e.clientX, y: e.clientY, dx: 0, axis: null };
-});
-track.addEventListener('pointermove', e => {
-  if (!swipe) return;
-  swipe.dx = e.clientX - swipe.x;
-  const dy = e.clientY - swipe.y;
-  if (!swipe.axis && Math.hypot(swipe.dx, dy) > 10) swipe.axis = Math.abs(swipe.dx) > Math.abs(dy) ? 'x' : 'y';
-  if (swipe.axis !== 'x') return;
-  const atEdge = (currentPage === 0 && swipe.dx > 0) || (currentPage === pages.length - 1 && swipe.dx < 0);
-  track.classList.add('dragging');
-  track.style.transform = `translateX(calc(${-100 * currentPage}% + ${atEdge ? swipe.dx / 3 : swipe.dx}px))`;
-});
-function endSwipe() {
-  if (!swipe) return;
-  const { axis, dx } = swipe;
-  swipe = null;
-  track.classList.remove('dragging');
-  if (axis !== 'x') return;
-  const threshold = Math.min(80, pager.clientWidth * 0.2);
-  goToPage(currentPage + (dx < -threshold ? 1 : dx > threshold ? -1 : 0));
-}
-track.addEventListener('pointerup', endSwipe);
-track.addEventListener('pointercancel', endSwipe);
-
-tabs.forEach((t, i) => {
-  t.onclick = () => goToPage(i);
-  t.onkeydown = e => {
-    const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-    if (d) { const n = (i + d + pages.length) % pages.length; goToPage(n); tabs[n].focus(); }
-  };
-});
-let savedPage = 0;
-try { savedPage = +localStorage.getItem('neeg.page') || 0; } catch {}
-track.classList.add('dragging'); // no slide animation on first paint
-goToPage(savedPage);
-requestAnimationFrame(() => requestAnimationFrame(() => track.classList.remove('dragging')));
-
-// ---------- capabilities ----------
-const bt = navigator.bluetooth;
-const isBrave = !!navigator.brave;
-const caps = {
-  bluetooth: !!bt && window.isSecureContext,
-  remember: !!bt && typeof bt.getDevices === 'function',
-  watch: typeof BluetoothDevice !== 'undefined' && 'watchAdvertisements' in BluetoothDevice.prototype,
-  scan: !!bt && typeof bt.requestLEScan === 'function',
-};
-
-const problems = [];
-if (!window.isSecureContext) problems.push('This page is not served over HTTPS, so Web Bluetooth is blocked.');
-else if (!bt && isBrave) problems.push('Brave turns Web Bluetooth off by default. Open brave://flags, search "Bluetooth", enable the Web Bluetooth API and relaunch, or use Chrome.');
-else if (!bt) problems.push('This browser has no Web Bluetooth. Use Chrome or Edge on Android, Windows, macOS or ChromeOS. iOS browsers, Firefox and Safari do not support it.');
-if (problems.length) {
-  ui.support.textContent = problems.join(' ') + ' Simulate still works.';
-  ui.support.hidden = false;
-  ui.add.disabled = true;
-}
-ui.scan.hidden = !caps.scan;
-
-const yesNo = v => `<b>${v ? 'yes' : 'no'}</b>`;
-$('caps').innerHTML =
-  `Web Bluetooth ${yesNo(caps.bluetooth)} · Remembered devices ${yesNo(caps.remember)} · ` +
-  `Signal strength ${yesNo(caps.watch)} · In-page scan ${yesNo(caps.scan)}` +
-  (isBrave ? ' · Brave' : '');
-
-// ---------- logging ----------
-function stamp() { return ((performance.now() - t0) / 1000).toFixed(3).padStart(8); }
-function push(kind, text) {
-  const arr = lines[kind];
-  arr.push(text);
-  if (arr.length > MAX_LINES) arr.splice(0, arr.length - MAX_LINES);
-  dirty.add(kind);
-}
-function log(msg) { push('events', `${stamp()}s  ${msg}`); console.log('[neeg]', msg); }
-const hex = bytes => Array.from(bytes, b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
-
-function setStatus(s, text) { $('status').dataset.s = s; $('status').textContent = text; }
-
-// ---------- data path ----------
-function onBytes(bytes) {
-  const now = performance.now();
-  notifs++;
-  lastChunk = bytes.length;
-  lastDataAt = now;
-  push('hex', `${stamp()}s  [${String(bytes.length).padStart(3)} B]  ${hex(bytes)}`);
-  for (const s of decoder.push(bytes)) {
-    lastSample = s;
-    rateCount++;
-    push('samples', `#${String(sampleIndex).padStart(6)}  t=${(sampleIndex / FS).toFixed(3)}s  batt=${String(s.battery).padStart(3)}  ` +
-      s.channels.map((c, i) => `ch${i}=${String(c).padStart(9)} (${countsToMicrovolts(c).toFixed(2).padStart(10)} µV)`).join('  '));
-    sampleIndex++;
-  }
-  // Enough well-formed 0xAA packets means this really is a NEEG-2 headset: remember that.
-  if (!linkVerified && device && !simTimer && decoder.stats.packets >= VERIFY_PACKETS &&
-      decoder.stats.rejected <= decoder.stats.packets / 10) {
-    linkVerified = true;
-    const fields = { verified: true };
-    if (!deviceMeta[device.id]?.label) fields.label = device.name ? `NEEG-2 (${device.name})` : 'NEEG-2 headset';
-    setMeta(device.id, fields);
-    log(`verified as NEEG-2 headset (${decoder.stats.packets} valid packets); you can rename it with ✎`);
-  }
-}
-
-function resetCounters() {
-  linkVerified = false;
-  decoder = createAaDecoder();
-  notifs = 0; sampleIndex = 0; lastChunk = 0; lastSample = null;
-  rateCount = 0; rate = null; lastDataAt = 0;
-}
-
-// ---------- device list ----------
-// id -> { device, name, rssi, seenAt, ffe0, source: 'remembered' | 'picked' | 'scan' }
-const known = new Map();
-let scan = null, scanTimer = null;
-
-// User labels and "verified headset" marks, kept in this browser by device.id.
-const META_KEY = 'neeg.deviceMeta';
-let deviceMeta = {};
-try { deviceMeta = JSON.parse(localStorage.getItem(META_KEY)) || {}; } catch {}
-function setMeta(id, fields) {
-  deviceMeta[id] = { ...deviceMeta[id], ...fields };
-  try { localStorage.setItem(META_KEY, JSON.stringify(deviceMeta)); } catch {}
-  renderDevices();
-}
-const isVerified = e => !!deviceMeta[e.device.id]?.verified;
-
-function rename(e) {
-  const current = deviceMeta[e.device.id]?.label || e.name || '';
-  const label = prompt('Name this device (e.g. Headset 07)', current);
-  if (label === null) return;
-  setMeta(e.device.id, { label: label.trim() });
-  log(`renamed ${e.device.id.slice(0, 10)}… to "${label.trim()}"`);
-}
-
-function upsert(dev, fields) {
-  const e = known.get(dev.id) || { device: dev, name: dev.name || '', rssi: null, seenAt: 0, ffe0: false, source: fields.source };
-  e.device = dev;
-  for (const [k, v] of Object.entries(fields)) if (v !== undefined && v !== '') e[k] = v;
-  known.set(dev.id, e);
-  renderDevices();
-  return e;
-}
-
-function renderDevices() {
-  const now = performance.now();
-  const live = e => e.device === device && (connected || reconnecting);
-  const entries = [...known.values()].sort((a, b) =>
-    live(b) - live(a) || isVerified(b) - isVerified(a) ||
-    b.ffe0 - a.ffe0 || (b.rssi ?? -999) - (a.rssi ?? -999));
-  ui.devices.replaceChildren(...entries.map(e => {
-    const li = document.createElement('li');
-    const info = document.createElement('div');
-    info.className = 'info';
-    const name = document.createElement('div');
-    name.className = 'name';
-    const label = deviceMeta[e.device.id]?.label;
-    name.textContent = label || e.name || 'Unnamed device';
-    if (isVerified(e)) name.insertAdjacentHTML('beforeend', '<span class="tag">NEEG-2 ✓</span>');
-    else if (e.ffe0) name.insertAdjacentHTML('beforeend', '<span class="tag">FFE0</span>');
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    const seen = e.seenAt ? `seen ${Math.round((now - e.seenAt) / 1000)} s ago` : e.source === 'remembered' ? 'remembered' : '';
-    meta.textContent = [label && e.name && e.name !== label && `"${e.name}"`, e.rssi != null && `${e.rssi} dBm`, seen,
-      `id ${e.device.id.slice(0, 6)}`].filter(Boolean).join(' · ');
-    info.append(name, meta);
-    const edit = document.createElement('button');
-    edit.className = 'edit';
-    edit.textContent = '✎';
-    edit.title = edit.ariaLabel = 'Rename';
-    edit.onclick = () => rename(e);
-    const btn = document.createElement('button');
-    const isCurrent = live(e);
-    btn.textContent = isCurrent ? 'Disconnect' : 'Connect';
-    if (!isCurrent) btn.className = 'primary';
-    btn.onclick = () => isCurrent ? disconnect() : connectTo(e);
-    li.append(info, edit, btn);
-    return li;
-  }));
-  if (!entries.length) {
-    const li = document.createElement('li');
-    li.className = 'empty';
-    li.textContent = caps.scan
-      ? 'No devices yet. Press Scan to search nearby, or Add device… to use the browser picker.'
-      : 'No devices yet. Press Add device… and pick the JDY-23 once; it will be listed here afterwards.';
-    ui.devices.append(li);
-  }
-}
-// Refresh "seen N s ago" only when something has been seen.
-setInterval(() => { if ([...known.values()].some(e => e.seenAt)) renderDevices(); }, 1000);
-
-const watched = new WeakSet();
-function watch(dev) {
-  if (!caps.watch || watched.has(dev)) return;
-  watched.add(dev);
-  dev.addEventListener('advertisementreceived', e =>
-    upsert(dev, { rssi: e.rssi, seenAt: performance.now(), name: e.name }));
-  dev.watchAdvertisements().catch(err => log(`watchAdvertisements(${dev.name || dev.id}) failed: ${err.message}`));
-}
-
-async function loadRemembered() {
-  if (!caps.remember) return;
-  try {
-    const devs = await bt.getDevices();
-    log(`remembered devices: ${devs.length}`);
-    for (const d of devs) { upsert(d, { source: 'remembered' }); watch(d); }
-  } catch (e) { log(`getDevices failed: ${e.message}`); }
-}
-
-async function startScan() {
-  if (scan) return stopScan();
-  try {
-    scan = await bt.requestLEScan({ acceptAllAdvertisements: true, keepRepeatedDevices: true });
-  } catch (e) {
-    log(`scan failed: ${e.name}: ${e.message}`);
-    scan = null;
-    return;
-  }
-  log('scanning…');
-  ui.scan.textContent = 'Stop scan';
-  scanTimer = setTimeout(stopScan, SCAN_MS);
-}
-
-function stopScan() {
-  clearTimeout(scanTimer);
-  if (!scan) return;
-  try { scan.stop(); } catch {}
-  scan = null;
-  ui.scan.textContent = 'Scan';
-  log('scan stopped');
-}
-
-if (bt) bt.addEventListener('advertisementreceived', e => {
-  if (!scan) return;
-  const ffe0 = (e.uuids || []).some(u => u.toLowerCase() === SERVICE);
-  upsert(e.device, { source: 'scan', name: e.name || e.device.name, rssi: e.rssi, seenAt: performance.now(), ffe0: ffe0 || undefined });
-});
-
-// Browser picker: required once per device before a page may use it.
-// By default it only lists JDY-style modules (FFE0 service advertised, or a name starting with "JDY").
-async function pick(entry) {
-  let options, desc;
-  if (entry?.name) {
-    options = { filters: [{ name: entry.name }], optionalServices: [SERVICE] };
-    desc = `name "${entry.name}"`;
-  } else if ($('pickAll').checked) {
-    options = { acceptAllDevices: true, optionalServices: [SERVICE] };
-    desc = 'all nearby devices';
-  } else {
-    options = { filters: [{ services: [SERVICE] }, { namePrefix: 'JDY' }], optionalServices: [SERVICE] };
-    desc = 'FFE0 service or name JDY*';
-  }
-  log(`browser picker (${desc})`);
-  try {
-    const dev = await bt.requestDevice(options);
-    log(`picked "${dev.name || ''}" id=${dev.id}`);
-    watch(dev);
-    return upsert(dev, { source: 'picked' });
-  } catch (e) {
-    log(`picker: ${e.name}: ${e.message}`);
-    if (e.name === 'NotFoundError' && !$('pickAll').checked)
-      log('headset not in the picker? tick "List every nearby device" and try again');
-    if (isBrave && e.name !== 'NotFoundError') log('Brave: make sure the Web Bluetooth flag is enabled');
-    setStatus('idle', e.name === 'NotFoundError' ? 'No device chosen' : 'Error');
-    return null;
-  }
-}
-
-async function addDevice() {
-  const e = await pick(null);
-  if (e) connectTo(e);
-}
-
-// ---------- connection ----------
-async function connectTo(entry) {
-  stopSim();
-  stopScan();
-  if (device && device !== entry.device) await dropCurrent();
-  try {
-    await openGatt(entry.device);
-  } catch (e) {
-    log(`ERROR ${e.name}: ${e.message}`);
-    closeQuietly();
-    // Devices found by an in-page scan may still need the picker once before GATT access is allowed.
-    if (entry.source === 'scan' && (e.name === 'SecurityError' || e.name === 'NotFoundError')) {
-      log('this device needs to be approved once in the browser picker');
-      const picked = await pick(entry);
-      if (picked) return connectTo(picked);
-      return;
-    }
-    const noService = e.name === 'NotFoundError';
-    if (noService) log('this device has no FFE0/FFE1 service; it is probably not the JDY-23');
-    setStatus('error', noService ? 'Not a JDY-23 (no FFE0 service)' : 'Error');
-  }
-}
-
-async function openGatt(dev) {
-  device = dev;
-  userDisconnect = false;
-  $('device').textContent = dev.name || '(no name)';
-  setStatus('connecting', 'Connecting…');
-  ui.disconnect.disabled = false;
-  renderDevices();
-  dev.removeEventListener('gattserverdisconnected', onDisconnected);
-  dev.addEventListener('gattserverdisconnected', onDisconnected);
-  const server = await dev.gatt.connect();
-  log('GATT connected');
-  const service = await server.getPrimaryService(SERVICE);
-  log('service FFE0 found');
-  characteristic = await service.getCharacteristic(CHARACTERISTIC);
-  const p = characteristic.properties;
-  log('FFE1 properties: ' + ['read', 'write', 'writeWithoutResponse', 'notify', 'indicate'].filter(k => p[k]).join(', '));
-  characteristic.addEventListener('characteristicvaluechanged', onNotify);
-  resetCounters();
-  await characteristic.startNotifications();
-  log('notifications started');
-  if (!reconnecting) goToPage(1);
-  connected = true;
-  if (known.has(dev.id)) known.get(dev.id).ffe0 = true;
-  setStatus('connected', 'Connected');
-  renderDevices();
-}
-
-function onNotify(e) {
-  const v = e.target.value;
-  onBytes(new Uint8Array(v.buffer, v.byteOffset, v.byteLength));
-}
-
-function closeQuietly() {
-  characteristic?.removeEventListener('characteristicvaluechanged', onNotify);
-  characteristic = null;
-  if (device) {
-    device.removeEventListener('gattserverdisconnected', onDisconnected);
-    if (device.gatt.connected) device.gatt.disconnect();
-  }
-  connected = false;
-  ui.disconnect.disabled = true;
-  renderDevices();
-}
-
-async function onDisconnected() {
-  const wasConnected = connected;
-  connected = false;
-  characteristic?.removeEventListener('characteristicvaluechanged', onNotify);
-  log('device disconnected');
-  if (reconnecting) return; // a failed attempt inside the retry loop below
-  if (userDisconnect || !wasConnected) return setIdle();
-  // Unexpected drop: retry on the same page.
-  reconnecting = true;
-  for (let i = 1; i <= RECONNECT_TRIES && !userDisconnect; i++) {
-    setStatus('connecting', `Reconnecting (${i}/${RECONNECT_TRIES})…`);
-    renderDevices();
-    await new Promise(r => setTimeout(r, RECONNECT_DELAY_MS));
-    if (userDisconnect) break;
-    try {
-      await openGatt(device);
-      log(`reconnected after ${i} attempt(s)`);
-      reconnecting = false;
-      return;
-    } catch (e) { log(`reconnect ${i} failed: ${e.message}`); }
-  }
-  reconnecting = false;
-  setIdle();
-}
-
-function setIdle() {
-  setStatus('idle', 'Disconnected');
-  ui.disconnect.disabled = !simTimer;
-  renderDevices();
-}
-
-async function dropCurrent() {
-  userDisconnect = true;
-  const wasUp = device?.gatt.connected;
-  closeQuietly();
-  if (wasUp) log('device disconnected');
-}
-
-function disconnect() {
-  if (simTimer) { stopSim(); return; }
-  userDisconnect = true;
-  if (device?.gatt.connected) device.gatt.disconnect(); // fires gattserverdisconnected
-  else { connected = false; setIdle(); }
-}
-
-// ---------- simulator ----------
-function startSim() {
-  if (device?.gatt.connected) dropCurrent();
-  stopScan();
-  resetCounters();
-  log('simulator started (10 Hz + 60 Hz + noise, random chunks of 1–20 B)');
-  $('device').textContent = 'Simulator';
-  let n = 0, pending = [];
-  const uvToCounts = uv => Math.round(uv / countsToMicrovolts(1));
-  simTimer = setInterval(() => {
-    for (let k = 0; k < 5; k++, n++) { // 5 packets / 40 ms = 125 Hz
-      const t = n / FS;
-      const ch0 = 20 * Math.sin(2 * Math.PI * 10 * t) + 5 * Math.sin(2 * Math.PI * 60 * t) + 4 * (Math.random() - .5);
-      const ch1 = 15 * Math.sin(2 * Math.PI * 10 * t + 1) + 300 + 4 * (Math.random() - .5);
-      pending.push(...encodeAaPacket(50, [uvToCounts(ch0), uvToCounts(ch1)]));
-    }
-    while (pending.length) {
-      const size = 1 + Math.floor(Math.random() * 20);
-      onBytes(Uint8Array.from(pending.splice(0, size)));
-    }
-  }, 40);
-  connected = true;
-  setStatus('connected', 'Simulating');
-  goToPage(1);
-  ui.simulate.disabled = true;
-  ui.disconnect.disabled = false;
-}
-
-function stopSim() {
-  if (!simTimer) return;
-  clearInterval(simTimer);
-  simTimer = null;
-  connected = false;
-  log('simulator stopped');
-  ui.simulate.disabled = false;
-  setIdle();
-}
-
-// ---------- rendering (~5 fps) ----------
-function render() {
-  const st = decoder.stats;
-  $('notifs').textContent = notifs;
-  $('bytes').textContent = st.bytes;
-  $('packets').textContent = st.packets;
-  $('rejected').textContent = st.rejected;
-  $('skipped').textContent = st.skipped;
-  $('chunk').textContent = lastChunk ? `${lastChunk} B` : '–';
-  $('rate').textContent = rate == null ? '–' : rate.toFixed(0);
-  $('liveRate').textContent = connected && rate != null ? `${rate} Hz` : '';
-  if (lastSample) {
-    $('battery').textContent = lastSample.battery;
-    for (const i of [0, 1]) {
-      const c = lastSample.channels[i];
-      $('ch' + i).textContent = c == null ? '–' : `${c} (${countsToMicrovolts(c).toFixed(1)} µV)`;
-    }
-  }
-  if (connected && !simTimer) {
-    const stalled = performance.now() - (lastDataAt || 0) > STALL_MS;
-    setStatus(stalled ? 'stalled' : 'connected', stalled ? 'Connected, no data > 2 s' : 'Connected');
-  }
-  if (!ui.pause.checked) {
-    for (const kind of dirty) {
-      const el = $(kind);
-      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
-      el.textContent = lines[kind].join('\n');
-      if (atBottom) el.scrollTop = el.scrollHeight;
-    }
-    dirty.clear();
-  }
-}
-setInterval(render, 200);
-setInterval(() => { if (connected) { rate = rateCount; } rateCount = 0; }, 1000);
-
-// ---------- buttons ----------
-ui.scan.onclick = startScan;
-ui.add.onclick = addDevice;
-ui.disconnect.onclick = disconnect;
-ui.simulate.onclick = startSim;
-$('clear').onclick = () => { for (const k in lines) lines[k] = []; ['events', 'hex', 'samples'].forEach(k => dirty.add(k)); render(); };
-$('copy').onclick = async () => {
-  const text = [
-    `NEEG-2 step 0 log  ${new Date().toISOString()}`,
-    `UA: ${navigator.userAgent}`,
-    `caps: ${JSON.stringify(caps)} brave=${isBrave}`,
-    `packets=${decoder.stats.packets} notifs=${notifs} bytes=${decoder.stats.bytes} rejected=${decoder.stats.rejected} skipped=${decoder.stats.skipped} rate=${rate}`,
-    '', '== events ==', ...lines.events,
-    '', '== hex (last 200) ==', ...lines.hex,
-    '', '== samples (last 200) ==', ...lines.samples,
-  ].join('\n');
-  try { await navigator.clipboard.writeText(text); log('log copied to clipboard'); }
-  catch (e) { log(`copy failed: ${e.message}`); }
-};
-
-log(problems.length ? 'Web Bluetooth unavailable' : `ready (${Object.entries(caps).map(([k, v]) => `${k}=${v ? 'yes' : 'no'}`).join(', ')})`);
-if (bt?.getAvailability) bt.getAvailability().then(a => { if (!a) log('Bluetooth adapter is off or unavailable'); });
-renderDevices();
-loadRemembered();
-</script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
