@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Serial Terminal</title>
+<meta name="description" content="Talk to serial and Bluetooth LE UART devices from the browser.">
+<link rel="stylesheet" href="../style.css">
+<style>
+  button,select,input[type=text]{font:inherit;font-size:.92rem;padding:.45em .8em;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+  button{cursor:pointer}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button:disabled{opacity:.45;cursor:default}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .row + .row{margin-top:10px}
+  .grow{flex:1 1 160px;min-width:0}
+  .check{display:flex;gap:.4em;align-items:center;margin:0;color:var(--muted);font-size:.88rem}
+  .notice{padding:10px 12px;border-radius:8px;border:1px solid #d64545;margin-top:10px;font-size:.9rem}
+  .notice:empty{display:none}
+  .hidden{display:none !important}
+  #status{font-size:.9rem;color:var(--muted)}
+  #status[data-s=on]{color:#2e9d5b}
+  #status[data-s=error]{color:#d64545}
+  #out{height:50vh;min-height:220px;overflow:auto;font:12.5px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+  #out .tx{color:var(--accent)}
+  #out .sys{color:var(--muted);font-style:italic}
+  #out .ts{color:var(--muted);user-select:none}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .toolbar .spacer{flex:1}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../">← All projects</a>
+  <h1>Serial Terminal</h1>
+  <p class="lead">Send and receive text or bytes over Bluetooth LE UART modules (HM-10, JDY, Nordic UART) or a serial port, right from the browser.</p>
+
+  <div class="panel">
+    <div class="row">
+      <select id="transport" class="grow" aria-label="Connection type">
+        <option value="ble">Bluetooth LE (UART)</option>
+        <option value="serial">Serial port (USB / Bluetooth Classic)</option>
+        <option value="loop">Loopback demo (no device)</option>
+      </select>
+      <button class="primary" id="connect">Connect</button>
+      <button id="disconnect" disabled>Disconnect</button>
+    </div>
+
+    <div id="bleOpts" class="row">
+      <select id="preset" class="grow" aria-label="BLE profile">
+        <option value="ffe0">HM-10 / JDY / CC254x (FFE0 · FFE1)</option>
+        <option value="nus">Nordic UART Service (6E400001)</option>
+        <option value="custom">Custom UUIDs</option>
+      </select>
+      <label class="check"><input type="checkbox" id="showAll"> Show all devices</label>
+    </div>
+    <div id="customOpts" class="row hidden">
+      <input type="text" id="svcUuid" class="grow" placeholder="Service UUID" spellcheck="false">
+      <input type="text" id="rxUuid" class="grow" placeholder="Notify characteristic UUID" spellcheck="false">
+      <input type="text" id="txUuid" class="grow" placeholder="Write characteristic UUID (blank = same)" spellcheck="false">
+    </div>
+
+    <div id="serialOpts" class="row hidden">
+      <label class="check" for="baud">Baud</label>
+      <select id="baud">
+        <option>9600</option><option>19200</option><option>38400</option><option>57600</option>
+        <option selected>115200</option><option>230400</option><option>460800</option><option>921600</option>
+      </select>
+    </div>
+
+    <div class="row"><span id="status" data-s="off">Not connected</span></div>
+    <div class="notice" id="support"></div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <label class="check"><input type="checkbox" id="hexView"> Hex</label>
+      <label class="check"><input type="checkbox" id="timestamps" checked> Time</label>
+      <label class="check"><input type="checkbox" id="autoscroll" checked> Autoscroll</label>
+      <span class="spacer"></span>
+      <button id="save">Save</button>
+      <button id="clear">Clear</button>
+    </div>
+    <div id="out" role="log" aria-live="off"></div>
+    <div class="row">
+      <input type="text" id="input" class="grow" placeholder="Type and press Enter" autocomplete="off" spellcheck="false">
+      <button class="primary" id="send" disabled>Send</button>
+    </div>
+    <div class="row">
+      <label class="check" for="eol">Line ending</label>
+      <select id="eol">
+        <option value="">None</option>
+        <option value="\r">CR</option>
+        <option value="\n">LF</option>
+        <option value="\r\n" selected>CR+LF</option>
+      </select>
+      <label class="check"><input type="checkbox" id="hexSend"> Send hex (e.g. <code>AA 01 FF</code>)</label>
+    </div>
+  </div>
+
+  <footer>© 2026 Lucas Sullivan</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const PRESETS = {
+  ffe0: { service: '0000ffe0-0000-1000-8000-00805f9b34fb', rx: '0000ffe1-0000-1000-8000-00805f9b34fb', tx: '0000ffe1-0000-1000-8000-00805f9b34fb' },
+  nus:  { service: '6e400001-b5a3-f393-e0a9-e50e24dcca9e', rx: '6e400003-b5a3-f393-e0a9-e50e24dcca9e', tx: '6e400002-b5a3-f393-e0a9-e50e24dcca9e' },
+};
+const SPP_UUID = '00001101-0000-1000-8000-00805f9b34fb';
+const BLE_CHUNK = 20; // safe write size for the default 23-byte ATT MTU
+const MAX_ENTRIES = 5000, MAX_LINES = 1500;
+
+// ---------- transports: connect(onData, onClose) / write(bytes) / close() ----------
+function uuid(s) {
+  s = s.trim().toLowerCase();
+  if (/^[0-9a-f]{4}$/.test(s)) return `0000${s}-0000-1000-8000-00805f9b34fb`;
+  if (/^0x[0-9a-f]{4}$/.test(s)) return uuid(s.slice(2));
+  return s;
+}
+
+function bleTransport() {
+  let device, rxChar, txChar, onNotify;
+  return {
+    async connect(onData, onClose) {
+      let p = PRESETS[$('preset').value];
+      if (!p) {
+        p = { service: uuid($('svcUuid').value), rx: uuid($('rxUuid').value) };
+        p.tx = $('txUuid').value.trim() ? uuid($('txUuid').value) : p.rx;
+        if (!p.service || !p.rx) throw new Error('Enter a service and a notify characteristic UUID.');
+      }
+      device = await navigator.bluetooth.requestDevice($('showAll').checked
+        ? { acceptAllDevices: true, optionalServices: [p.service] }
+        : { filters: [{ services: [p.service] }] });
+      device.addEventListener('gattserverdisconnected', onClose);
+      sys(`Connecting to ${device.name || device.id}…`);
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(p.service);
+      rxChar = await service.getCharacteristic(p.rx);
+      txChar = p.tx === p.rx ? rxChar : await service.getCharacteristic(p.tx);
+      onNotify = e => { const v = e.target.value; onData(new Uint8Array(v.buffer, v.byteOffset, v.byteLength)); };
+      rxChar.addEventListener('characteristicvaluechanged', onNotify);
+      await rxChar.startNotifications();
+      return device.name || 'BLE device';
+    },
+    async write(bytes) {
+      const noResp = txChar.properties.writeWithoutResponse && txChar.writeValueWithoutResponse;
+      for (let i = 0; i < bytes.length; i += BLE_CHUNK) {
+        const part = bytes.slice(i, i + BLE_CHUNK);
+        if (noResp) await txChar.writeValueWithoutResponse(part);
+        else if (txChar.writeValueWithResponse) await txChar.writeValueWithResponse(part);
+        else await txChar.writeValue(part);
+      }
+    },
+    async close() {
+      rxChar?.removeEventListener('characteristicvaluechanged', onNotify);
+      if (device?.gatt.connected) device.gatt.disconnect();
+    },
+  };
+}
+
+function serialTransport() {
+  let port, reader, loop, closing = false;
+  return {
+    async connect(onData, onClose) {
+      // allowedBluetoothServiceClassIds lets Chrome also list paired Bluetooth Classic (SPP) devices.
+      port = await navigator.serial.requestPort({ allowedBluetoothServiceClassIds: [SPP_UUID] });
+      await port.open({ baudRate: +$('baud').value });
+      loop = (async () => {
+        try {
+          while (port.readable && !closing) {
+            reader = port.readable.getReader();
+            try {
+              for (;;) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                if (value?.length) onData(value);
+              }
+            } catch (e) {
+              if (!closing) sys(`Read error: ${e.message}`);
+            } finally { reader.releaseLock(); }
+          }
+        } finally {
+          if (!closing) onClose();
+        }
+      })();
+      const info = port.getInfo();
+      return info.usbVendorId != null
+        ? `USB ${info.usbVendorId.toString(16).padStart(4, '0')}:${info.usbProductId.toString(16).padStart(4, '0')} @ ${$('baud').value}`
+        : `Serial port @ ${$('baud').value}`;
+    },
+    async write(bytes) {
+      const writer = port.writable.getWriter();
+      try { await writer.write(bytes); } finally { writer.releaseLock(); }
+    },
+    async close() {
+      closing = true;
+      try { await reader?.cancel(); } catch {}
+      await loop;
+      try { await port.close(); } catch {}
+    },
+  };
+}
+
+function loopTransport() {
+  let onDataCb;
+  return {
+    async connect(onData) { onDataCb = onData; return 'Loopback'; },
+    async write(bytes) { setTimeout(() => onDataCb(bytes.slice()), 30); },
+    async close() {},
+  };
+}
+
+const TRANSPORTS = { ble: bleTransport, serial: serialTransport, loop: loopTransport };
+
+function supportProblem(kind) {
+  if (kind === 'loop') return '';
+  if (!window.isSecureContext) return 'This page must be served over HTTPS.';
+  if (kind === 'ble' && !navigator.bluetooth)
+    return 'This browser has no Web Bluetooth. Use Chrome or Edge on Android, Windows, macOS or ChromeOS. iOS browsers, Firefox and Safari do not support it.';
+  if (kind === 'serial' && !navigator.serial)
+    return 'This browser has no Web Serial. Use desktop Chrome or Edge.';
+  return '';
+}
+
+// ---------- log model ----------
+let entries = []; // { dir: 'rx'|'tx'|'sys', t: Date, bytes?, text? }
+let lines = [];   // rendered for the current view: { dir, t, text, open }
+let decoder = new TextDecoder();
+let dirty = false;
+
+const hexOf = bytes => Array.from(bytes, b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+
+function addLine(dir, t, text, open = false) {
+  lines.push({ dir, t, text, open });
+  if (lines.length > MAX_LINES) lines.splice(0, lines.length - MAX_LINES);
+}
+
+function project(e) {
+  if (e.dir === 'sys') return addLine('sys', e.t, e.text);
+  if ($('hexView').checked) return addLine(e.dir, e.t, hexOf(e.bytes));
+  if (e.dir === 'tx') return addLine('tx', e.t, new TextDecoder().decode(e.bytes).replace(/\r/g, '').replace(/\n$/, ''));
+  // rx text: continue the open line, break on LF, drop CR.
+  const parts = decoder.decode(e.bytes, { stream: true }).replace(/\r/g, '').split('\n');
+  parts.forEach((part, i) => {
+    const last = lines[lines.length - 1];
+    if (i === 0 && last?.dir === 'rx' && last.open) last.text += part;
+    else if (part || i < parts.length - 1) addLine('rx', e.t, part, true);
+    if (i < parts.length - 1) lines[lines.length - 1].open = false;
+  });
+}
+
+function record(e) {
+  entries.push(e);
+  if (entries.length > MAX_ENTRIES) entries.splice(0, entries.length - MAX_ENTRIES);
+  project(e);
+  dirty = true;
+}
+const sys = text => record({ dir: 'sys', t: new Date(), text });
+
+function rebuild() {
+  lines = []; decoder = new TextDecoder();
+  entries.forEach(project);
+  dirty = true;
+}
+
+const fmtTime = t => t.toTimeString().slice(0, 8) + '.' + String(t.getMilliseconds()).padStart(3, '0');
+const out = $('out');
+
+function render() {
+  if (!dirty) return;
+  dirty = false;
+  const showTs = $('timestamps').checked;
+  const frag = document.createDocumentFragment();
+  for (const l of lines) {
+    const div = document.createElement('div');
+    div.className = l.dir;
+    if (showTs) {
+      const ts = document.createElement('span');
+      ts.className = 'ts';
+      ts.textContent = fmtTime(l.t) + (l.dir === 'tx' ? ' → ' : l.dir === 'rx' ? ' ← ' : '   ');
+      div.append(ts);
+    }
+    div.append(l.text || '​');
+    frag.append(div);
+  }
+  out.replaceChildren(frag);
+  if ($('autoscroll').checked) out.scrollTop = out.scrollHeight;
+}
+setInterval(render, 100);
+
+// ---------- connection ----------
+let link = null;
+
+function setStatus(s, text) { $('status').dataset.s = s; $('status').textContent = text; }
+function setConnected(on) {
+  $('connect').disabled = on || !!supportProblem($('transport').value);
+  $('disconnect').disabled = !on;
+  $('send').disabled = !on;
+  $('transport').disabled = on;
+}
+
+async function connect() {
+  const t = TRANSPORTS[$('transport').value]();
+  setStatus('busy', 'Connecting…');
+  $('connect').disabled = true;
+  try {
+    const name = await t.connect(
+      bytes => record({ dir: 'rx', t: new Date(), bytes: Uint8Array.from(bytes) }),
+      () => { if (link === t) { link = null; sys('Disconnected'); setStatus('off', 'Disconnected'); setConnected(false); } });
+    link = t;
+    sys(`Connected: ${name}`);
+    setStatus('on', `Connected · ${name}`);
+    setConnected(true);
+    $('input').focus();
+  } catch (e) {
+    try { await t.close(); } catch {}
+    const cancelled = e.name === 'NotFoundError';
+    if (!cancelled) sys(`Error: ${e.message}`);
+    setStatus(cancelled ? 'off' : 'error', cancelled ? 'Not connected' : `Error: ${e.message}`);
+    setConnected(false);
+  }
+}
+
+async function disconnect() {
+  const t = link;
+  link = null;
+  setConnected(false);
+  await t?.close();
+  sys('Disconnected');
+  setStatus('off', 'Disconnected');
+}
+
+// ---------- sending ----------
+const sent = [];
+let sentPos = 0;
+
+function encodeInput(text) {
+  if ($('hexSend').checked) {
+    const clean = text.replace(/0x/gi, '').replace(/[\s,]/g, '');
+    if (!/^([0-9a-f]{2})*$/i.test(clean)) throw new Error('Hex must be pairs of 0-9 / A-F.');
+    return Uint8Array.from(clean.match(/../g) || [], h => parseInt(h, 16));
+  }
+  return new TextEncoder().encode(text + $('eol').value.replace('\\r', '\r').replace('\\n', '\n'));
+}
+
+async function send() {
+  if (!link) return;
+  const text = $('input').value;
+  let bytes;
+  try { bytes = encodeInput(text); } catch (e) { sys(e.message); return; }
+  if (!bytes.length) return;
+  if (text && sent[sent.length - 1] !== text) sent.push(text);
+  sentPos = sent.length;
+  $('input').value = '';
+  try {
+    await link.write(bytes);
+    record({ dir: 'tx', t: new Date(), bytes });
+  } catch (e) { sys(`Send failed: ${e.message}`); }
+}
+
+// ---------- UI wiring ----------
+function updateOptions() {
+  const kind = $('transport').value;
+  $('bleOpts').classList.toggle('hidden', kind !== 'ble');
+  $('customOpts').classList.toggle('hidden', kind !== 'ble' || $('preset').value !== 'custom');
+  $('serialOpts').classList.toggle('hidden', kind !== 'serial');
+  $('support').textContent = supportProblem(kind);
+  if (!link) setConnected(false);
+}
+$('transport').onchange = updateOptions;
+$('preset').onchange = updateOptions;
+$('connect').onclick = connect;
+$('disconnect').onclick = disconnect;
+$('send').onclick = send;
+$('input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); send(); }
+  else if (e.key === 'ArrowUp' && sentPos > 0) { e.preventDefault(); $('input').value = sent[--sentPos]; }
+  else if (e.key === 'ArrowDown' && sentPos < sent.length) { e.preventDefault(); $('input').value = sent[++sentPos] ?? ''; }
+});
+$('hexView').onchange = rebuild;
+$('timestamps').onchange = () => { dirty = true; };
+$('clear').onclick = () => { entries = []; rebuild(); };
+$('save').onclick = () => {
+  const showTs = $('timestamps').checked;
+  const text = lines.map(l => (showTs ? fmtTime(l.t) + (l.dir === 'tx' ? ' > ' : l.dir === 'rx' ? ' < ' : '   ') : '') + l.text).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text + '\n'], { type: 'text/plain' }));
+  a.download = `serial-log-${new Date().toISOString().replace(/[:.]/g, '-')}.txt`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+updateOptions();
+</script>
+</body>
+</html>
