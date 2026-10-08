@@ -14,6 +14,8 @@ import { createQualityView } from './ui/quality-view.js';
 import { Recorder, recordingBaseName, createWakeLock } from './pipeline/recorder.js';
 import { BleTransport } from './transports/ble.js';
 import { SimTransport } from './transports/sim.js';
+import { SerialTransport, BAUD_CHOICES, DONGLE_BAUD } from './transports/serial.js';
+import { createDongleCsvDecoder } from './decoders/dongle-csv.js';
 import { createPager } from './ui/pager.js';
 import { createDeviceList } from './ui/devices.js';
 
@@ -26,13 +28,20 @@ function loadPref(key, fallback) { try { return localStorage.getItem(key) ?? fal
 function savePref(key, value) { try { localStorage.setItem(key, value); } catch {} }
 
 const format = NEEG_AA_V1;
-const decoder = createFramedDecoder(format);
+// The decoder follows the transport: BLE and the simulator carry binary frames, the USB
+// dongle carries CSV lines. Both produce the same sample shape for the pipeline.
+const framedDecoder = createFramedDecoder(format);
+const dongleDecoder = createDongleCsvDecoder(format, { onMessage: m => log(`dongle ${m}`) });
+let decoder = framedDecoder;
 const pipeline = new Pipeline(format);
 const savedMode = loadPref('neeg.mode', 'bp');
 const store = new SignalStore({ channels: pipeline.channels, fs: format.fs, mode: savedMode in DISPLAY_MODES ? savedMode : 'bp' });
 pipeline.on(batch => store.push(batch));
 const ble = new BleTransport();
 const sim = new SimTransport(format);
+const serial = new SerialTransport();
+const decoderFor = t => t === serial ? dongleDecoder : framedDecoder;
+const transportLabel = t => t === sim ? 'Simulator' : t === serial ? 'ESP32 dongle (USB)' : devices.titleOf(ble.device.id);
 
 let active = null;           // transport currently feeding the decoder
 let connected = false;
@@ -113,7 +122,7 @@ function startRecording() {
   recorder.start({
     transport: active.kind,
     id: active === ble ? ble.device?.id : null,
-    label: active === ble ? devices.titleOf(ble.device.id) : 'Simulator',
+    label: transportLabel(active),
   });
   wakeLock.on();
   log('recording started');
@@ -205,7 +214,7 @@ function onBytes(transport, bytes) {
   lastChunk = bytes.length;
   lastDataAt = performance.now();
   push('hex', `${stamp()}s  [${String(bytes.length).padStart(3)} B]  ${hex(bytes)}`);
-  pipeline.push(decoder.push(bytes), lastDataAt);
+  pipeline.push(decoderFor(transport).push(bytes), lastDataAt);
 
   // Enough well-formed frames means this really is a NEEG-2 headset: remember that.
   const st = decoder.stats;
@@ -230,6 +239,7 @@ function onState(transport, { state, reason, reconnect }) {
     if (active && active !== transport) active.disconnect();
     active = transport;
     connected = true;
+    decoder = decoderFor(transport);
     if (reconnect) {
       decoder.resync(); // keep counters and the sample index running
     } else {
@@ -241,24 +251,28 @@ function onState(transport, { state, reason, reconnect }) {
       notifs = 0; lastChunk = 0; linkVerified = false;
     }
     lastDataAt = performance.now();
-    $('device').textContent = transport === sim ? 'Simulator' : devices.titleOf(ble.device.id);
+    $('device').textContent = transportLabel(transport);
     setStatus('connected', transport === sim ? 'Simulating' : 'Connected');
-  } else if (transport === ble && state === 'connecting') {
+  } else if (transport !== sim && state === 'connecting') {
     setStatus('connecting', reconnect ? 'Reconnecting…' : 'Connecting…');
   } else if (transport === ble && state === 'reconnecting') {
     connected = false;
     setStatus('connecting', `Reconnecting (${reason})…`);
   } else if (state === 'disconnected' || state === 'error') {
-    if (transport !== active && active) return; // e.g. BLE closing after the simulator took over
-    connected = false;
-    active = null;
-    setStatus(state === 'error' ? 'error' : 'idle', reason || 'Disconnected');
+    // Ignore e.g. BLE closing after the simulator took over.
+    if (transport === active || !active) {
+      connected = false;
+      active = null;
+      setStatus(state === 'error' ? 'error' : 'idle', reason || 'Disconnected');
+    }
   }
   $('simulate').textContent = sim.connected ? 'Stop simulation' : 'Simulate';
+  $('dongle').textContent = serial.connected ? 'Disconnect dongle' : 'Connect dongle';
+  $('fillerCell').hidden = decoder !== dongleDecoder;
   updateRecUi();
 }
 
-for (const t of [ble, sim]) {
+for (const t of [ble, sim, serial]) {
   t.addEventListener('data', e => onBytes(t, e.detail));
   t.addEventListener('state', e => onState(t, e.detail));
   t.addEventListener('log', e => log(e.detail));
@@ -274,6 +288,7 @@ function render() {
   $('packets').textContent = st.packets;
   $('rejected').textContent = st.rejected;
   $('skipped').textContent = st.skipped;
+  $('fillers').textContent = st.fillerDropped ?? 0;
   $('chunk').textContent = lastChunk ? `${lastChunk} B` : '–';
   $('rate').textContent = pipeline.rate ?? '–';
   $('liveRate').textContent = connected && pipeline.rate != null ? `${pipeline.rate} Hz` : '';
@@ -283,7 +298,7 @@ function render() {
     channelCells.forEach((cell, i) => { cell.textContent = `${last.uv[i].toFixed(1)} µV`; });
   }
   if (recorder.recording) updateRecUi();
-  if (connected && active === ble) {
+  if (connected && active !== sim) {
     const stalled = performance.now() - lastDataAt > STALL_MS;
     setStatus(stalled ? 'stalled' : 'connected', stalled ? 'No data > 2 s' : 'Connected');
   }
@@ -306,6 +321,20 @@ $('add').onclick = async () => {
   const entry = await ble.pick({ all: $('pickAll').checked });
   if (entry) { await stopSim(); ble.connect(entry); }
 };
+// USB dongle (Web Serial, desktop Chrome/Edge).
+if (SerialTransport.supported) {
+  for (const b of BAUD_CHOICES) $('baud').add(new Option(`${b} baud`, b));
+  $('baud').value = loadPref('neeg.baud', DONGLE_BAUD);
+  $('baud').onchange = () => savePref('neeg.baud', $('baud').value);
+  $('dongle').onclick = async () => {
+    if (serial.connected) return serial.disconnect();
+    await serial.connect({ baudRate: +$('baud').value });
+  };
+} else {
+  $('dongleRow').hidden = true;
+  $('dongleNote').textContent = 'USB dongle: this browser has no Web Serial (desktop Chrome or Edge only).';
+}
+
 $('simulate').onclick = async () => {
   if (sim.connected) return stopSim();
   if (ble.connected) await ble.disconnect();
