@@ -17,6 +17,24 @@
   select{font:inherit;font-size:.85rem;padding:.3em .4em;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
   canvas.plot{width:100%;border:0;border-radius:0;background:transparent;touch-action:pan-y}
   #wave{height:calc(var(--nch,2) * 130px)}
+  #spectrum{height:200px}
+  .legend{display:flex;gap:10px;font-size:.8rem;color:var(--fg)}
+  .legend i{display:inline-block;width:12px;height:2px;border-radius:1px;vertical-align:middle;margin-right:4px}
+  /* Status colours (fixed, never themed); always paired with an icon and a label. */
+  :root{--good:#0ca30c;--warn:#fab219;--bad:#d03b3b}
+  .qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:8px}
+  .qcard{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:8px 10px}
+  .qcard[data-level=good]{border-left-color:var(--good)}
+  .qcard[data-level=warn]{border-left-color:var(--warn)}
+  .qcard[data-level=bad]{border-left-color:var(--bad)}
+  .qhead{display:flex;justify-content:space-between;align-items:center}
+  .qbadge{display:inline-flex;align-items:center;gap:5px;font-size:.84rem}
+  .qicon{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--line);color:#fff;font-size:.72rem;font-weight:600}
+  .qcard[data-level=good] .qicon{background:var(--good)}
+  .qcard[data-level=warn] .qicon{background:var(--warn);color:#1c1c1a}
+  .qcard[data-level=bad] .qicon{background:var(--bad)}
+  .qreason{font-size:.84rem;color:var(--muted);margin:.2em 0 .5em}
+  .qstats{grid-template-columns:repeat(4,minmax(0,1fr))}
   .back{margin-bottom:.4em;font-size:.85rem}
   h1{font-size:1.35rem;margin:0}
   button{font:inherit;font-size:.88rem;padding:.38em .85em;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
@@ -32,7 +50,8 @@
 
   .tabbar{position:sticky;top:0;z-index:5;background:var(--bg);margin:6px -12px 0;padding:6px 12px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 10px}
   .tabs{display:flex;gap:2px}
-  .tabs button{border:0;background:none;color:var(--muted);padding:.35em .8em;border-radius:6px}
+  .tabs button{border:0;background:none;color:var(--muted);padding:.35em .6em;border-radius:6px}
+  @media(max-width:420px){#liveRate{display:none}}
   .tabs button[aria-selected=true]{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line),inset 0 -2px 0 var(--accent)}
   .live{font-size:.82rem;display:flex;gap:.7em;color:var(--muted);font-variant-numeric:tabular-nums}
   #status[data-s=connected]{color:#2e9d5b}
@@ -77,6 +96,7 @@
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-device" aria-controls="page-device">Device</button>
       <button role="tab" id="tab-signal" aria-controls="page-signal">Signal</button>
+      <button role="tab" id="tab-quality" aria-controls="page-quality">Quality</button>
       <button role="tab" id="tab-log" aria-controls="page-log">Log</button>
     </div>
     <div class="live"><span id="status" data-s="idle">Not connected</span><span id="liveRate"></span></div>
@@ -153,6 +173,37 @@
       </div>
       <canvas id="wave" class="plot"></canvas>
       <small class="note">Last 5 s, newest on the right. Time comes from the sample count (index ÷ <span class="fs">125</span> Hz), not from when Bluetooth delivered the data.</small>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Spectrum</h3>
+        <div class="row">
+          <span class="legend" id="legend"></span>
+          <select id="mains" aria-label="Mains frequency">
+            <option value="60">Mains 60 Hz</option>
+            <option value="50">Mains 50 Hz</option>
+          </select>
+        </div>
+      </div>
+      <canvas id="spectrum" class="plot"></canvas>
+      <small class="note">Power of the last 4 s (unfiltered, mean removed, Hamming window), dB re 1 µV²/Hz. Dashed line: mains frequency. Drag across the plot to read values.</small>
+    </div>
+  </section>
+
+  <section class="page" id="page-quality" role="tabpanel" aria-labelledby="tab-quality">
+    <div class="panel">
+      <h3>Signal quality</h3>
+      <small class="note" style="margin-top:.2em">Inferred from the last 2 s of the waveform, <b>not an electrode impedance measurement</b>. Same rules and thresholds as the PC monitor (neeg_monitor.py).</small>
+      <div id="quality" class="qgrid"></div>
+      <details class="help">
+        <summary>What the numbers mean</summary>
+        <ul>
+          <li><b>Railed</b>: share of samples above 90% of the ADC range. Over 1% is a warning, over 5% usually means a loose or detached electrode.</li>
+          <li><b>RMS</b>: size of the signal after removing its mean. Below 1 µV looks flat (broken lead or short); above 200 µV suggests muscle or movement artefacts. Scalp EEG is typically 10–50 µV.</li>
+          <li><b>Mains share</b>: power within ±2 Hz of the mains frequency, relative to 1 Hz … mains + 5 Hz. High contact impedance picks up more mains noise, but nearby chargers and lights do too. Warning at 15%, poor at 30%.</li>
+          <li><b>Drift</b>: slope of a straight line fitted to the signal. Above 50 µV/s the electrode may be moving.</li>
+        </ul>
+      </details>
     </div>
   </section>
 

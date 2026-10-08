@@ -9,6 +9,8 @@ import { Pipeline } from './pipeline/pipeline.js';
 import { SignalStore } from './pipeline/store.js';
 import { DISPLAY_MODES } from './pipeline/filters.js';
 import { createWaveform } from './ui/waveform.js';
+import { createSpectrumView } from './ui/spectrum-view.js';
+import { createQualityView } from './ui/quality-view.js';
 import { BleTransport } from './transports/ble.js';
 import { SimTransport } from './transports/sim.js';
 import { createPager } from './ui/pager.js';
@@ -68,9 +70,31 @@ $('scale').value = loadPref('neeg.scale', 'auto');
 const applyScale = () => wave.setSpan($('scale').value === 'auto' ? null : +$('scale').value);
 applyScale();
 $('scale').onchange = () => { applyScale(); savePref('neeg.scale', $('scale').value); wave.draw(); };
-// ~10 fps, and only while the Signal page is on screen.
-setInterval(() => { if (pager.current === PAGE_SIGNAL && !document.hidden) wave.draw(); }, 100);
-pager.onChange(i => { if (i === PAGE_SIGNAL) requestAnimationFrame(() => wave.draw()); });
+const PAGE_QUALITY = 2;
+$('mains').value = loadPref('neeg.mains', '60');
+const lineFreq = () => +$('mains').value;
+$('mains').onchange = () => { savePref('neeg.mains', $('mains').value); spectrum.update(); quality.update(); };
+const spectrum = createSpectrumView($('spectrum'), { store, names: pipeline.channelNames, fs: format.fs, getLineFreq: lineFreq });
+const quality = createQualityView($('quality'), {
+  store, names: pipeline.channelNames, fs: format.fs, adcMax: format.scale.adcMax, getLineFreq: lineFreq,
+});
+pipeline.channelNames.forEach((name, i) => {
+  const item = document.createElement('span');
+  item.innerHTML = `<i style="background:var(--series-${i + 1})"></i>`;
+  item.append(name);
+  $('legend').append(item);
+});
+
+// Redraw only what is on screen: waveform ~10 fps, spectrum 2.5 fps, quality 2 fps
+// (refresh rates from neeg_monitor.py).
+const visible = page => pager.current === page && !document.hidden;
+setInterval(() => { if (visible(PAGE_SIGNAL)) wave.draw(); }, 100);
+setInterval(() => { if (visible(PAGE_SIGNAL)) spectrum.update(); }, 400);
+setInterval(() => { if (visible(PAGE_QUALITY)) quality.update(); }, 500);
+pager.onChange(i => requestAnimationFrame(() => {
+  if (i === PAGE_SIGNAL) { wave.draw(); spectrum.update(); }
+  if (i === PAGE_QUALITY) quality.update();
+}));
 
 // ---------- per-channel stats ----------
 $('fsNote').textContent = format.fs;
