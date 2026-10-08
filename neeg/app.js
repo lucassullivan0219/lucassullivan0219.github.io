@@ -12,7 +12,7 @@ import { createWaveform } from './ui/waveform.js';
 import { createSpectrumView } from './ui/spectrum-view.js';
 import { createQualityView } from './ui/quality-view.js';
 import { Recorder, recordingBaseName, createWakeLock } from './pipeline/recorder.js';
-import { BleTransport } from './transports/ble.js';
+import { BleTransport, BLE_BUILD } from './transports/ble.js';
 import { SimTransport } from './transports/sim.js';
 import { SerialTransport, BAUD_CHOICES, DONGLE_BAUD } from './transports/serial.js';
 import { createDongleCsvDecoder } from './decoders/dongle-csv.js';
@@ -22,6 +22,7 @@ import { createDeviceList } from './ui/devices.js';
 const MAX_LINES = 200;
 const STALL_MS = 2000;
 const VERIFY_PACKETS = 50;
+const BUILD = '2026-10-08.2'; // bump on every change so a pasted log shows which version ran
 
 const $ = id => document.getElementById(id);
 function loadPref(key, fallback) { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } }
@@ -345,7 +346,7 @@ $('clear').onclick = () => { for (const k in lines) { lines[k] = []; dirty.add(k
 $('copy').onclick = async () => {
   const st = decoder.stats;
   const text = [
-    `NEEG-2 log  ${new Date().toISOString()}`,
+    `NEEG-2 log  ${new Date().toISOString()}  build ${BUILD} / ble ${BLE_BUILD}`,
     `UA: ${navigator.userAgent}`,
     `caps: ${JSON.stringify(caps)}  format: ${format.id}`,
     `frames=${st.packets} notifs=${notifs} bytes=${st.bytes} rejected=${st.rejected} skipped=${st.skipped} rate=${pipeline.rate}`,
@@ -358,7 +359,7 @@ $('copy').onclick = async () => {
 };
 
 log(problems.length ? 'Web Bluetooth unavailable' :
-  `ready (${Object.entries(caps).map(([k, v]) => `${k}=${v ? 'yes' : 'no'}`).join(', ')})`);
+  `ready, build ${BUILD} / ble ${BLE_BUILD} (${Object.entries(caps).map(([k, v]) => `${k}=${v ? 'yes' : 'no'}`).join(', ')})`);
 if (navigator.bluetooth?.getAvailability)
   navigator.bluetooth.getAvailability().then(a => { if (!a) log('Bluetooth adapter is off or unavailable'); });
 devices.render();

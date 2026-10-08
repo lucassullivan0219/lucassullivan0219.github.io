@@ -8,12 +8,27 @@
 //   'devices' the device list changed (read .known)
 //   'log'     detail: string
 
+export const BLE_BUILD = '2026-10-08.2'; // shown in the log to tell which version a browser runs
 export const JDY_SERVICE = '0000ffe0-0000-1000-8000-00805f9b34fb';
 export const JDY_CHARACTERISTIC = '0000ffe1-0000-1000-8000-00805f9b34fb';
 
 const SCAN_MS = 20000;
 const RECONNECT_TRIES = 10, RECONNECT_DELAY_MS = 2000;
 const OPEN_TRIES = 3, OPEN_RETRY_MS = 700;
+// Windows Chrome was seen connecting, then never finishing service discovery until the link
+// timed out ~30 s later. Give up on a stuck discovery sooner so a retry can happen.
+const DISCOVERY_TIMEOUT_MS = 10000;
+
+function withTimeout(promise, ms, what) {
+  promise.catch(() => {}); // the abandoned call may still reject later
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new DOMException(`${what} did not finish within ${ms / 1000} s`, 'TimeoutError')), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
 
 export function bleCapabilities() {
   const bt = navigator.bluetooth;
@@ -162,15 +177,15 @@ export class BleTransport extends EventTarget {
         return;
       }
       const noService = e.name === 'NotFoundError';
-      const dropped = e.name === 'NetworkError' && !entry.device.gatt.connected;
+      const failedDiscovery = e.name === 'TimeoutError' || (e.name === 'NetworkError' && !entry.device.gatt.connected);
       if (noService) this.#log('this device has no FFE0/FFE1 service; it is not the headset module');
-      if (dropped) {
-        this.#log('the link keeps dropping right after connecting. Check: (1) the ESP32 dongle is unplugged ' +
-          '(it reconnects to the headset every second); (2) on Windows, the JDY-23 is not paired under ' +
-          'Settings › Bluetooth & devices (remove it if it is); then try again.');
+      if (failedDiscovery) {
+        this.#log('connected, but the device\'s services could not be read. Check: (1) no ESP32 dongle or other ' +
+          'app is connected to the headset; (2) on Windows, the JDY-23 is not paired under Settings › Bluetooth & ' +
+          'devices; (3) chrome://bluetooth-internals › Devices › Inspect can list its services.');
       }
       this.#state('error', {
-        reason: noService ? 'Not a JDY module (no FFE0)' : dropped ? 'Link dropped right after connecting (see Log)' : e.message,
+        reason: noService ? 'Not a JDY module (no FFE0)' : failedDiscovery ? 'Connected, but services could not be read (see Log)' : e.message,
       });
     }
   }
@@ -201,9 +216,11 @@ export class BleTransport extends EventTarget {
           break;
         } catch (e) {
           const dropped = e.name === 'NetworkError' && !dev.gatt.connected;
-          const dropMs = this.#droppedAt != null ? ` (link dropped ${Math.round(this.#droppedAt - t0)} ms after connect started)` : '';
+          const stuck = e.name === 'TimeoutError';
+          const dropMs = this.#droppedAt != null ?` (link dropped ${Math.round(this.#droppedAt - t0)} ms after connect started)` : '';
           this.#log(`open attempt ${attempt}/${OPEN_TRIES} failed after ${Math.round(performance.now() - t0)} ms: ${e.name}: ${e.message}${dropMs}`);
-          if (!dropped || attempt >= OPEN_TRIES) throw e;
+          if (stuck && dev.gatt.connected) dev.gatt.disconnect(); // start the next attempt from a clean link
+          if (!(dropped || stuck) || attempt >= OPEN_TRIES) throw e;
           await new Promise(r => setTimeout(r, OPEN_RETRY_MS * attempt));
         }
       }
@@ -221,7 +238,7 @@ export class BleTransport extends EventTarget {
     const ms = () => `${Math.round(performance.now() - t0)} ms`;
     const server = await dev.gatt.connect();
     this.#log(`GATT connected (${ms()})`);
-    const service = await server.getPrimaryService(this.#service);
+    const service = await withTimeout(server.getPrimaryService(this.#service), DISCOVERY_TIMEOUT_MS, 'service discovery');
     this.#log(`service found (${ms()})`);
     this.#char = await service.getCharacteristic(this.#characteristic);
     const p = this.#char.properties;
