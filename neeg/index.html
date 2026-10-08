@@ -25,12 +25,23 @@
   #status[data-s=stalled],#status[data-s=error]{color:#d64545}
   h3{font-size:.95rem;margin:0 0 .5em}
   pre{margin:0;max-height:38vh;overflow:auto;font:12px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px}
-  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:.5em}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:.6em}
   .panel-head h3{margin:0}
+  .devices{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:8px}
+  .devices li{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--line)}
+  .devices li:first-child{border-top:0}
+  .devices li.empty{color:var(--muted);font-size:.9rem;display:block}
+  .devices .info{flex:1;min-width:0}
+  .devices .name{font-weight:500;overflow-wrap:anywhere}
+  .devices .meta{font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
+  .tag{display:inline-block;font-size:.72rem;padding:0 .45em;border-radius:4px;border:1px solid var(--accent);color:var(--accent);margin-left:.4em;vertical-align:1px}
+  .caps{font-size:.8rem;color:var(--muted);margin-top:.8em}
+  .caps b{font-weight:500;color:var(--fg)}
   .help{margin-top:.8em;font-size:.88rem}
   .help summary{cursor:pointer;color:var(--accent)}
   .help ul{margin:.5em 0 0;padding-left:1.2em;color:var(--muted)}
   .help li{margin:.3em 0}
+  code{overflow-wrap:anywhere}
   small.note{display:block;color:var(--muted);margin-top:.8em;font-size:.82rem}
 </style>
 </head>
@@ -43,20 +54,26 @@
   <div class="notice" id="support" hidden></div>
 
   <div class="panel">
-    <div class="row">
-      <button class="primary" id="connect">Connect</button>
-      <button id="disconnect" disabled>Disconnect</button>
-      <button id="simulate">Simulate</button>
+    <div class="panel-head">
+      <h3>Devices</h3>
+      <div class="row">
+        <button class="primary" id="scan" hidden>Scan</button>
+        <button id="add">Add device…</button>
+        <button id="simulate">Simulate</button>
+        <button id="disconnect" disabled>Disconnect</button>
+      </div>
     </div>
-    <label class="check"><input type="checkbox" id="onlyFfe0"> Only list devices that advertise the FFE0 service</label>
-    <small class="note">Connect lists every Bluetooth LE device nearby; pick the headset's JDY-23 module (no pairing needed). Simulate feeds synthetic packets, split into random-sized chunks, through the same decoder. No hardware needed.</small>
+    <ul class="devices" id="devices"></ul>
+    <div class="caps" id="caps"></div>
     <details class="help">
-      <summary>Headset not in the list?</summary>
+      <summary>How connecting works / headset not found?</summary>
       <ul>
-        <li>The phone's own Bluetooth settings may not show the JDY-23 at all. That is normal for a BLE-only module; connect from this page instead.</li>
+        <li>No pairing is needed. The phone's own Bluetooth settings cannot connect to the JDY-23; that is expected. Connect from this page.</li>
+        <li>Browsers only let a page use a Bluetooth device after you pick it once in the browser's own device picker ("Add device…"). Chrome then remembers it, and later visits connect from the list above without the picker, if this browser supports remembered devices (see the line above).</li>
+        <li>In-page scanning ("Scan") is an experimental Chrome feature. To try it, open <code>chrome://flags/#enable-experimental-web-platform-features</code>, set it to Enabled and relaunch.</li>
+        <li>Brave turns Web Bluetooth off by default. Enable it at <code>brave://flags</code> (search "Bluetooth"), or use Chrome.</li>
         <li>The JDY-23 accepts one connection at a time and stops advertising while connected. Unplug the ESP32 dongle and close other BLE apps first.</li>
-        <li>Android: turn on Location, and allow Chrome the "Nearby devices" permission (Android 12+) or Location (Android 11 and older).</li>
-        <li>Devices without a name show up as "Unknown or unsupported device". If unsure, switch the headset off and on and watch which entry disappears and returns.</li>
+        <li>Android: turn on Location, and allow the browser the "Nearby devices" permission (Android 12+) or Location (Android 11 and older).</li>
       </ul>
     </details>
   </div>
@@ -76,7 +93,7 @@
       <div><dt>ch0</dt><dd id="ch0">–</dd></div>
       <div><dt>ch1</dt><dd id="ch1">–</dd></div>
     </dl>
-    <small class="note">Rate counts decoded packets per second (expected 125). Skipped bytes are bytes dropped while searching for the 0xAA header.</small>
+    <small class="note">Rate counts decoded packets per second (expected 125). Skipped bytes are bytes dropped while searching for the 0xAA header. Simulate feeds synthetic packets, split into random-sized chunks, through the same decoder.</small>
   </div>
 
   <div class="panel">
@@ -114,11 +131,13 @@ const SERVICE = '0000ffe0-0000-1000-8000-00805f9b34fb';
 const CHARACTERISTIC = '0000ffe1-0000-1000-8000-00805f9b34fb';
 const MAX_LINES = 200;
 const STALL_MS = 2000;
+const SCAN_MS = 20000;
+const RECONNECT_TRIES = 10, RECONNECT_DELAY_MS = 2000;
 
 const $ = id => document.getElementById(id);
 const ui = {
-  connect: $('connect'), disconnect: $('disconnect'), simulate: $('simulate'),
-  onlyFfe0: $('onlyFfe0'), pause: $('pause'), support: $('support'),
+  scan: $('scan'), add: $('add'), disconnect: $('disconnect'), simulate: $('simulate'),
+  pause: $('pause'), support: $('support'), devices: $('devices'),
 };
 
 let decoder = createAaDecoder();
@@ -126,18 +145,36 @@ let device = null, characteristic = null, simTimer = null;
 let notifs = 0, sampleIndex = 0, lastChunk = 0, lastSample = null;
 let lastDataAt = 0, t0 = performance.now(), connected = false;
 let rateCount = 0, rate = null;
+let userDisconnect = false, reconnecting = false;
 const lines = { events: [], hex: [], samples: [] };
 const dirty = new Set();
 
-// ---------- support check ----------
+// ---------- capabilities ----------
+const bt = navigator.bluetooth;
+const isBrave = !!navigator.brave;
+const caps = {
+  bluetooth: !!bt && window.isSecureContext,
+  remember: !!bt && typeof bt.getDevices === 'function',
+  watch: typeof BluetoothDevice !== 'undefined' && 'watchAdvertisements' in BluetoothDevice.prototype,
+  scan: !!bt && typeof bt.requestLEScan === 'function',
+};
+
 const problems = [];
 if (!window.isSecureContext) problems.push('This page is not served over HTTPS, so Web Bluetooth is blocked.');
-else if (!('bluetooth' in navigator)) problems.push('This browser has no Web Bluetooth. Use Chrome or Edge on Android, Windows, macOS or ChromeOS. iOS browsers, Firefox and Safari do not support it.');
+else if (!bt && isBrave) problems.push('Brave turns Web Bluetooth off by default. Open brave://flags, search "Bluetooth", enable the Web Bluetooth API and relaunch, or use Chrome.');
+else if (!bt) problems.push('This browser has no Web Bluetooth. Use Chrome or Edge on Android, Windows, macOS or ChromeOS. iOS browsers, Firefox and Safari do not support it.');
 if (problems.length) {
   ui.support.textContent = problems.join(' ') + ' Simulate still works.';
   ui.support.hidden = false;
-  ui.connect.disabled = true;
+  ui.add.disabled = true;
 }
+ui.scan.hidden = !caps.scan;
+
+const yesNo = v => `<b>${v ? 'yes' : 'no'}</b>`;
+$('caps').innerHTML =
+  `Web Bluetooth ${yesNo(caps.bluetooth)} · Remembered devices ${yesNo(caps.remember)} · ` +
+  `Signal strength ${yesNo(caps.watch)} · In-page scan ${yesNo(caps.scan)}` +
+  (isBrave ? ' · Brave' : '');
 
 // ---------- logging ----------
 function stamp() { return ((performance.now() - t0) / 1000).toFixed(3).padStart(8); }
@@ -174,41 +211,161 @@ function resetCounters() {
   rateCount = 0; rate = null; lastDataAt = 0;
 }
 
-// ---------- Web Bluetooth ----------
-async function connect() {
-  stopSim();
+// ---------- device list ----------
+// id -> { device, name, rssi, seenAt, ffe0, source: 'remembered' | 'picked' | 'scan' }
+const known = new Map();
+let scan = null, scanTimer = null;
+
+function upsert(dev, fields) {
+  const e = known.get(dev.id) || { device: dev, name: dev.name || '', rssi: null, seenAt: 0, ffe0: false, source: fields.source };
+  e.device = dev;
+  for (const [k, v] of Object.entries(fields)) if (v !== undefined && v !== '') e[k] = v;
+  known.set(dev.id, e);
+  renderDevices();
+  return e;
+}
+
+function renderDevices() {
+  const now = performance.now();
+  const entries = [...known.values()].sort((a, b) =>
+    (b.device === device) - (a.device === device) || b.ffe0 - a.ffe0 || (b.rssi ?? -999) - (a.rssi ?? -999));
+  ui.devices.replaceChildren(...entries.map(e => {
+    const li = document.createElement('li');
+    const info = document.createElement('div');
+    info.className = 'info';
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = e.name || 'Unnamed device';
+    if (e.ffe0) name.insertAdjacentHTML('beforeend', '<span class="tag">FFE0</span>');
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const seen = e.seenAt ? `seen ${Math.round((now - e.seenAt) / 1000)} s ago` : e.source === 'remembered' ? 'remembered' : '';
+    meta.textContent = [e.rssi != null && `${e.rssi} dBm`, seen, e.device.id.slice(0, 10) + '…'].filter(Boolean).join(' · ');
+    info.append(name, meta);
+    const btn = document.createElement('button');
+    const isCurrent = e.device === device && (connected || reconnecting);
+    btn.textContent = isCurrent ? 'Disconnect' : 'Connect';
+    if (!isCurrent) btn.className = 'primary';
+    btn.onclick = () => isCurrent ? disconnect() : connectTo(e);
+    li.append(info, btn);
+    return li;
+  }));
+  if (!entries.length) {
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = caps.scan
+      ? 'No devices yet. Press Scan to search nearby, or Add device… to use the browser picker.'
+      : 'No devices yet. Press Add device… and pick the JDY-23 once; it will be listed here afterwards.';
+    ui.devices.append(li);
+  }
+}
+// Refresh "seen N s ago" only when something has been seen.
+setInterval(() => { if ([...known.values()].some(e => e.seenAt)) renderDevices(); }, 1000);
+
+const watched = new WeakSet();
+function watch(dev) {
+  if (!caps.watch || watched.has(dev)) return;
+  watched.add(dev);
+  dev.addEventListener('advertisementreceived', e =>
+    upsert(dev, { rssi: e.rssi, seenAt: performance.now(), name: e.name }));
+  dev.watchAdvertisements().catch(err => log(`watchAdvertisements(${dev.name || dev.id}) failed: ${err.message}`));
+}
+
+async function loadRemembered() {
+  if (!caps.remember) return;
   try {
-    const options = ui.onlyFfe0.checked
-      ? { filters: [{ services: [SERVICE] }] }
-      : { acceptAllDevices: true, optionalServices: [SERVICE] };
-    log(`requestDevice(${ui.onlyFfe0.checked ? 'filter: service FFE0' : 'all nearby devices'})`);
-    device = await navigator.bluetooth.requestDevice(options);
+    const devs = await bt.getDevices();
+    log(`remembered devices: ${devs.length}`);
+    for (const d of devs) { upsert(d, { source: 'remembered' }); watch(d); }
+  } catch (e) { log(`getDevices failed: ${e.message}`); }
+}
+
+async function startScan() {
+  if (scan) return stopScan();
+  try {
+    scan = await bt.requestLEScan({ acceptAllAdvertisements: true, keepRepeatedDevices: true });
   } catch (e) {
-    log(`ERROR ${e.name}: ${e.message}`);
-    setStatus(e.name === 'NotFoundError' ? 'idle' : 'error', e.name === 'NotFoundError' ? 'No device chosen' : 'Error');
+    log(`scan failed: ${e.name}: ${e.message}`);
+    scan = null;
     return;
   }
-  $('device').textContent = device.name || '(no name)';
-  log(`picked "${device.name || ''}" id=${device.id}`);
-  device.addEventListener('gattserverdisconnected', onDisconnected);
+  log('scanning…');
+  ui.scan.textContent = 'Stop scan';
+  scanTimer = setTimeout(stopScan, SCAN_MS);
+}
+
+function stopScan() {
+  clearTimeout(scanTimer);
+  if (!scan) return;
+  try { scan.stop(); } catch {}
+  scan = null;
+  ui.scan.textContent = 'Scan';
+  log('scan stopped');
+}
+
+if (bt) bt.addEventListener('advertisementreceived', e => {
+  if (!scan) return;
+  const ffe0 = (e.uuids || []).some(u => u.toLowerCase() === SERVICE);
+  upsert(e.device, { source: 'scan', name: e.name || e.device.name, rssi: e.rssi, seenAt: performance.now(), ffe0: ffe0 || undefined });
+});
+
+// Browser picker: required once per device before a page may use it.
+async function pick(entry) {
+  const options = entry?.name
+    ? { filters: [{ name: entry.name }], optionalServices: [SERVICE] }
+    : { acceptAllDevices: true, optionalServices: [SERVICE] };
+  log(`browser picker (${entry?.name ? `name "${entry.name}"` : 'all nearby devices'})`);
   try {
-    await openGatt();
+    const dev = await bt.requestDevice(options);
+    log(`picked "${dev.name || ''}" id=${dev.id}`);
+    watch(dev);
+    return upsert(dev, { source: 'picked' });
   } catch (e) {
-    log(`ERROR ${e.name}: ${e.message}`);
-    if (e.name === 'NotFoundError') log('this device has no FFE0/FFE1 service; it is probably not the JDY-23');
-    device.removeEventListener('gattserverdisconnected', onDisconnected);
-    if (device.gatt.connected) device.gatt.disconnect();
-    setStatus('error', e.name === 'NotFoundError' ? 'Not a JDY-23 (no FFE0 service)' : 'Error');
-    ui.connect.disabled = false;
-    ui.disconnect.disabled = true;
+    log(`picker: ${e.name}: ${e.message}`);
+    if (isBrave && e.name !== 'NotFoundError') log('Brave: make sure the Web Bluetooth flag is enabled');
+    setStatus('idle', e.name === 'NotFoundError' ? 'No device chosen' : 'Error');
+    return null;
   }
 }
 
-async function openGatt() {
+async function addDevice() {
+  const e = await pick(null);
+  if (e) connectTo(e);
+}
+
+// ---------- connection ----------
+async function connectTo(entry) {
+  stopSim();
+  stopScan();
+  if (device && device !== entry.device) await dropCurrent();
+  try {
+    await openGatt(entry.device);
+  } catch (e) {
+    log(`ERROR ${e.name}: ${e.message}`);
+    closeQuietly();
+    // Devices found by an in-page scan may still need the picker once before GATT access is allowed.
+    if (entry.source === 'scan' && (e.name === 'SecurityError' || e.name === 'NotFoundError')) {
+      log('this device needs to be approved once in the browser picker');
+      const picked = await pick(entry);
+      if (picked) return connectTo(picked);
+      return;
+    }
+    const noService = e.name === 'NotFoundError';
+    if (noService) log('this device has no FFE0/FFE1 service; it is probably not the JDY-23');
+    setStatus('error', noService ? 'Not a JDY-23 (no FFE0 service)' : 'Error');
+  }
+}
+
+async function openGatt(dev) {
+  device = dev;
+  userDisconnect = false;
+  $('device').textContent = dev.name || '(no name)';
   setStatus('connecting', 'Connecting…');
-  ui.connect.disabled = true;
   ui.disconnect.disabled = false;
-  const server = await device.gatt.connect();
+  renderDevices();
+  dev.removeEventListener('gattserverdisconnected', onDisconnected);
+  dev.addEventListener('gattserverdisconnected', onDisconnected);
+  const server = await dev.gatt.connect();
   log('GATT connected');
   const service = await server.getPrimaryService(SERVICE);
   log('service FFE0 found');
@@ -220,7 +377,9 @@ async function openGatt() {
   await characteristic.startNotifications();
   log('notifications started');
   connected = true;
+  if (known.has(dev.id)) known.get(dev.id).ffe0 = true;
   setStatus('connected', 'Connected');
+  renderDevices();
 }
 
 function onNotify(e) {
@@ -228,29 +387,67 @@ function onNotify(e) {
   onBytes(new Uint8Array(v.buffer, v.byteOffset, v.byteLength));
 }
 
-function onDisconnected(event) {
+function closeQuietly() {
+  characteristic?.removeEventListener('characteristicvaluechanged', onNotify);
+  characteristic = null;
+  if (device) {
+    device.removeEventListener('gattserverdisconnected', onDisconnected);
+    if (device.gatt.connected) device.gatt.disconnect();
+  }
   connected = false;
-  if (event) log('device disconnected');
-  setStatus('idle', 'Disconnected');
-  ui.connect.disabled = !!problems.length;
   ui.disconnect.disabled = true;
+  renderDevices();
+}
+
+async function onDisconnected() {
+  const wasConnected = connected;
+  connected = false;
+  characteristic?.removeEventListener('characteristicvaluechanged', onNotify);
+  log('device disconnected');
+  if (reconnecting) return; // a failed attempt inside the retry loop below
+  if (userDisconnect || !wasConnected) return setIdle();
+  // Unexpected drop: retry on the same page.
+  reconnecting = true;
+  for (let i = 1; i <= RECONNECT_TRIES && !userDisconnect; i++) {
+    setStatus('connecting', `Reconnecting (${i}/${RECONNECT_TRIES})…`);
+    renderDevices();
+    await new Promise(r => setTimeout(r, RECONNECT_DELAY_MS));
+    if (userDisconnect) break;
+    try {
+      await openGatt(device);
+      log(`reconnected after ${i} attempt(s)`);
+      reconnecting = false;
+      return;
+    } catch (e) { log(`reconnect ${i} failed: ${e.message}`); }
+  }
+  reconnecting = false;
+  setIdle();
+}
+
+function setIdle() {
+  setStatus('idle', 'Disconnected');
+  ui.disconnect.disabled = !simTimer;
+  renderDevices();
+}
+
+async function dropCurrent() {
+  userDisconnect = true;
+  const wasUp = device?.gatt.connected;
+  closeQuietly();
+  if (wasUp) log('device disconnected');
 }
 
 function disconnect() {
   if (simTimer) { stopSim(); return; }
-  if (characteristic) characteristic.removeEventListener('characteristicvaluechanged', onNotify);
+  userDisconnect = true;
   if (device?.gatt.connected) device.gatt.disconnect(); // fires gattserverdisconnected
-  else onDisconnected();
+  else { connected = false; setIdle(); }
 }
 
 // ---------- simulator ----------
 function startSim() {
-  if (device?.gatt.connected) {
-    device.removeEventListener('gattserverdisconnected', onDisconnected);
-    characteristic?.removeEventListener('characteristicvaluechanged', onNotify);
-    device.gatt.disconnect();
-    log('device disconnected');
-  }
+  if (device?.gatt.connected) dropCurrent();
+  stopScan();
   resetCounters();
   log('simulator started (10 Hz + 60 Hz + noise, random chunks of 1–20 B)');
   $('device').textContent = 'Simulator';
@@ -278,9 +475,10 @@ function stopSim() {
   if (!simTimer) return;
   clearInterval(simTimer);
   simTimer = null;
+  connected = false;
   log('simulator stopped');
   ui.simulate.disabled = false;
-  onDisconnected();
+  setIdle();
 }
 
 // ---------- rendering (~5 fps) ----------
@@ -318,7 +516,8 @@ setInterval(render, 200);
 setInterval(() => { if (connected) { rate = rateCount; } rateCount = 0; }, 1000);
 
 // ---------- buttons ----------
-ui.connect.onclick = connect;
+ui.scan.onclick = startScan;
+ui.add.onclick = addDevice;
 ui.disconnect.onclick = disconnect;
 ui.simulate.onclick = startSim;
 $('clear').onclick = () => { for (const k in lines) lines[k] = []; ['events', 'hex', 'samples'].forEach(k => dirty.add(k)); render(); };
@@ -326,6 +525,7 @@ $('copy').onclick = async () => {
   const text = [
     `NEEG-2 step 0 log  ${new Date().toISOString()}`,
     `UA: ${navigator.userAgent}`,
+    `caps: ${JSON.stringify(caps)} brave=${isBrave}`,
     `packets=${decoder.stats.packets} notifs=${notifs} bytes=${decoder.stats.bytes} rejected=${decoder.stats.rejected} skipped=${decoder.stats.skipped} rate=${rate}`,
     '', '== events ==', ...lines.events,
     '', '== hex (last 200) ==', ...lines.hex,
@@ -334,7 +534,11 @@ $('copy').onclick = async () => {
   try { await navigator.clipboard.writeText(text); log('log copied to clipboard'); }
   catch (e) { log(`copy failed: ${e.message}`); }
 };
-log(problems.length ? 'Web Bluetooth unavailable' : 'ready');
+
+log(problems.length ? 'Web Bluetooth unavailable' : `ready (${Object.entries(caps).map(([k, v]) => `${k}=${v ? 'yes' : 'no'}`).join(', ')})`);
+if (bt?.getAvailability) bt.getAvailability().then(a => { if (!a) log('Bluetooth adapter is off or unavailable'); });
+renderDevices();
+loadRemembered();
 </script>
 </body>
 </html>
