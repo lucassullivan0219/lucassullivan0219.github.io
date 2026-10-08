@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEEG-2 Decoder Tests · Lucas Sullivan</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .ok{color:#2e9d5b}.fail{color:#d64545}
+  #results li{margin:.2em 0}
+  #results small{display:block;color:var(--muted);word-break:break-word}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">← NEEG-2</a>
+  <h1>Decoder tests</h1>
+  <p class="lead" id="summary">Running…</p>
+  <ul id="results"></ul>
+</main>
+<script type="module">
+  import { runTests } from './decoder.test.js';
+  const results = runTests();
+  const failed = results.filter(r => !r.ok).length;
+  document.getElementById('summary').textContent =
+    failed ? `${failed} of ${results.length} failed` : `All ${results.length} passed`;
+  document.getElementById('summary').className = failed ? 'lead fail' : 'lead ok';
+  const ul = document.getElementById('results');
+  for (const r of results) {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="${r.ok ? 'ok' : 'fail'}">${r.ok ? 'PASS' : 'FAIL'}</span> `;
+    li.append(r.name);
+    if (!r.ok) { const s = document.createElement('small'); s.textContent = r.error; li.append(s); }
+    ul.append(li);
+  }
+  window.testResults = results;
+</script>
+</body>
+</html>

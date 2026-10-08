@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEEG-2 · Lucas Sullivan</title>
+<meta name="description" content="NEEG-2 EEG headset: browser receiver over Web Bluetooth. Step 0: connection test.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css">
+<style>
+  button{font:inherit;font-size:.92rem;padding:.45em 1em;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button:disabled{opacity:.45;cursor:default}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .check{display:flex;gap:.4em;align-items:center;margin:.8em 0 0;color:var(--muted);font-size:.88rem}
+  .notice{padding:12px 14px;border-radius:10px;border:1px solid #d64545;color:var(--fg);margin-top:16px;font-size:.92rem}
+  .notice[hidden]{display:none}
+  .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px 16px;margin:0}
+  .stats div{min-width:0}
+  .stats dt{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .stats dd{margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  #status[data-s=connected]{color:#2e9d5b}
+  #status[data-s=stalled],#status[data-s=error]{color:#d64545}
+  h3{font-size:.95rem;margin:0 0 .5em}
+  pre{margin:0;max-height:38vh;overflow:auto;font:12px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:.5em}
+  .panel-head h3{margin:0}
+  small.note{display:block;color:var(--muted);margin-top:.8em;font-size:.82rem}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../">← All projects</a>
+  <h1>NEEG-2 Receiver</h1>
+  <p class="lead">Step 0: connection test. Connects straight to the headset's JDY-23 BLE module with Web Bluetooth, subscribes to FFE1 and prints the raw bytes and decoded values.</p>
+
+  <div class="notice" id="support" hidden></div>
+
+  <div class="panel">
+    <div class="row">
+      <button class="primary" id="connect">Connect</button>
+      <button id="disconnect" disabled>Disconnect</button>
+      <button id="simulate">Simulate</button>
+    </div>
+    <label class="check"><input type="checkbox" id="showAll"> Show all nearby devices (use if the headset is missing from the list)</label>
+    <small class="note">Simulate feeds synthetic packets, split into random-sized chunks, through the same decoder. No hardware needed.</small>
+  </div>
+
+  <div class="panel">
+    <dl class="stats">
+      <div><dt>Status</dt><dd id="status" data-s="idle">Not connected</dd></div>
+      <div><dt>Device</dt><dd id="device">–</dd></div>
+      <div><dt>Rate (Hz)</dt><dd id="rate">–</dd></div>
+      <div><dt>Packets</dt><dd id="packets">0</dd></div>
+      <div><dt>Notifications</dt><dd id="notifs">0</dd></div>
+      <div><dt>Bytes</dt><dd id="bytes">0</dd></div>
+      <div><dt>Chunk size</dt><dd id="chunk">–</dd></div>
+      <div><dt>Bad sub-header</dt><dd id="rejected">0</dd></div>
+      <div><dt>Skipped bytes</dt><dd id="skipped">0</dd></div>
+      <div><dt>Battery byte</dt><dd id="battery">–</dd></div>
+      <div><dt>ch0</dt><dd id="ch0">–</dd></div>
+      <div><dt>ch1</dt><dd id="ch1">–</dd></div>
+    </dl>
+    <small class="note">Rate counts decoded packets per second (expected 125). Skipped bytes are bytes dropped while searching for the 0xAA header.</small>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Log</h3>
+      <div class="row">
+        <label class="check" style="margin:0"><input type="checkbox" id="pause"> Pause</label>
+        <button id="copy">Copy</button>
+        <button id="clear">Clear</button>
+      </div>
+    </div>
+    <pre id="events"></pre>
+  </div>
+
+  <div class="panel">
+    <h3>Raw notifications (hex)</h3>
+    <pre id="hex"></pre>
+  </div>
+
+  <div class="panel">
+    <h3>Decoded samples</h3>
+    <pre id="samples"></pre>
+    <small class="note">µV = count / 8388607 × 2.39 V / 24 (gain). Last 200 lines are kept.</small>
+  </div>
+
+  <p><a href="test.html">Decoder tests</a></p>
+
+  <footer>© 2026 Lucas Sullivan</footer>
+</main>
+
+<script type="module">
+import { createAaDecoder, countsToMicrovolts, encodeAaPacket, FS } from './decoder.js';
+
+const SERVICE = '0000ffe0-0000-1000-8000-00805f9b34fb';
+const CHARACTERISTIC = '0000ffe1-0000-1000-8000-00805f9b34fb';
+const MAX_LINES = 200;
+const STALL_MS = 2000;
+
+const $ = id => document.getElementById(id);
+const ui = {
+  connect: $('connect'), disconnect: $('disconnect'), simulate: $('simulate'),
+  showAll: $('showAll'), pause: $('pause'), support: $('support'),
+};
+
+let decoder = createAaDecoder();
+let device = null, characteristic = null, simTimer = null;
+let notifs = 0, sampleIndex = 0, lastChunk = 0, lastSample = null;
+let lastDataAt = 0, t0 = performance.now(), connected = false;
+let rateCount = 0, rate = null;
+const lines = { events: [], hex: [], samples: [] };
+const dirty = new Set();
+
+// ---------- support check ----------
+const problems = [];
+if (!window.isSecureContext) problems.push('This page is not served over HTTPS, so Web Bluetooth is blocked.');
+else if (!('bluetooth' in navigator)) problems.push('This browser has no Web Bluetooth. Use Chrome or Edge on Android, Windows, macOS or ChromeOS. iOS browsers, Firefox and Safari do not support it.');
+if (problems.length) {
+  ui.support.textContent = problems.join(' ') + ' Simulate still works.';
+  ui.support.hidden = false;
+  ui.connect.disabled = true;
+}
+
+// ---------- logging ----------
+function stamp() { return ((performance.now() - t0) / 1000).toFixed(3).padStart(8); }
+function push(kind, text) {
+  const arr = lines[kind];
+  arr.push(text);
+  if (arr.length > MAX_LINES) arr.splice(0, arr.length - MAX_LINES);
+  dirty.add(kind);
+}
+function log(msg) { push('events', `${stamp()}s  ${msg}`); console.log('[neeg]', msg); }
+const hex = bytes => Array.from(bytes, b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+
+function setStatus(s, text) { $('status').dataset.s = s; $('status').textContent = text; }
+
+// ---------- data path ----------
+function onBytes(bytes) {
+  const now = performance.now();
+  notifs++;
+  lastChunk = bytes.length;
+  lastDataAt = now;
+  push('hex', `${stamp()}s  [${String(bytes.length).padStart(3)} B]  ${hex(bytes)}`);
+  for (const s of decoder.push(bytes)) {
+    lastSample = s;
+    rateCount++;
+    push('samples', `#${String(sampleIndex).padStart(6)}  t=${(sampleIndex / FS).toFixed(3)}s  batt=${String(s.battery).padStart(3)}  ` +
+      s.channels.map((c, i) => `ch${i}=${String(c).padStart(9)} (${countsToMicrovolts(c).toFixed(2).padStart(10)} µV)`).join('  '));
+    sampleIndex++;
+  }
+}
+
+function resetCounters() {
+  decoder = createAaDecoder();
+  notifs = 0; sampleIndex = 0; lastChunk = 0; lastSample = null;
+  rateCount = 0; rate = null; lastDataAt = 0;
+}
+
+// ---------- Web Bluetooth ----------
+async function connect() {
+  stopSim();
+  try {
+    const options = ui.showAll.checked
+      ? { acceptAllDevices: true, optionalServices: [SERVICE] }
+      : { filters: [{ services: [SERVICE] }] };
+    log(`requestDevice(${ui.showAll.checked ? 'acceptAllDevices' : 'filter: service FFE0'})`);
+    device = await navigator.bluetooth.requestDevice(options);
+    $('device').textContent = device.name || '(no name)';
+    log(`picked "${device.name || ''}" id=${device.id}`);
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+    await openGatt();
+  } catch (e) {
+    log(`ERROR ${e.name}: ${e.message}`);
+    setStatus('error', e.name === 'NotFoundError' ? 'No device chosen' : 'Error');
+    ui.connect.disabled = false;
+  }
+}
+
+async function openGatt() {
+  setStatus('connecting', 'Connecting…');
+  ui.connect.disabled = true;
+  ui.disconnect.disabled = false;
+  const server = await device.gatt.connect();
+  log('GATT connected');
+  const service = await server.getPrimaryService(SERVICE);
+  log('service FFE0 found');
+  characteristic = await service.getCharacteristic(CHARACTERISTIC);
+  const p = characteristic.properties;
+  log('FFE1 properties: ' + ['read', 'write', 'writeWithoutResponse', 'notify', 'indicate'].filter(k => p[k]).join(', '));
+  characteristic.addEventListener('characteristicvaluechanged', onNotify);
+  resetCounters();
+  await characteristic.startNotifications();
+  log('notifications started');
+  connected = true;
+  setStatus('connected', 'Connected');
+}
+
+function onNotify(e) {
+  const v = e.target.value;
+  onBytes(new Uint8Array(v.buffer, v.byteOffset, v.byteLength));
+}
+
+function onDisconnected(event) {
+  connected = false;
+  if (event) log('device disconnected');
+  setStatus('idle', 'Disconnected');
+  ui.connect.disabled = !!problems.length;
+  ui.disconnect.disabled = true;
+}
+
+function disconnect() {
+  if (simTimer) { stopSim(); return; }
+  if (characteristic) characteristic.removeEventListener('characteristicvaluechanged', onNotify);
+  if (device?.gatt.connected) device.gatt.disconnect(); // fires gattserverdisconnected
+  else onDisconnected();
+}
+
+// ---------- simulator ----------
+function startSim() {
+  if (device?.gatt.connected) {
+    device.removeEventListener('gattserverdisconnected', onDisconnected);
+    characteristic?.removeEventListener('characteristicvaluechanged', onNotify);
+    device.gatt.disconnect();
+    log('device disconnected');
+  }
+  resetCounters();
+  log('simulator started (10 Hz + 60 Hz + noise, random chunks of 1–20 B)');
+  $('device').textContent = 'Simulator';
+  let n = 0, pending = [];
+  const uvToCounts = uv => Math.round(uv / countsToMicrovolts(1));
+  simTimer = setInterval(() => {
+    for (let k = 0; k < 5; k++, n++) { // 5 packets / 40 ms = 125 Hz
+      const t = n / FS;
+      const ch0 = 20 * Math.sin(2 * Math.PI * 10 * t) + 5 * Math.sin(2 * Math.PI * 60 * t) + 4 * (Math.random() - .5);
+      const ch1 = 15 * Math.sin(2 * Math.PI * 10 * t + 1) + 300 + 4 * (Math.random() - .5);
+      pending.push(...encodeAaPacket(50, [uvToCounts(ch0), uvToCounts(ch1)]));
+    }
+    while (pending.length) {
+      const size = 1 + Math.floor(Math.random() * 20);
+      onBytes(Uint8Array.from(pending.splice(0, size)));
+    }
+  }, 40);
+  connected = true;
+  setStatus('connected', 'Simulating');
+  ui.simulate.disabled = true;
+  ui.disconnect.disabled = false;
+}
+
+function stopSim() {
+  if (!simTimer) return;
+  clearInterval(simTimer);
+  simTimer = null;
+  log('simulator stopped');
+  ui.simulate.disabled = false;
+  onDisconnected();
+}
+
+// ---------- rendering (~5 fps) ----------
+function render() {
+  const st = decoder.stats;
+  $('notifs').textContent = notifs;
+  $('bytes').textContent = st.bytes;
+  $('packets').textContent = st.packets;
+  $('rejected').textContent = st.rejected;
+  $('skipped').textContent = st.skipped;
+  $('chunk').textContent = lastChunk ? `${lastChunk} B` : '–';
+  $('rate').textContent = rate == null ? '–' : rate.toFixed(0);
+  if (lastSample) {
+    $('battery').textContent = lastSample.battery;
+    for (const i of [0, 1]) {
+      const c = lastSample.channels[i];
+      $('ch' + i).textContent = c == null ? '–' : `${c} (${countsToMicrovolts(c).toFixed(1)} µV)`;
+    }
+  }
+  if (connected && !simTimer) {
+    const stalled = performance.now() - (lastDataAt || 0) > STALL_MS;
+    setStatus(stalled ? 'stalled' : 'connected', stalled ? 'Connected, no data > 2 s' : 'Connected');
+  }
+  if (!ui.pause.checked) {
+    for (const kind of dirty) {
+      const el = $(kind);
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+      el.textContent = lines[kind].join('\n');
+      if (atBottom) el.scrollTop = el.scrollHeight;
+    }
+    dirty.clear();
+  }
+}
+setInterval(render, 200);
+setInterval(() => { if (connected) { rate = rateCount; } rateCount = 0; }, 1000);
+
+// ---------- buttons ----------
+ui.connect.onclick = connect;
+ui.disconnect.onclick = disconnect;
+ui.simulate.onclick = startSim;
+$('clear').onclick = () => { for (const k in lines) lines[k] = []; ['events', 'hex', 'samples'].forEach(k => dirty.add(k)); render(); };
+$('copy').onclick = async () => {
+  const text = [
+    `NEEG-2 step 0 log  ${new Date().toISOString()}`,
+    `UA: ${navigator.userAgent}`,
+    `packets=${decoder.stats.packets} notifs=${notifs} bytes=${decoder.stats.bytes} rejected=${decoder.stats.rejected} skipped=${decoder.stats.skipped} rate=${rate}`,
+    '', '== events ==', ...lines.events,
+    '', '== hex (last 200) ==', ...lines.hex,
+    '', '== samples (last 200) ==', ...lines.samples,
+  ].join('\n');
+  try { await navigator.clipboard.writeText(text); log('log copied to clipboard'); }
+  catch (e) { log(`copy failed: ${e.message}`); }
+};
+log(problems.length ? 'Web Bluetooth unavailable' : 'ready');
+</script>
+</body>
+</html>
