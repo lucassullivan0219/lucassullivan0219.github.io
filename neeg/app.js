@@ -11,6 +11,7 @@ import { DISPLAY_MODES } from './pipeline/filters.js';
 import { createWaveform } from './ui/waveform.js';
 import { createSpectrumView } from './ui/spectrum-view.js';
 import { createQualityView } from './ui/quality-view.js';
+import { Recorder, recordingBaseName, createWakeLock } from './pipeline/recorder.js';
 import { BleTransport } from './transports/ble.js';
 import { SimTransport } from './transports/sim.js';
 import { createPager } from './ui/pager.js';
@@ -96,6 +97,73 @@ pager.onChange(i => requestAnimationFrame(() => {
   if (i === PAGE_QUALITY) quality.update();
 }));
 
+// ---------- recording ----------
+const recorder = new Recorder({ format, channelNames: pipeline.channelNames });
+pipeline.on(batch => recorder.push(batch));
+const wakeLock = createWakeLock(log);
+let lastRecording = null; // { csv, meta, name, saved: Set }
+$('wakeNote').textContent = wakeLock.supported
+  ? 'The screen is kept on while recording. Keep this page in the foreground: phones may pause Bluetooth for background pages.'
+  : 'This browser cannot keep the screen on (no Screen Wake Lock). Keep the screen on and this page in the foreground while recording.';
+
+const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+function startRecording() {
+  if (!connected || recorder.recording) return;
+  recorder.start({
+    transport: active.kind,
+    id: active === ble ? ble.device?.id : null,
+    label: active === ble ? devices.titleOf(ble.device.id) : 'Simulator',
+  });
+  wakeLock.on();
+  log('recording started');
+  updateRecUi();
+}
+
+function stopRecording(reason = '') {
+  const result = recorder.stop();
+  wakeLock.off();
+  if (!result) return;
+  lastRecording = { ...result, name: recordingBaseName(new Date(recorder.startEpoch)), saved: new Set() };
+  log(`recording stopped${reason}: ${recorder.sampleCount} samples, ${recorder.durationS.toFixed(1)} s`);
+  updateRecUi();
+}
+
+function download(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+function updateRecUi() {
+  const on = recorder.recording;
+  $('rec').classList.toggle('on', on);
+  $('rec').disabled = !on && !connected;
+  $('rec').ariaLabel = $('rec').title = on ? 'Stop recording' : 'Start recording';
+  $('recTime').textContent = on ? mmss(recorder.durationS) : '';
+  if (on) {
+    $('recInfo').textContent = `Recording · ${mmss(recorder.durationS)} · ${recorder.sampleCount.toLocaleString()} samples` +
+      (wakeLock.supported ? (wakeLock.active ? ' · screen kept on' : ' · screen lock not held') : '');
+  } else if (lastRecording) {
+    const m = lastRecording.meta;
+    $('recInfo').textContent = `${lastRecording.name} · ${mmss(m.durationS)} · ${m.samples.toLocaleString()} samples ` +
+      `(expected ${m.expectedSamples.toLocaleString()})`;
+  }
+  $('recDownloads').hidden = on || !lastRecording;
+}
+
+$('rec').onclick = () => recorder.recording ? stopRecording() : startRecording();
+$('dlCsv').onclick = () => { download(lastRecording.csv, `${lastRecording.name}.csv`); lastRecording.saved.add('csv'); };
+$('dlJson').onclick = () => {
+  download(new Blob([JSON.stringify(lastRecording.meta, null, 2)], { type: 'application/json' }), `${lastRecording.name}.json`);
+  lastRecording.saved.add('json');
+};
+window.addEventListener('beforeunload', e => {
+  if (recorder.recording || (lastRecording && !lastRecording.saved.has('csv'))) e.preventDefault();
+});
+
 // ---------- per-channel stats ----------
 $('fsNote').textContent = format.fs;
 document.querySelectorAll('.fs').forEach(el => { el.textContent = format.fs; });
@@ -165,6 +233,8 @@ function onState(transport, { state, reason, reconnect }) {
     if (reconnect) {
       decoder.resync(); // keep counters and the sample index running
     } else {
+      // A new connection restarts the sample index, so it can't continue an open recording.
+      if (recorder.recording) stopRecording(' (new connection)');
       decoder.reset();
       pipeline.reset();
       store.reset();
@@ -185,6 +255,7 @@ function onState(transport, { state, reason, reconnect }) {
     setStatus(state === 'error' ? 'error' : 'idle', reason || 'Disconnected');
   }
   $('simulate').textContent = sim.connected ? 'Stop simulation' : 'Simulate';
+  updateRecUi();
 }
 
 for (const t of [ble, sim]) {
@@ -211,6 +282,7 @@ function render() {
     $('battery').textContent = last.battery ?? '–';
     channelCells.forEach((cell, i) => { cell.textContent = `${last.uv[i].toFixed(1)} µV`; });
   }
+  if (recorder.recording) updateRecUi();
   if (connected && active === ble) {
     const stalled = performance.now() - lastDataAt > STALL_MS;
     setStatus(stalled ? 'stalled' : 'connected', stalled ? 'No data > 2 s' : 'Connected');

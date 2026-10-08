@@ -52,6 +52,13 @@
   .tabs{display:flex;gap:2px}
   .tabs button{border:0;background:none;color:var(--muted);padding:.35em .6em;border-radius:6px}
   @media(max-width:420px){#liveRate{display:none}}
+  .live{align-items:center}
+  .rec{display:inline-flex;align-items:center;gap:5px;padding:.25em .55em;font-variant-numeric:tabular-nums}
+  .rec .dot{width:10px;height:10px;border-radius:50%;background:var(--bad)}
+  .rec.on .dot{border-radius:2px}
+  .rec.on{border-color:var(--bad);color:var(--fg)}
+  .recinfo{font-size:.86rem}
+  [hidden]{display:none !important}
   .tabs button[aria-selected=true]{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line),inset 0 -2px 0 var(--accent)}
   .live{font-size:.82rem;display:flex;gap:.7em;color:var(--muted);font-variant-numeric:tabular-nums}
   #status[data-s=connected]{color:#2e9d5b}
@@ -99,7 +106,8 @@
       <button role="tab" id="tab-quality" aria-controls="page-quality">Quality</button>
       <button role="tab" id="tab-log" aria-controls="page-log">Log</button>
     </div>
-    <div class="live"><span id="status" data-s="idle">Not connected</span><span id="liveRate"></span></div>
+    <div class="live"><span id="status" data-s="idle">Not connected</span><span id="liveRate"></span>
+      <button id="rec" class="rec" disabled aria-label="Start recording" title="Start recording"><span class="dot"></span><span id="recTime"></span></button></div>
   </div>
 
   <div class="pager" id="pager"><div class="track" id="track">
@@ -151,6 +159,18 @@
         <pre id="samples"></pre>
       </details>
       <small class="note">Rate: decoded samples per second (expected <span id="fsNote">125</span>). Bad frames: a header byte followed by invalid fields. Skipped: bytes dropped while looking for a header.</small>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Recording</h3>
+        <div class="row" id="recDownloads" hidden>
+          <button id="dlCsv">Download CSV</button>
+          <button id="dlJson">Download JSON</button>
+        </div>
+      </div>
+      <div id="recInfo" class="recinfo">Press ● at the top to record. Data stays in this browser until you download it.</div>
+      <small class="note" id="wakeNote"></small>
     </div>
   </section>
 

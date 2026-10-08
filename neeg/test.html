@@ -25,6 +25,7 @@
   import './tests/pipeline.test.js';
   import './tests/dsp.test.js';
   import './tests/quality.test.js';
+  import './tests/recorder.test.js';
 
   const results = await runTests();
   const failed = results.filter(r => !r.ok).length;
