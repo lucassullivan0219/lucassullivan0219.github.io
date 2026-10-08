@@ -27,6 +27,10 @@
   pre{margin:0;max-height:38vh;overflow:auto;font:12px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px}
   .panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:.5em}
   .panel-head h3{margin:0}
+  .help{margin-top:.8em;font-size:.88rem}
+  .help summary{cursor:pointer;color:var(--accent)}
+  .help ul{margin:.5em 0 0;padding-left:1.2em;color:var(--muted)}
+  .help li{margin:.3em 0}
   small.note{display:block;color:var(--muted);margin-top:.8em;font-size:.82rem}
 </style>
 </head>
@@ -44,8 +48,17 @@
       <button id="disconnect" disabled>Disconnect</button>
       <button id="simulate">Simulate</button>
     </div>
-    <label class="check"><input type="checkbox" id="showAll"> Show all nearby devices (use if the headset is missing from the list)</label>
-    <small class="note">Simulate feeds synthetic packets, split into random-sized chunks, through the same decoder. No hardware needed.</small>
+    <label class="check"><input type="checkbox" id="onlyFfe0"> Only list devices that advertise the FFE0 service</label>
+    <small class="note">Connect lists every Bluetooth LE device nearby; pick the headset's JDY-23 module (no pairing needed). Simulate feeds synthetic packets, split into random-sized chunks, through the same decoder. No hardware needed.</small>
+    <details class="help">
+      <summary>Headset not in the list?</summary>
+      <ul>
+        <li>The phone's own Bluetooth settings may not show the JDY-23 at all. That is normal for a BLE-only module; connect from this page instead.</li>
+        <li>The JDY-23 accepts one connection at a time and stops advertising while connected. Unplug the ESP32 dongle and close other BLE apps first.</li>
+        <li>Android: turn on Location, and allow Chrome the "Nearby devices" permission (Android 12+) or Location (Android 11 and older).</li>
+        <li>Devices without a name show up as "Unknown or unsupported device". If unsure, switch the headset off and on and watch which entry disappears and returns.</li>
+      </ul>
+    </details>
   </div>
 
   <div class="panel">
@@ -105,7 +118,7 @@ const STALL_MS = 2000;
 const $ = id => document.getElementById(id);
 const ui = {
   connect: $('connect'), disconnect: $('disconnect'), simulate: $('simulate'),
-  showAll: $('showAll'), pause: $('pause'), support: $('support'),
+  onlyFfe0: $('onlyFfe0'), pause: $('pause'), support: $('support'),
 };
 
 let decoder = createAaDecoder();
@@ -165,19 +178,29 @@ function resetCounters() {
 async function connect() {
   stopSim();
   try {
-    const options = ui.showAll.checked
-      ? { acceptAllDevices: true, optionalServices: [SERVICE] }
-      : { filters: [{ services: [SERVICE] }] };
-    log(`requestDevice(${ui.showAll.checked ? 'acceptAllDevices' : 'filter: service FFE0'})`);
+    const options = ui.onlyFfe0.checked
+      ? { filters: [{ services: [SERVICE] }] }
+      : { acceptAllDevices: true, optionalServices: [SERVICE] };
+    log(`requestDevice(${ui.onlyFfe0.checked ? 'filter: service FFE0' : 'all nearby devices'})`);
     device = await navigator.bluetooth.requestDevice(options);
-    $('device').textContent = device.name || '(no name)';
-    log(`picked "${device.name || ''}" id=${device.id}`);
-    device.addEventListener('gattserverdisconnected', onDisconnected);
+  } catch (e) {
+    log(`ERROR ${e.name}: ${e.message}`);
+    setStatus(e.name === 'NotFoundError' ? 'idle' : 'error', e.name === 'NotFoundError' ? 'No device chosen' : 'Error');
+    return;
+  }
+  $('device').textContent = device.name || '(no name)';
+  log(`picked "${device.name || ''}" id=${device.id}`);
+  device.addEventListener('gattserverdisconnected', onDisconnected);
+  try {
     await openGatt();
   } catch (e) {
     log(`ERROR ${e.name}: ${e.message}`);
-    setStatus('error', e.name === 'NotFoundError' ? 'No device chosen' : 'Error');
+    if (e.name === 'NotFoundError') log('this device has no FFE0/FFE1 service; it is probably not the JDY-23');
+    device.removeEventListener('gattserverdisconnected', onDisconnected);
+    if (device.gatt.connected) device.gatt.disconnect();
+    setStatus('error', e.name === 'NotFoundError' ? 'Not a JDY-23 (no FFE0 service)' : 'Error');
     ui.connect.disabled = false;
+    ui.disconnect.disabled = true;
   }
 }
 
