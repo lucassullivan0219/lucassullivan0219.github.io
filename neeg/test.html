@@ -23,6 +23,7 @@
   import { runTests } from './tests/harness.js';
   import './tests/framed.test.js';
   import './tests/pipeline.test.js';
+  import './tests/dsp.test.js';
 
   const results = await runTests();
   const failed = results.filter(r => !r.ok).length;

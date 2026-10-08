@@ -6,6 +6,9 @@
 import { NEEG_AA_V1 } from './decoders/formats.js';
 import { createFramedDecoder } from './decoders/framed.js';
 import { Pipeline } from './pipeline/pipeline.js';
+import { SignalStore } from './pipeline/store.js';
+import { DISPLAY_MODES } from './pipeline/filters.js';
+import { createWaveform } from './ui/waveform.js';
 import { BleTransport } from './transports/ble.js';
 import { SimTransport } from './transports/sim.js';
 import { createPager } from './ui/pager.js';
@@ -16,10 +19,15 @@ const STALL_MS = 2000;
 const VERIFY_PACKETS = 50;
 
 const $ = id => document.getElementById(id);
+function loadPref(key, fallback) { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } }
+function savePref(key, value) { try { localStorage.setItem(key, value); } catch {} }
 
 const format = NEEG_AA_V1;
 const decoder = createFramedDecoder(format);
 const pipeline = new Pipeline(format);
+const savedMode = loadPref('neeg.mode', 'bp');
+const store = new SignalStore({ channels: pipeline.channels, fs: format.fs, mode: savedMode in DISPLAY_MODES ? savedMode : 'bp' });
+pipeline.on(batch => store.push(batch));
 const ble = new BleTransport();
 const sim = new SimTransport(format);
 
@@ -49,8 +57,24 @@ function log(msg) { push('events', `${stamp()}s  ${msg}`); console.log('[neeg]',
 const hex = bytes => Array.from(bytes, b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
 function setStatus(s, text) { $('status').dataset.s = s; $('status').textContent = text; }
 
+// ---------- signal view ----------
+const PAGE_SIGNAL = 1;
+document.documentElement.style.setProperty('--nch', pipeline.channels);
+const wave = createWaveform($('wave'), { store, names: pipeline.channelNames, fs: format.fs });
+for (const [value, label] of Object.entries(DISPLAY_MODES)) $('mode').add(new Option(label, value));
+$('mode').value = store.mode;
+$('mode').onchange = () => { store.setMode($('mode').value); savePref('neeg.mode', $('mode').value); wave.draw(); };
+$('scale').value = loadPref('neeg.scale', 'auto');
+const applyScale = () => wave.setSpan($('scale').value === 'auto' ? null : +$('scale').value);
+applyScale();
+$('scale').onchange = () => { applyScale(); savePref('neeg.scale', $('scale').value); wave.draw(); };
+// ~10 fps, and only while the Signal page is on screen.
+setInterval(() => { if (pager.current === PAGE_SIGNAL && !document.hidden) wave.draw(); }, 100);
+pager.onChange(i => { if (i === PAGE_SIGNAL) requestAnimationFrame(() => wave.draw()); });
+
 // ---------- per-channel stats ----------
 $('fsNote').textContent = format.fs;
+document.querySelectorAll('.fs').forEach(el => { el.textContent = format.fs; });
 const channelCells = pipeline.channelNames.map(name => {
   const div = document.createElement('div');
   div.innerHTML = '<dt></dt><dd>–</dd>';
@@ -119,6 +143,7 @@ function onState(transport, { state, reason, reconnect }) {
     } else {
       decoder.reset();
       pipeline.reset();
+      store.reset();
       notifs = 0; lastChunk = 0; linkVerified = false;
     }
     lastDataAt = performance.now();

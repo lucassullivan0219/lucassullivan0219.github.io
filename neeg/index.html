@@ -10,7 +10,13 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="../style.css">
 <style>
+  /* Channel colours: validated categorical slots 1–2 (blue, orange), stepped per mode. */
+  :root{--series-1:#2a78d6;--series-2:#eb6834}
+  @media(prefers-color-scheme:dark){:root{--series-1:#3987e5;--series-2:#d95926}}
   main{padding:12px 12px 0}
+  select{font:inherit;font-size:.85rem;padding:.3em .4em;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+  canvas.plot{width:100%;border:0;border-radius:0;background:transparent;touch-action:pan-y}
+  #wave{height:calc(var(--nch,2) * 130px)}
   .back{margin-bottom:.4em;font-size:.85rem}
   h1{font-size:1.35rem;margin:0}
   button{font:inherit;font-size:.88rem;padding:.38em .85em;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
@@ -70,6 +76,7 @@
   <div class="tabbar">
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-device" aria-controls="page-device">Device</button>
+      <button role="tab" id="tab-signal" aria-controls="page-signal">Signal</button>
       <button role="tab" id="tab-log" aria-controls="page-log">Log</button>
     </div>
     <div class="live"><span id="status" data-s="idle">Not connected</span><span id="liveRate"></span></div>
@@ -124,6 +131,28 @@
         <pre id="samples"></pre>
       </details>
       <small class="note">Rate: decoded samples per second (expected <span id="fsNote">125</span>). Bad frames: a header byte followed by invalid fields. Skipped: bytes dropped while looking for a header.</small>
+    </div>
+  </section>
+
+  <section class="page" id="page-signal" role="tabpanel" aria-labelledby="tab-signal">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Waveform</h3>
+        <div class="row">
+          <select id="mode" aria-label="Display filter"></select>
+          <select id="scale" aria-label="Vertical scale">
+            <option value="auto">Auto scale</option>
+            <option value="100">±50 µV</option>
+            <option value="200">±100 µV</option>
+            <option value="300">±150 µV</option>
+            <option value="400">±200 µV</option>
+            <option value="500">±250 µV</option>
+            <option value="1000">±500 µV</option>
+          </select>
+        </div>
+      </div>
+      <canvas id="wave" class="plot"></canvas>
+      <small class="note">Last 5 s, newest on the right. Time comes from the sample count (index ÷ <span class="fs">125</span> Hz), not from when Bluetooth delivered the data.</small>
     </div>
   </section>
 
