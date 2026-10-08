@@ -22,7 +22,7 @@ import { createDeviceList } from './ui/devices.js';
 const MAX_LINES = 200;
 const STALL_MS = 2000;
 const VERIFY_PACKETS = 50;
-const BUILD = '2026-10-08.2'; // bump on every change so a pasted log shows which version ran
+const BUILD = '2026-10-08.3'; // bump on every change so a pasted log shows which version ran
 
 const $ = id => document.getElementById(id);
 function loadPref(key, fallback) { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } }
@@ -197,6 +197,7 @@ if (problems.length) {
   $('add').disabled = true;
 }
 $('scan').hidden = !caps.scan;
+$('winIssue').hidden = !(caps.windows && caps.bluetooth); // NEEG-2 known_issues.md, Issue #11
 const yesNo = v => `<b>${v ? 'yes' : 'no'}</b>`;
 $('caps').innerHTML = `Web Bluetooth ${yesNo(caps.bluetooth)} · Remembered devices ${yesNo(caps.remember)} · ` +
   `Signal strength ${yesNo(caps.watch)} · In-page scan ${yesNo(caps.scan)}` + (caps.brave ? ' · Brave' : '');

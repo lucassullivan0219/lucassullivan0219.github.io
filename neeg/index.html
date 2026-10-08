@@ -44,6 +44,7 @@
   .check{display:flex;gap:.4em;align-items:center;margin:.5em 0 0;color:var(--muted);font-size:.84rem}
   .notice{padding:8px 10px;border-radius:8px;border:1px solid #d64545;color:var(--fg);margin-top:8px;font-size:.88rem}
   .notice[hidden]{display:none}
+  .notice.info{border-color:var(--warn)}
   .panel{padding:10px 12px;margin-top:8px}
   h3{font-size:.9rem;margin:0}
   .panel-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:.5em}
@@ -117,6 +118,11 @@
 
   <section class="page" id="page-device" role="tabpanel" aria-labelledby="tab-device">
     <div class="notice" id="support" hidden></div>
+    <div class="notice info" id="winIssue" hidden>
+      <b>Known issue on Windows:</b> Chrome on Windows can find and connect to the JDY-23, but cannot read its
+      services; the connection drops after about 30 s and retrying does not help. Phones are not affected.
+      On a PC, use the <b>ESP32 dongle (USB)</b> below for now.
+    </div>
 
     <div class="panel">
       <div class="panel-head">

@@ -8,7 +8,7 @@
 //   'devices' the device list changed (read .known)
 //   'log'     detail: string
 
-export const BLE_BUILD = '2026-10-08.2'; // shown in the log to tell which version a browser runs
+export const BLE_BUILD = '2026-10-08.3'; // shown in the log to tell which version a browser runs
 export const JDY_SERVICE = '0000ffe0-0000-1000-8000-00805f9b34fb';
 export const JDY_CHARACTERISTIC = '0000ffe1-0000-1000-8000-00805f9b34fb';
 
@@ -38,6 +38,7 @@ export function bleCapabilities() {
     watch: typeof BluetoothDevice !== 'undefined' && 'watchAdvertisements' in BluetoothDevice.prototype,
     scan: !!bt && typeof bt.requestLEScan === 'function',
     brave: !!navigator.brave,
+    windows: /Windows/.test(navigator.userAgent),
   };
 }
 
@@ -179,13 +180,19 @@ export class BleTransport extends EventTarget {
       const noService = e.name === 'NotFoundError';
       const failedDiscovery = e.name === 'TimeoutError' || (e.name === 'NetworkError' && !entry.device.gatt.connected);
       if (noService) this.#log('this device has no FFE0/FFE1 service; it is not the headset module');
-      if (failedDiscovery) {
-        this.#log('connected, but the device\'s services could not be read. Check: (1) no ESP32 dongle or other ' +
-          'app is connected to the headset; (2) on Windows, the JDY-23 is not paired under Settings › Bluetooth & ' +
-          'devices; (3) chrome://bluetooth-internals › Devices › Inspect can list its services.');
+      const knownWindowsIssue = failedDiscovery && this.caps.windows;
+      if (knownWindowsIssue) {
+        this.#log('KNOWN ISSUE (Windows): Chrome on Windows connects to the JDY-23 but cannot read its services; ' +
+          'the link drops about 30 s later and retrying does not help. Phones work. On a PC, use the ESP32 dongle ' +
+          '(Device page › Connect dongle). Tracked as NEEG-2 docs/known_issues.md, Issue #11.');
+      } else if (failedDiscovery) {
+        this.#log('connected, but the device\'s services could not be read. Check that no ESP32 dongle or other ' +
+          'app is connected to the headset, then try again.');
       }
       this.#state('error', {
-        reason: noService ? 'Not a JDY module (no FFE0)' : failedDiscovery ? 'Connected, but services could not be read (see Log)' : e.message,
+        reason: noService ? 'Not a JDY module (no FFE0)'
+          : knownWindowsIssue ? 'Known Windows issue: use the USB dongle'
+          : failedDiscovery ? 'Connected, but services could not be read (see Log)' : e.message,
       });
     }
   }

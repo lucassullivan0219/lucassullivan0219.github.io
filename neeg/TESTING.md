@@ -14,6 +14,10 @@
 
 ## 1. 連線（Android Chrome、Windows Chrome 各做一次）
 
+> **已知問題（2026-10-08）**：Windows Chrome 154 找得到 JDY-23、`gatt.connect()` 成功，但讀取服務卡住，
+> 約 30 秒後斷線，重試無效；Android 正常。詳見 NEEG-2 `docs/known_issues.md` Issue #11。
+> 頁面在 Windows 上會顯示提示；電腦端暫時改用第 7 節的 ESP32 dongle。
+
 - [ ] Device 頁 Web Bluetooth 顯示 **yes**；記下 Remembered devices / In-page scan 是 yes 還是 no
 - [ ] 按 **Add device…**，選擇視窗**只列出 JDY 類模組**（不是一堆 Unknown device）
   - 若清單是空的：勾「List every nearby device」再試，並記下是哪種情況（代表 JDY-23 沒廣播 FFE0、名稱也不是 JDY 開頭）
