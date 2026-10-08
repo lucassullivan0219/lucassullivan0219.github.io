@@ -32,6 +32,8 @@
   .devices li:first-child{border-top:0}
   .devices li.empty{color:var(--muted);font-size:.9rem;display:block}
   .devices .info{flex:1;min-width:0}
+  .devices button{flex:none}
+  .devices .edit{padding:.45em .65em}
   .devices .name{font-weight:500;overflow-wrap:anywhere}
   .devices .meta{font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
   .tag{display:inline-block;font-size:.72rem;padding:0 .45em;border-radius:4px;border:1px solid var(--accent);color:var(--accent);margin-left:.4em;vertical-align:1px}
@@ -64,13 +66,16 @@
       </div>
     </div>
     <ul class="devices" id="devices"></ul>
+    <label class="check"><input type="checkbox" id="pickAll"> List every nearby device in the picker (only if the headset is missing)</label>
     <div class="caps" id="caps"></div>
     <details class="help">
       <summary>How connecting works / headset not found?</summary>
       <ul>
         <li>No pairing is needed. The phone's own Bluetooth settings cannot connect to the JDY-23; that is expected. Connect from this page.</li>
-        <li>Browsers only let a page use a Bluetooth device after you pick it once in the browser's own device picker ("Add device…"). Chrome then remembers it, and later visits connect from the list above without the picker, if this browser supports remembered devices (see the line above).</li>
-        <li>In-page scanning ("Scan") is an experimental Chrome feature. To try it, open <code>chrome://flags/#enable-experimental-web-platform-features</code>, set it to Enabled and relaunch.</li>
+        <li>Browsers only let a page use a Bluetooth device after you pick it once in the browser's own device picker ("Add device…"). The picker lists only JDY-style modules (FFE0 service, or a name starting with JDY).</li>
+        <li>Telling headsets apart: once a device sends valid NEEG-2 packets it is tagged <b>NEEG-2 ✓</b> and kept in this browser. Use ✎ to give it a name such as "Headset 07".</li>
+        <li>With "List every nearby device", most entries are unnamed. Hold the phone next to the headset (strongest signal) or switch the headset off and on and watch which entry disappears and returns.</li>
+        <li>Remembered devices and in-page scanning ("Scan") are experimental browser features. In Chrome, try <code>chrome://flags/#enable-experimental-web-platform-features</code>, set it to Enabled and relaunch. Brave may not offer them at all.</li>
         <li>Brave turns Web Bluetooth off by default. Enable it at <code>brave://flags</code> (search "Bluetooth"), or use Chrome.</li>
         <li>The JDY-23 accepts one connection at a time and stops advertising while connected. Unplug the ESP32 dongle and close other BLE apps first.</li>
         <li>Android: turn on Location, and allow the browser the "Nearby devices" permission (Android 12+) or Location (Android 11 and older).</li>
@@ -145,7 +150,8 @@ let device = null, characteristic = null, simTimer = null;
 let notifs = 0, sampleIndex = 0, lastChunk = 0, lastSample = null;
 let lastDataAt = 0, t0 = performance.now(), connected = false;
 let rateCount = 0, rate = null;
-let userDisconnect = false, reconnecting = false;
+let userDisconnect = false, reconnecting = false, linkVerified = false;
+const VERIFY_PACKETS = 50;
 const lines = { events: [], hex: [], samples: [] };
 const dirty = new Set();
 
@@ -203,9 +209,19 @@ function onBytes(bytes) {
       s.channels.map((c, i) => `ch${i}=${String(c).padStart(9)} (${countsToMicrovolts(c).toFixed(2).padStart(10)} µV)`).join('  '));
     sampleIndex++;
   }
+  // Enough well-formed 0xAA packets means this really is a NEEG-2 headset: remember that.
+  if (!linkVerified && device && !simTimer && decoder.stats.packets >= VERIFY_PACKETS &&
+      decoder.stats.rejected <= decoder.stats.packets / 10) {
+    linkVerified = true;
+    const fields = { verified: true };
+    if (!deviceMeta[device.id]?.label) fields.label = device.name ? `NEEG-2 (${device.name})` : 'NEEG-2 headset';
+    setMeta(device.id, fields);
+    log(`verified as NEEG-2 headset (${decoder.stats.packets} valid packets); you can rename it with ✎`);
+  }
 }
 
 function resetCounters() {
+  linkVerified = false;
   decoder = createAaDecoder();
   notifs = 0; sampleIndex = 0; lastChunk = 0; lastSample = null;
   rateCount = 0; rate = null; lastDataAt = 0;
@@ -215,6 +231,25 @@ function resetCounters() {
 // id -> { device, name, rssi, seenAt, ffe0, source: 'remembered' | 'picked' | 'scan' }
 const known = new Map();
 let scan = null, scanTimer = null;
+
+// User labels and "verified headset" marks, kept in this browser by device.id.
+const META_KEY = 'neeg.deviceMeta';
+let deviceMeta = {};
+try { deviceMeta = JSON.parse(localStorage.getItem(META_KEY)) || {}; } catch {}
+function setMeta(id, fields) {
+  deviceMeta[id] = { ...deviceMeta[id], ...fields };
+  try { localStorage.setItem(META_KEY, JSON.stringify(deviceMeta)); } catch {}
+  renderDevices();
+}
+const isVerified = e => !!deviceMeta[e.device.id]?.verified;
+
+function rename(e) {
+  const current = deviceMeta[e.device.id]?.label || e.name || '';
+  const label = prompt('Name this device (e.g. Headset 07)', current);
+  if (label === null) return;
+  setMeta(e.device.id, { label: label.trim() });
+  log(`renamed ${e.device.id.slice(0, 10)}… to "${label.trim()}"`);
+}
 
 function upsert(dev, fields) {
   const e = known.get(dev.id) || { device: dev, name: dev.name || '', rssi: null, seenAt: 0, ffe0: false, source: fields.source };
@@ -227,27 +262,37 @@ function upsert(dev, fields) {
 
 function renderDevices() {
   const now = performance.now();
+  const live = e => e.device === device && (connected || reconnecting);
   const entries = [...known.values()].sort((a, b) =>
-    (b.device === device) - (a.device === device) || b.ffe0 - a.ffe0 || (b.rssi ?? -999) - (a.rssi ?? -999));
+    live(b) - live(a) || isVerified(b) - isVerified(a) ||
+    b.ffe0 - a.ffe0 || (b.rssi ?? -999) - (a.rssi ?? -999));
   ui.devices.replaceChildren(...entries.map(e => {
     const li = document.createElement('li');
     const info = document.createElement('div');
     info.className = 'info';
     const name = document.createElement('div');
     name.className = 'name';
-    name.textContent = e.name || 'Unnamed device';
-    if (e.ffe0) name.insertAdjacentHTML('beforeend', '<span class="tag">FFE0</span>');
+    const label = deviceMeta[e.device.id]?.label;
+    name.textContent = label || e.name || 'Unnamed device';
+    if (isVerified(e)) name.insertAdjacentHTML('beforeend', '<span class="tag">NEEG-2 ✓</span>');
+    else if (e.ffe0) name.insertAdjacentHTML('beforeend', '<span class="tag">FFE0</span>');
     const meta = document.createElement('div');
     meta.className = 'meta';
     const seen = e.seenAt ? `seen ${Math.round((now - e.seenAt) / 1000)} s ago` : e.source === 'remembered' ? 'remembered' : '';
-    meta.textContent = [e.rssi != null && `${e.rssi} dBm`, seen, e.device.id.slice(0, 10) + '…'].filter(Boolean).join(' · ');
+    meta.textContent = [label && e.name && e.name !== label && `"${e.name}"`, e.rssi != null && `${e.rssi} dBm`, seen,
+      `id ${e.device.id.slice(0, 6)}`].filter(Boolean).join(' · ');
     info.append(name, meta);
+    const edit = document.createElement('button');
+    edit.className = 'edit';
+    edit.textContent = '✎';
+    edit.title = edit.ariaLabel = 'Rename';
+    edit.onclick = () => rename(e);
     const btn = document.createElement('button');
-    const isCurrent = e.device === device && (connected || reconnecting);
+    const isCurrent = live(e);
     btn.textContent = isCurrent ? 'Disconnect' : 'Connect';
     if (!isCurrent) btn.className = 'primary';
     btn.onclick = () => isCurrent ? disconnect() : connectTo(e);
-    li.append(info, btn);
+    li.append(info, edit, btn);
     return li;
   }));
   if (!entries.length) {
@@ -310,11 +355,20 @@ if (bt) bt.addEventListener('advertisementreceived', e => {
 });
 
 // Browser picker: required once per device before a page may use it.
+// By default it only lists JDY-style modules (FFE0 service advertised, or a name starting with "JDY").
 async function pick(entry) {
-  const options = entry?.name
-    ? { filters: [{ name: entry.name }], optionalServices: [SERVICE] }
-    : { acceptAllDevices: true, optionalServices: [SERVICE] };
-  log(`browser picker (${entry?.name ? `name "${entry.name}"` : 'all nearby devices'})`);
+  let options, desc;
+  if (entry?.name) {
+    options = { filters: [{ name: entry.name }], optionalServices: [SERVICE] };
+    desc = `name "${entry.name}"`;
+  } else if ($('pickAll').checked) {
+    options = { acceptAllDevices: true, optionalServices: [SERVICE] };
+    desc = 'all nearby devices';
+  } else {
+    options = { filters: [{ services: [SERVICE] }, { namePrefix: 'JDY' }], optionalServices: [SERVICE] };
+    desc = 'FFE0 service or name JDY*';
+  }
+  log(`browser picker (${desc})`);
   try {
     const dev = await bt.requestDevice(options);
     log(`picked "${dev.name || ''}" id=${dev.id}`);
@@ -322,6 +376,8 @@ async function pick(entry) {
     return upsert(dev, { source: 'picked' });
   } catch (e) {
     log(`picker: ${e.name}: ${e.message}`);
+    if (e.name === 'NotFoundError' && !$('pickAll').checked)
+      log('headset not in the picker? tick "List every nearby device" and try again');
     if (isBrave && e.name !== 'NotFoundError') log('Brave: make sure the Web Bluetooth flag is enabled');
     setStatus('idle', e.name === 'NotFoundError' ? 'No device chosen' : 'Error');
     return null;
