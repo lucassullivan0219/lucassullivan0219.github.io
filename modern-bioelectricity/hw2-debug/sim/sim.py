@@ -101,7 +101,7 @@ class Circuit:
                  stim=True, leak=True, fi=True, so=True, lk_vm=True,
                  fi_vm=True, fi_vplus=True, fi_gnd=True, so_vm=True, so_gnd=True,
                  qsense_on_switched=False, rleak=100e3, probe='Vm', rprobe=10e6,
-                 models=None):
+                 r_so_r2=3e6, r_so_r3=1e3, models=None):
         m = {k: dict(v) for k, v in DEFAULT_MODELS.items()}
         for k, v in (models or {}).items():
             m[k].update(v)
@@ -137,10 +137,10 @@ class Circuit:
             R.append(['SO.Vm', 'SO.S', 100e3, None])
             C.append(('SO.S', 'SO.GND', 1e-6))
             D.append(('SO.S', 'SO.B3'))
-            R.append(['SO.B3', 'SO.GND', 3e6, None])
+            R.append(['SO.B3', 'SO.GND', r_so_r2, None])     # 3M-R2; 1 ohm models SO.B3 shorted to GND
             Q.append(('npn', 'SO.B4', 'SO.B3', 'SO.GND', '3904'))
             Q.append(('pnp', 'SO.C4', 'SO.B4', 'SO.Vm', '4403'))
-            R.append(['SO.C4', 'SO.GND', 1e3, None])
+            R.append(['SO.C4', 'SO.GND', r_so_r3, None])     # 1K-R3
         if probe:
             R.append([probe, 'GND', rprobe, None])
         nodes = []
