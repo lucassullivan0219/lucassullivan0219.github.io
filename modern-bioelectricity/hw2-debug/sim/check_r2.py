@@ -1,5 +1,9 @@
 """Slow out R2 (TA: use 1 Mohm; the kit shipped 100 ohm; PCB label 3 Mohm) and fixes.
 
+The fixes only ADD resistors clipped onto existing component legs (sim.py `extra`,
+values in check_ap.py); nothing on the PCBs is cut or rewired.  "Qsense emitter after
+SW" is a rewire, kept only as a reference that shows the leak is the cause.
+
 For each case: power on, run 2 s with SW released, then hold SW for 1 s and
 release.  Reports
   - free running:  Vm range and spike rate in the last second before SW
@@ -13,22 +17,27 @@ release.  Reports
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sim import Circuit, transient
+from check_ap import RX, R13_11K, R13_1K, RF_1M, RF_470K, RB_470K, RS_47K
 
 DT = 2e-4
 RPOT = 700.0          # ~90 uA, the setting implied by the breadboard re-test
+R13_100K = ('FI.V+', 'FI.E4', 100e3)   # 100k || 100k = 50 kohm
 CASES = [
     ('R2 = 1M (as built now)', dict(r_so_r2=1e6)),
     ('R2 = 100 ohm (kit part)', dict(r_so_r2=100.0)),
     ('R2 = 3M (PCB label)', dict(r_so_r2=3e6)),
-    ('R2 = 1M, Qsense moved after SW', dict(r_so_r2=1e6, qsense_on_switched=True)),
-    ('R2 = 1M, Qsense after SW, R13 = 50k', dict(r_so_r2=1e6, qsense_on_switched=True, r13=50e3)),
-    ('R2 = 1M, Qsense after SW, R13 = 10k', dict(r_so_r2=1e6, qsense_on_switched=True, r13=10e3)),
-    ('R2 = 1M, Qsense after SW, R13 = 1k', dict(r_so_r2=1e6, qsense_on_switched=True, r13=1e3)),
-    ('R2 = 1M, R13 = 10k (Qsense as built)', dict(r_so_r2=1e6, r13=10e3)),
-    ('R2 = 1M, Qsense after SW, no FI (passive response)', dict(r_so_r2=1e6, qsense_on_switched=True, fi=False)),
-    ('R2 = 1M, 22k across Qpass E-B (ST.Q-ST.R)', dict(r_so_r2=1e6, extra=[('ST.Q', 'ST.R', 22e3)])),
-    ('R2 = 1M, 22k across Qpass E-B, R13 = 10k', dict(r_so_r2=1e6, r13=10e3, extra=[('ST.Q', 'ST.R', 22e3)])),
-    ('R2 = 1M, extra 100k from Vm to GND', dict(r_so_r2=1e6, extra=[('Vm', 'GND', 100e3)])),
+    ('R2 = 1M, Qsense emitter after SW (reference only)', dict(r_so_r2=1e6, qsense_on_switched=True)),
+    ('R2 = 1M, fix 1: 22k across Qpass E-B', dict(r_so_r2=1e6, extra=[RX])),
+    ('fix 1, no FI (passive response)', dict(r_so_r2=1e6, fi=False, extra=[RX])),
+    ('fix 1 + 100k across R13 (R13 -> 50k)', dict(r_so_r2=1e6, extra=[RX, R13_100K])),
+    ('fix 1 + 11k across R13 (R13 -> 9.9k)', dict(r_so_r2=1e6, extra=[RX, R13_11K])),
+    ('fix 1 + 1k across R13 (R13 -> 0.99k)', dict(r_so_r2=1e6, extra=[RX, R13_1K])),
+    ('11k across R13 only, leak not fixed', dict(r_so_r2=1e6, extra=[R13_11K])),
+    ('extra 100k from Vm to GND (confirmation test only)', dict(r_so_r2=1e6, extra=[('Vm', 'GND', 100e3)])),
+    ('fix 1b: 1M V+ -> FI.E3 (Stimulator untouched)', dict(r_so_r2=1e6, extra=[RF_1M])),
+    ('fix 1b + 11k across R13', dict(r_so_r2=1e6, extra=[RF_1M, R13_11K])),
+    ('undershoot set: 470k V+ -> Vm, 470k V+ -> FI.E3, 47k across SO C1, 11k across R13',
+     dict(r_so_r2=1e6, extra=[RB_470K, RF_470K, RS_47K, R13_11K])),
 ]
 
 
@@ -40,11 +49,7 @@ def spikes(t, v, thr):
 
 
 def run(title, kw):
-    kw = dict(kw)
-    extra = kw.pop('extra', [])
     c = Circuit(rpot=RPOT, **kw)
-    for a, b, ohm in extra:          # parts added on the breadboard
-        c.R.append([a, b, ohm, None])
     V = [0.0] * len(c.nodes)
     ev = [(2.0, lambda k: k.set_sw(True)), (3.0, lambda k: k.set_sw(False))]
     out, _ = transient(c, ev, 4.0, DT, V0=V, record=['Vm'])

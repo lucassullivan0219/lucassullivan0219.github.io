@@ -105,7 +105,7 @@ footer{margin-top:56px;font-size:13.5px;color:var(--muted);border-top:1px solid 
   <b>D</b><span>只接 ST + LK + SO（沒有 FI）、SW 按住（電流最大）。</span>
   <b>E</b><span>ST + LK + FI，但 FI:Vm 斷開、FI 已自鎖，探棒在 FI.Vm。對應測試 4–5。</span>
 </div>
-<p class="note-warn"><span class="tag warn">注意</span>這張表用 PCB 標示的 3M-R2（3 MΩ）計算。助教指定（也是目前電路）的 1 MΩ：B、D 狀態的 Vm、SO.S、SO.B4 約高 0.05–0.07 V，其他節點差異在 0.05 V 內；A 狀態實測約每 0.1 秒冒一個 1.6 V 的小峰。修正 Stimulator 的漏電後，A 狀態的 Vm、FI、SO 節點都會變成約 0 V 且不再自發（見<a href="./#s11">除錯分析 §11</a>）。</p>
+<p class="note-warn"><span class="tag warn">注意</span>這張表用 PCB 標示的 3M-R2（3 MΩ）計算。助教指定（也是目前電路）的 1 MΩ：B、D 狀態的 Vm、SO.S、SO.B4 約高 0.05–0.07 V，其他節點差異在 0.05 V 內；A 狀態實測約每 0.1 秒冒一個 1.6 V 的小峰。在 Q<sub>pass</sub> 的 E–B 並 22 kΩ（修正 1，見<a href="#addons">外加元件</a>）後，A 狀態的 Vm、FI、SO 節點都會變成約 0 V 且不再自發（見<a href="./#s11">除錯分析 §11</a>）。</p>
 <div class="scroll">
 <table>
   <thead><tr><th>名稱</th><th>包含哪些焊墊</th><th>最好量哪裡</th><th class="num">A</th><th class="num">B</th><th class="num">C</th><th class="num">D</th><th class="num">E</th></tr></thead>
@@ -149,6 +149,7 @@ footer{margin-top:56px;font-size:13.5px;color:var(--muted);border-top:1px solid 
   <tbody>
     <tr><td>刺激電流</td><td>(ST.K − ST.Q) / 7 kΩ，再加約 6 µA（Q<sub>sense</sub> 的 base 電流）</td><td>約 44–99 µA（SW 按住）</td></tr>
     <tr><td>SW 放開時的漏電流</td><td>Vm / 100 kΩ（只接 ST + LK 時）</td><td>約 6 µA → Vm ≈ 0.6 V</td></tr>
+    <tr><td>漏電有沒有消掉</td><td><code class="n">ST.Q − ST.R</code>（Q<sub>pass</sub> 的 V<sub>EB</sub>，SW 放開）</td><td>原樣 0.52 V；並 22 kΩ 後 0.15 V（Q<sub>pass</sub> 關掉）</td></tr>
     <tr><td>FI 從 V+ 拉的電流</td><td>(FI.V+ − FI.E4) / R13</td><td>A 時 0–70 µA；C 約 47 µA</td></tr>
     <tr><td>FI 2N3904 的電流</td><td>FI.E3 / 100 kΩ</td><td>C 約 22 µA；E 約 34 µA</td></tr>
     <tr><td>FI 的 D1 壓降</td><td>FI.Vm − FI.B3</td><td>導通時 0.2–0.3 V</td></tr>
@@ -160,6 +161,24 @@ footer{margin-top:56px;font-size:13.5px;color:var(--muted);border-top:1px solid 
 </table>
 </div>
 <p style="font-size:14.5px;color:var(--muted)">TDS2001C 可以用 MATH 的 CH1 − CH2 直接看兩點相減：CH1、CH2 各夾一點，地線夾都夾 GND。</p>
+
+<h2 id="addons">外加元件（可拆）</h2>
+<p>除錯分析建議的修正都只是多夾一顆電阻，不割線、不拔腳，拆掉就回到原狀。夾點全部是電阻、電容的腳或麵包板的孔，不需要碰電晶體的腳。用途與預期值見<a href="./#s11">除錯分析 §11</a>。</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>用途</th><th>電阻</th><th>接在哪兩個節點</th><th>夾在哪裡</th><th>夾上後</th></tr></thead>
+  <tbody>
+    <tr><td>修正 1：消除 Stimulator 漏電</td><td>22 kΩ</td><td><code class="n">ST.Q</code> ↔ <code class="n">ST.R</code>（Q<sub>pass</sub> 的 E–B）</td><td>7K-R1 下端 ↔ 7K-R2 上端</td><td>SW 放開時 <code class="n">ST.Q − ST.R</code> 0.52 → 0.15 V，Vm 0 V；刺激電流少約 25 µA</td></tr>
+    <tr><td>修正 1b：抬高 FI 門檻（不碰 Stimulator）</td><td>1 MΩ</td><td><code class="n">FI.V+</code> ↔ <code class="n">FI.E3</code></td><td>R13 下端 ↔ 100K-R2 上端</td><td><code class="n">FI.E3</code> 0.71 V；FI 門檻約 1.4 V</td></tr>
+    <tr><td>修正 2：AP 變大</td><td>11 kΩ（或 1 kΩ）</td><td><code class="n">FI.V+</code> ↔ <code class="n">FI.E4</code>（並在 R13）</td><td>R13 的上端 ↔ 下端</td><td>R13 變成 9.9 kΩ（0.99 kΩ）</td></tr>
+    <tr><td>方案 3：抬高靜止電位</td><td>470 kΩ</td><td><code class="n">V+</code> ↔ <code class="n">Vm</code></td><td>麵包板的 V+ 列 ↔ Vm 列</td><td rowspan="3">和 R13 並 11 kΩ 一起用（不加 22 kΩ）：靜止 Vm 1.18 V、<code class="n">FI.E3</code> 1.37 V、<code class="n">SO.S</code> 0.37 V；AP 後低於靜止約 0.6 V</td></tr>
+    <tr><td>方案 3：抬高 FI 門檻</td><td>470 kΩ</td><td><code class="n">FI.V+</code> ↔ <code class="n">FI.E3</code></td><td>R13 下端 ↔ 100K-R2 上端</td></tr>
+    <tr><td>方案 3：抬高 Slow out 門檻</td><td>47 kΩ</td><td><code class="n">SO.S</code> ↔ <code class="n">SO.GND</code>（並在 C1）</td><td>1UF-C1 的兩腳</td></tr>
+    <tr><td>只用來確認漏電（量完拿掉）</td><td>100 kΩ</td><td><code class="n">Vm</code> ↔ <code class="n">GND</code></td><td>麵包板的 Vm 列 ↔ GND 列</td><td>Vm 約 0.30 V，小峰消失</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small" style="font-size:14px;color:var(--muted)">模擬裡的寫法是 <code>Circuit(extra=[('ST.Q', 'ST.R', 22e3), ...])</code>，見 <a href="sim/check_ap.py">sim/check_ap.py</a>。</p>
 
 <h2 id="contacts">接點名稱</h2>
 <p>每塊板經由 1×2 的 Intracellular 排針（Vm）和 2×2 的 Extracellular 排針（V+、GND）接到堆疊上。接點壞掉時，那塊板上的同名節點會和 Stimulator 上的不一樣：</p>

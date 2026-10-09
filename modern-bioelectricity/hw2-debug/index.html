@@ -131,6 +131,7 @@ figure.viz figcaption{font-size:13.5px;color:var(--muted);margin-top:6px;max-wid
   </div>
   <p class="small muted" style="margin-top:12px">節點名稱（例如 <code>FI.B3</code>、<code>SO.S</code>）的定義、焊墊位置與預期電壓見<a href="nodes.html">節點命名</a>。</p>
   <p class="note-warn"><span class="tag warn">更新 2026-10-09</span>Slow out 的故障找到了：助教指定的 1 MΩ 電阻，套件給成 100 Ω（就是第二輪推出的 SO.B3 對地短路）。換成 1 MΩ 後出現自發小峰，原因是 Stimulator 的漏電；消除方法與做出真正 AP 的方法見 <a href="#s9-r2">§9</a>、<a href="#s11">§11</a>。</p>
+  <p class="note"><span class="tag req">原則</span>所有修正都只<b>加</b>元件：電阻夾在既有元件的腳上或插在麵包板上，拆掉就完全回到原狀。不割銅箔、不拔腳、不改線。修正後算不算 AP、能不能做出過極化，見 <a href="#s9-ap">§9</a>。</p>
 </header>
 
 <nav class="toc" aria-label="目錄">
@@ -158,11 +159,13 @@ figure.viz figcaption{font-size:13.5px;color:var(--muted);margin-top:6px;max-wid
   <li><b>第一輪時好時壞的現象是排針接觸不良。</b>改插麵包板後數值穩定、重複三次都一樣（<a href="#s1-bb">§1</a>）。</li>
   <li><b>Slow out 的故障是 R2 用錯電阻。</b>助教指定 3M-R2 要換成 1 MΩ，套件卻給成 100 Ω。100 Ω 把 SO.B3 拉到地，2N3904 永遠不導通，Slow out 只剩「100 kΩ 串一個二極體」，所以四塊全接時 FI 一觸發就鎖在 2.4 V 下不來。這正是第二輪用數字推出的「SO.B3 對地短路」：模擬這個故障，6 個數值都對得上，誤差 ≤ 0.1 V（<a href="#s9-bb">§9</a>）。</li>
   <li><b>R2 換成 1 MΩ 後，Slow out 正常了，但出現自發小峰（第三輪）。</b>實測不按 SW 時約每 100 ms 冒一個 1.6 V 的小峰，按住時在 0.6–1.0 V 之間約 40 Hz 震盪。模型（R2 = 1 MΩ）是每 128 ms 一個 1.46 V，按住時 0.78 V，和實測吻合。原因是 Stimulator 放開時漏出的約 6 µA 把 Vm 墊在 FI 的門檻附近（<a href="#s9-r2">§9</a>）。</li>
-  <li><b>消除小峰：修正 Stimulator 的漏電。</b>Q<sub>sense</sub> 的 emitter 改接到 SW 之後（照講義電路圖），或在 Q<sub>pass</sub> 的 E–B 並一顆 22 kΩ。模擬中 Vm 靜止在 0 V，不再自發（<a href="#s11">§11</a>）。</li>
-  <li><b>要真正的 AP：R13 要小。</b>只修漏電時 AP 約 3.4 V，拔掉 FI 也有 2.9 V，FI 只多約 0.5 V。R13 換成 10 kΩ 時 AP 約 6 V、按住時約 20 Hz 連續發放；換成講義電路圖的 1 kΩ 時約 7 V。R13 是 Q4 要改的電阻，換之前先問助教（<a href="#s7">§7</a>、<a href="#s9-r2">§9</a>）。</li>
+  <li><b>消除小峰（修正 1）：在 Q<sub>pass</sub> 的 E–B 並一顆 22 kΩ。</b>夾在 7K-R1 下端和 7K-R2 上端，拆掉就復原。模擬中 Vm 靜止在 0 V，不再自發。代價是按住時刺激電流少約 25 µA（約 90 → 64 µA）。不想碰 Stimulator 的話，也可以從 V+ 到 FI.E3 加 1 MΩ，把 FI 的門檻抬高約 0.8 V（<a href="#s11">§11</a>）。</li>
+  <li><b>AP 變大（修正 2）：在 R13 兩端並一顆 11 kΩ</b>（100 kΩ ∥ 11 kΩ = 9.9 kΩ）。AP 約 5.5–5.9 V，按住時約 20 Hz 連續發放；並 1 kΩ（0.99 kΩ）時約 7.2 V。只做修正 1 時 AP 約 3 V，拔掉 FI 也有約 2 V，看起來不像 AP（<a href="#s7">§7</a>、<a href="#s9-r2">§9</a>）。</li>
+  <li><b>修正 1 + 2 有門檻、all-or-none、去極化、再極化，但沒有過極化。</b>AP 後 Vm 最低 0.10 V，一直在靜止的 0 V 之上。原因是 Slow out 的外向電流只能把 Vm 拉到約 0.55–0.6 V，這是這個電路的「E<sub>K</sub>」；修正 1 之後靜止是 0 V，比它還低，順序和神經相反（<a href="#s9-ap">§9</a>）。</li>
+  <li><b>過極化做得出來，但要再加三顆電阻。</b>V+ → Vm 470 kΩ（抬高靜止電位）、V+ → FI.E3 470 kΩ（抬高 FI 門檻）、SO 的 C1 並 47 kΩ（抬高 Slow out 門檻），R13 仍並 11 kΩ，不用 22 kΩ。模擬：靜止 1.18 V、門檻約 2.05 V、AP 5.3–5.7 V、AP 後最低 0.58 V，比靜止低約 0.6 V、持續約 125 ms；16 組隨機參數都成立。代價是膜電阻和靜止電位都變了，做其他題目前要拆掉（<a href="#s9-hyper">§9</a>）。</li>
   <li><b>沒有正常的 Slow out 時，FI 可能不按 SW 就自己鎖住。</b>第二輪 ST + LK + FI 的靜止值就是 3.1 V（已鎖住），和模擬一致。</li>
 </ol>
-<p class="note-inf"><span class="tag inf">推論</span>第 1–3 點來自量測加計算；第 4 點的現象模型和實測吻合；第 5、6 點是模擬，改完請量測確認。</p>
+<p class="note-inf"><span class="tag inf">推論</span>第 1–3 點來自量測加計算；第 4 點的現象模型和實測吻合；第 5–8 點是模擬，加上元件後請照 <a href="#s11-check">§11 的對照表</a>量測確認。</p>
 
 <!-- ===================== 1 ===================== -->
 <h2 id="s1"><span class="no">1</span>量測紀錄</h2>
@@ -418,7 +421,7 @@ SO.B4：      Vm − V_EB(4403 @ 92 µA) = 0.68 − 0.59 = <b>0.09 V</b>
   <li><b>Stimulator 打不過它</b>：2N4403 經 1 kΩ 可以吃到好幾 mA，Stimulator 最多不到 100 µA。</li>
   <li><b>反應很快</b>：靜止時 SO.S ≈ 0.53–0.6 V（§3 的漏電流造成），只要再升約 0.1 V 就啟動。Vm 升到 2 V 時 SO.S 以 (2 − 0.55) V / (100 kΩ × 1 µF) ≈ 15 V/s 上升，約 7 ms 就多 0.1 V。</li>
   <li><b>所以只要 Slow out 正常</b>，按住 SW 時 Vm 在約 20 ms 內就被拉到 0.65–0.78 V，不可能停在 4.8 V 或 7.2 V 的平台。這個結論在所有隨機參數下都成立（§9）。</li>
-  <li><b>R2 = 1 MΩ（助教指定）時</b>：模型按住 SW 停在 0.78 V；實測在 0.6–1.0 V 之間約 40 Hz 震盪，平均相同。模型正好在「會不會震盪」的邊緣（<a href="#s9-r2">§9</a>）。上面的手算用的是 3 MΩ；換成 1 MΩ，3 MΩ 那行變成 0.47 µA，SO.S ≈ 0.71 V、Vm ≈ 0.76 V。</li>
+  <li><b>R2 = 1 MΩ（助教指定）時</b>：模型按住 SW 停在 0.78 V；實測在 0.6–1.0 V 之間約 40 Hz 震盪，平均相同。模型正好在「會不會震盪」的邊緣：修正 1 之後在 R13 並 100 kΩ（= 50 kΩ），模型就變成 30 Hz、0.64–1.09 V 的震盪（<a href="#s9-r2">§9</a>）。上面的手算用的是 3 MΩ；換成 1 MΩ，3 MΩ 那行變成 0.47 µA，SO.S ≈ 0.71 V、Vm ≈ 0.76 V。</li>
   <li><span class="tag warn">更正</span>第二輪麵包板量到 S + LK + SO 按住時是 4.8 V：接觸沒問題，Slow out 卻沒有鉗住，代表<b>板子本身的主動部分壞了</b>（<a href="#s9-bb">§9</a>）。之前把測試 9 前半「連刺激波形都沒有」解讀成「Slow out 有接上、把 Vm 鉗住」，這個解讀不成立。</li>
 </ul>
 
@@ -548,7 +551,7 @@ SO.B4：      Vm − V_EB(4403 @ 92 µA) = 0.68 − 0.59 = <b>0.09 V</b>
   </tbody>
 </table>
 </div>
-<p class="small muted">單位：V、ms。從開機後的靜止點按住 SW 0.35 秒；「按住時」是放開前一刻的 Vm。有自發小峰的情況，數值會隨按下的時機變動約 ±0.3 V。來源：<a href="sim/variants.py">variants.py</a>、<a href="sim/sweep_q4.py">sweep_q4.py</a>。</p>
+<p class="small muted">單位：V、ms。從開機後的靜止點按住 SW 0.35 秒；「按住時」是放開前一刻的 Vm。有自發小峰的情況，數值會隨按下的時機變動約 ±0.3 V。來源：<a href="sim/variants.py">variants.py</a>、<a href="sim/sweep_q4.py">sweep_q4.py</a>。這張表是「換設計值」的比較，用來說明 PCB 和電路圖差在哪裡；Q<sub>sense</sub> 改接、R13 換成 1 kΩ 都不是要你動手改。實際可做、可復原的修正見 <a href="#s9-r2">§9 第三輪</a>和 <a href="#s11">§11</a>。</p>
 
 <h3 id="s9-bb">第二輪麵包板：設計值 vs Slow out 故障假設</h3>
 <p>表中兩個數字都是穩態（SW 放開、SW 一直按住），所以用 DC 解。刺激電流設成約 90 µA：由 S + LK + FI 按住時的 5.9 V 反推（(8.65 V + I × 100 kΩ) / 3 = 5.9 V）。有 FI 的組合是雙穩態，分「FI 沒鎖」「FI 鎖住」兩支。來源：<a href="sim/check_breadboard.py">check_breadboard.py</a>。</p>
@@ -585,8 +588,8 @@ S + LK + SO，按住：  90 µA = Vm/100k ＋ (Vm − 0.4)/100k
   <li><b>第一輪的測試 10c</b>（加上 SO 完全沒變）：就算是這塊壞掉的 Slow out，接上後靜止值也會從 0.7 降到 0.5 V、按住從 7.2 降到 4.8 V。所以 10c 當時 Slow out 是真的沒接上；接觸不良和板子故障兩個問題同時存在。</li>
 </ul>
 
-<h3 id="s9-r2">第三輪：R2 = 1 MΩ 與兩個修正</h3>
-<p>從開機開始跑 2 秒（不按 SW），再按住 SW 1 秒、放開。刺激電流約 90 µA（和第二輪同一個可變電阻位置）。來源：<a href="sim/check_r2.py">check_r2.py</a>。</p>
+<h3 id="s9-r2">第三輪：R2 = 1 MΩ 與修正</h3>
+<p>從開機開始跑 2 秒（不按 SW），再按住 SW 1 秒、放開。刺激電流約 90 µA（和第二輪同一個可變電阻位置）。所有修正都是<b>外加</b>的電阻（夾在既有元件的腳上，拆掉就復原），夾點見 <a href="#s11">§11</a>、<a href="nodes.html#addons">節點命名頁</a>。來源：<a href="sim/check_r2.py">check_r2.py</a>。</p>
 <div class="scroll">
 <table>
   <thead><tr><th>情況</th><th>不按 SW</th><th class="num">按下的第一個峰</th><th>一直按著</th></tr></thead>
@@ -596,26 +599,137 @@ S + LK + SO，按住：  90 µA = Vm/100k ＋ (Vm − 0.4)/100k
     <tr><td>模擬：R2 = 1 MΩ</td><td>0.53 V，每 128 ms 一個 1.46 V 小峰</td><td class="num">1.75 V</td><td>停在 0.78 V</td></tr>
     <tr><td>模擬：R2 = 100 Ω（套件給的）</td><td>0.46 V，安靜</td><td class="num">4.11 V</td><td>4.49 V；放開後鎖在 2.39 V</td></tr>
     <tr><td>模擬：R2 = 3 MΩ（PCB 標示）</td><td>0.53 V，每 210 ms 一個 1.35 V 小峰</td><td class="num">1.63 V</td><td>停在 0.71 V</td></tr>
-    <tr class="grp"><td colspan="4">修正 1：消除 Stimulator 的漏電（R2 = 1 MΩ、R13 = 100 kΩ）</td></tr>
-    <tr><td>Q<sub>sense</sub> 的 emitter 改接 SW 之後</td><td>0 V，安靜</td><td class="num">3.40 V</td><td>停在 0.78 V</td></tr>
-    <tr><td>Q<sub>pass</sub> 的 E–B 並 22 kΩ</td><td>0 V，安靜</td><td class="num">3.02 V</td><td>停在 0.77 V</td></tr>
-    <tr><td>同第一列，但拔掉 FI（被動反應）</td><td>0 V</td><td class="num">2.86 V</td><td>停在 0.76 V</td></tr>
-    <tr class="grp"><td colspan="4">修正 1 ＋ 修正 2：R13 換小</td></tr>
-    <tr><td>R13 = 50 kΩ</td><td>0 V，安靜</td><td class="num">3.98 V</td><td>0.66–1.01 V，36 Hz</td></tr>
-    <tr><td>R13 = 10 kΩ</td><td>0 V，安靜</td><td class="num">6.03 V</td><td>0.63–2.23 V，22 Hz</td></tr>
-    <tr><td>R13 = 1 kΩ（講義電路圖的值）</td><td>0 V，安靜</td><td class="num">7.17 V</td><td>0.62–5.61 V，12 Hz</td></tr>
+    <tr class="grp"><td colspan="4">修正 1：Q<sub>pass</sub> 的 E–B 並 22 kΩ（R2 = 1 MΩ、R13 = 100 kΩ）</td></tr>
+    <tr><td>並 22 kΩ</td><td>0 V，安靜</td><td class="num">3.02 V</td><td>停在 0.77 V</td></tr>
+    <tr><td>同上，拔掉 FI（被動反應）</td><td>0 V</td><td class="num">2.31 V</td><td>停在 0.74 V</td></tr>
+    <tr><td class="muted">對照：Q<sub>sense</sub> 的 emitter 改接 SW 之後（照講義電路圖）</td><td class="muted">0 V，安靜</td><td class="num muted">3.40 V</td><td class="muted">停在 0.78 V</td></tr>
+    <tr class="grp"><td colspan="4">修正 1 ＋ 修正 2：再在 R13 兩端並一顆電阻</td></tr>
+    <tr><td>並 100 kΩ（R13 → 50 kΩ）</td><td>0 V，安靜</td><td class="num">3.66 V</td><td>0.64–1.09 V，30 Hz</td></tr>
+    <tr><td>並 11 kΩ（R13 → 9.9 kΩ）</td><td>0 V，安靜</td><td class="num">5.87 V</td><td>0.62–2.39 V，20 Hz</td></tr>
+    <tr><td>並 1 kΩ（R13 → 0.99 kΩ）</td><td>0 V，安靜</td><td class="num">7.17 V</td><td>0.61–5.79 V，12 Hz</td></tr>
+    <tr class="grp"><td colspan="4">不碰 Stimulator 的備案（修正 1b）：V+ 到 FI.E3 加 1 MΩ</td></tr>
+    <tr><td>加 1 MΩ</td><td>0.56 V，安靜</td><td class="num">2.36 V</td><td>停在 0.76 V</td></tr>
+    <tr><td>加 1 MΩ，R13 並 11 kΩ</td><td>0.56 V，安靜</td><td class="num">4.24 V</td><td>停在 0.76 V</td></tr>
+    <tr class="grp"><td colspan="4">要過極化（方案 3，見下方）</td></tr>
+    <tr><td>V+ → Vm 470 kΩ、V+ → FI.E3 470 kΩ、SO 的 C1 並 47 kΩ、R13 並 11 kΩ</td><td>1.18 V，安靜</td><td class="num">5.65 V</td><td>0.64–4.93 V，27 Hz</td></tr>
     <tr class="grp"><td colspan="4">只做一半</td></tr>
-    <tr><td>只把 R13 換成 10 kΩ，不修漏電</td><td>0.53 V，每 133 ms 一個 3.8 V 的自發 AP</td><td class="num">3.76 V</td><td>0.63–2.23 V，22 Hz</td></tr>
-    <tr><td>不修 Stimulator，在 Vm 到 GND 多並 100 kΩ</td><td>0.30 V，安靜</td><td class="num">2.76 V</td><td>停在 0.77 V</td></tr>
+    <tr><td>R13 並 11 kΩ，不修漏電</td><td>0.53 V，每 133 ms 一個 3.8 V 的自發 AP</td><td class="num">3.77 V</td><td>0.63–2.24 V，22 Hz</td></tr>
+    <tr><td>Vm 到 GND 多插 100 kΩ（只用來確認原因）</td><td>0.30 V，安靜</td><td class="num">2.76 V</td><td>停在 0.77 V</td></tr>
   </tbody>
 </table>
 </div>
 <ul class="specs">
-  <li><b>模型和第三輪實測吻合</b>：自發小峰的大小和頻率、按下時的短峰都對得上。按住時模型停在 0.78 V，剛好是實測 40 Hz 震盪（0.6–1.0 V）的中間：模型正好在「會不會震盪」的邊緣，R13 = 50 kΩ 時模型也變成 36 Hz、0.66–1.01 V 的震盪。</li>
+  <li><b>模型和第三輪實測吻合</b>：自發小峰的大小和頻率、按下時的短峰都對得上。按住時模型停在 0.78 V，剛好是實測 40 Hz 震盪（0.6–1.0 V）的中間：模型正好在「會不會震盪」的邊緣，R13 並 100 kΩ（= 50 kΩ）時模型也變成 30 Hz、0.64–1.09 V 的震盪。</li>
   <li><b>小峰的成因</b>：Stimulator 放開時漏出約 6 µA（§3），把 Vm 墊在 0.5–0.6 V，剛好是 FI 開始導通的電壓。FI 一點一點灌電流 → Vm 上升 → FI 更開 → 衝出一個小峰 → Slow out 把它拉回來 → SO.S 慢慢放電 → 又開始。這就是一個自己會振盪的電路。R2 = 100 Ω 時 Slow out 不動作，所以第二輪看不到；R2 = 1 MΩ 時 Slow out 能把每一下拉回來，振盪就出現了。</li>
-  <li><b>修正 1 消除小峰</b>：沒有漏電，Vm 靜止在 0 V，離門檻 0.6 V 以上，不再自發。</li>
-  <li><b>修正 1 還不夠產生「真正的」AP</b>：R13 = 100 kΩ 時 FI 最多只能送約 70 µA（§7），AP 3.4 V 只比沒有 FI 的被動反應（2.9 V）高 0.5 V。R13 換成 10 kΩ 才有約 6 V、明顯比被動反應大的 AP，按住時也會連續發放。</li>
-  <li><b>電流小一點，對比比較清楚</b>（修正 1、可變電阻 10 kΩ、約 44 µA）：R13 = 100 kΩ 時有 FI 2.72 V、沒有 FI 1.84 V；R13 = 50 kΩ 時 3.41 V；R13 = 10 kΩ 時 5.72 V。</li>
+  <li><b>修正 1 消除小峰</b>：沒有漏電，Vm 靜止在 0 V，離門檻 0.6 V，不再自發。效果和照講義電路圖把 Q<sub>sense</sub> 改接到 SW 之後幾乎一樣（灰字那列），但不用改線。</li>
+  <li><b>修正 1 還不夠產生「真正的」AP</b>：R13 = 100 kΩ 時 FI 最多只能送約 70 µA（§7），AP 約 3 V 只比沒有 FI 的被動反應高零點幾伏。R13 並 11 kΩ 才有約 6 V、明顯比被動反應大的 AP，按住時也會連續發放。</li>
+  <li><b>修正 1b</b> 不動 Stimulator，改把 FI 的門檻抬高：FI.E3 被 1 MΩ 和 100K-R2 分壓墊在 0.71 V，FI 要到 Vm 約 1.4 V 才開，靜止的 0.5–0.6 V 就碰不到門檻了。代價是 AP 小一點、按住時不會連續發放。</li>
+</ul>
+
+<h3 id="s9-ap">修正後算不算 AP？</h3>
+<p>先定義要看什麼。神經的 AP 有這幾個特徵，括號是這個電路對應的東西：</p>
+<ol class="specs">
+  <li><b>門檻</b>：刺激不夠時只有被動反應（和拔掉 FI 一樣）；超過某個電壓後，FI 自己把 Vm 往上推，刺激停了也會繼續衝上去。</li>
+  <li><b>All-or-none</b>：超過門檻後，峰值幾乎不隨刺激強度改變（換可變電阻位置、按久一點），而且明顯比被動反應高。</li>
+  <li><b>去極化</b>：由內向電流（FI）推上去，比 Leak 的 RC 充電快。</li>
+  <li><b>再極化</b>：由外向電流（Slow out）拉回來，比 Leak 的 RC 放電（τ = 1 µF × 100 kΩ = 100 ms）快得多。</li>
+  <li><b>過極化</b>（after-hyperpolarization、undershoot）：AP 之後 Vm 短暫低於靜止電位，再慢慢回來。條件是外向電流的「反轉電位」（神經是 E<sub>K</sub> ≈ −90 mV）比靜止電位（≈ −70 mV）低，而且 AP 後外向通道還沒關。</li>
+</ol>
+<p>怎麼判定（<a href="sim/check_ap.py">check_ap.py</a>）：從靜止開始按 SW 一段時間 T 再放開，T 從 2 ms 往上加，找出最短會觸發的 T（觸發 = 峰值比拔掉 FI 的被動反應高 0.5 V 以上）；「未觸發時最高 Vm」就是門檻電壓。All-or-none 用按 50 ms、可變電阻兩個位置比較。波形用「門檻 T ＋ 5 ms」的按壓量。</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>情況</th><th class="num">靜止</th><th class="num">門檻</th><th class="num">峰值<br>pot 0.7k／10k</th><th class="num">拔掉 FI<br>pot 0.7k／10k</th><th class="num">峰值後回到 10 %</th><th class="num">AP 後最低</th><th>過極化</th></tr></thead>
+  <tbody>
+    <tr><td>目前（沒加東西）</td><td colspan="3">自己一直冒小峰（0.53–1.46 V），沒有穩定的靜止點</td><td class="num">—</td><td class="num">—</td><td class="num">0.53</td><td class="bad">✗（約 0）</td></tr>
+    <tr><td>修正 1（22 kΩ）</td><td class="num">0.00</td><td class="num">10.5 ms／0.58 V</td><td class="num">3.02／1.96</td><td class="num">2.08／0.63</td><td class="num">216 ms</td><td class="num">0.11</td><td class="bad">✗</td></tr>
+    <tr><td><b>修正 1 ＋ 2（22 kΩ、R13 並 11 kΩ）</b></td><td class="num">0.00</td><td class="num">10.5 ms／0.58 V</td><td class="num">5.87／5.37</td><td class="num">2.08／0.63</td><td class="num">9 ms</td><td class="num">0.10</td><td class="bad">✗</td></tr>
+    <tr><td>修正 1 ＋ 2′（R13 並 1 kΩ）</td><td class="num">0.00</td><td class="num">10.5 ms／0.58 V</td><td class="num">7.17／7.57</td><td class="num">2.08／0.63</td><td class="num">12 ms</td><td class="num">0.11</td><td class="bad">✗</td></tr>
+    <tr><td>修正 1b ＋ 2（1 MΩ、R13 並 11 kΩ）</td><td class="num">0.56</td><td class="num">10.8 ms／1.37 V</td><td class="num">4.24／3.34</td><td class="num">1.94／1.38</td><td class="num">4 ms</td><td class="num">0.52</td><td class="bad">✗（0.04 V）</td></tr>
+    <tr><td><b>方案 3</b>（見下一節）</td><td class="num">1.18</td><td class="num">11.8 ms／2.05 V</td><td class="num">5.65／5.26</td><td class="num">3.27／2.37</td><td class="num">5 ms</td><td class="num">0.58</td><td class="ok">✓ 0.60 V、約 125 ms</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small muted">單位 V；典型參數。pot 0.7k ≈ 90 µA、pot 10k ≈ 44 µA（加了 22 kΩ 時分別是 64、19 µA）。「回到 10 %」是從峰值降到「靜止 ＋ 10 % 振幅」的時間；修正 1 的 FI 太弱，AP 拖到 59 ms 才到頂，之後由 Leak 慢慢放電。</p>
+<ul class="specs">
+  <li><b>修正 1 ＋ 2：門檻 ✓、all-or-none ✓、去極化 ✓、再極化 ✓、過極化 ✗。</b>按 10 ms 時 Vm 到 0.58 V 就停，按 10.5 ms 以上就觸發，峰值 5.5–5.9 V；換可變電阻位置峰值只差 0.5 V，拔掉 FI 只有 0.6–2.1 V。AP 後 9 ms 就降回接近基線。但最低點是 0.10 V，<b>高於</b>靜止的 0 V。</li>
+  <li><b>為什麼修正 1 ＋ 2 不可能過極化</b>：</li>
+</ul>
+<div class="calc"><span class="c">Slow out 的外向電流只有一條路：Vm → 2N4403 的 E→C → 1K-R3 → GND</span>
+2N3904 全開時 SO.B4 ≈ 0.05 V（飽和），所以 Vm = SO.B4 ＋ V_EB(4403)，V_EB = V_T·ln(I / I_S)：
+   要吸 10 µA：V_EB = 0.02585 × ln(10 µA / 10 fA) = 0.54 V → Vm ≈ <b>0.59 V</b>
+   要吸 1 µA： V_EB = 0.48 V                        → Vm ≈ <b>0.53 V</b>
+   Vm = 0.3 V：V_EB ≤ 0.25 V → I ≤ 10 fA × e^(0.25/0.02585) ≈ 0.2 nA，等於沒有
+→ Slow out 最多只能把 Vm 拉到約 0.55–0.6 V：這就是這個電路的「E_K」。
+
+修正 1 之後靜止 = 0 V（Leak 的 100 kΩ 接 GND，「E_leak」= 0 V）
+→ E_K（約 0.55 V）<b>高於</b> V_rest（0 V），順序和神經相反（E_K −90 mV &lt; V_rest −70 mV）。
+→ AP 後 Slow out 只能把 Vm 拉回 0.6 V 附近，剩下靠 Leak 慢慢放到 0 V；
+  而且 SO 的 C1 在 AP 時充到 1–2 V，會經 100K-R1 把電流送回 Vm，所以 AP 後 Vm 反而略高於靜止（模擬最低 0.10 V）。
+沒修漏電時：靜止 0.53 V ≈ E_K，最多也只低 0.04 V（模擬拔掉 FI：靜止 0.57、最低 0.53）。</div>
+
+<h3 id="s9-hyper">過極化：只加元件做得出來嗎</h3>
+<p>由上面的計算，要有過極化就要讓<b>靜止電位高於 Slow out 能拉到的最低點（約 0.6 V）</b>，同時 FI 和 Slow out 的門檻都要在靜止電位之上，否則一個會自己發放、一個會把靜止點鉗住。每件事各用一顆電阻：</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>目的</th><th>加什麼</th><th>夾在哪裡</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td>抬高靜止電位</td><td>470 kΩ：V+ → Vm</td><td>麵包板的 V+ 列和 Vm 列</td><td>多送約 14 µA 進 Vm</td></tr>
+    <tr><td>抬高 FI 門檻</td><td>470 kΩ：V+ → FI.E3</td><td>100K-R2 上端 ↔ R13 下端（FI.V+）</td><td>FI.E3 先被墊在 7.8 × 100/570 = 1.37 V</td></tr>
+    <tr><td>抬高 Slow out 門檻</td><td>47 kΩ：並在 SO 的 C1</td><td>C1 兩腳（SO.S ↔ SO.GND）</td><td>SO.S 只剩 Vm 的 47/147 = 0.32 倍</td></tr>
+    <tr><td>AP 夠大</td><td>11 kΩ：並在 R13</td><td>R13 兩端</td><td>同修正 2</td></tr>
+  </tbody>
+</table>
+</div>
+<p>不需要 22 kΩ：Stimulator 的 6 µA 漏電在這裡變成偏壓的一部分。</p>
+<div class="calc"><span class="c">靜止（FI、Slow out 都關）：流進 Vm ＝ 流出 Vm</span>
+   (7.8 − Vm)/470k ＋ 6.3 µA ＝ Vm/100k ＋ Vm/147k ＋ 約 0.4 µA（FI 的 D1、探棒）
+   16.6 − 2.13·Vm ＋ 6.3 − 0.4 ＝ 10·Vm ＋ 6.8·Vm      <span class="c">（µA；Vm 以 V 計）</span>
+   Vm ＝ 22.5 / 18.9 ＝ <b>1.19 V</b>                    <span class="c">模擬 1.18 V</span>
+
+<span class="c">FI 門檻：FI.E3 被墊在 1.37 V（戴維寧電阻 100k ∥ 470k = 82.5 kΩ）</span>
+   2N3904 開始導通：FI.B3 ≈ 1.37 ＋ 0.5 ＝ 1.87 V；D1 約 0.6 µA → 0.25 V
+   Vm ≈ <b>2.1 V</b>                                      <span class="c">模擬：Vm 到 2.05 V 還不觸發</span>
+
+<span class="c">Slow out：SO.S ＝ 0.32 × Vm（DC）</span>
+   靜止 SO.S ＝ 0.38 V，要約 0.65 V 才會開 → 關著
+   Vm 到約 2.0 V 才開始動作；AP 峰值 5.3 V 時 SO.S 往 1.7 V 衝 → 全開
+
+<span class="c">AP 後最低點（Slow out 全開）</span>
+   Vm ＝ 0.6 V 時流進 Vm：(7.8 − 0.6)/470k ＋ 6.3 ＝ 21.6 µA
+   Leak 吃 6.0 µA、C1 那條（100k ＋ 47k）吃 4.1 µA → Slow out 要吸 11.5 µA
+   V_EB ＝ 0.02585 × ln(11.5 µA / 10 fA) ＝ 0.54 V → Vm ≈ 0.05 ＋ 0.54 ＝ <b>0.59 V</b>   <span class="c">模擬 0.58 V</span>
+   過極化 ≈ 1.19 − 0.59 ＝ <b>0.6 V</b>
+   SO.S 以 τ ＝ 1 µF × (100k ∥ 47k) ＝ 32 ms 放電，Slow out 關掉後 Vm 以約
+   τ ＝ 1 µF × (100k ∥ 147k ∥ 470k) ＝ 49 ms 回到靜止     <span class="c">模擬：比靜止低 0.05 V 以上約 125 ms</span></div>
+<p>少任何一顆都不行（<a href="sim/check_ap.py">check_ap.py</a> 的 attempt 幾列）：</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>加了哪些（都另外並 11 kΩ 在 R13，除非註明）</th><th>結果</th></tr></thead>
+  <tbody>
+    <tr><td>只有 V+ → Vm 470 kΩ</td><td class="bad">靜止被抬到門檻之上，自己一直發放（0.58–2.91 V）</td></tr>
+    <tr><td>V+ → Vm、V+ → FI.E3 各 470 kΩ，沒有 47 kΩ</td><td class="bad">Slow out 把靜止鉗在 0.70 V，FI 永遠到不了門檻：按 50 ms 峰值 1.40 V，和拔掉 FI 一樣</td></tr>
+    <tr><td>三顆都加，但 R13 沒並 11 kΩ</td><td class="bad">AP 只有 2.79 V，AP 後最低 1.18 V，沒有過極化；按住時在 1.9–2.7 V 間震盪</td></tr>
+    <tr><td>四顆都加</td><td class="ok">靜止 1.18 V、AP 5.3–5.7 V、過極化 0.6 V</td></tr>
+  </tbody>
+</table>
+</div>
+<ul class="specs">
+  <li><b>參數變動下站得住</b>：16 組隨機參數（<code>check_ap.py mc 7 8 1</code>、<code>mc 7 8 2</code>）每一組都安靜不自發，靜止 1.05–1.32 V，按 20 ms 都觸發，峰值 5.3–5.9 V，AP 後最低 0.56–0.67 V（按 20 ms 時過極化 0.47–0.71 V），放開後回到靜止，按住時都是連續發放、沒有鎖住。V+ 換成 7.0／8.5 V 時靜止 1.06／1.29 V，仍成立。</li>
+  <li><b>代價</b>：
+    <ul>
+      <li>膜變了：多了 V+ 的 470 kΩ 和 C1 那條 147 kΩ，被動時間常數從 100 ms 變成約 49 ms；靜止電位是 1.2 V，而且跟著電池電壓走。報告裡要寫清楚。</li>
+      <li>門檻變成約 2 V：可變電阻 0.7k 時要按 12 ms 以上才觸發（手按通常都超過）。</li>
+      <li>做 Q3（門檻）、Q4（換 R13）、Q6（TTX／TEA）前要拆掉：拔 Slow out 時 47 kΩ 跟著拔掉，靜止會升到 1.83 V，離 FI 門檻只剩 0.2 V；並在 R13 的 11 kΩ 會蓋過 Q4 要換的值。</li>
+      <li>夾的東西多（四顆），夾錯一顆就不是這個結果：夾好後先照 <a href="#s11-check">§11 對照表</a>量靜止的 Vm、FI.E3、SO.S。</li>
+    </ul></li>
+  <li><b>這個方案的作用是示範過極化的條件</b>（E<sub>K</sub> 低於靜止電位、外向電流比內向慢），不是電路本來的設計。電路圖的設計（9 V、R13 = 1 kΩ、Q<sub>sense</sub> 在 SW 後）靜止也是 0 V，同樣沒有過極化。</li>
+</ul>
+
+<h3 id="s9-robust">修正 1 ＋ 2 的餘裕</h3>
+<p>同一套 8 組隨機參數（<code>check_ap.py mc 3 8 1</code>）：7 組都正常（靜止 0 V、按 20 ms 觸發、峰值 5.5–6.0 V、AP 後最低約 0.1 V、之後回到 0 V）。<b>有 1 組</b>（2N3904 β 106、二極體 I<sub>S</sub> 偏大，FI 門檻偏低）在第一個 AP 之後不回 0 V，停在約 0.64 V、每 0.25 秒冒一個小峰：FI 和 Slow out 在 0.64 V 互相抵住，又變回自己會振盪的狀態。照講義電路圖接 Q<sub>sense</sub>（不漏電）也一樣，所以是 FI 門檻和 Slow out 的鉗位太接近，不是 22 kΩ 的問題。</p>
+<ul class="specs">
+  <li>如果實測加了修正 1 ＋ 2 後看到這個現象，再加修正 1b 的 1 MΩ（V+ → FI.E3）：8 組都正常（<code>mc 6 8 1</code>）。代價是門檻變成約 1.4 V，可變電阻 0.7k 時要按約 30 ms 以上；可變電阻轉到 10 kΩ 時（加了 22 kΩ 只剩 19 µA）按 50 ms 也不會觸發。</li>
+  <li>修正 1b ＋ 2（不加 22 kΩ）：8 組都安靜，靜止 0.41–0.63 V，峰值 3.6–5.1 V，按住時停在 0.71–0.82 V（不連續發放）。</li>
 </ul>
 
 <h3 id="s9-mc">隨機參數：哪些結論站得住</h3>
@@ -671,41 +785,90 @@ S + LK + SO，按住：  90 µA = Vm/100k ＋ (Vm − 0.4)/100k
 
 <!-- ===================== 11 ===================== -->
 <h2 id="s11"><span class="no">11</span>下一步：消除小峰、做出真正的 AP</h2>
-<p>Slow out 的故障（R2 用了 100 Ω）已經找到，換成 1 MΩ 後 Slow out 正常動作。現在的問題換成兩件事：<b>不按 SW 也自己冒小峰</b>，以及 <b>AP 太小</b>。依序處理。節點位置見<a href="nodes.html">節點命名</a>；每一步都可以先在<a href="../active-membrane-sim/">互動模擬</a>裡試（情境「修正 1」「修正 1 + 2」）。</p>
+<p>Slow out 的故障（R2 用了 100 Ω）已經找到，換成 1 MΩ 後 Slow out 正常動作。現在的問題換成兩件事：<b>不按 SW 也自己冒小峰</b>，以及 <b>AP 太小</b>（也沒有過極化，見 <a href="#s9-ap">§9</a>）。依序處理。每一步都可以先在<a href="../active-membrane-sim/">互動模擬</a>裡試（情境「修正 1」「修正 1 + 2」「方案 3：過極化」）。</p>
+<div class="note">
+  <p><span class="tag req">怎麼加、怎麼拆</span>下面每個修正都只是<b>多夾一顆電阻</b>，沒有任何原本的元件、焊點或銅箔被動到，拆掉就完全回到原狀。</p>
+  <ul class="specs">
+    <li>用兩條小勾夾線（IC 測試勾、迷你勾夾）把電阻的兩腳接到指定的兩個點。所有夾點都是<b>電阻、電容的腳</b>或<b>麵包板的孔</b>，不需要碰電晶體的腳（TO-92 的腳太密，容易夾到隔壁）。</li>
+    <li>夾點的位置、節點名稱見<a href="nodes.html#addons">節點命名頁的外加元件表</a>。</li>
+    <li>可以斷電就先斷電再夾。電池焊在 Stimulator 上拆不掉時，一次只夾一端，確認勾子沒有碰到隔壁的腳再夾另一端。</li>
+    <li>不建議用焊的。真的要焊，焊在電阻腳的中段（不是焊墊），拆掉後只會在腳上留一點錫，電路不變。</li>
+    <li>夾好後先量下面<a href="#s11-check">對照表</a>的靜態值，確定夾對位置，再量 AP。</li>
+  </ul>
+</div>
 <ol class="steps">
-  <li><b class="t">先確認小峰是 Stimulator 的漏電造成（不用改任何東西）</b>
+  <li><b class="t">先確認小峰是 Stimulator 的漏電造成（不用拆 Stimulator）</b>
     <ul>
-      <li>拔掉 Stimulator，只留 LK + FI + SO：模擬預測 Vm 回到 0 V，小峰消失。</li>
-      <li>或接著 Stimulator、在 Vm 和 GND 之間多插一顆 100 kΩ：模擬預測 Vm 停在約 0.3 V，小峰消失。這只用來確認原因，不要拿這個狀態做作業數據（它改變了膜電阻）。</li>
-      <li>兩個都讓小峰消失，就確定是漏電；如果沒有消失，告訴我。</li>
+      <li>已經有的證據：第二輪只接 S + LK 時 Vm = 0.7 V，就是約 7 µA × 100 kΩ。沒有漏電的話應該是 0 V。</li>
+      <li>在麵包板上 Vm 和 GND 之間多插一顆 100 kΩ：模擬 Vm 停在約 0.30 V，小峰消失。量完拿掉，不要拿這個狀態做作業數據（它改變了膜電阻）。</li>
+      <li>或直接做第 2 步：夾上 22 kΩ 小峰消失、拿掉又出現，就確定是漏電。如果夾上後小峰還在，告訴我。</li>
     </ul></li>
-  <li><b class="t">修正 1：消除 Stimulator 的漏電（擇一，先問助教）</b>
+  <li><b class="t">修正 1：在 Q<sub>pass</sub> 的 E–B 並一顆 22 kΩ</b>
     <ul>
-      <li><b>照講義電路圖改線</b>：把 Q<sub>sense</sub>（Stimulator 下面那顆 2N4403，PCB 標 Q2）的 emitter（方形焊墊那支）從 V+ 改接到 ST.P（SW 上面那支腳）。做法：吸掉那支腳的焊錫、把腳拔出焊孔，用一條線接到 SW 上面那支腳；或割斷方形焊墊往下接到排針的那段銅箔，再從方形焊墊拉飛線到 ST.P。都可以還原。</li>
-      <li><b>不割線</b>：在 Q<sub>pass</sub>（上面那顆 2N4403，Q1）的 E 和 B 之間並一顆 22 kΩ，也就是 ST.Q（7K-R1 下端）到 ST.R（7K-R2 上端）。代價是最大刺激電流少約 25 µA。</li>
-      <li>預期：Vm 靜止在約 0 V（不再是 0.6 V），不再自己冒小峰，按 SW 才有反應。按住時還是會停在約 0.8 V 或小幅震盪。</li>
-      <li>靜止電位會從 0.6 V 變成 0 V，報告裡寫清楚改了什麼。</li>
+      <li>夾點：<code>ST.Q</code> = 7K-R1 下端（也是 Q<sub>pass</sub> 的方形焊墊）、<code>ST.R</code> = 7K-R2 上端。</li>
+      <li>原理：SW 放開時，Q<sub>sense</sub> 的 base 電流（約 6.6 µA）改走 22 kΩ，在 Q<sub>pass</sub> 的 E–B 只留下 22 kΩ × 6.6 µA = 0.15 V，Q<sub>pass</sub> 關掉，漏電變成 0。</li>
+      <li>預期：SW 放開時 Vm = 0 V，不再自己冒小峰；按 SW 才有反應。按住時還是會停在約 0.8 V。</li>
+      <li>代價：按住時 22 kΩ 分走 V<sub>EB</sub>/22 kΩ ≈ 25 µA，刺激電流變小：可變電阻同一位置約 90 → 64 µA；轉到 10 kΩ 時 44 → 19 µA。量 AP 時可變電阻轉到電流大的那一側。</li>
+      <li>靜止電位從 0.6 V 變成 0 V，報告裡寫清楚加了什麼。</li>
+      <li><b>備案 1b（不碰 Stimulator）</b>：從 V+ 到 FI.E3 加 1 MΩ（夾在 100K-R2 上端和 R13 下端）。FI.E3 被墊到 0.71 V，FI 的門檻抬高到約 1.4 V，靜止的 0.4–0.6 V 碰不到，不再自發。代價：AP 小一點（再並 11 kΩ 在 R13 時 3.6–5.1 V），按住時不會連續發放。</li>
     </ul></li>
-  <li><b class="t">修正 2：要真正的 AP，把 R13 換小（先問助教）</b>
+  <li><b class="t">修正 2：在 R13 兩端並一顆 11 kΩ（R13 變成 9.9 kΩ）</b>
     <ul>
-      <li>R13 是 FI 板上的 100K-R13（DIP 版就是那組 DIP 開關），#2-2 Q4 本來就要換這顆。</li>
-      <li>R13 = 100 kΩ（現在）：修正 1 之後 AP 約 3.4 V，拔掉 FI 也有 2.9 V，看起來不像 AP。</li>
-      <li>R13 = 10 kΩ：AP 約 6 V；按住 SW 時約 20 Hz 連續發放（0.6–2.2 V）。</li>
-      <li>R13 = 1 kΩ（講義電路圖的值）：AP 約 7 V；按住時約 12 Hz、0.6–5.6 V。</li>
-      <li><span class="tag warn">注意</span>一定要先做修正 1：只換 R13、不修漏電，小峰會變成每 0.13 秒一個 3.8 V 的自發 AP。</li>
+      <li>夾點：R13 的兩端（上端 <code>FI.E4</code>、下端 <code>FI.V+</code>）。</li>
+      <li>預期：AP 約 5.5–5.9 V，門檻約 0.6 V（上升段會看到一個轉折，之後突然變陡），AP 後約 10 ms 回到 0.6 V 以下；按住 SW 時約 20 Hz 連續發放（0.6–2.4 V）。</li>
+      <li>要更大：改並 1 kΩ（0.99 kΩ，接近講義電路圖的 1 kΩ）：AP 約 7.2 V，按住時 12 Hz（0.6–5.8 V）。</li>
+      <li><span class="tag warn">注意</span>一定要先做修正 1（或 1b）：只並 11 kΩ、不修漏電，小峰會變成每 0.13 秒一個 3.8 V 的自發 AP。</li>
+      <li>如果加完後第一個 AP 之後 Vm 不回 0 V，停在約 0.65 V 繼續冒小峰：這是 FI 門檻偏低的參數會發生的情況（<a href="#s9-robust">§9</a>），再加備案 1b 的 1 MΩ 就好。</li>
+      <li>Q4 要換 R13 本身的值時（DIP 版），先把 11 kΩ 拆掉。</li>
+    </ul></li>
+  <li><b class="t">選做：要看到過極化（方案 3）</b>
+    <ul>
+      <li>拆掉 22 kΩ（漏電在這裡反而是偏壓的一部分），保留 R13 並 11 kΩ，再加三顆：麵包板 V+ → Vm 470 kΩ；V+ → FI.E3 470 kΩ（100K-R2 上端 ↔ R13 下端）；SO 的 C1 兩腳並 47 kΩ。</li>
+      <li>預期：靜止 1.18 V，門檻約 2 V，AP 5.3–5.7 V，AP 後最低約 0.58 V，比靜止低約 0.6 V、持續約 0.1 秒後回到 1.18 V。按住時約 27 Hz 連續發放（0.64–4.9 V）。</li>
+      <li>代價與原理見 <a href="#s9-hyper">§9</a>。做 Q3、Q4、Q6 前把這四顆拆掉，或在報告註明。</li>
     </ul></li>
   <li><b class="t">量 AP 的設定</b>
     <ul>
-      <li>示波器：1 V/div、10–25 ms/div、上升緣觸發，Level 約 1 V，Single Sequence。修正 1 之後基線是 0 V。</li>
-      <li>可變電阻轉小一點（電流小一點），AP 和被動反應的差別比較明顯；找「剛好能觸發」的電流，就是 Q3 要的門檻。</li>
+      <li>示波器：1 V/div、10–25 ms/div、上升緣觸發、Single Sequence。觸發準位：修正 1 之後基線 0 V，Level 約 1 V；方案 3 基線約 1.2 V，Level 約 2.5 V。</li>
+      <li>判斷是不是 AP：同一個可變電阻位置，比較有 FI 和拔掉 FI 的峰值（all-or-none）；看上升段的轉折（門檻）；看 AP 後有沒有低於基線（過極化）。</li>
       <li>每按一次至少隔 1 秒，讓 Slow out 的電容放電。</li>
     </ul></li>
   <li><b class="t">順便確認 S + FI 那一列</b>
     <ul>
-      <li>確定 Leak 拔掉後重量。照模型，FI 鎖住時靜止約 4.5 V、按住頂到約 7.1 V；如果還是 3.0／5.9 V，代表 Vm 上有別的約 100 kΩ 負載，請告訴我。</li>
+      <li>確定 Leak 拔掉後重量（不加任何修正）。照模型，FI 鎖住時靜止約 4.5 V、按住頂到約 7.1 V；如果還是 3.0／5.9 V，代表 Vm 上有別的約 100 kΩ 負載，請告訴我。</li>
     </ul></li>
 </ol>
-<p class="small muted">如果之後改回堆疊排針，先照<a href="nodes.html#contacts">節點命名頁的接點表</a>確認 FI:V+、SO:Vm、SO:GND 等每個接點。第二輪排查 Slow out 用的節點預期值見 <a href="sim/check_breadboard.py">check_breadboard.py</a>。</p>
+
+<h3 id="s11-check">量測對照表</h3>
+<p>每加一樣東西，先量靜態值確認夾對，再量波形。「目前」是什麼都沒加（R2 = 1 MΩ）。可變電阻都在第二、三輪的同一個位置（約 90 µA）。單位 V；預期值來自模擬（典型參數），實測差 ±0.1–0.2 V 都算對上。</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>步驟</th><th>量什麼（節點見<a href="nodes.html">節點命名</a>）</th><th>條件</th><th class="num">目前</th><th class="num">加上後（預期）</th></tr></thead>
+  <tbody>
+    <tr class="grp"><td colspan="5">修正 1：22 kΩ 並在 Q<sub>pass</sub> E–B</td></tr>
+    <tr><td></td><td><code>ST.Q − ST.R</code>（MATH CH1 − CH2）</td><td>SW 放開</td><td class="num">0.52</td><td class="num">0.15</td></tr>
+    <tr><td></td><td><code>Vm</code></td><td>四塊全接、SW 放開</td><td class="num">0.6，每 0.1 s 一個 1.6 V 小峰</td><td class="num">0.00，平的</td></tr>
+    <tr><td></td><td><code>Vm</code></td><td>只接 S + LK、SW 按住</td><td class="num">7.1–7.2（實測 7.2）</td><td class="num">6.3</td></tr>
+    <tr><td></td><td><code>Vm</code> 的峰值</td><td>四塊全接、按一下</td><td class="num">約 2.2</td><td class="num">約 3.0（拔掉 FI：2.1–2.3）</td></tr>
+    <tr class="grp"><td colspan="5">修正 1 ＋ 2：再並 11 kΩ 在 R13</td></tr>
+    <tr><td></td><td><code>Vm</code> 的峰值</td><td>按一下（10 ms 以上）</td><td class="num">約 2.2</td><td class="num">5.5–5.9，按下後約 30 ms 到頂</td></tr>
+    <tr><td></td><td>門檻（上升段的轉折）</td><td>同上</td><td class="num">—</td><td class="num">約 0.6</td></tr>
+    <tr><td></td><td>AP 後最低 <code>Vm</code></td><td>同上</td><td class="num">0.5–0.6</td><td class="num">約 0.1（不會低於 0）</td></tr>
+    <tr><td></td><td><code>Vm</code></td><td>SW 按住</td><td class="num">0.6–1.0，40 Hz</td><td class="num">0.6–2.4，約 20 Hz</td></tr>
+    <tr><td></td><td><code>Vm</code> 的峰值，拔掉 FI 對照</td><td>按 50 ms 左右</td><td class="num">—</td><td class="num">約 2.1</td></tr>
+    <tr class="grp"><td colspan="5">備案 1b：1 MΩ 從 V+ 到 FI.E3</td></tr>
+    <tr><td></td><td><code>FI.E3</code></td><td>SW 放開</td><td class="num">0–0.6（跟著小峰跳）</td><td class="num">0.71</td></tr>
+    <tr><td></td><td><code>Vm</code></td><td>SW 放開</td><td class="num">0.6，有小峰</td><td class="num">0.56，平的</td></tr>
+    <tr class="grp"><td colspan="5">方案 3：470 kΩ V+ → Vm、470 kΩ V+ → FI.E3、47 kΩ 並 SO C1、11 kΩ 並 R13（不加 22 kΩ）</td></tr>
+    <tr><td></td><td><code>Vm</code></td><td>SW 放開</td><td class="num">—</td><td class="num">1.18，平的</td></tr>
+    <tr><td></td><td><code>FI.E3</code>、<code>FI.B3</code></td><td>SW 放開</td><td class="num">—</td><td class="num">1.37、0.96</td></tr>
+    <tr><td></td><td><code>SO.S</code></td><td>SW 放開</td><td class="num">—</td><td class="num">0.37</td></tr>
+    <tr><td></td><td><code>Vm</code>：峰值／AP 後最低</td><td>按一下（12 ms 以上）</td><td class="num">—</td><td class="num">5.3–5.7／約 0.58</td></tr>
+    <tr><td></td><td><code>Vm</code> 回到 1.18 V</td><td>同上</td><td class="num">—</td><td class="num">AP 後約 0.1–0.15 s</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small muted">來源：<a href="sim/check_ap.py">check_ap.py</a>、<a href="sim/check_r2.py">check_r2.py</a>，靜態值用 DC 解。如果之後改回堆疊排針，先照<a href="nodes.html#contacts">節點命名頁的接點表</a>確認 FI:V+、SO:Vm、SO:GND 等每個接點。第二輪排查 Slow out 用的節點預期值見 <a href="sim/check_breadboard.py">check_breadboard.py</a>。</p>
 
 <!-- ===================== 12 ===================== -->
 <h2 id="s12"><span class="no">12</span>檔案</h2>
@@ -717,7 +880,8 @@ S + LK + SO，按住：  90 µA = Vm/100k ＋ (Vm − 0.4)/100k
     <tr><td><a href="sim/sim.py">sim.py</a></td><td>模擬器本體（§8）</td></tr>
     <tr><td><a href="sim/check_dc.py">check_dc.py</a></td><td>§3、§4 的 DC 數值；§9 對照表</td></tr>
     <tr><td><a href="sim/check_transient.py">check_transient.py</a></td><td>各種接觸不良組合的波形；測試 7</td></tr>
-    <tr><td><a href="sim/check_r2.py">check_r2.py</a></td><td>§9 第三輪：R2 = 100 Ω／1 MΩ／3 MΩ 與兩個修正</td></tr>
+    <tr><td><a href="sim/check_r2.py">check_r2.py</a></td><td>§9 第三輪：R2 = 100 Ω／1 MΩ／3 MΩ 與各個外加修正</td></tr>
+    <tr><td><a href="sim/check_ap.py">check_ap.py</a></td><td>§9 算不算 AP、過極化、隨機參數下的餘裕；§11 對照表</td></tr>
     <tr><td><a href="sim/check_breadboard.py">check_breadboard.py</a></td><td>§9 第二輪麵包板對照與 Slow out 故障假設；§11 的節點預期值</td></tr>
     <tr><td><a href="sim/variants.py">variants.py</a></td><td>§9 換設計值的表</td></tr>
     <tr><td><a href="sim/sweep_q4.py">sweep_q4.py</a></td><td>§9 Q4 掃描</td></tr>

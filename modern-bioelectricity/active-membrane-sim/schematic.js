@@ -7,6 +7,7 @@
    s.setOn({qPass: true, ...})        highlight conducting transistors
    s.setContacts(state)   state.sw / leak / fi_vm / fi_vplus / fi_gnd / so_vm / so_gnd
    s.setQsense('pcb'|'sw'|'rx'); s.setResistors(r13, rfe, soR2)
+   s.setAddons(state)     state.r13p / rf / rb / rs: add-on resistors clipped on (0 = none)
    Node codes follow hw2-debug/nodes.html: board + node, e.g. FI.B3.
 */
 (function(){
@@ -133,6 +134,7 @@
     out.push('<text id="lRx" class="cur" x="242" y="176" style="display:none">E–B 並 22k</text>');
     L([[260, 110], [276, 110], [276, 70]]);
     cur('iStim', 272, 62, 'end');
+    out.push('<text id="lRb" class="cur" x="300" y="62" style="display:none"></text>');
     L([[230, 144], [230, 200]]);
     L([[196, 110], [196, 166]]);
     bjt(196, 186, 'p', 90, false, 'qSense'); txt(196, 232, 'Q_sense', 'lab', 'middle');
@@ -164,10 +166,12 @@
     L([[534, 190], [534, 170], [600, 170]]); dot(534, 170); tag('FI.B4', 'B4', 538, 160);
     resV(534, 250, 405, 300, 370); tag('FI.E3', 'E3', 540, 284);
     out.push('<text id="lRfe" class="lab" x="544" y="340">100 kΩ</text>');
+    out.push('<text id="lRf" class="cur" x="544" y="356" style="display:none"></text>');
     bjt(620, 170, 'p', 0, false, 'qFi4403'); txt(646, 166, '4403', 'lab');
     L([[634, 140], [634, 120]]);
     resV(634, 200, 310, 228, 290); tag('FI.E4', 'E4', 628, 214, 'end');
     out.push('<text id="lR13" class="lab" x="626" y="262" text-anchor="end">R13 100 kΩ</text>');
+    out.push('<text id="lR13p" class="cur" x="626" y="278" text-anchor="end" style="display:none"></text>');
     contactV('fi_vplus', 'FI:V+', 634, 310, 346);
     L([[634, 346], [634, 362]]); tag('FI.V+', 'V+', 634, 380, 'middle');
     L([[460, 405], [534, 405]]); dot(500, 405);
@@ -182,6 +186,7 @@
     resV(740, 120, 230, 140, 205); txt(750, 176, '100k', 'lab');
     dot(740, 230); tag('SO.S', 'S', 748, 250);
     capV(740, 230, 405, 320); txt(756, 324, '1µF', 'lab');
+    out.push('<text id="lRs" class="cur" x="756" y="340" style="display:none"></text>');
     diodeH(230, 740, 840, 772, 802); txt(787, 216, 'D1', 'lab', 'middle');
     dot(840, 230); tag('SO.B3', 'B3', 834, 272, 'end');
     resV(840, 230, 405, 290, 360);
@@ -239,6 +244,17 @@
         svg.querySelector('#dQsPcb').style.display = pcb ? '' : 'none';
         svg.querySelector('#wQsSw').style.display = pcb ? 'none' : '';
         svg.querySelector('#lRx').style.display = mode === 'rx' ? '' : 'none';
+      },
+      /* add-on resistors clipped onto existing legs: show what is fitted */
+      setAddons: function(st){
+        [['lR13p', st.r13p, function(r){ return '∥ ' + fmtR(r); }],
+         ['lRf', st.rf, function(r){ return '＋' + fmtR(r) + ' ← V+'; }],
+         ['lRb', st.rb, function(r){ return '＋' + fmtR(r) + '：V+ → Vm'; }],
+         ['lRs', st.rs, function(r){ return '∥ ' + fmtR(r); }]].forEach(function(a){
+          var e = svg.querySelector('#' + a[0]); if(!e) return;
+          e.style.display = a[1] ? '' : 'none';
+          if(a[1]) e.textContent = a[2](a[1]);
+        });
       },
       setResistors: function(r13, rfe, soR2){
         svg.querySelector('#lR13').textContent = 'R13 ' + fmtR(r13);

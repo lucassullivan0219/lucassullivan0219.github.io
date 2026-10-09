@@ -706,6 +706,7 @@ flowchart TD
     <li>Fast inward 的 R13（V+ → 2N4403 E）是 <b>100 kΩ</b>，電路圖畫的是 1 kΩ。FI 最多只能送約 70 µA，上升慢，峰值只有 1–2 V，和拔掉 FI 的被動反應差不多。</li>
     <li>Stimulator 的 Q<sub>sense</sub> 的 emitter 接在 SW 之前，SW 放開時仍漏出約 6 µA，所以靜止 Vm 約 0.5–0.6 V，不是 0。這個電壓剛好在 FI 的門檻附近：實測（Slow out 的 R2 = 1 MΩ）<b>不按 SW 也每 0.1 秒左右自己冒一個約 1.6 V 的小峰</b>。消除方法見<a href="../hw2-debug/#s11">除錯頁 §11</a>。</li>
   </ul>
+  <p>改善方法一律是<b>外加、可拆</b>的電阻（夾在既有元件的腳上，拆掉就復原），不割線、不拔腳：Q<sub>pass</sub> 的 E–B 並 22 kΩ 消除漏電、R13 並 11 kΩ 讓 AP 變大，見<a href="../hw2-debug/#s11">除錯頁 §11</a>。修好之後有門檻、all-or-none，但 AP 後不會低於靜止電位（沒有過極化），原因和要怎麼做出來見<a href="../hw2-debug/#s9-ap">除錯頁 §9</a>。</p>
   <p>下面的內容已依實體 PCB 修正。完整分析、量測對照與除錯步驟見 <a href="../hw2-debug/">HW2 #2-2 除錯</a>；節點名稱（FI.B3、SO.S…）見<a href="../hw2-debug/nodes.html">節點命名</a>；也可以在<a href="../active-membrane-sim/">互動模擬</a>直接試。</p>
 </div>
 
@@ -797,7 +798,7 @@ flowchart TD
   classDef chk fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
 </pre>
 </div>
-<p class="note-inf"><span class="tag inf">推論</span>依實體 PCB 的模擬推得的運作順序。<b>SW 一直按著時，連續發放很小</b>：Slow out 把 Vm 壓在約 0.7–0.8 V。實測（R2 = 1 MΩ）在 0.6–1.0 V 之間約 40 Hz 震盪；R13 = 100 kΩ 時每一下只有零點幾伏。模擬中 R13 換成 10 kΩ，才會變成明顯的連續發放（約 20 Hz、0.6–2.2 V）。另外，Stimulator 的漏電流把靜止點墊在門檻附近，實測不按 SW 也每 0.1 秒左右自己冒一個約 1.6 V 的小峰，修正方法見<a href="../hw2-debug/#s11">除錯頁 §11</a>。</p>
+<p class="note-inf"><span class="tag inf">推論</span>依實體 PCB 的模擬推得的運作順序。<b>SW 一直按著時，連續發放很小</b>：Slow out 把 Vm 壓在約 0.7–0.8 V。實測（R2 = 1 MΩ）在 0.6–1.0 V 之間約 40 Hz 震盪；R13 = 100 kΩ 時每一下只有零點幾伏。模擬中在 R13 並一顆 11 kΩ（變成 9.9 kΩ，並先消除漏電），才會變成明顯的連續發放（約 20 Hz、0.6–2.4 V）。另外，Stimulator 的漏電流把靜止點墊在門檻附近，實測不按 SW 也每 0.1 秒左右自己冒一個約 1.6 V 的小峰，修正方法見<a href="../hw2-debug/#s11">除錯頁 §11</a>。</p>
 
 <h3 id="s3-flow">實驗流程</h3>
 <div class="flow">
@@ -1122,8 +1123,8 @@ flowchart TD
     <tr><td>Passive 波形看起來像斜線，沒有彎</td><td>s/div 太小，只看到一小段</td><td>調到 100–200 ms/div</td></tr>
     <tr><td>基線一直抖、雜訊很大</td><td>探棒鱷魚夾太長或沒夾好、旁邊有手機等干擾</td><td>夾好 GND、縮短接線；示波器可開 averaging 或 bandwidth limit</td></tr>
     <tr><td>基線約 0.6 V，不是 0</td><td>正常：刺激器 SW 放開時仍漏出約 6 µA</td><td>不用處理；amplitude 用「波峰 − 基線」，觸發準位設在基線之上</td></tr>
-    <tr><td>按住 SW 時 Vm 停在約 0.7–0.8 V，或在 0.6–1.0 V 間約 40 Hz 震盪</td><td>正常：Slow out 把刺激電流吃掉；R13 = 100 kΩ 讓每一下都很小</td><td>量按下後 10–20 ms 的那個 AP；要明顯的 AP 見<a href="../hw2-debug/#s11">除錯頁 §11</a></td></tr>
-    <tr><td>不按 SW 也每 0.1 秒左右冒一個約 1.6 V 的小峰</td><td>Stimulator 放開時仍漏出約 6 µA，把 Vm 墊在 FI 的門檻附近</td><td>修正 Stimulator 的漏電：Q<sub>sense</sub> 的 emitter 改接 SW 之後，或在 Q<sub>pass</sub> 的 E–B 並 22 kΩ（先問助教，見<a href="../hw2-debug/#s11">除錯頁 §11</a>）</td></tr>
+    <tr><td>按住 SW 時 Vm 停在約 0.7–0.8 V，或在 0.6–1.0 V 間約 40 Hz 震盪</td><td>正常：Slow out 把刺激電流吃掉；R13 = 100 kΩ 讓每一下都很小</td><td>量按下後 10–20 ms 的那個 AP；要明顯的 AP：消除漏電後在 R13 兩端並 11 kΩ（見<a href="../hw2-debug/#s11">除錯頁 §11</a>）</td></tr>
+    <tr><td>不按 SW 也每 0.1 秒左右冒一個約 1.6 V 的小峰</td><td>Stimulator 放開時仍漏出約 6 µA，把 Vm 墊在 FI 的門檻附近</td><td>在 Q<sub>pass</sub> 的 E–B 並一顆 22 kΩ：夾在 7K-R1 下端和 7K-R2 上端，拆掉就復原；代價是刺激電流少約 25 µA（見<a href="../hw2-debug/#s11">除錯頁 §11</a>）</td></tr>
     <tr><td>Active membrane 怎麼按都沒有 AP</td><td>PCB 實際值的 AP 本來就只有 1–2 V、10–20 ms；時間軸太慢；FI:V+ 沒接上</td><td>用 10–20 ms/div、觸發約 1 V、Single；量 FI.V+（R13 下端）是不是 7.8 V；量元件的腳、不要量排針（見<a href="../hw2-debug/#s11">除錯頁</a>）</td></tr>
     <tr><td>按住 SW 時 Vm 停在 5–7 V 的平台</td><td>Slow out 沒有作用：SO:Vm 或 SO:GND 沒接上，或 Slow out 的 R2 裝成 100 Ω</td><td>量 SO.Vm（100K-R1 上端）是否等於 Vm、SO.GND 是否為 0 V</td></tr>
     <tr><td>Vm 卡在約 2.4–3 V 下不來（不按 SW 也可能）</td><td>Slow out 沒作用，FI 自鎖。約 3 V：Slow out 沒接上（或 TEA 情況）；約 2.4 V：Slow out 的 R2 是 100 Ω</td><td>斷電重置；同上檢查 Slow out 的接點</td></tr>

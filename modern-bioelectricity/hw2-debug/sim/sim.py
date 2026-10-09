@@ -31,6 +31,11 @@ B3/E3 = 2N3904 base/emitter node, B4/E4/C4 = 2N4403 base/emitter/collector node.
                2N3904: B=SO.B3, E=SO.GND, C=SO.B4
                2N4403: E=SO.Vm, B=SO.B4, C=SO.C4;  1K-R3: SO.C4 -> SO.GND
   Scope probe  10 Mohm from the probed node to GND (x10 probe)
+  Add-ons      extra=[(node_a, node_b, ohm), ...]: resistors clipped onto existing
+               component legs (nothing on the PCBs is cut or removed), e.g.
+               ('ST.Q', 'ST.R', 22e3) = 22 kohm across Qpass E-B,
+               ('FI.V+', 'FI.E4', 11e3) = 11 kohm across R13.
+               An add-on whose node belongs to a board that is not plugged in is skipped.
 
 Only the Python standard library is used.
 """
@@ -102,7 +107,7 @@ class Circuit:
                  stim=True, leak=True, fi=True, so=True, lk_vm=True,
                  fi_vm=True, fi_vplus=True, fi_gnd=True, so_vm=True, so_gnd=True,
                  qsense_on_switched=False, rleak=100e3, probe='Vm', rprobe=10e6,
-                 r_so_r2=3e6, r_so_r3=1e3, models=None):
+                 r_so_r2=3e6, r_so_r3=1e3, extra=(), models=None):
         m = {k: dict(v) for k, v in DEFAULT_MODELS.items()}
         for k, v in (models or {}).items():
             m[k].update(v)
@@ -144,6 +149,10 @@ class Circuit:
             R.append(['SO.C4', 'SO.GND', r_so_r3, None])     # 1K-R3
         if probe:
             R.append([probe, 'GND', rprobe, None])
+        present = {n for el in R + C + D for n in el[:2]} | {n for q in Q for n in q[1:4]} | set(self.fixed)
+        for a, b, ohm in extra:
+            if a in present and b in present:
+                R.append([a, b, ohm, None])
         nodes = []
         for el in R + C + D:
             for n in el[:2]:
