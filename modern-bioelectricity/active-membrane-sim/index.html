@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Active Membrane 模擬</title>
+<meta name="description" content="HW2 #2-2 active membrane 的即時電路模擬：照 PCB 實際接法，可以按 SW、開關每個排針接點、換電阻，用模擬示波器看 Vm。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F1; --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72;
+  --link:#1F5FA8; --req:#2F5D3A; --opt:#8A6100; --infer:#7A3E8F; --warn:#A33A2B; --rule:#CCD3CE;
+  --grid:rgba(47,93,58,.07); --qon:rgba(42,120,214,.16); --vmbus:#2a78d6;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+    --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+    --grid:rgba(127,176,137,.08); --qon:rgba(57,135,229,.22); --vmbus:#3987e5;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+  --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+  --grid:rgba(127,176,137,.08); --qon:rgba(57,135,229,.22); --vmbus:#3987e5;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  font-size:16px;line-height:1.7}
+a{color:var(--link);text-underline-offset:3px}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,.contact:focus-visible{outline:3px solid var(--link);outline-offset:2px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 22px 70px}
+@media (max-width:560px){.wrap{padding:24px 16px 60px}}
+.crumbs{font-size:14px;display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:14px}
+.crumbs a{color:var(--muted)}
+h1{font-weight:900;font-size:clamp(26px,4.4vw,36px);line-height:1.25;margin:0 0 8px}
+.lede{color:var(--muted);max-width:52em;margin:0 0 18px}
+h2{font-size:15px;font-weight:700;margin:0 0 8px;color:var(--muted);letter-spacing:.04em}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px}
+.top{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.top{grid-template-columns:1fr}}
+
+/* scope */
+.scope-wrap{position:relative}
+canvas#scope{display:block;width:100%;aspect-ratio:10/8;border-radius:6px;background:#0d1114;touch-action:pan-y}
+.scope-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:10px;font-size:14px}
+.scope-bar label{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+select,input[type=number]{font:inherit;font-size:14px;padding:3px 6px;border:1px solid var(--rule);border-radius:5px;background:var(--surface);color:var(--ink)}
+.btn{font:inherit;font-size:14px;padding:5px 13px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:999px;cursor:pointer;line-height:1.4}
+.btn:hover{background:var(--grid)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+#swBtn{width:100%;font-size:17px;font-weight:700;padding:14px;border-radius:10px;margin:12px 0 4px;user-select:none;-webkit-user-select:none;touch-action:none}
+#swBtn.on{background:var(--ink);color:var(--paper)}
+.hint{font-size:13px;color:var(--muted)}
+.cursor-read{font-size:13px;color:var(--muted);min-height:1.6em;margin-top:4px}
+
+/* readouts */
+.reads{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.read{border:1px solid var(--rule);border-radius:6px;padding:6px 9px}
+.read .k{font-size:12px;color:var(--muted);display:block}
+.read .v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:16px;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:13px;border:1.5px solid var(--rule);border-radius:999px;padding:1px 10px;color:var(--muted)}
+.chip.on{border-color:var(--ink);color:var(--ink);font-weight:700}
+
+/* controls */
+.ctl{display:grid;gap:12px}
+.ctl .row{display:grid;grid-template-columns:7.2em 1fr auto;gap:8px;align-items:center;font-size:14.5px}
+.ctl .row > span:first-child{color:var(--muted)}
+.ctl input[type=range]{width:100%}
+.ctl .val{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13.5px;min-width:6.5em;text-align:right}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets .btn{font-size:13px;padding:4px 10px}
+fieldset{border:1px solid var(--rule);border-radius:6px;padding:8px 10px 10px;margin:0}
+legend{font-size:13px;color:var(--muted);padding:0 4px}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px;font-size:14px}
+.checks label{display:flex;gap:6px;align-items:center}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:999px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;border:0;background:var(--surface);color:var(--ink);padding:3px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* schematic */
+.sch-card{margin-top:16px}
+.sch-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+svg#sch{display:block;width:100%;min-width:760px;height:auto}
+#sch .w{stroke:var(--ink);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#sch .vm{stroke:var(--vmbus);stroke-width:3}
+#sch .sym{stroke:var(--ink);stroke-width:1.6;fill:none;stroke-linejoin:round}
+#sch .fillk{fill:var(--ink);stroke:none}
+#sch .dotn{fill:var(--ink)}
+#sch .box{fill:none;stroke:var(--rule);stroke-width:1.4;stroke-dasharray:5 4}
+#sch .bt{fill:var(--muted);font-size:13px;font-weight:700}
+#sch .lab{fill:var(--muted);font-size:11.5px}
+#sch .nv{fill:var(--ink);font-size:11.5px;font-family:"IBM Plex Mono",ui-monospace,monospace}
+#sch .nvb{fill:var(--vmbus);font-size:15px;font-weight:700;font-family:"IBM Plex Mono",ui-monospace,monospace}
+#sch .cur{fill:var(--opt);font-size:11.5px;font-family:"IBM Plex Mono",ui-monospace,monospace}
+#sch .qc{fill:transparent;stroke:var(--ink);stroke-width:1.2}
+#sch .qc.on{fill:var(--qon)}
+#sch .contact{cursor:pointer}
+#sch .contact .blade{stroke:var(--ink);stroke-width:2.2}
+#sch .contact.open .blade{stroke:var(--warn)}
+#sch .contact .ct{font-size:10.5px;fill:var(--warn);font-weight:700}
+#sch .contact:not(.open) .ct{display:none}
+#sch .contact:hover .blade{stroke-width:3}
+#sch .sw .blade{stroke-width:2.4}
+.legend-sch{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--muted);margin-top:8px}
+.notes{margin-top:16px;font-size:15px}
+.notes ul{margin:6px 0;padding-left:1.3em;max-width:60em}
+.notes li{margin:4px 0}
+footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid var(--rule);padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="crumbs">
+  <a href="../">← Modern Bioelectricity</a>
+  <a href="../hw2-debug/">HW2 #2-2 除錯分析</a>
+  <a href="../hw2/">HW2 實驗講解</a>
+</div>
+<h1>Active membrane 互動模擬</h1>
+<p class="lede">照 PCB 實際接法（R13 = 100 kΩ、Q<sub>sense</sub> 的 E 接在 SW 之前）即時計算。按住 SW 看 Vm，點電路圖上的接點可以斷開排針，重現「FI 沒有 V+」「Slow out 沒接上」等狀況。模型和<a href="../hw2-debug/#s8">分析頁</a>的 Python 版相同。</p>
+
+<div class="top">
+  <section class="card scope-wrap" aria-label="示波器">
+    <h2>示波器</h2>
+    <canvas id="scope" aria-label="模擬示波器畫面，CH1 是 Vm"></canvas>
+    <div class="cursor-read" id="cursorRead">把滑鼠移到畫面上可讀數值。</div>
+    <div class="scope-bar">
+      <label>V/div <select id="vdiv"><option>0.2</option><option>0.5</option><option selected>1</option><option>2</option></select></label>
+      <label>時間/div <select id="tdiv"><option value="0.005">5 ms</option><option value="0.01">10 ms</option><option value="0.02">20 ms</option><option value="0.05" selected>50 ms</option><option value="0.1">100 ms</option><option value="0.2">200 ms</option></select></label>
+      <label>CH2 <select id="ch2"><option value="">關</option><option value="S">Slow out 的 S</option><option value="VPF">FI 的 V+ 腳</option><option value="E4">FI 2N4403 E</option><option value="T">Slow out 的 T</option><option value="Y">Slow out 3904 C</option></select></label>
+    </div>
+    <div class="scope-bar">
+      <span class="seg" role="group" aria-label="掃描模式"><button type="button" id="mRoll" aria-pressed="true">Roll</button><button type="button" id="mSingle" aria-pressed="false">Single</button></span>
+      <label>觸發 <input type="number" id="trig" value="1.0" step="0.1" min="0" max="12" style="width:5em"> V</label>
+      <button type="button" class="btn" id="arm">重新 Single</button>
+      <span class="hint" id="trigState"></span>
+    </div>
+    <button type="button" id="swBtn" aria-pressed="false">按住 SW（或空白鍵）</button>
+    <label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="swLatch"> SW 保持按下</label>
+    <div class="reads">
+      <div class="read"><span class="k">Vm（CH1）</span><span class="v" id="rVm">—</span></div>
+      <div class="read"><span class="k">畫面內最高</span><span class="v" id="rMax">—</span></div>
+      <div class="read"><span class="k">CH2</span><span class="v" id="rCh2">—</span></div>
+      <div class="read"><span class="k">I_stim 刺激</span><span class="v" id="rIs">—</span></div>
+      <div class="read"><span class="k">I_FI 內向</span><span class="v" id="rIf">—</span></div>
+      <div class="read"><span class="k">I_SO 外向</span><span class="v" id="rIo">—</span></div>
+    </div>
+    <div class="chips" aria-live="polite">
+      <span class="chip" id="cSW">SW 放開</span>
+      <span class="chip" id="cFI">Fast inward 關</span>
+      <span class="chip" id="cSO">Slow out 關</span>
+    </div>
+  </section>
+
+  <section class="card ctl" aria-label="設定">
+    <div>
+      <h2>情境</h2>
+      <div class="presets" id="presets">
+        <button type="button" class="btn" data-p="pcb">全部接好（PCB）</button>
+        <button type="button" class="btn" data-p="t1">測試 1：FI 沒 V+、SO 沒接</button>
+        <button type="button" class="btn" data-p="so">SO 沒接（測試 9、10d）</button>
+        <button type="button" class="btn" data-p="leak">只有 Stim + Leak（10b）</button>
+        <button type="button" class="btn" data-p="ttx">TTX：拔 FI</button>
+        <button type="button" class="btn" data-p="tea">TEA：拔 SO</button>
+        <button type="button" class="btn" data-p="sch">電路圖數值</button>
+      </div>
+      <p class="hint" id="presetNote" style="margin:6px 0 0"></p>
+    </div>
+    <div>
+      <h2>元件</h2>
+      <div class="row"><span>可變電阻</span><input type="range" id="pot" min="0" max="10" step="0.1" value="0"><span class="val" id="potV"></span></div>
+      <div class="row"><span>V+</span><input type="range" id="vplus" min="6" max="12" step="0.1" value="7.8"><span class="val" id="vplusV"></span></div>
+      <div class="row"><span>R13（V+→4403 E）</span><select id="r13"><option value="1e3">1 kΩ</option><option value="5e4">50 kΩ</option><option value="1e5" selected>100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select><span></span></div>
+      <div class="row"><span>FI 3904 E 電阻</span><select id="rfe"><option value="5e4">50 kΩ</option><option value="1e5" selected>100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select><span></span></div>
+      <div class="row"><span>Q<sub>sense</sub> 的 E</span><select id="qs"><option value="pcb" selected>V+（PCB 實際）</option><option value="sw">SW 之後（電路圖）</option></select><span></span></div>
+      <div class="row"><span>探棒</span><select id="probe"><option value="1e7" selected>×10（10 MΩ）</option><option value="1e6">×1（1 MΩ）</option></select><span></span></div>
+    </div>
+    <fieldset>
+      <legend>排針接點（也可以直接點電路圖）</legend>
+      <div class="checks" id="contacts">
+        <label><input type="checkbox" data-c="leak" checked> Leak 接上</label>
+        <label><input type="checkbox" data-c="fi_vm" checked> FI 的 Vm</label>
+        <label><input type="checkbox" data-c="fi_vplus" checked> FI 的 V+</label>
+        <label><input type="checkbox" data-c="fi_gnd" checked> FI 的 GND</label>
+        <label><input type="checkbox" data-c="so_vm" checked> SO 的 Vm</label>
+        <label><input type="checkbox" data-c="so_gnd" checked> SO 的 GND</label>
+      </div>
+    </fieldset>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <button type="button" class="btn" id="reset">斷電重置</button>
+      <span class="seg" role="group" aria-label="速度"><button type="button" id="sp1" aria-pressed="true">1×</button><button type="button" id="sp4" aria-pressed="false">¼×</button></span>
+      <button type="button" class="btn" id="pause" aria-pressed="false">暫停</button>
+    </div>
+  </section>
+</div>
+
+<section class="card sch-card" aria-label="電路圖">
+  <h2>電路（照 PCB 接法，數值即時更新）</h2>
+  <div class="sch-scroll"><svg id="sch" viewBox="0 0 1000 480" role="img" aria-label="Stimulator、Leak、Fast inward、Slow out 的電路圖，標示即時節點電壓"></svg></div>
+  <div class="legend-sch"><span>藍色粗線 = Vm</span><span>淡藍底的電晶體 = 正在導通（I<sub>C</sub> &gt; 2 µA）</span><span>紅色斜線接點 = 斷開，點一下切換</span></div>
+</section>
+
+<section class="notes">
+  <h2>可以試試看</h2>
+  <ul>
+    <li><b>全部接好</b>，時間/div 調到 10 ms、觸發 1 V、Single，按一下 SW：開頭 15–20 ms 有一個約 2 V 的小峰，接著 Slow out 把 Vm 鉗在約 0.7 V。不按 SW 時可能偶爾自己冒小峰。</li>
+    <li><b>斷開 SO 的 Vm</b>，按住 SW 再放開：Vm 停在約 3 V 下不來（測試 9、10d）。只有「斷電重置」或斷開 FI 的 V+ 能讓它回來。</li>
+    <li><b>斷開 FI 的 V+</b>，CH2 選「FI 的 V+ 腳」：這支腳跟著 Vm 走，只比 Vm 小一點（測試 7）。</li>
+    <li><b>電路圖數值</b>（R13 = 1 kΩ）：AP 變成接近 8 V 的完整尖峰。對照 PCB 的 100 kΩ，就知道為什麼實際電路的 AP 這麼小。</li>
+    <li>模型沒有 60 Hz 雜訊，所以浮接的腳在這裡是平的；實際示波器上會看到上下震盪。</li>
+  </ul>
+</section>
+
+<footer>Ebers–Moll 模型、修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton。元件參數為典型值（2N3904 β 200、2N4403 β 150），細節見<a href="../hw2-debug/#s8">分析頁 §8</a>。</footer>
+</div>
+
+<script>
+/* ================= engine: same model as hw2-debug/sim/sim.py ================= */
+var AM = (function(){
+  var VT = 0.02585, EXPLIM = 40, GMIN = 1e-12, SHORT = 0.05, OPEN = 1e13;
+  var M3904 = {Is:6.7e-15, bf:200, br:0.74}, M4403 = {Is:1e-14, bf:150, br:4}, MD = {Is:2.52e-9, n:1.752};
+  var NODES = ['P','Q','R','VM','VML','VMF','VPF','GF','B1','E3','X','E4','VMS','GS','S','T','Y','Z'];
+  var N = NODES.length, IDX = {GND:-1, VP:-2};
+  NODES.forEach(function(n, i){ IDX[n] = i; });
+
+  var st = {
+    vplus:7.8, sw:false, rpot:0, r13:1e5, rfe:1e5, qs:'pcb', rprobe:1e7, ch2:'',
+    leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true
+  };
+  var V = new Float64Array(N), Vprev = new Float64Array(N);
+  var F = new Float64Array(N), J = new Float64Array(N * N), dx = new Float64Array(N), A = new Float64Array(N * (N + 1));
+  var R = [], C = [], D = [], Q = [];
+  var t = 0;
+
+  function link(ok){ return ok ? SHORT : OPEN; }
+  function build(){
+    R = []; C = []; D = []; Q = [];
+    function r(a, b, ohm){ R.push([IDX[a], IDX[b], 1 / ohm]); }
+    /* Stimulator */
+    r('VP', 'P', link(st.sw));
+    r('P', 'Q', st.rpot + 7e3);
+    Q.push(['p', IDX.VM, IDX.R, IDX.Q, M4403, 'pass']);
+    Q.push(['p', IDX.R, IDX.Q, st.qs === 'sw' ? IDX.P : IDX.VP, M4403, 'sense']);
+    r('R', 'GND', 7e3);
+    /* Leak */
+    r('VM', 'VML', link(st.leak));
+    C.push([IDX.VML, IDX.GND, 1e-6]); r('VML', 'GND', 1e5);
+    /* Fast inward */
+    r('VMF', 'VM', link(st.fi_vm)); r('VPF', 'VP', link(st.fi_vplus)); r('GF', 'GND', link(st.fi_gnd));
+    D.push([IDX.VMF, IDX.B1]);
+    r('B1', 'GF', 3e6);
+    Q.push(['n', IDX.X, IDX.B1, IDX.E3, M3904, 'fi3904']);
+    r('E3', 'GF', st.rfe);
+    Q.push(['p', IDX.VMF, IDX.X, IDX.E4, M4403, 'fi4403']);
+    r('E4', 'VPF', st.r13);
+    /* Slow out */
+    r('VMS', 'VM', link(st.so_vm)); r('GS', 'GND', link(st.so_gnd));
+    r('VMS', 'S', 1e5);
+    C.push([IDX.S, IDX.GS, 1e-6]);
+    D.push([IDX.S, IDX.T]);
+    r('T', 'GS', 3e6);
+    Q.push(['n', IDX.Y, IDX.T, IDX.GS, M3904, 'so3904']);
+    Q.push(['p', IDX.Z, IDX.Y, IDX.VMS, M4403, 'so4403']);
+    r('Z', 'GS', 1e3);
+    /* probes */
+    r('VM', 'GND', st.rprobe);
+    if(st.ch2) r(st.ch2, 'GND', st.rprobe);
+  }
+
+  function gv(arr, i){ return i >= 0 ? arr[i] : (i === -1 ? 0 : st.vplus); }
+  function lexp(x){ if(x > EXPLIM){ var e = Math.exp(EXPLIM); return [e * (1 + x - EXPLIM), e]; } var e2 = Math.exp(x); return [e2, e2]; }
+
+  /* currents INTO (c,b,e) and Jacobian rows, written into out = {i:[3], d:[9]} */
+  var bo = {i:[0,0,0], d:[0,0,0,0,0,0,0,0,0]};
+  function bjt(kind, vc, vb, ve, m){
+    var k = 1 + 1 / m.br, ef, er, If, Ir, gf, gr, i = bo.i, d = bo.d;
+    if(kind === 'n'){
+      ef = lexp((vb - ve) / VT); er = lexp((vb - vc) / VT);
+      If = m.Is * (ef[0] - 1); gf = m.Is * ef[1] / VT;
+      Ir = m.Is * (er[0] - 1); gr = m.Is * er[1] / VT;
+      i[0] = If - Ir * k; i[1] = If / m.bf + Ir / m.br;
+      d[0] = gr * k;  d[1] = gf - gr * k;          d[2] = -gf;
+      d[3] = -gr / m.br; d[4] = gf / m.bf + gr / m.br; d[5] = -gf / m.bf;
+    } else {
+      ef = lexp((ve - vb) / VT); er = lexp((vc - vb) / VT);
+      If = m.Is * (ef[0] - 1); gf = m.Is * ef[1] / VT;
+      Ir = m.Is * (er[0] - 1); gr = m.Is * er[1] / VT;
+      i[0] = -(If - Ir * k); i[1] = -(If / m.bf + Ir / m.br);
+      d[0] = gr * k;  d[1] = gf - gr * k;          d[2] = -gf;
+      d[3] = -gr / m.br; d[4] = gf / m.bf + gr / m.br; d[5] = -gf / m.bf;
+    }
+    i[2] = -i[0] - i[1];
+    d[6] = -(d[0] + d[3]); d[7] = -(d[1] + d[4]); d[8] = -(d[2] + d[5]);
+    return bo;
+  }
+
+  function stampG(a, b, g, ieq){
+    var cur = g * (gv(V, a) - gv(V, b)) + ieq;
+    if(a >= 0){ F[a] += cur; J[a * N + a] += g; if(b >= 0) J[a * N + b] -= g; }
+    if(b >= 0){ F[b] -= cur; J[b * N + b] += g; if(a >= 0) J[b * N + a] -= g; }
+  }
+
+  function newton(dt, maxit){
+    for(var it = 0; it < maxit; it++){
+      F.fill(0); J.fill(0);
+      var k, e;
+      for(k = 0; k < R.length; k++){ e = R[k]; stampG(e[0], e[1], e[2], 0); }
+      for(k = 0; k < N; k++) stampG(k, -1, GMIN, 0);
+      if(dt){
+        for(k = 0; k < C.length; k++){ e = C[k]; var g = e[2] / dt; stampG(e[0], e[1], g, -g * (gv(Vprev, e[0]) - gv(Vprev, e[1]))); }
+      }
+      for(k = 0; k < D.length; k++){
+        e = D[k];
+        var x = lexp((gv(V, e[0]) - gv(V, e[1])) / (MD.n * VT));
+        var id = MD.Is * (x[0] - 1), gd = MD.Is * x[1] / (MD.n * VT), a = e[0], c = e[1];
+        if(a >= 0){ F[a] += id; J[a * N + a] += gd; if(c >= 0) J[a * N + c] -= gd; }
+        if(c >= 0){ F[c] -= id; J[c * N + c] += gd; if(a >= 0) J[c * N + a] -= gd; }
+      }
+      for(k = 0; k < Q.length; k++){
+        e = Q[k];
+        var nn = [e[1], e[2], e[3]];
+        var o = bjt(e[0], gv(V, e[1]), gv(V, e[2]), gv(V, e[3]), e[4]);
+        for(var tt = 0; tt < 3; tt++){
+          var row = nn[tt]; if(row < 0) continue;
+          F[row] += o.i[tt];
+          for(var s = 0; s < 3; s++){ var col = nn[s]; if(col >= 0) J[row * N + col] += o.d[tt * 3 + s]; }
+        }
+      }
+      /* solve J dx = -F (partial pivoting) */
+      var W = N + 1, r, cc, p;
+      for(r = 0; r < N; r++){ for(cc = 0; cc < N; cc++) A[r * W + cc] = J[r * N + cc]; A[r * W + N] = -F[r]; }
+      for(cc = 0; cc < N; cc++){
+        p = cc; var best = Math.abs(A[cc * W + cc]);
+        for(r = cc + 1; r < N; r++){ var av = Math.abs(A[r * W + cc]); if(av > best){ best = av; p = r; } }
+        if(p !== cc){ for(var q = cc; q <= N; q++){ var tmp = A[cc * W + q]; A[cc * W + q] = A[p * W + q]; A[p * W + q] = tmp; } }
+        var pv = A[cc * W + cc];
+        for(r = cc + 1; r < N; r++){
+          var f = A[r * W + cc] / pv; if(f === 0) continue;
+          for(q = cc; q <= N; q++) A[r * W + q] -= f * A[cc * W + q];
+        }
+      }
+      var mx = 0;
+      for(r = N - 1; r >= 0; r--){
+        var sum = A[r * W + N];
+        for(q = r + 1; q < N; q++) sum -= A[r * W + q] * dx[q];
+        dx[r] = sum / A[r * W + r];
+        if(Math.abs(dx[r]) > mx) mx = Math.abs(dx[r]);
+      }
+      var sc = mx <= 0.1 ? 1 : 0.1 / mx;
+      for(r = 0; r < N; r++) V[r] += sc * dx[r];
+      if(mx < 1e-7) return true;
+    }
+    return false;
+  }
+
+  function dcSolve(guess){
+    V.fill(0);
+    if(guess) for(var n in guess) if(IDX[n] >= 0) V[IDX[n]] = guess[n];
+    return newton(0, 3000);
+  }
+  function step(dt){
+    Vprev.set(V);
+    if(newton(dt, 80)) { t += dt; return true; }
+    V.set(Vprev);
+    var ok = true;
+    for(var k = 0; k < 10; k++){ Vprev.set(V); ok = newton(dt / 10, 400) && ok; }
+    t += dt;
+    return ok;
+  }
+  function v(n){ return gv(V, IDX[n]); }
+  function qCurrents(tag){
+    for(var k = 0; k < Q.length; k++) if(Q[k][5] === tag){
+      var e = Q[k], o = bjt(e[0], gv(V, e[1]), gv(V, e[2]), gv(V, e[3]), e[4]);
+      return [o.i[0], o.i[1], o.i[2]];
+    }
+    return [0, 0, 0];
+  }
+  return {
+    st:st, build:build, dc:dcSolve, step:step, v:v, q:qCurrents,
+    time:function(){ return t; }, setTime:function(x){ t = x; }, nodes:NODES
+  };
+})();
+
+/* ================= schematic ================= */
+var SCH = (function(){
+  var svg = document.getElementById('sch'), NS = 'http://www.w3.org/2000/svg', out = [];
+  function L(pts, cls){ out.push('<polyline class="' + (cls || 'w') + '" points="' + pts.map(function(p){ return p.join(','); }).join(' ') + '"/>'); }
+  function dot(x, y){ out.push('<circle class="dotn" cx="' + x + '" cy="' + y + '" r="3"/>'); }
+  function txt(x, y, s, cls, anchor){ out.push('<text class="' + cls + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + s + '</text>'); }
+  function tag(id, x, y, cls, anchor){ out.push('<text id="' + id + '" class="' + (cls || 'nv') + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>—</text>'); }
+  function resV(x, y1, y2, a, b){ /* wire x,y1->a ; zigzag a->b ; wire b->y2 */
+    L([[x, y1], [x, a]]);
+    var pts = [[x, a]], seg = (b - a) / 12;
+    for(var i = 1; i < 12; i++) pts.push([x + (i % 2 ? 7 : -7), a + seg * i]);
+    pts.push([x, b]); L(pts, 'sym'); L([[x, b], [x, y2]]);
+  }
+  function resH(y, x1, x2, a, b){
+    L([[x1, y], [a, y]]);
+    var pts = [[a, y]], seg = (b - a) / 12;
+    for(var i = 1; i < 12; i++) pts.push([a + seg * i, y + (i % 2 ? -7 : 7)]);
+    pts.push([b, y]); L(pts, 'sym'); L([[b, y], [x2, y]]);
+  }
+  function capV(x, y1, y2, yc){
+    L([[x, y1], [x, yc - 4]]); L([[x - 13, yc - 4], [x + 13, yc - 4]], 'sym'); L([[x - 13, yc + 4], [x + 13, yc + 4]], 'sym'); L([[x, yc + 4], [x, y2]]);
+  }
+  function diodeV(x, y1, y2, a, b){ /* anode at a (top), cathode b */
+    L([[x, y1], [x, a]]);
+    out.push('<polygon class="sym" points="' + (x - 9) + ',' + a + ' ' + (x + 9) + ',' + a + ' ' + x + ',' + b + '"/>');
+    L([[x - 9, b], [x + 9, b]], 'sym'); L([[x, b], [x, y2]]);
+  }
+  function diodeH(y, x1, x2, a, b){
+    L([[x1, y], [a, y]]);
+    out.push('<polygon class="sym" points="' + a + ',' + (y - 9) + ' ' + a + ',' + (y + 9) + ' ' + b + ',' + y + '"/>');
+    L([[b, y - 9], [b, y + 9]], 'sym'); L([[b, y], [x2, y]]);
+  }
+  /* BJT in local frame: base lead (-20,0)->(0,0), bar x=0 |y|<=12, leads to (14,-30) and (14,30) */
+  function bjt(cx, cy, type, rot, eTop, id){
+    var s = eTop ? -1 : 1; /* emitter lead sign */
+    var ex0 = 0, ey0 = 6 * s, ex1 = 14, ey1 = 18 * s;
+    var dxv = ex1 - ex0, dyv = ey1 - ey0, len = Math.sqrt(dxv * dxv + dyv * dyv), ux = dxv / len, uy = dyv / len;
+    var tipT = type === 'n' ? 0.95 : 0.35, tx = ex0 + dxv * tipT, ty = ey0 + dyv * tipT, dir = type === 'n' ? 1 : -1;
+    var bx = tx - ux * 7 * dir, by = ty - uy * 7 * dir, px = -uy * 4, py = ux * 4;
+    out.push('<g transform="translate(' + cx + ',' + cy + ') rotate(' + rot + ')">' +
+      '<circle id="' + id + '" class="qc" cx="5" cy="0" r="21"/>' +
+      '<polyline class="sym" points="-20,0 0,0"/><polyline class="sym" points="0,-12 0,12" style="stroke-width:2.6"/>' +
+      '<polyline class="sym" points="0,-6 14,-18 14,-30"/><polyline class="sym" points="0,6 14,18 14,30"/>' +
+      '<polygon class="fillk" points="' + tx + ',' + ty + ' ' + (bx + px) + ',' + (by + py) + ' ' + (bx - px) + ',' + (by - py) + '"/></g>');
+  }
+  function contactV(key, x, y1, y2){
+    out.push('<g class="contact" data-c="' + key + '" tabindex="0" role="button" aria-label="切換接點 ' + key + '">' +
+      '<rect x="' + (x - 16) + '" y="' + y1 + '" width="36" height="' + (y2 - y1) + '" fill="transparent"/>' +
+      '<circle class="dotn" cx="' + x + '" cy="' + y1 + '" r="2.6"/><circle class="dotn" cx="' + x + '" cy="' + y2 + '" r="2.6"/>' +
+      '<line class="blade" data-x="' + x + '" data-y1="' + y1 + '" data-y2="' + y2 + '" x1="' + x + '" y1="' + y2 + '" x2="' + x + '" y2="' + y1 + '"/>' +
+      '<text class="ct" x="' + (x + 8) + '" y="' + ((y1 + y2) / 2 + 4) + '">斷開</text></g>');
+  }
+  function box(x, y, w, h, title, tx){
+    out.push('<rect class="box" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="6"/>');
+    txt(tx, y + h - 9, title, 'bt');
+  }
+
+  /* boards (titles sit at the bottom, where the wiring leaves room) */
+  box(14, 18, 228, 430, 'Stimulator', 46);
+  box(252, 86, 86, 362, 'Leak', 271);
+  box(348, 86, 262, 362, 'Fast inward', 470);
+  box(620, 86, 352, 362, 'Slow out', 836);
+  /* rails */
+  L([[230, 70], [975, 70]], 'w vm');
+  L([[20, 455], [975, 455]]);
+  txt(978, 74, 'CH1', 'lab');
+  tag('nVM', 600, 58, 'nvb', 'middle');
+  txt(24, 470, 'GND（Extracellular）', 'lab');
+
+  /* ---- Stimulator ---- */
+  L([[34, 36], [74, 36]]); L([[34, 36], [34, 330]]);
+  L([[22, 340], [46, 340]], 'sym'); L([[28, 350], [40, 350]], 'sym');
+  L([[34, 350], [34, 455]]); dot(34, 455);
+  txt(40, 334, '+', 'lab'); tag('nVP', 44, 30, 'nv');
+  /* SW */
+  L([[74, 36], [74, 58]]);
+  out.push('<g class="contact sw" data-c="sw" tabindex="0" role="button" aria-label="SW">' +
+    '<rect x="58" y="56" width="36" height="40" fill="transparent"/>' +
+    '<circle class="dotn" cx="74" cy="58" r="2.6"/><circle class="dotn" cx="74" cy="92" r="2.6"/>' +
+    '<line class="blade" data-x="74" data-y1="58" data-y2="92" x1="74" y1="92" x2="88" y2="62"/></g>');
+  txt(92, 80, 'SW', 'lab');
+  L([[74, 92], [74, 110]]); dot(74, 110); tag('nP', 80, 134, 'nv');
+  resH(110, 74, 150, 90, 138); txt(114, 96, 'pot + 7k', 'lab', 'middle');
+  dot(150, 110); tag('nQ', 156, 98, 'nv');
+  L([[150, 110], [154, 110]]);
+  bjt(184, 124, 'p', -90, true, 'qPass'); txt(184, 160, 'Q_pass', 'lab', 'middle');
+  L([[214, 110], [230, 110], [230, 70]]);
+  tag('iStim', 226, 62, 'cur', 'end');
+  L([[184, 144], [184, 200]]);
+  L([[150, 110], [150, 166]]);
+  bjt(150, 186, 'p', 90, false, 'qSense'); txt(150, 228, 'Q_sense', 'lab', 'middle');
+  L([[180, 200], [184, 200]]); dot(184, 200); tag('nR', 192, 196, 'nv');
+  out.push('<polyline id="wQsPcb" class="w" points="120,200 34,200"/>');
+  out.push('<polyline id="wQsSw" class="w" points="120,200 74,200 74,110" style="display:none"/>');
+  out.push('<circle id="dQsPcb" class="dotn" cx="34" cy="200" r="3"/>');
+  resV(184, 200, 455, 300, 380); txt(194, 345, '7k', 'lab'); dot(184, 455);
+
+  /* ---- Leak ---- */
+  L([[290, 70], [290, 76]]); dot(290, 70);
+  contactV('leak', 290, 76, 112);
+  L([[290, 112], [290, 130]]); L([[264, 130], [316, 130]]);
+  capV(264, 130, 455, 290); txt(278, 312, '1µF', 'lab');
+  resV(316, 130, 455, 250, 330); txt(298, 360, '100k', 'lab');
+  dot(264, 455); dot(316, 455);
+
+  /* ---- Fast inward ---- */
+  L([[380, 70], [380, 76]]); dot(380, 70);
+  contactV('fi_vm', 380, 76, 112);
+  L([[380, 112], [380, 120], [554, 120]]);
+  diodeV(380, 120, 220, 152, 182); txt(394, 172, 'D1', 'lab');
+  dot(380, 220); tag('nB1', 386, 240, 'nv');
+  resV(380, 220, 405, 280, 350); txt(390, 320, '3M', 'lab');
+  L([[380, 220], [420, 220]]);
+  bjt(440, 220, 'n', 0, false, 'qFi3904'); txt(470, 226, '3904', 'lab');
+  L([[454, 190], [454, 170], [520, 170]]); dot(454, 170); tag('nX', 470, 162, 'nv');
+  resV(454, 250, 405, 300, 370); tag('lRfe', 464, 340, 'lab');
+  tag('nE3', 460, 274, 'nv');
+  bjt(540, 170, 'p', 0, false, 'qFi4403'); txt(566, 166, '4403', 'lab');
+  L([[554, 140], [554, 120]]); tag('iFi', 504, 112, 'cur');
+  resV(554, 200, 310, 228, 290); tag('lR13', 564, 264, 'lab');
+  tag('nE4', 560, 214, 'nv');
+  contactV('fi_vplus', 554, 310, 346);
+  L([[554, 346], [554, 360]]); txt(554, 376, 'V+', 'lab', 'middle'); tag('nVPF', 554, 392, 'nv', 'middle');
+  L([[380, 405], [454, 405]]); dot(420, 405);
+  contactV('fi_gnd', 420, 412, 448); L([[420, 405], [420, 412]]); L([[420, 448], [420, 455]]);
+
+  /* ---- Slow out ---- */
+  L([[660, 70], [660, 76]]); dot(660, 70);
+  contactV('so_vm', 660, 76, 112);
+  L([[660, 112], [660, 120], [914, 120]]);
+  resV(660, 120, 230, 140, 205); txt(670, 176, '100k', 'lab');
+  dot(660, 230); tag('nS', 668, 250, 'nv');
+  capV(660, 230, 405, 320); txt(676, 324, '1µF', 'lab');
+  diodeH(230, 660, 760, 692, 722); txt(707, 216, 'D1', 'lab', 'middle');
+  dot(760, 230); tag('nT', 766, 250, 'nv');
+  resV(760, 230, 405, 290, 360); txt(770, 330, '3M', 'lab');
+  L([[760, 230], [780, 230]]);
+  bjt(800, 230, 'n', 0, false, 'qSo3904'); txt(830, 236, '3904', 'lab');
+  L([[814, 200], [814, 170], [880, 170]]); dot(814, 170); tag('nY', 824, 162, 'nv');
+  L([[814, 260], [814, 405]]);
+  bjt(900, 170, 'p', 0, true, 'qSo4403'); txt(926, 176, '4403', 'lab');
+  L([[914, 140], [914, 120]]); tag('iSo', 864, 112, 'cur');
+  resV(914, 200, 405, 260, 330); txt(924, 300, '1k', 'lab');
+  tag('nZ', 920, 220, 'nv');
+  L([[660, 405], [914, 405]]); dot(790, 405); dot(760, 405); dot(814, 405);
+  contactV('so_gnd', 790, 412, 448); L([[790, 405], [790, 412]]); L([[790, 448], [790, 455]]);
+
+  svg.innerHTML = out.join('');
+  return {svg:svg};
+})();
+
+/* ================= UI ================= */
+(function(){
+  var st = AM.st, DT = 2e-4;
+  var $ = function(id){ return document.getElementById(id); };
+  var running = true, speed = 1, latch = false, swDown = false;
+
+  /* ring buffer for the scope */
+  var CAP = 12000, tB = new Float64Array(CAP), aB = new Float64Array(CAP), bB = new Float64Array(CAP), head = 0, count = 0;
+  function push(t, a, b){ tB[head] = t; aB[head] = a; bB[head] = b; head = (head + 1) % CAP; if(count < CAP) count++; }
+  function sample(){ push(AM.time(), AM.v('VM'), st.ch2 ? AM.v(st.ch2) : NaN); }
+
+  var mode = 'roll', trig = {state:'idle', t0:0, prev:0}, frozen = null;
+
+  function rebuild(){ AM.build(); }
+  function powerOn(){
+    AM.build(); AM.dc(); AM.setTime(0); count = 0; head = 0; frozen = null;
+    if(mode === 'single') arm();
+    sample();
+  }
+
+  /* ---- controls ---- */
+  function fmtR(x){ return x >= 1e6 ? (x / 1e6) + ' MΩ' : (x / 1e3) + ' kΩ'; }
+  function syncLabels(){
+    $('potV').textContent = (+$('pot').value).toFixed(1) + ' kΩ';
+    $('vplusV').textContent = (+$('vplus').value).toFixed(1) + ' V';
+  }
+  function readControls(){
+    st.rpot = +$('pot').value * 1e3; st.vplus = +$('vplus').value;
+    st.r13 = +$('r13').value; st.rfe = +$('rfe').value; st.qs = $('qs').value; st.rprobe = +$('probe').value;
+    st.ch2 = $('ch2').value;
+    document.querySelectorAll('#contacts input').forEach(function(c){ st[c.dataset.c] = c.checked; });
+    syncLabels(); syncSchematic(); rebuild();
+  }
+  ['pot', 'vplus'].forEach(function(id){ $(id).addEventListener('input', readControls); });
+  ['r13', 'rfe', 'qs', 'probe', 'ch2'].forEach(function(id){ $(id).addEventListener('change', readControls); });
+  document.querySelectorAll('#contacts input').forEach(function(c){ c.addEventListener('change', readControls); });
+
+  function toggleContact(key){
+    if(key === 'sw'){ setSW(!st.sw); return; }
+    var box = document.querySelector('#contacts input[data-c="' + key + '"]');
+    box.checked = !box.checked; readControls();
+  }
+  document.querySelectorAll('#sch .contact').forEach(function(g){
+    g.addEventListener('click', function(){ toggleContact(g.dataset.c); });
+    g.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleContact(g.dataset.c); } });
+  });
+  function syncSchematic(){
+    document.querySelectorAll('#sch .contact').forEach(function(g){
+      var key = g.dataset.c, closed = key === 'sw' ? st.sw : st[key];
+      g.classList.toggle('open', !closed);
+      var b = g.querySelector('.blade'), x = +b.dataset.x, y1 = +b.dataset.y1, y2 = +b.dataset.y2;
+      b.setAttribute('x2', closed ? x : x + 14); b.setAttribute('y2', closed ? y1 : y1 + 4);
+    });
+    var pcb = st.qs === 'pcb';
+    $('wQsPcb').style.display = pcb ? '' : 'none'; $('dQsPcb').style.display = pcb ? '' : 'none';
+    $('wQsSw').style.display = pcb ? 'none' : '';
+    $('lR13').textContent = 'R13 ' + fmtR(st.r13);
+    $('lRfe').textContent = fmtR(st.rfe);
+  }
+
+  /* ---- SW ---- */
+  function setSW(on){
+    st.sw = on; rebuild();
+    var b = $('swBtn'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.textContent = on ? 'SW 按下中' : '按住 SW（或空白鍵）';
+    syncSchematic();
+  }
+  var sb = $('swBtn');
+  sb.addEventListener('pointerdown', function(e){ e.preventDefault(); sb.setPointerCapture(e.pointerId); swDown = true; setSW(true); });
+  function up(){ if(!swDown) return; swDown = false; if(!latch) setSW(false); }
+  sb.addEventListener('pointerup', up); sb.addEventListener('pointercancel', up);
+  sb.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); } });
+  document.addEventListener('keydown', function(e){
+    if(e.code !== 'Space' || e.repeat) return;
+    var tg = e.target.tagName; if(tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA') return;
+    if(e.target.classList && e.target.classList.contains('contact')) return;
+    e.preventDefault(); setSW(true);
+  });
+  document.addEventListener('keyup', function(e){
+    if(e.code !== 'Space') return;
+    var tg = e.target.tagName; if(tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA') return;
+    if(e.target.classList && e.target.classList.contains('contact')) return;
+    e.preventDefault(); if(!latch) setSW(false);
+  });
+  $('swLatch').addEventListener('change', function(){ latch = this.checked; setSW(latch); });
+
+  /* ---- presets ---- */
+  var PRESETS = {
+    pcb:{note:'PCB 實際值，所有接點都接上。'},
+    t1:{fi_vplus:false, so_vm:false, note:'FI 的 V+ 和 SO 的 Vm 都斷開：按住 SW 出現平台，放開後平滑回到基線（測試 1）。'},
+    so:{so_vm:false, note:'SO 的 Vm 斷開：FI 一旦觸發就自鎖在約 3 V。'},
+    leak:{fi_vm:false, fi_vplus:false, fi_gnd:false, so_vm:false, so_gnd:false, note:'只有 Stimulator + Leak：基線 0.6 V（Q_sense 漏電流），按住到 7.1 V 上限。'},
+    ttx:{fi_vm:false, fi_vplus:false, fi_gnd:false, note:'拔掉 Fast inward：剩被動反應，仍會被 Slow out 拉回約 0.7 V。'},
+    tea:{so_vm:false, so_gnd:false, note:'拔掉 Slow out：觸發後沒有東西把 Vm 拉回來。'},
+    sch:{vplus:9, r13:'1e3', qs:'sw', note:'講義電路圖的數值：9 V、R13 = 1 kΩ、Q_sense 在 SW 之後。'}
+  };
+  function applyPreset(k){
+    var p = PRESETS[k];
+    $('vplus').value = p.vplus || 7.8; $('r13').value = p.r13 || '1e5'; $('rfe').value = '1e5'; $('qs').value = p.qs || 'pcb';
+    document.querySelectorAll('#contacts input').forEach(function(c){ c.checked = p[c.dataset.c] !== false; });
+    $('presetNote').textContent = p.note;
+    document.querySelectorAll('#presets .btn').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.p === k ? 'true' : 'false'); });
+    readControls(); powerOn();
+  }
+  document.querySelectorAll('#presets .btn').forEach(function(b){ b.addEventListener('click', function(){ applyPreset(b.dataset.p); }); });
+
+  $('reset').addEventListener('click', powerOn);
+  function seg(a, b, on){ $(a).setAttribute('aria-pressed', on ? 'true' : 'false'); $(b).setAttribute('aria-pressed', on ? 'false' : 'true'); }
+  $('sp1').addEventListener('click', function(){ speed = 1; seg('sp1', 'sp4', true); });
+  $('sp4').addEventListener('click', function(){ speed = 0.25; seg('sp1', 'sp4', false); });
+  $('pause').addEventListener('click', function(){ running = !running; this.setAttribute('aria-pressed', running ? 'false' : 'true'); this.textContent = running ? '暫停' : '繼續'; });
+
+  /* ---- scope ---- */
+  var cv = $('scope'), ctx = cv.getContext('2d'), cursorX = null;
+  function vdiv(){ return +$('vdiv').value; }
+  function tdiv(){ return +$('tdiv').value; }
+  function arm(){ trig.state = 'armed'; frozen = null; trig.prev = AM.v('VM'); updTrig(); }
+  function updTrig(){
+    var s = mode === 'roll' ? '' : ({armed:'等待觸發…', capturing:'擷取中…', done:'已擷取（按「重新 Single」再抓一次）'})[trig.state] || '';
+    $('trigState').textContent = s;
+  }
+  $('mRoll').addEventListener('click', function(){ mode = 'roll'; frozen = null; seg('mRoll', 'mSingle', true); updTrig(); });
+  $('mSingle').addEventListener('click', function(){ mode = 'single'; seg('mRoll', 'mSingle', false); arm(); });
+  $('arm').addEventListener('click', function(){ if(mode !== 'single'){ mode = 'single'; seg('mRoll', 'mSingle', false); } arm(); });
+  $('vdiv').addEventListener('change', draw); $('tdiv').addEventListener('change', function(){ if(mode === 'single') arm(); });
+
+  function windowSamples(t0, t1){
+    var ts = [], as = [], bs = [], n = count, start = (head - n + CAP) % CAP;
+    for(var k = 0; k < n; k++){
+      var i = (start + k) % CAP, tt = tB[i];
+      if(tt >= t0 && tt <= t1){ ts.push(tt); as.push(aB[i]); bs.push(bB[i]); }
+    }
+    return {t0:t0, t1:t1, t:ts, a:as, b:bs};
+  }
+  function onSample(){
+    if(mode !== 'single') return;
+    var now = AM.time(), vm = AM.v('VM'), lvl = +$('trig').value;
+    if(trig.state === 'armed' && trig.prev < lvl && vm >= lvl){ trig.state = 'capturing'; trig.t0 = now; updTrig(); }
+    if(trig.state === 'capturing' && now >= trig.t0 + 9 * tdiv()){
+      frozen = windowSamples(trig.t0 - tdiv(), trig.t0 + 9 * tdiv()); trig.state = 'done'; updTrig();
+    }
+    trig.prev = vm;
+  }
+
+  function sizeCanvas(){
+    var r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.width * 0.8 * dpr);
+  }
+  window.addEventListener('resize', sizeCanvas);
+
+  var lastMax = NaN;
+  function draw(){
+    var Wd = cv.width, Hd = cv.height, dpr = window.devicePixelRatio || 1;
+    var gx = Wd / 10, gy = Hd / 8, vd = vdiv(), td = tdiv();
+    ctx.fillStyle = '#0d1114'; ctx.fillRect(0, 0, Wd, Hd);
+    ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var i = 1; i < 10; i++){ ctx.moveTo(Math.round(i * gx) + .5, 0); ctx.lineTo(Math.round(i * gx) + .5, Hd); }
+    for(i = 1; i < 8; i++){ ctx.moveTo(0, Math.round(i * gy) + .5); ctx.lineTo(Wd, Math.round(i * gy) + .5); }
+    ctx.stroke();
+    var y0 = 7 * gy; /* 0 V one division above the bottom */
+    var Yv = function(v){ return y0 - v / vd * gy; };
+    var w;
+    if(mode === 'single' && frozen) w = frozen;
+    else if(mode === 'single' && trig.state === 'capturing') w = windowSamples(trig.t0 - td, trig.t0 + 9 * td);
+    else { var now = AM.time(); w = windowSamples(now - 10 * td, now); }
+    var Xt = function(t){ return (t - w.t0) / (w.t1 - w.t0) * Wd; };
+    /* ground marker and trigger level */
+    ctx.fillStyle = '#3987e5'; ctx.beginPath(); ctx.moveTo(0, y0 - 6 * dpr); ctx.lineTo(9 * dpr, y0); ctx.lineTo(0, y0 + 6 * dpr); ctx.fill();
+    if(mode === 'single'){
+      var ty = Yv(+$('trig').value);
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.moveTo(Wd, ty - 6 * dpr); ctx.lineTo(Wd - 9 * dpr, ty); ctx.lineTo(Wd, ty + 6 * dpr); ctx.fill();
+      if(trig.state !== 'armed'){ var tx = Xt(trig.t0); ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.setLineDash([4 * dpr, 4 * dpr]); ctx.beginPath(); ctx.moveTo(tx, 0); ctx.lineTo(tx, Hd); ctx.stroke(); ctx.setLineDash([]); }
+    }
+    function trace(arr, color){
+      var n = w.t.length; if(n < 2) return;
+      var stride = Math.max(1, Math.floor(n / (Wd * 1.5)));
+      ctx.strokeStyle = color; ctx.lineWidth = 2 * dpr; ctx.lineJoin = 'round'; ctx.beginPath();
+      var started = false;
+      for(var k = 0; k < n; k += stride){
+        var v = arr[k]; if(isNaN(v)) continue;
+        var x = Xt(w.t[k]), y = Math.max(-4, Math.min(Hd + 4, Yv(v)));
+        if(!started){ ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    if(st.ch2) trace(w.b, '#d95926');
+    trace(w.a, '#3987e5');
+    var mx = -Infinity; for(var k = 0; k < w.a.length; k++) if(w.a[k] > mx) mx = w.a[k];
+    lastMax = mx;
+    /* labels */
+    ctx.font = (12 * dpr) + 'px "IBM Plex Mono", monospace'; ctx.fillStyle = '#3987e5';
+    ctx.fillText('CH1 Vm  ' + vd + ' V/div', 8 * dpr, Hd - 8 * dpr);
+    if(st.ch2){ ctx.fillStyle = '#d95926'; ctx.fillText('CH2 ' + $('ch2').selectedOptions[0].textContent, 190 * dpr, Hd - 8 * dpr); }
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    var tl = 'M ' + (td * 1000) + ' ms/div';
+    ctx.fillText(tl, Wd - ctx.measureText(tl).width - 8 * dpr, Hd - 8 * dpr);
+    /* cursor */
+    if(cursorX !== null && w.t.length){
+      var cx = cursorX * dpr, tc = w.t0 + cx / Wd * (w.t1 - w.t0), lo = 0, hi = w.t.length - 1;
+      while(hi - lo > 1){ var mid = (lo + hi) >> 1; if(w.t[mid] < tc) lo = mid; else hi = mid; }
+      var j = (tc - w.t[lo] < w.t[hi] - tc) ? lo : hi;
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, Hd); ctx.stroke();
+      var ref = (mode === 'single' && trig.state !== 'armed') ? trig.t0 : w.t1;
+      $('cursorRead').textContent = '游標：' + (mode === 'single' && trig.state !== 'armed' ? '觸發後 ' : '距現在 ') +
+        ((w.t[j] - ref) * 1000).toFixed(1) + ' ms，CH1 = ' + w.a[j].toFixed(2) + ' V' + (st.ch2 ? '，CH2 = ' + w.b[j].toFixed(2) + ' V' : '');
+    }
+  }
+  cv.addEventListener('pointermove', function(e){ var r = cv.getBoundingClientRect(); cursorX = e.clientX - r.left; });
+  cv.addEventListener('pointerdown', function(e){ var r = cv.getBoundingClientRect(); cursorX = e.clientX - r.left; });
+  cv.addEventListener('pointerleave', function(){ cursorX = null; $('cursorRead').textContent = '把滑鼠移到畫面上可讀數值。'; });
+
+  /* ---- readouts ---- */
+  function uA(x){ return (x * 1e6).toFixed(1) + ' µA'; }
+  var lastUI = 0;
+  function updateUI(){
+    var vm = AM.v('VM');
+    var qp = AM.q('pass'), q4 = AM.q('fi4403'), q6 = AM.q('so4403');
+    var Is = -qp[0], If = -q4[0], Io = q6[2];
+    $('rVm').textContent = vm.toFixed(2) + ' V';
+    $('rMax').textContent = isFinite(lastMax) ? lastMax.toFixed(2) + ' V' : '—';
+    $('rCh2').textContent = st.ch2 ? AM.v(st.ch2).toFixed(2) + ' V' : '—';
+    $('rIs').textContent = uA(Is); $('rIf').textContent = uA(If); $('rIo').textContent = uA(Io);
+    var fiOn = If > 2e-6, soOn = Io > 2e-6;
+    $('cSW').textContent = st.sw ? 'SW 按下' : 'SW 放開'; $('cSW').classList.toggle('on', st.sw);
+    $('cFI').textContent = fiOn ? 'Fast inward 導通' : 'Fast inward 關'; $('cFI').classList.toggle('on', fiOn);
+    $('cSO').textContent = soOn ? 'Slow out 導通' : 'Slow out 關'; $('cSO').classList.toggle('on', soOn);
+    /* schematic */
+    var set = function(id, s){ var e = $(id); if(e) e.textContent = s; };
+    var f2 = function(n){ return AM.v(n).toFixed(2) + ' V'; };
+    set('nVM', 'Vm = ' + vm.toFixed(2) + ' V'); set('nVP', 'V+ ' + st.vplus.toFixed(1) + ' V');
+    ['P', 'Q', 'R', 'B1', 'X', 'E3', 'E4', 'S', 'T', 'Y', 'Z'].forEach(function(n){ set('n' + n, f2(n)); });
+    set('nVPF', f2('VPF'));
+    set('iStim', 'I_stim ' + uA(Is)); set('iFi', 'I_FI ' + uA(If)); set('iSo', 'I_SO ' + uA(Io));
+    var on = {qPass:-qp[0], qSense:-AM.q('sense')[0], qFi3904:AM.q('fi3904')[0], qFi4403:If, qSo3904:AM.q('so3904')[0], qSo4403:-q6[0]};
+    for(var id in on){ var c = $(id); if(c) c.classList.toggle('on', on[id] > 2e-6); }
+  }
+
+  /* ---- main loop ---- */
+  var last = performance.now(), carry = 0;
+  function frame(now){
+    var real = Math.min(now - last, 50) / 1000; last = now;
+    if(running){
+      carry += real * speed;
+      var steps = Math.floor(carry / DT);
+      carry -= steps * DT;
+      for(var k = 0; k < steps; k++){ AM.step(DT); sample(); onSample(); }
+    }
+    draw();
+    if(now - lastUI > 90){ updateUI(); lastUI = now; }
+    requestAnimationFrame(frame);
+  }
+
+  sizeCanvas(); syncLabels(); applyPreset('pcb');
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
