@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HW2 節點命名</title>
+<meta name="description" content="HW2 #2-2 active membrane 每個節點的名稱、實際焊墊位置與預期電壓，回報量測時用。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F1; --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72;
+  --link:#1F5FA8; --req:#2F5D3A; --opt:#8A6100; --infer:#7A3E8F; --warn:#A33A2B; --rule:#CCD3CE;
+  --grid:rgba(47,93,58,.07); --vmbus:#2a78d6; --qon:rgba(42,120,214,.16);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+    --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+    --grid:rgba(127,176,137,.08); --vmbus:#3987e5; --qon:rgba(57,135,229,.22);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+  --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+  --grid:rgba(127,176,137,.08); --vmbus:#3987e5; --qon:rgba(57,135,229,.22);
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  font-size:16.5px;line-height:1.8}
+a{color:var(--link);text-underline-offset:3px}
+a:focus-visible{outline:3px solid var(--link);outline-offset:2px;border-radius:3px}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:14px}
+code.n{font-weight:700;color:var(--link);white-space:nowrap}
+p{margin:0 0 14px;max-width:48em}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 26px 80px}
+@media (max-width:560px){.wrap{padding:28px 16px 60px}}
+.crumbs{font-size:14px;display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:18px}
+.crumbs a{color:var(--muted)}
+h1{font-weight:900;font-size:clamp(28px,5vw,40px);line-height:1.25;margin:0 0 12px}
+.lede{font-size:18px;color:var(--muted);max-width:44em}
+h2{font-weight:900;font-size:24px;line-height:1.3;margin:48px 0 12px;padding-top:14px;border-top:2px solid var(--ink)}
+h3{font-weight:900;font-size:19px;margin:30px 0 8px}
+ol.rules{margin:8px 0 14px;padding-left:1.4em;max-width:52em}
+ol.rules li{margin:6px 0}
+.note,.note-warn{padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.note{border-left:3px solid var(--req)} .note-warn{border-left:3px solid var(--warn)}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:0 7px;border-radius:999px;border:1.5px solid currentColor;vertical-align:2px;margin-right:5px;white-space:nowrap;line-height:1.6}
+.warn{color:var(--warn)} .req{color:var(--req)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px 0 8px;border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14.5px;background:var(--surface)}
+table.narrow{min-width:520px}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:700;font-size:13px;color:var(--muted);background:var(--paper)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13.5px}
+tr.grp td{background:var(--grid);font-weight:700;font-size:14px}
+.sch-card{background:var(--surface);border:1px solid var(--rule);padding:12px;margin:12px 0}
+.sch-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+svg#nodesSch{display:block;width:100%;min-width:760px;height:auto}
+.states{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px;margin:8px 0 12px;max-width:52em}
+.states b{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.example{background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--req);padding:10px 14px;margin:8px 0 14px;font-size:15px}
+footer{margin-top:56px;font-size:13.5px;color:var(--muted);border-top:1px solid var(--rule);padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="crumbs">
+  <a href="../">← Modern Bioelectricity</a>
+  <a href="./">HW2 #2-2 除錯分析</a>
+  <a href="../active-membrane-sim/">互動模擬</a>
+  <a href="../hw2/">HW2 實驗講解</a>
+</div>
+
+<h1>節點命名</h1>
+<p class="lede">HW2 #2-2 active membrane 每一個節點的名稱、它包含哪些焊墊、最好在哪裡量，以及幾種狀態下的預期電壓。回報量測時用這套名稱，就不會搞混是哪塊板、哪一支腳。</p>
+
+<h2 id="rules">命名規則</h2>
+<ol class="rules">
+  <li><b>格式是「板代號.節點」</b>。板代號：<code class="n">ST</code> = Stimulator、<code class="n">LK</code> = Leak（Passive unit）、<code class="n">FI</code> = Fast inward、<code class="n">SO</code> = Slow out。</li>
+  <li><b>三條經過排針的共用線</b>是 <code class="n">V+</code>、<code class="n">GND</code>、<code class="n">Vm</code>，每塊板上各有一份，例如 <code class="n">FI.V+</code>、<code class="n">SO.GND</code>、<code class="n">LK.Vm</code>。排針接觸良好時，同一條線在每塊板上的電壓都一樣；不一樣就是那塊板的接點有問題。
+    <ul>
+      <li>單寫 <code class="n">Vm</code> 指 <code class="n">ST.Vm</code>：Stimulator 的輸出，也就是 CH1 平常量的點。</li>
+      <li>單寫 <code class="n">V+</code>、<code class="n">GND</code> 指 Stimulator 電源端子的「+」「−」（<code class="n">ST.V+</code>、<code class="n">ST.GND</code>）。</li>
+    </ul></li>
+  <li><b>電晶體旁的節點用「腳＋型號」命名</b>：3 = 2N3904，4 = 2N4403。<code class="n">B3</code> 是接到 2N3904 base 的節點，<code class="n">E4</code> 是接到 2N4403 emitter 的節點。一個節點同時接兩支腳時取其中一支命名，例如 <code class="n">FI.B4</code> 同時也是 2N3904 的 C。</li>
+  <li><b>Stimulator 內部</b>沿電流方向命名：<code class="n">ST.P</code>（SW 之後）→ <code class="n">ST.K</code>（可變電阻和 7K-R1 之間）→ <code class="n">ST.Q</code>（Q<sub>pass</sub> 的 E）；<code class="n">ST.R</code> 是 Q<sub>pass</sub> 的 B。</li>
+  <li><b>接點</b>（板子和堆疊之間的排針接觸）寫成「板:線」，例如 <code class="n">FI:V+</code> 是 FI 板 V+ 那支排針的接觸。</li>
+  <li><b>電壓一律對 GND 量</b>：探棒地線夾夾 Stimulator 電源端子的「−」。兩點之間的電壓寫成相減，例如 <code class="n">FI.E4 − FI.B4</code>。</li>
+  <li><b>方位</b>：元件面朝自己、Intracellular 字樣在上方。TO-92 電晶體：方形焊墊 = E、中間 = B、另一端 = C。二極體有色帶的一端是陰極（PCB 上標「−」）。</li>
+</ol>
+
+<h2 id="sch">電路圖</h2>
+<p>照 PCB 實際接法。圖上每個節點旁的藍色字是它的節點名稱（省略板代號，板代號看外框）；紅色斜線處是接點。</p>
+<div class="sch-card"><div class="sch-scroll"><svg id="nodesSch" role="img" aria-label="Stimulator、Leak、Fast inward、Slow out 的電路圖，標出每個節點的名稱"></svg></div></div>
+
+<h2 id="table">每個節點的位置與預期電壓</h2>
+<p>預期電壓來自模擬（典型元件參數、V+ = 7.8 V、10 MΩ 探棒），讀格子的誤差和元件差異會讓實測差 ±0.1–0.3 V。五種狀態：</p>
+<div class="states">
+  <b>A</b><span>全部接好、SW 放開。模擬時 Vm 會每 0.2 秒左右自己冒一個小峰，所以列「最低–最高」；安靜的電路則停在範圍內某個固定值（模擬中約一半的參數組合是這樣）。</span>
+  <b>B</b><span>全部接好、SW 按住（可變電阻轉到電流最大），按住 0.3 秒後。</span>
+  <b>C</b><span>只接 ST + LK + FI（沒有 SO）、SW 放開，FI 已自鎖。對應測試 10d。</span>
+  <b>D</b><span>只接 ST + LK + SO（沒有 FI）、SW 按住（電流最大）。</span>
+  <b>E</b><span>ST + LK + FI，但 FI:Vm 斷開、FI 已自鎖，探棒在 FI.Vm。對應測試 4–5。</span>
+</div>
+<div class="scroll">
+<table>
+  <thead><tr><th>名稱</th><th>包含哪些焊墊</th><th>最好量哪裡</th><th class="num">A</th><th class="num">B</th><th class="num">C</th><th class="num">D</th><th class="num">E</th></tr></thead>
+  <tbody>
+    <tr class="grp"><td colspan="8">ST：Stimulator</td></tr>
+    <tr><td><code class="n">V+</code><br><code class="n">ST.V+</code></td><td>電源端子「+」、SW 下面那支腳、Q<sub>sense</sub>（Q2）方形焊墊、2×2 排針中和方形焊墊對角那支</td><td>電源端子「+」</td><td class="num">7.80</td><td class="num">7.80</td><td class="num">7.80</td><td class="num">7.80</td><td class="num">7.80</td></tr>
+    <tr><td><code class="n">GND</code><br><code class="n">ST.GND</code></td><td>電源端子「−」、7K-R2 下端、排針中和方形焊墊同一排那支</td><td>電源端子「−」（地線夾）</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+    <tr><td><code class="n">ST.P</code></td><td>SW 上面那支腳、可變電阻中間腳</td><td>SW 上面那支腳</td><td class="num">浮接*</td><td class="num">7.80</td><td class="num">浮接*</td><td class="num">7.80</td><td class="num">浮接*</td></tr>
+    <tr><td><code class="n">ST.K</code></td><td>可變電阻左腳、7K-R1 上端</td><td>7K-R1 上端</td><td class="num">浮接*</td><td class="num">7.80</td><td class="num">浮接*</td><td class="num">7.80</td><td class="num">浮接*</td></tr>
+    <tr><td><code class="n">ST.Q</code></td><td>7K-R1 下端、Q<sub>pass</sub>（Q1）方形焊墊、Q<sub>sense</sub>（Q2）中間腳</td><td>7K-R1 下端</td><td class="num">7.15</td><td class="num">7.15</td><td class="num">7.15</td><td class="num">7.15</td><td class="num">7.15</td></tr>
+    <tr><td><code class="n">ST.R</code></td><td>Q1 中間腳、Q2 最上面那支腳、7K-R2 上端</td><td>7K-R2 上端</td><td class="num">6.62</td><td class="num">6.55</td><td class="num">6.62</td><td class="num">6.55</td><td class="num">6.62</td></tr>
+    <tr><td><code class="n">Vm</code><br><code class="n">ST.Vm</code></td><td>Q1 最上面那支腳、Intracellular 排針有走線那支</td><td>Intracellular 排針</td><td class="num">0.53–1.35</td><td class="num">0.71</td><td class="num">3.04</td><td class="num">0.69</td><td class="num">0.63</td></tr>
+    <tr class="grp"><td colspan="8">LK：Leak（Passive unit）</td></tr>
+    <tr><td><code class="n">LK.Vm</code></td><td>1UF-C1 上腳、100K-R1 上端</td><td>R1 上端</td><td class="num">= Vm</td><td class="num">= Vm</td><td class="num">= Vm</td><td class="num">= Vm</td><td class="num">= Vm</td></tr>
+    <tr><td><code class="n">LK.GND</code></td><td>C1 下腳、R1 下端</td><td>R1 下端</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+    <tr class="grp"><td colspan="8">FI：Fast inward</td></tr>
+    <tr><td><code class="n">FI.Vm</code></td><td>D1「+」端（上端，沒有色帶）、2N4403 最上面那支腳（C）、Intracellular 排針</td><td>D1「+」端</td><td class="num">0.53–1.35</td><td class="num">0.71</td><td class="num">3.04</td><td class="num">—</td><td class="num">4.24</td></tr>
+    <tr><td><code class="n">FI.B3</code></td><td>D1「−」端（下端，色帶那端）、3M-R1 上端、2N3904 中間腳</td><td>3M-R1 上端</td><td class="num">0.35–1.12</td><td class="num">0.52</td><td class="num">2.77</td><td class="num">—</td><td class="num">3.95</td></tr>
+    <tr><td><code class="n">FI.E3</code></td><td>2N3904 方形焊墊、100K-R2 上端</td><td>100K-R2 上端</td><td class="num">0.00–0.59</td><td class="num">0.05</td><td class="num">2.20</td><td class="num">—</td><td class="num">3.38</td></tr>
+    <tr><td><code class="n">FI.B4</code></td><td>2N3904 最上面那支腳（C）、2N4403 中間腳（B）</td><td>2N4403 中間腳</td><td class="num">0.27–7.24</td><td class="num">0.30</td><td class="num">2.45</td><td class="num">—</td><td class="num">3.64</td></tr>
+    <tr><td><code class="n">FI.E4</code></td><td>2N4403 方形焊墊（E）、R13 上端（背面藍色走線）</td><td>R13 上端</td><td class="num">0.85–7.71</td><td class="num">0.88</td><td class="num">3.06</td><td class="num">—</td><td class="num">4.25</td></tr>
+    <tr><td><code class="n">FI.V+</code></td><td>R13 下端、2×2 排針中和方形焊墊對角那支</td><td>R13 下端</td><td class="num">7.80</td><td class="num">7.80</td><td class="num">7.80</td><td class="num">—</td><td class="num">7.80</td></tr>
+    <tr><td><code class="n">FI.GND</code></td><td>3M-R1 下端、100K-R2 下端（兩者相連）、排針中和方形焊墊同一排那支</td><td>100K-R2 下端</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">—</td><td class="num">0</td></tr>
+    <tr class="grp"><td colspan="8">SO：Slow out</td></tr>
+    <tr><td><code class="n">SO.Vm</code></td><td>100K-R1 上端、2N4403 方形焊墊（E）、Intracellular 排針</td><td>100K-R1 上端</td><td class="num">0.53–1.35</td><td class="num">0.71</td><td class="num">—</td><td class="num">0.69</td><td class="num">—</td></tr>
+    <tr><td><code class="n">SO.S</code></td><td>100K-R1 下端、D1「+」端（上端）、1UF-C1 上腳</td><td>C1 上腳</td><td class="num">0.56–0.68</td><td class="num">0.69</td><td class="num">—</td><td class="num">0.67</td><td class="num">—</td></tr>
+    <tr><td><code class="n">SO.B3</code></td><td>D1「−」端（下端，色帶那端）、2N3904 中間腳、3M-R2 <b>下端</b></td><td>D1「−」端</td><td class="num">0.38–0.49</td><td class="num">0.49</td><td class="num">—</td><td class="num">0.48</td><td class="num">—</td></tr>
+    <tr><td><code class="n">SO.B4</code></td><td>2N3904 最上面那支腳（C）、2N4403 中間腳（B）</td><td>2N4403 中間腳</td><td class="num">0.03–0.78</td><td class="num">0.10</td><td class="num">—</td><td class="num">0.10</td><td class="num">—</td></tr>
+    <tr><td><code class="n">SO.C4</code></td><td>2N4403 最上面那支腳（C）、1K-R3 上端（背面藍色走線）</td><td>1K-R3 上端</td><td class="num">0.00–0.18</td><td class="num">0.16</td><td class="num">—</td><td class="num">0.09</td><td class="num">—</td></tr>
+    <tr><td><code class="n">SO.GND</code></td><td>1UF-C1 下腳、1K-R3 下端、3M-R2 <b>上端</b>、2N3904 方形焊墊（E）、排針中和方形焊墊同一排那支</td><td>1K-R3 下端</td><td class="num">0</td><td class="num">0</td><td class="num">—</td><td class="num">0</td><td class="num">—</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small" style="font-size:14px;color:var(--muted)">單位 V。「—」表示那塊板沒接。*SW 放開時 ST.P、ST.K 沒有電流流過，只靠探棒的 10 MΩ 決定電壓，讀數不固定，不用拿來判斷。來源：<a href="sim/node_table.py">node_table.py</a>。</p>
+<p class="note-warn"><span class="tag warn">注意</span>Slow out 的 3M-R2 是「上端接 GND、下端接 SO.B3」，和 FI 的 3M-R1（上端接 FI.B3）方向相反。量 SO.B3 時請量 D1 的「−」端，比較不會量錯。</p>
+
+<h3 id="derived">常用的相減與換算</h3>
+<div class="scroll">
+<table class="narrow">
+  <thead><tr><th>想知道</th><th>怎麼算</th><th>正常值（狀態）</th></tr></thead>
+  <tbody>
+    <tr><td>刺激電流</td><td>(ST.K − ST.Q) / 7 kΩ，再加約 6 µA（Q<sub>sense</sub> 的 base 電流）</td><td>約 44–99 µA（SW 按住）</td></tr>
+    <tr><td>SW 放開時的漏電流</td><td>Vm / 100 kΩ（只接 ST + LK 時）</td><td>約 6 µA → Vm ≈ 0.6 V</td></tr>
+    <tr><td>FI 從 V+ 拉的電流</td><td>(FI.V+ − FI.E4) / R13</td><td>A 時 0–70 µA；C 約 47 µA</td></tr>
+    <tr><td>FI 2N3904 的電流</td><td>FI.E3 / 100 kΩ</td><td>C 約 22 µA；E 約 34 µA</td></tr>
+    <tr><td>FI 的 D1 壓降</td><td>FI.Vm − FI.B3</td><td>導通時 0.2–0.3 V</td></tr>
+    <tr><td>FI 2N3904 的 V<sub>BE</sub></td><td>FI.B3 − FI.E3</td><td>導通時 0.55–0.7 V</td></tr>
+    <tr><td>FI 2N4403 的 V<sub>EB</sub></td><td>FI.E4 − FI.B4</td><td>導通時 0.55–0.65 V</td></tr>
+    <tr><td>SO 外向電流</td><td>SO.C4 / 1 kΩ</td><td>B 約 160 µA；D 約 90 µA</td></tr>
+    <tr><td>SO 2N4403 的 V<sub>EB</sub></td><td>SO.Vm − SO.B4</td><td>導通時約 0.6 V</td></tr>
+  </tbody>
+</table>
+</div>
+<p style="font-size:14.5px;color:var(--muted)">TDS2001C 可以用 MATH 的 CH1 − CH2 直接看兩點相減：CH1、CH2 各夾一點，地線夾都夾 GND。</p>
+
+<h2 id="contacts">接點名稱</h2>
+<p>每塊板經由 1×2 的 Intracellular 排針（Vm）和 2×2 的 Extracellular 排針（V+、GND）接到堆疊上。接點壞掉時，那塊板上的同名節點會和 Stimulator 上的不一樣：</p>
+<div class="scroll">
+<table class="narrow">
+  <thead><tr><th>接點</th><th>正常時</th><th>壞掉時通常看到</th></tr></thead>
+  <tbody>
+    <tr><td><code class="n">LK:Vm</code></td><td>LK.Vm = Vm</td><td>按 SW 時 Vm 幾乎瞬間上升、放開時瞬間掉下（少了 1 µF，就沒有約 100 ms 的 RC 曲線）</td></tr>
+    <tr><td><code class="n">LK:GND</code></td><td>LK.GND = 0</td><td>同上</td></tr>
+    <tr><td><code class="n">FI:Vm</code></td><td>FI.Vm = Vm</td><td>FI 對 Vm 完全沒影響；FI 自己可能鎖在 ½ V+（測試 4–5）</td></tr>
+    <tr><td><code class="n">FI:V+</code></td><td>FI.V+ = 7.8 V，按 SW 也不動</td><td>FI.V+ 只有零點幾伏、上下震盪，或跟著 Vm 走（測試 2、7）</td></tr>
+    <tr><td><code class="n">FI:GND</code></td><td>FI.GND = 0</td><td>FI.GND 不是 0 V（浮起來）；FI 沒有回到地的路，不會觸發</td></tr>
+    <tr><td><code class="n">SO:Vm</code></td><td>SO.Vm = Vm</td><td>按住 SW 時 Vm 停在 5–7 V 的平台；FI 觸發後卡在 3 V（測試 1、9、10c、10d）</td></tr>
+    <tr><td><code class="n">SO:GND</code></td><td>SO.GND = 0，按 SW 也不動</td><td>同上，而且 SO.GND 會被拉高</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note"><span class="tag req">重點</span>板子是一層一層疊上去的話，某一層的接點壞掉，它<b>上面每一層</b>都會一起斷。回報時順便寫堆疊順序（由下往上），例如「ST / LK / FI / SO」。</p>
+
+<h2 id="report">回報範例</h2>
+<div class="example">ST / LK / FI / SO 全接（由下往上），pot 轉到電流最大，SW 按住約 1 秒。CH1 = Vm（1 V/div、20 ms/div）：從 0.6 V 升到 1.6 V 後掉到 0.7 V 停住。CH2 = SO.S（0.5 V/div）：0.55 → 0.69 V。</div>
+<div class="example">同上，SW 放開。FI.V+ = 0.4 V 且上下震盪（2 V/div）；V+ = 7.8 V。→ FI:V+ 接點有問題。</div>
+<div class="example">ST / LK / FI，SW 沒按。FI.E4 − FI.B4（MATH）= 0.6 V，FI.E3 = 2.2 V，Vm = 3.0 V。→ FI 已自鎖。</div>
+
+<h3 id="old">和之前用過的名稱對照</h3>
+<div class="scroll">
+<table class="narrow">
+  <thead><tr><th>之前（分析頁初版、對話中）</th><th>現在</th></tr></thead>
+  <tbody>
+    <tr><td>P、Q、R（Stimulator）</td><td>ST.P、ST.Q、ST.R；新增 ST.K</td></tr>
+    <tr><td>VMF、VPF、GF</td><td>FI.Vm、FI.V+、FI.GND</td></tr>
+    <tr><td>B1、E3、X、E4（FI）</td><td>FI.B3、FI.E3、FI.B4、FI.E4</td></tr>
+    <tr><td>S、T、Y、Z（Slow out）</td><td>SO.S、SO.B3、SO.B4、SO.C4</td></tr>
+    <tr><td>VMS、GS</td><td>SO.Vm、SO.GND</td></tr>
+    <tr><td>hw2 講解頁 Fast inward 圖的 X；Slow outward 圖的 Y、Z</td><td>FI.B3；SO.S、SO.B3</td></tr>
+  </tbody>
+</table>
+</div>
+
+<footer>焊墊位置從講義的 PCB 佈線圖追出；預期電壓由 <a href="sim/node_table.py">sim/node_table.py</a> 計算，模型說明見<a href="./#s8">除錯分析 §8</a>。</footer>
+</div>
+<script src="../active-membrane-sim/schematic.js"></script>
+<script>
+(function(){
+  var s = MembraneSchematic(document.getElementById('nodesSch'), {live:false});
+  s.setContacts({sw:false, leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true});
+})();
+</script>
+</body>
+</html>

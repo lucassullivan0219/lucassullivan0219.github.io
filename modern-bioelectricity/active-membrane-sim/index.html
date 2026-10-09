@@ -87,26 +87,6 @@ legend{font-size:13px;color:var(--muted);padding:0 4px}
 .sch-card{margin-top:16px}
 .sch-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 svg#sch{display:block;width:100%;min-width:760px;height:auto}
-#sch .w{stroke:var(--ink);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
-#sch .vm{stroke:var(--vmbus);stroke-width:3}
-#sch .sym{stroke:var(--ink);stroke-width:1.6;fill:none;stroke-linejoin:round}
-#sch .fillk{fill:var(--ink);stroke:none}
-#sch .dotn{fill:var(--ink)}
-#sch .box{fill:none;stroke:var(--rule);stroke-width:1.4;stroke-dasharray:5 4}
-#sch .bt{fill:var(--muted);font-size:13px;font-weight:700}
-#sch .lab{fill:var(--muted);font-size:11.5px}
-#sch .nv{fill:var(--ink);font-size:11.5px;font-family:"IBM Plex Mono",ui-monospace,monospace}
-#sch .nvb{fill:var(--vmbus);font-size:15px;font-weight:700;font-family:"IBM Plex Mono",ui-monospace,monospace}
-#sch .cur{fill:var(--opt);font-size:11.5px;font-family:"IBM Plex Mono",ui-monospace,monospace}
-#sch .qc{fill:transparent;stroke:var(--ink);stroke-width:1.2}
-#sch .qc.on{fill:var(--qon)}
-#sch .contact{cursor:pointer}
-#sch .contact .blade{stroke:var(--ink);stroke-width:2.2}
-#sch .contact.open .blade{stroke:var(--warn)}
-#sch .contact .ct{font-size:10.5px;fill:var(--warn);font-weight:700}
-#sch .contact:not(.open) .ct{display:none}
-#sch .contact:hover .blade{stroke-width:3}
-#sch .sw .blade{stroke-width:2.4}
 .legend-sch{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--muted);margin-top:8px}
 .notes{margin-top:16px;font-size:15px}
 .notes ul{margin:6px 0;padding-left:1.3em;max-width:60em}
@@ -122,7 +102,7 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
   <a href="../hw2/">HW2 實驗講解</a>
 </div>
 <h1>Active membrane 互動模擬</h1>
-<p class="lede">照 PCB 實際接法（R13 = 100 kΩ、Q<sub>sense</sub> 的 E 接在 SW 之前）即時計算。按住 SW 看 Vm，點電路圖上的接點可以斷開排針，重現「FI 沒有 V+」「Slow out 沒接上」等狀況。模型和<a href="../hw2-debug/#s8">分析頁</a>的 Python 版相同。</p>
+<p class="lede">照 PCB 實際接法（R13 = 100 kΩ、Q<sub>sense</sub> 的 E 接在 SW 之前）即時計算。按住 SW 看 Vm，點電路圖上的接點可以斷開排針，重現「FI:V+ 沒接上」「SO:Vm 沒接上」等狀況。節點和接點的名稱見<a href="../hw2-debug/nodes.html">節點命名</a>。模型和<a href="../hw2-debug/#s8">分析頁</a>的 Python 版相同。</p>
 
 <div class="top">
   <section class="card scope-wrap" aria-label="示波器">
@@ -132,7 +112,7 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
     <div class="scope-bar">
       <label>V/div <select id="vdiv"><option>0.2</option><option>0.5</option><option selected>1</option><option>2</option></select></label>
       <label>時間/div <select id="tdiv"><option value="0.005">5 ms</option><option value="0.01">10 ms</option><option value="0.02">20 ms</option><option value="0.05" selected>50 ms</option><option value="0.1">100 ms</option><option value="0.2">200 ms</option></select></label>
-      <label>CH2 <select id="ch2"><option value="">關</option><option value="S">Slow out 的 S</option><option value="VPF">FI 的 V+ 腳</option><option value="E4">FI 2N4403 E</option><option value="T">Slow out 的 T</option><option value="Y">Slow out 3904 C</option></select></label>
+      <label>CH2 <select id="ch2"><option value="">關</option><option value="SO.S">SO.S</option><option value="SO.B3">SO.B3</option><option value="SO.B4">SO.B4</option><option value="FI.V+">FI.V+</option><option value="FI.E4">FI.E4</option><option value="FI.B3">FI.B3</option><option value="LK.Vm">LK.Vm</option></select></label>
     </div>
     <div class="scope-bar">
       <span class="seg" role="group" aria-label="掃描模式"><button type="button" id="mRoll" aria-pressed="true">Roll</button><button type="button" id="mSingle" aria-pressed="false">Single</button></span>
@@ -181,14 +161,14 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
       <div class="row"><span>探棒</span><select id="probe"><option value="1e7" selected>×10（10 MΩ）</option><option value="1e6">×1（1 MΩ）</option></select><span></span></div>
     </div>
     <fieldset>
-      <legend>排針接點（也可以直接點電路圖）</legend>
+      <legend>排針接點（也可以直接點電路圖；名稱見<a href="../hw2-debug/nodes.html">節點命名</a>）</legend>
       <div class="checks" id="contacts">
-        <label><input type="checkbox" data-c="leak" checked> Leak 接上</label>
-        <label><input type="checkbox" data-c="fi_vm" checked> FI 的 Vm</label>
-        <label><input type="checkbox" data-c="fi_vplus" checked> FI 的 V+</label>
-        <label><input type="checkbox" data-c="fi_gnd" checked> FI 的 GND</label>
-        <label><input type="checkbox" data-c="so_vm" checked> SO 的 Vm</label>
-        <label><input type="checkbox" data-c="so_gnd" checked> SO 的 GND</label>
+        <label><input type="checkbox" data-c="leak" checked> LK:Vm</label>
+        <label><input type="checkbox" data-c="fi_vm" checked> FI:Vm</label>
+        <label><input type="checkbox" data-c="fi_vplus" checked> FI:V+</label>
+        <label><input type="checkbox" data-c="fi_gnd" checked> FI:GND</label>
+        <label><input type="checkbox" data-c="so_vm" checked> SO:Vm</label>
+        <label><input type="checkbox" data-c="so_gnd" checked> SO:GND</label>
       </div>
     </fieldset>
     <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
@@ -200,17 +180,18 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
 </div>
 
 <section class="card sch-card" aria-label="電路圖">
-  <h2>電路（照 PCB 接法，數值即時更新）</h2>
-  <div class="sch-scroll"><svg id="sch" viewBox="0 0 1000 480" role="img" aria-label="Stimulator、Leak、Fast inward、Slow out 的電路圖，標示即時節點電壓"></svg></div>
-  <div class="legend-sch"><span>藍色粗線 = Vm</span><span>淡藍底的電晶體 = 正在導通（I<sub>C</sub> &gt; 2 µA）</span><span>紅色斜線接點 = 斷開，點一下切換</span></div>
+  <h2>電路（照 PCB 接法，數值即時更新；節點名稱見<a href="../hw2-debug/nodes.html">節點命名</a>）</h2>
+  <div class="sch-scroll"><svg id="sch" viewBox="0 0 1080 480" role="img" aria-label="Stimulator、Leak、Fast inward、Slow out 的電路圖，標示即時節點電壓"></svg></div>
+  <div class="legend-sch"><span>藍色粗線 = Vm</span><span>B3 0.37 V = 這塊板上 B3 節點（例如 FI.B3）的電壓</span><span>淡藍底的電晶體 = 正在導通（I<sub>C</sub> &gt; 2 µA）</span><span>紅色斜線接點 = 斷開，點一下切換</span></div>
 </section>
 
 <section class="notes">
   <h2>可以試試看</h2>
   <ul>
-    <li><b>全部接好</b>，時間/div 調到 10 ms、觸發 1 V、Single，按一下 SW：開頭 15–20 ms 有一個約 2 V 的小峰，接著 Slow out 把 Vm 鉗在約 0.7 V。不按 SW 時可能偶爾自己冒小峰。</li>
-    <li><b>斷開 SO 的 Vm</b>，按住 SW 再放開：Vm 停在約 3 V 下不來（測試 9、10d）。只有「斷電重置」或斷開 FI 的 V+ 能讓它回來。</li>
-    <li><b>斷開 FI 的 V+</b>，CH2 選「FI 的 V+ 腳」：這支腳跟著 Vm 走，只比 Vm 小一點（測試 7）。</li>
+    <li><b>全部接好</b>：剛開（或按「斷電重置」）時，用典型參數模擬會看到 Vm 每 0.2 秒左右自己冒一個 0.5→1.4 V 的小峰。實際電路不一定會這樣，大約一半的參數組合會安靜地停在 0.4–0.7 V。</li>
+    <li><b>全部接好再按 SW</b>：時間/div 調到 10 ms、觸發 1 V、Single，在兩個小峰之間按一下。開頭 10–20 ms 有一個約 1–2 V 的小峰，接著 Slow out 把 Vm 鉗在約 0.7 V，按住期間一直停在那裡。</li>
+    <li><b>斷開 SO:Vm</b>：FI 會自己（或按一下 SW 後）鎖在約 3 V，下不來（測試 9、10d）。只有「斷電重置」或斷開 FI:V+ 能讓它回來。</li>
+    <li><b>斷開 FI:V+</b>，CH2 選 FI.V+：這支腳跟著 Vm 走，只比 Vm 小一點（測試 7）。</li>
     <li><b>電路圖數值</b>（R13 = 1 kΩ）：AP 變成接近 8 V 的完整尖峰。對照 PCB 的 100 kΩ，就知道為什麼實際電路的 AP 這麼小。</li>
     <li>模型沒有 60 Hz 雜訊，所以浮接的腳在這裡是平的；實際示波器上會看到上下震盪。</li>
   </ul>
@@ -219,13 +200,16 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
 <footer>Ebers–Moll 模型、修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton。元件參數為典型值（2N3904 β 200、2N4403 β 150），細節見<a href="../hw2-debug/#s8">分析頁 §8</a>。</footer>
 </div>
 
+<script src="schematic.js"></script>
 <script>
-/* ================= engine: same model as hw2-debug/sim/sim.py ================= */
+/* ================= engine: same model as hw2-debug/sim/sim.py =================
+   Node codes follow hw2-debug/nodes.html.  'V+' and 'GND' are fixed (battery). */
 var AM = (function(){
   var VT = 0.02585, EXPLIM = 40, GMIN = 1e-12, SHORT = 0.05, OPEN = 1e13;
   var M3904 = {Is:6.7e-15, bf:200, br:0.74}, M4403 = {Is:1e-14, bf:150, br:4}, MD = {Is:2.52e-9, n:1.752};
-  var NODES = ['P','Q','R','VM','VML','VMF','VPF','GF','B1','E3','X','E4','VMS','GS','S','T','Y','Z'];
-  var N = NODES.length, IDX = {GND:-1, VP:-2};
+  var NODES = ['ST.P','ST.K','ST.Q','ST.R','Vm','LK.Vm','FI.Vm','FI.V+','FI.GND','FI.B3','FI.E3','FI.B4','FI.E4',
+               'SO.Vm','SO.GND','SO.S','SO.B3','SO.B4','SO.C4'];
+  var N = NODES.length, IDX = {'GND':-1, 'V+':-2};
   NODES.forEach(function(n, i){ IDX[n] = i; });
 
   var st = {
@@ -235,47 +219,48 @@ var AM = (function(){
   var V = new Float64Array(N), Vprev = new Float64Array(N);
   var F = new Float64Array(N), J = new Float64Array(N * N), dx = new Float64Array(N), A = new Float64Array(N * (N + 1));
   var R = [], C = [], D = [], Q = [];
-  var t = 0;
+  var t = 0, gmin = GMIN;
 
   function link(ok){ return ok ? SHORT : OPEN; }
   function build(){
     R = []; C = []; D = []; Q = [];
     function r(a, b, ohm){ R.push([IDX[a], IDX[b], 1 / ohm]); }
     /* Stimulator */
-    r('VP', 'P', link(st.sw));
-    r('P', 'Q', st.rpot + 7e3);
-    Q.push(['p', IDX.VM, IDX.R, IDX.Q, M4403, 'pass']);
-    Q.push(['p', IDX.R, IDX.Q, st.qs === 'sw' ? IDX.P : IDX.VP, M4403, 'sense']);
-    r('R', 'GND', 7e3);
+    r('V+', 'ST.P', link(st.sw));
+    r('ST.P', 'ST.K', Math.max(st.rpot, 1));
+    r('ST.K', 'ST.Q', 7e3);
+    Q.push(['p', IDX['Vm'], IDX['ST.R'], IDX['ST.Q'], M4403, 'pass']);
+    Q.push(['p', IDX['ST.R'], IDX['ST.Q'], st.qs === 'sw' ? IDX['ST.P'] : IDX['V+'], M4403, 'sense']);
+    r('ST.R', 'GND', 7e3);
     /* Leak */
-    r('VM', 'VML', link(st.leak));
-    C.push([IDX.VML, IDX.GND, 1e-6]); r('VML', 'GND', 1e5);
+    r('Vm', 'LK.Vm', link(st.leak));
+    C.push([IDX['LK.Vm'], IDX['GND'], 1e-6]); r('LK.Vm', 'GND', 1e5);
     /* Fast inward */
-    r('VMF', 'VM', link(st.fi_vm)); r('VPF', 'VP', link(st.fi_vplus)); r('GF', 'GND', link(st.fi_gnd));
-    D.push([IDX.VMF, IDX.B1]);
-    r('B1', 'GF', 3e6);
-    Q.push(['n', IDX.X, IDX.B1, IDX.E3, M3904, 'fi3904']);
-    r('E3', 'GF', st.rfe);
-    Q.push(['p', IDX.VMF, IDX.X, IDX.E4, M4403, 'fi4403']);
-    r('E4', 'VPF', st.r13);
+    r('FI.Vm', 'Vm', link(st.fi_vm)); r('FI.V+', 'V+', link(st.fi_vplus)); r('FI.GND', 'GND', link(st.fi_gnd));
+    D.push([IDX['FI.Vm'], IDX['FI.B3']]);
+    r('FI.B3', 'FI.GND', 3e6);
+    Q.push(['n', IDX['FI.B4'], IDX['FI.B3'], IDX['FI.E3'], M3904, 'fi3904']);
+    r('FI.E3', 'FI.GND', st.rfe);
+    Q.push(['p', IDX['FI.Vm'], IDX['FI.B4'], IDX['FI.E4'], M4403, 'fi4403']);
+    r('FI.E4', 'FI.V+', st.r13);
     /* Slow out */
-    r('VMS', 'VM', link(st.so_vm)); r('GS', 'GND', link(st.so_gnd));
-    r('VMS', 'S', 1e5);
-    C.push([IDX.S, IDX.GS, 1e-6]);
-    D.push([IDX.S, IDX.T]);
-    r('T', 'GS', 3e6);
-    Q.push(['n', IDX.Y, IDX.T, IDX.GS, M3904, 'so3904']);
-    Q.push(['p', IDX.Z, IDX.Y, IDX.VMS, M4403, 'so4403']);
-    r('Z', 'GS', 1e3);
+    r('SO.Vm', 'Vm', link(st.so_vm)); r('SO.GND', 'GND', link(st.so_gnd));
+    r('SO.Vm', 'SO.S', 1e5);
+    C.push([IDX['SO.S'], IDX['SO.GND'], 1e-6]);
+    D.push([IDX['SO.S'], IDX['SO.B3']]);
+    r('SO.B3', 'SO.GND', 3e6);
+    Q.push(['n', IDX['SO.B4'], IDX['SO.B3'], IDX['SO.GND'], M3904, 'so3904']);
+    Q.push(['p', IDX['SO.C4'], IDX['SO.B4'], IDX['SO.Vm'], M4403, 'so4403']);
+    r('SO.C4', 'SO.GND', 1e3);
     /* probes */
-    r('VM', 'GND', st.rprobe);
+    r('Vm', 'GND', st.rprobe);
     if(st.ch2) r(st.ch2, 'GND', st.rprobe);
   }
 
   function gv(arr, i){ return i >= 0 ? arr[i] : (i === -1 ? 0 : st.vplus); }
   function lexp(x){ if(x > EXPLIM){ var e = Math.exp(EXPLIM); return [e * (1 + x - EXPLIM), e]; } var e2 = Math.exp(x); return [e2, e2]; }
 
-  /* currents INTO (c,b,e) and Jacobian rows, written into out = {i:[3], d:[9]} */
+  /* currents INTO (c,b,e) and their Jacobian rows */
   var bo = {i:[0,0,0], d:[0,0,0,0,0,0,0,0,0]};
   function bjt(kind, vc, vb, ve, m){
     var k = 1 + 1 / m.br, ef, er, If, Ir, gf, gr, i = bo.i, d = bo.d;
@@ -284,16 +269,14 @@ var AM = (function(){
       If = m.Is * (ef[0] - 1); gf = m.Is * ef[1] / VT;
       Ir = m.Is * (er[0] - 1); gr = m.Is * er[1] / VT;
       i[0] = If - Ir * k; i[1] = If / m.bf + Ir / m.br;
-      d[0] = gr * k;  d[1] = gf - gr * k;          d[2] = -gf;
-      d[3] = -gr / m.br; d[4] = gf / m.bf + gr / m.br; d[5] = -gf / m.bf;
     } else {
       ef = lexp((ve - vb) / VT); er = lexp((vc - vb) / VT);
       If = m.Is * (ef[0] - 1); gf = m.Is * ef[1] / VT;
       Ir = m.Is * (er[0] - 1); gr = m.Is * er[1] / VT;
       i[0] = -(If - Ir * k); i[1] = -(If / m.bf + Ir / m.br);
-      d[0] = gr * k;  d[1] = gf - gr * k;          d[2] = -gf;
-      d[3] = -gr / m.br; d[4] = gf / m.bf + gr / m.br; d[5] = -gf / m.bf;
     }
+    d[0] = gr * k;     d[1] = gf - gr * k;          d[2] = -gf;
+    d[3] = -gr / m.br; d[4] = gf / m.bf + gr / m.br; d[5] = -gf / m.bf;
     i[2] = -i[0] - i[1];
     d[6] = -(d[0] + d[3]); d[7] = -(d[1] + d[4]); d[8] = -(d[2] + d[5]);
     return bo;
@@ -306,11 +289,12 @@ var AM = (function(){
   }
 
   function newton(dt, maxit){
+    var nn = [0, 0, 0];
     for(var it = 0; it < maxit; it++){
       F.fill(0); J.fill(0);
       var k, e;
       for(k = 0; k < R.length; k++){ e = R[k]; stampG(e[0], e[1], e[2], 0); }
-      for(k = 0; k < N; k++) stampG(k, -1, GMIN, 0);
+      for(k = 0; k < N; k++) stampG(k, -1, gmin, 0);
       if(dt){
         for(k = 0; k < C.length; k++){ e = C[k]; var g = e[2] / dt; stampG(e[0], e[1], g, -g * (gv(Vprev, e[0]) - gv(Vprev, e[1]))); }
       }
@@ -322,8 +306,7 @@ var AM = (function(){
         if(c >= 0){ F[c] -= id; J[c * N + c] += gd; if(a >= 0) J[c * N + a] -= gd; }
       }
       for(k = 0; k < Q.length; k++){
-        e = Q[k];
-        var nn = [e[1], e[2], e[3]];
+        e = Q[k]; nn[0] = e[1]; nn[1] = e[2]; nn[2] = e[3];
         var o = bjt(e[0], gv(V, e[1]), gv(V, e[2]), gv(V, e[3]), e[4]);
         for(var tt = 0; tt < 3; tt++){
           var row = nn[tt]; if(row < 0) continue;
@@ -331,13 +314,13 @@ var AM = (function(){
           for(var s = 0; s < 3; s++){ var col = nn[s]; if(col >= 0) J[row * N + col] += o.d[tt * 3 + s]; }
         }
       }
-      /* solve J dx = -F (partial pivoting) */
-      var W = N + 1, r, cc, p;
+      /* solve J dx = -F (Gaussian elimination, partial pivoting) */
+      var W = N + 1, r, cc, p, q;
       for(r = 0; r < N; r++){ for(cc = 0; cc < N; cc++) A[r * W + cc] = J[r * N + cc]; A[r * W + N] = -F[r]; }
       for(cc = 0; cc < N; cc++){
         p = cc; var best = Math.abs(A[cc * W + cc]);
         for(r = cc + 1; r < N; r++){ var av = Math.abs(A[r * W + cc]); if(av > best){ best = av; p = r; } }
-        if(p !== cc){ for(var q = cc; q <= N; q++){ var tmp = A[cc * W + q]; A[cc * W + q] = A[p * W + q]; A[p * W + q] = tmp; } }
+        if(p !== cc){ for(q = cc; q <= N; q++){ var tmp = A[cc * W + q]; A[cc * W + q] = A[p * W + q]; A[p * W + q] = tmp; } }
         var pv = A[cc * W + cc];
         for(r = cc + 1; r < N; r++){
           var f = A[r * W + cc] / pv; if(f === 0) continue;
@@ -358,14 +341,21 @@ var AM = (function(){
     return false;
   }
 
+  /* DC operating point, same strategy as sim.py: plain Newton, then gmin stepping */
   function dcSolve(guess){
     V.fill(0);
     if(guess) for(var n in guess) if(IDX[n] >= 0) V[IDX[n]] = guess[n];
+    gmin = GMIN;
+    if(newton(0, 3000)) return true;
+    for(var g = guess ? 1e-9 : 1e-4; g > GMIN * 1.01; g /= 10){ gmin = g; newton(0, 3000); }
+    gmin = GMIN;
     return newton(0, 3000);
   }
+  /* power on: every capacitor (and node) at 0 V, like plugging in the battery */
+  function powerOn(){ V.fill(0); t = 0; }
   function step(dt){
     Vprev.set(V);
-    if(newton(dt, 80)) { t += dt; return true; }
+    if(newton(dt, 80)){ t += dt; return true; }
     V.set(Vprev);
     var ok = true;
     for(var k = 0; k < 10; k++){ Vprev.set(V); ok = newton(dt / 10, 400) && ok; }
@@ -381,161 +371,12 @@ var AM = (function(){
     return [0, 0, 0];
   }
   return {
-    st:st, build:build, dc:dcSolve, step:step, v:v, q:qCurrents,
+    st:st, build:build, dc:dcSolve, powerOn:powerOn, step:step, v:v, q:qCurrents,
     time:function(){ return t; }, setTime:function(x){ t = x; }, nodes:NODES
   };
 })();
 
-/* ================= schematic ================= */
-var SCH = (function(){
-  var svg = document.getElementById('sch'), NS = 'http://www.w3.org/2000/svg', out = [];
-  function L(pts, cls){ out.push('<polyline class="' + (cls || 'w') + '" points="' + pts.map(function(p){ return p.join(','); }).join(' ') + '"/>'); }
-  function dot(x, y){ out.push('<circle class="dotn" cx="' + x + '" cy="' + y + '" r="3"/>'); }
-  function txt(x, y, s, cls, anchor){ out.push('<text class="' + cls + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + s + '</text>'); }
-  function tag(id, x, y, cls, anchor){ out.push('<text id="' + id + '" class="' + (cls || 'nv') + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>—</text>'); }
-  function resV(x, y1, y2, a, b){ /* wire x,y1->a ; zigzag a->b ; wire b->y2 */
-    L([[x, y1], [x, a]]);
-    var pts = [[x, a]], seg = (b - a) / 12;
-    for(var i = 1; i < 12; i++) pts.push([x + (i % 2 ? 7 : -7), a + seg * i]);
-    pts.push([x, b]); L(pts, 'sym'); L([[x, b], [x, y2]]);
-  }
-  function resH(y, x1, x2, a, b){
-    L([[x1, y], [a, y]]);
-    var pts = [[a, y]], seg = (b - a) / 12;
-    for(var i = 1; i < 12; i++) pts.push([a + seg * i, y + (i % 2 ? -7 : 7)]);
-    pts.push([b, y]); L(pts, 'sym'); L([[b, y], [x2, y]]);
-  }
-  function capV(x, y1, y2, yc){
-    L([[x, y1], [x, yc - 4]]); L([[x - 13, yc - 4], [x + 13, yc - 4]], 'sym'); L([[x - 13, yc + 4], [x + 13, yc + 4]], 'sym'); L([[x, yc + 4], [x, y2]]);
-  }
-  function diodeV(x, y1, y2, a, b){ /* anode at a (top), cathode b */
-    L([[x, y1], [x, a]]);
-    out.push('<polygon class="sym" points="' + (x - 9) + ',' + a + ' ' + (x + 9) + ',' + a + ' ' + x + ',' + b + '"/>');
-    L([[x - 9, b], [x + 9, b]], 'sym'); L([[x, b], [x, y2]]);
-  }
-  function diodeH(y, x1, x2, a, b){
-    L([[x1, y], [a, y]]);
-    out.push('<polygon class="sym" points="' + a + ',' + (y - 9) + ' ' + a + ',' + (y + 9) + ' ' + b + ',' + y + '"/>');
-    L([[b, y - 9], [b, y + 9]], 'sym'); L([[b, y], [x2, y]]);
-  }
-  /* BJT in local frame: base lead (-20,0)->(0,0), bar x=0 |y|<=12, leads to (14,-30) and (14,30) */
-  function bjt(cx, cy, type, rot, eTop, id){
-    var s = eTop ? -1 : 1; /* emitter lead sign */
-    var ex0 = 0, ey0 = 6 * s, ex1 = 14, ey1 = 18 * s;
-    var dxv = ex1 - ex0, dyv = ey1 - ey0, len = Math.sqrt(dxv * dxv + dyv * dyv), ux = dxv / len, uy = dyv / len;
-    var tipT = type === 'n' ? 0.95 : 0.35, tx = ex0 + dxv * tipT, ty = ey0 + dyv * tipT, dir = type === 'n' ? 1 : -1;
-    var bx = tx - ux * 7 * dir, by = ty - uy * 7 * dir, px = -uy * 4, py = ux * 4;
-    out.push('<g transform="translate(' + cx + ',' + cy + ') rotate(' + rot + ')">' +
-      '<circle id="' + id + '" class="qc" cx="5" cy="0" r="21"/>' +
-      '<polyline class="sym" points="-20,0 0,0"/><polyline class="sym" points="0,-12 0,12" style="stroke-width:2.6"/>' +
-      '<polyline class="sym" points="0,-6 14,-18 14,-30"/><polyline class="sym" points="0,6 14,18 14,30"/>' +
-      '<polygon class="fillk" points="' + tx + ',' + ty + ' ' + (bx + px) + ',' + (by + py) + ' ' + (bx - px) + ',' + (by - py) + '"/></g>');
-  }
-  function contactV(key, x, y1, y2){
-    out.push('<g class="contact" data-c="' + key + '" tabindex="0" role="button" aria-label="切換接點 ' + key + '">' +
-      '<rect x="' + (x - 16) + '" y="' + y1 + '" width="36" height="' + (y2 - y1) + '" fill="transparent"/>' +
-      '<circle class="dotn" cx="' + x + '" cy="' + y1 + '" r="2.6"/><circle class="dotn" cx="' + x + '" cy="' + y2 + '" r="2.6"/>' +
-      '<line class="blade" data-x="' + x + '" data-y1="' + y1 + '" data-y2="' + y2 + '" x1="' + x + '" y1="' + y2 + '" x2="' + x + '" y2="' + y1 + '"/>' +
-      '<text class="ct" x="' + (x + 8) + '" y="' + ((y1 + y2) / 2 + 4) + '">斷開</text></g>');
-  }
-  function box(x, y, w, h, title, tx){
-    out.push('<rect class="box" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="6"/>');
-    txt(tx, y + h - 9, title, 'bt');
-  }
-
-  /* boards (titles sit at the bottom, where the wiring leaves room) */
-  box(14, 18, 228, 430, 'Stimulator', 46);
-  box(252, 86, 86, 362, 'Leak', 271);
-  box(348, 86, 262, 362, 'Fast inward', 470);
-  box(620, 86, 352, 362, 'Slow out', 836);
-  /* rails */
-  L([[230, 70], [975, 70]], 'w vm');
-  L([[20, 455], [975, 455]]);
-  txt(978, 74, 'CH1', 'lab');
-  tag('nVM', 600, 58, 'nvb', 'middle');
-  txt(24, 470, 'GND（Extracellular）', 'lab');
-
-  /* ---- Stimulator ---- */
-  L([[34, 36], [74, 36]]); L([[34, 36], [34, 330]]);
-  L([[22, 340], [46, 340]], 'sym'); L([[28, 350], [40, 350]], 'sym');
-  L([[34, 350], [34, 455]]); dot(34, 455);
-  txt(40, 334, '+', 'lab'); tag('nVP', 44, 30, 'nv');
-  /* SW */
-  L([[74, 36], [74, 58]]);
-  out.push('<g class="contact sw" data-c="sw" tabindex="0" role="button" aria-label="SW">' +
-    '<rect x="58" y="56" width="36" height="40" fill="transparent"/>' +
-    '<circle class="dotn" cx="74" cy="58" r="2.6"/><circle class="dotn" cx="74" cy="92" r="2.6"/>' +
-    '<line class="blade" data-x="74" data-y1="58" data-y2="92" x1="74" y1="92" x2="88" y2="62"/></g>');
-  txt(92, 80, 'SW', 'lab');
-  L([[74, 92], [74, 110]]); dot(74, 110); tag('nP', 80, 134, 'nv');
-  resH(110, 74, 150, 90, 138); txt(114, 96, 'pot + 7k', 'lab', 'middle');
-  dot(150, 110); tag('nQ', 156, 98, 'nv');
-  L([[150, 110], [154, 110]]);
-  bjt(184, 124, 'p', -90, true, 'qPass'); txt(184, 160, 'Q_pass', 'lab', 'middle');
-  L([[214, 110], [230, 110], [230, 70]]);
-  tag('iStim', 226, 62, 'cur', 'end');
-  L([[184, 144], [184, 200]]);
-  L([[150, 110], [150, 166]]);
-  bjt(150, 186, 'p', 90, false, 'qSense'); txt(150, 228, 'Q_sense', 'lab', 'middle');
-  L([[180, 200], [184, 200]]); dot(184, 200); tag('nR', 192, 196, 'nv');
-  out.push('<polyline id="wQsPcb" class="w" points="120,200 34,200"/>');
-  out.push('<polyline id="wQsSw" class="w" points="120,200 74,200 74,110" style="display:none"/>');
-  out.push('<circle id="dQsPcb" class="dotn" cx="34" cy="200" r="3"/>');
-  resV(184, 200, 455, 300, 380); txt(194, 345, '7k', 'lab'); dot(184, 455);
-
-  /* ---- Leak ---- */
-  L([[290, 70], [290, 76]]); dot(290, 70);
-  contactV('leak', 290, 76, 112);
-  L([[290, 112], [290, 130]]); L([[264, 130], [316, 130]]);
-  capV(264, 130, 455, 290); txt(278, 312, '1µF', 'lab');
-  resV(316, 130, 455, 250, 330); txt(298, 360, '100k', 'lab');
-  dot(264, 455); dot(316, 455);
-
-  /* ---- Fast inward ---- */
-  L([[380, 70], [380, 76]]); dot(380, 70);
-  contactV('fi_vm', 380, 76, 112);
-  L([[380, 112], [380, 120], [554, 120]]);
-  diodeV(380, 120, 220, 152, 182); txt(394, 172, 'D1', 'lab');
-  dot(380, 220); tag('nB1', 386, 240, 'nv');
-  resV(380, 220, 405, 280, 350); txt(390, 320, '3M', 'lab');
-  L([[380, 220], [420, 220]]);
-  bjt(440, 220, 'n', 0, false, 'qFi3904'); txt(470, 226, '3904', 'lab');
-  L([[454, 190], [454, 170], [520, 170]]); dot(454, 170); tag('nX', 470, 162, 'nv');
-  resV(454, 250, 405, 300, 370); tag('lRfe', 464, 340, 'lab');
-  tag('nE3', 460, 274, 'nv');
-  bjt(540, 170, 'p', 0, false, 'qFi4403'); txt(566, 166, '4403', 'lab');
-  L([[554, 140], [554, 120]]); tag('iFi', 504, 112, 'cur');
-  resV(554, 200, 310, 228, 290); tag('lR13', 564, 264, 'lab');
-  tag('nE4', 560, 214, 'nv');
-  contactV('fi_vplus', 554, 310, 346);
-  L([[554, 346], [554, 360]]); txt(554, 376, 'V+', 'lab', 'middle'); tag('nVPF', 554, 392, 'nv', 'middle');
-  L([[380, 405], [454, 405]]); dot(420, 405);
-  contactV('fi_gnd', 420, 412, 448); L([[420, 405], [420, 412]]); L([[420, 448], [420, 455]]);
-
-  /* ---- Slow out ---- */
-  L([[660, 70], [660, 76]]); dot(660, 70);
-  contactV('so_vm', 660, 76, 112);
-  L([[660, 112], [660, 120], [914, 120]]);
-  resV(660, 120, 230, 140, 205); txt(670, 176, '100k', 'lab');
-  dot(660, 230); tag('nS', 668, 250, 'nv');
-  capV(660, 230, 405, 320); txt(676, 324, '1µF', 'lab');
-  diodeH(230, 660, 760, 692, 722); txt(707, 216, 'D1', 'lab', 'middle');
-  dot(760, 230); tag('nT', 766, 250, 'nv');
-  resV(760, 230, 405, 290, 360); txt(770, 330, '3M', 'lab');
-  L([[760, 230], [780, 230]]);
-  bjt(800, 230, 'n', 0, false, 'qSo3904'); txt(830, 236, '3904', 'lab');
-  L([[814, 200], [814, 170], [880, 170]]); dot(814, 170); tag('nY', 824, 162, 'nv');
-  L([[814, 260], [814, 405]]);
-  bjt(900, 170, 'p', 0, true, 'qSo4403'); txt(926, 176, '4403', 'lab');
-  L([[914, 140], [914, 120]]); tag('iSo', 864, 112, 'cur');
-  resV(914, 200, 405, 260, 330); txt(924, 300, '1k', 'lab');
-  tag('nZ', 920, 220, 'nv');
-  L([[660, 405], [914, 405]]); dot(790, 405); dot(760, 405); dot(814, 405);
-  contactV('so_gnd', 790, 412, 448); L([[790, 405], [790, 412]]); L([[790, 448], [790, 455]]);
-
-  svg.innerHTML = out.join('');
-  return {svg:svg};
-})();
+var SCH = MembraneSchematic(document.getElementById('sch'), {live:true});
 
 /* ================= UI ================= */
 (function(){
@@ -546,19 +387,18 @@ var SCH = (function(){
   /* ring buffer for the scope */
   var CAP = 12000, tB = new Float64Array(CAP), aB = new Float64Array(CAP), bB = new Float64Array(CAP), head = 0, count = 0;
   function push(t, a, b){ tB[head] = t; aB[head] = a; bB[head] = b; head = (head + 1) % CAP; if(count < CAP) count++; }
-  function sample(){ push(AM.time(), AM.v('VM'), st.ch2 ? AM.v(st.ch2) : NaN); }
+  function sample(){ push(AM.time(), AM.v('Vm'), st.ch2 ? AM.v(st.ch2) : NaN); }
 
   var mode = 'roll', trig = {state:'idle', t0:0, prev:0}, frozen = null;
 
   function rebuild(){ AM.build(); }
   function powerOn(){
-    AM.build(); AM.dc(); AM.setTime(0); count = 0; head = 0; frozen = null;
+    AM.build(); AM.powerOn(); count = 0; head = 0; frozen = null;
     if(mode === 'single') arm();
     sample();
   }
 
   /* ---- controls ---- */
-  function fmtR(x){ return x >= 1e6 ? (x / 1e6) + ' MΩ' : (x / 1e3) + ' kΩ'; }
   function syncLabels(){
     $('potV').textContent = (+$('pot').value).toFixed(1) + ' kΩ';
     $('vplusV').textContent = (+$('vplus').value).toFixed(1) + ' V';
@@ -583,19 +423,7 @@ var SCH = (function(){
     g.addEventListener('click', function(){ toggleContact(g.dataset.c); });
     g.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleContact(g.dataset.c); } });
   });
-  function syncSchematic(){
-    document.querySelectorAll('#sch .contact').forEach(function(g){
-      var key = g.dataset.c, closed = key === 'sw' ? st.sw : st[key];
-      g.classList.toggle('open', !closed);
-      var b = g.querySelector('.blade'), x = +b.dataset.x, y1 = +b.dataset.y1, y2 = +b.dataset.y2;
-      b.setAttribute('x2', closed ? x : x + 14); b.setAttribute('y2', closed ? y1 : y1 + 4);
-    });
-    var pcb = st.qs === 'pcb';
-    $('wQsPcb').style.display = pcb ? '' : 'none'; $('dQsPcb').style.display = pcb ? '' : 'none';
-    $('wQsSw').style.display = pcb ? 'none' : '';
-    $('lR13').textContent = 'R13 ' + fmtR(st.r13);
-    $('lRfe').textContent = fmtR(st.rfe);
-  }
+  function syncSchematic(){ SCH.setContacts(st); SCH.setQsense(st.qs); SCH.setResistors(st.r13, st.rfe); }
 
   /* ---- SW ---- */
   function setSW(on){
@@ -609,28 +437,28 @@ var SCH = (function(){
   function up(){ if(!swDown) return; swDown = false; if(!latch) setSW(false); }
   sb.addEventListener('pointerup', up); sb.addEventListener('pointercancel', up);
   sb.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); } });
+  function skipKey(e){
+    var tg = e.target.tagName;
+    return tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA' || (e.target.closest && e.target.closest('.contact'));
+  }
   document.addEventListener('keydown', function(e){
-    if(e.code !== 'Space' || e.repeat) return;
-    var tg = e.target.tagName; if(tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA') return;
-    if(e.target.classList && e.target.classList.contains('contact')) return;
+    if(e.code !== 'Space' || e.repeat || skipKey(e)) return;
     e.preventDefault(); setSW(true);
   });
   document.addEventListener('keyup', function(e){
-    if(e.code !== 'Space') return;
-    var tg = e.target.tagName; if(tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA') return;
-    if(e.target.classList && e.target.classList.contains('contact')) return;
+    if(e.code !== 'Space' || skipKey(e)) return;
     e.preventDefault(); if(!latch) setSW(false);
   });
   $('swLatch').addEventListener('change', function(){ latch = this.checked; setSW(latch); });
 
   /* ---- presets ---- */
   var PRESETS = {
-    pcb:{note:'PCB 實際值，所有接點都接上。'},
-    t1:{fi_vplus:false, so_vm:false, note:'FI 的 V+ 和 SO 的 Vm 都斷開：按住 SW 出現平台，放開後平滑回到基線（測試 1）。'},
-    so:{so_vm:false, note:'SO 的 Vm 斷開：FI 一旦觸發就自鎖在約 3 V。'},
-    leak:{fi_vm:false, fi_vplus:false, fi_gnd:false, so_vm:false, so_gnd:false, note:'只有 Stimulator + Leak：基線 0.6 V（Q_sense 漏電流），按住到 7.1 V 上限。'},
-    ttx:{fi_vm:false, fi_vplus:false, fi_gnd:false, note:'拔掉 Fast inward：剩被動反應，仍會被 Slow out 拉回約 0.7 V。'},
-    tea:{so_vm:false, so_gnd:false, note:'拔掉 Slow out：觸發後沒有東西把 Vm 拉回來。'},
+    pcb:{note:'PCB 實際值，所有接點都接上。用典型參數時，不按 SW 也會每 0.2 秒左右自己冒一個小峰；實際電路不一定會。'},
+    t1:{fi_vplus:false, so_vm:false, note:'FI:V+ 和 SO:Vm 都斷開：按住 SW 出現平台，放開後平滑回到基線（測試 1）。'},
+    so:{so_vm:false, note:'SO:Vm 斷開：FI 會自己（或按一下 SW 之後）鎖在約 3 V，下不來（測試 9、10d）。'},
+    leak:{fi_vm:false, fi_vplus:false, fi_gnd:false, so_vm:false, so_gnd:false, note:'只有 ST + LK：基線約 0.6 V（Q_sense 漏電流），按住到約 7.1 V 上限（測試 10b）。'},
+    ttx:{fi_vm:false, fi_vplus:false, fi_gnd:false, note:'拔掉 FI：剩被動反應，按住時仍被 Slow out 拉回約 0.7 V。'},
+    tea:{so_vm:false, so_gnd:false, note:'拔掉 SO：FI 一觸發就沒有東西把 Vm 拉回來。'},
     sch:{vplus:9, r13:'1e3', qs:'sw', note:'講義電路圖的數值：9 V、R13 = 1 kΩ、Q_sense 在 SW 之後。'}
   };
   function applyPreset(k){
@@ -653,7 +481,7 @@ var SCH = (function(){
   var cv = $('scope'), ctx = cv.getContext('2d'), cursorX = null;
   function vdiv(){ return +$('vdiv').value; }
   function tdiv(){ return +$('tdiv').value; }
-  function arm(){ trig.state = 'armed'; frozen = null; trig.prev = AM.v('VM'); updTrig(); }
+  function arm(){ trig.state = 'armed'; frozen = null; trig.prev = AM.v('Vm'); updTrig(); }
   function updTrig(){
     var s = mode === 'roll' ? '' : ({armed:'等待觸發…', capturing:'擷取中…', done:'已擷取（按「重新 Single」再抓一次）'})[trig.state] || '';
     $('trigState').textContent = s;
@@ -673,7 +501,7 @@ var SCH = (function(){
   }
   function onSample(){
     if(mode !== 'single') return;
-    var now = AM.time(), vm = AM.v('VM'), lvl = +$('trig').value;
+    var now = AM.time(), vm = AM.v('Vm'), lvl = +$('trig').value;
     if(trig.state === 'armed' && trig.prev < lvl && vm >= lvl){ trig.state = 'capturing'; trig.t0 = now; updTrig(); }
     if(trig.state === 'capturing' && now >= trig.t0 + 9 * tdiv()){
       frozen = windowSamples(trig.t0 - tdiv(), trig.t0 + 9 * tdiv()); trig.state = 'done'; updTrig();
@@ -704,7 +532,6 @@ var SCH = (function(){
     else if(mode === 'single' && trig.state === 'capturing') w = windowSamples(trig.t0 - td, trig.t0 + 9 * td);
     else { var now = AM.time(); w = windowSamples(now - 10 * td, now); }
     var Xt = function(t){ return (t - w.t0) / (w.t1 - w.t0) * Wd; };
-    /* ground marker and trigger level */
     ctx.fillStyle = '#3987e5'; ctx.beginPath(); ctx.moveTo(0, y0 - 6 * dpr); ctx.lineTo(9 * dpr, y0); ctx.lineTo(0, y0 + 6 * dpr); ctx.fill();
     if(mode === 'single'){
       var ty = Yv(+$('trig').value);
@@ -727,22 +554,20 @@ var SCH = (function(){
     trace(w.a, '#3987e5');
     var mx = -Infinity; for(var k = 0; k < w.a.length; k++) if(w.a[k] > mx) mx = w.a[k];
     lastMax = mx;
-    /* labels */
     ctx.font = (12 * dpr) + 'px "IBM Plex Mono", monospace'; ctx.fillStyle = '#3987e5';
     ctx.fillText('CH1 Vm  ' + vd + ' V/div', 8 * dpr, Hd - 8 * dpr);
-    if(st.ch2){ ctx.fillStyle = '#d95926'; ctx.fillText('CH2 ' + $('ch2').selectedOptions[0].textContent, 190 * dpr, Hd - 8 * dpr); }
+    if(st.ch2){ ctx.fillStyle = '#d95926'; ctx.fillText('CH2 ' + st.ch2, 190 * dpr, Hd - 8 * dpr); }
     ctx.fillStyle = 'rgba(255,255,255,.75)';
     var tl = 'M ' + (td * 1000) + ' ms/div';
     ctx.fillText(tl, Wd - ctx.measureText(tl).width - 8 * dpr, Hd - 8 * dpr);
-    /* cursor */
     if(cursorX !== null && w.t.length){
       var cx = cursorX * dpr, tc = w.t0 + cx / Wd * (w.t1 - w.t0), lo = 0, hi = w.t.length - 1;
       while(hi - lo > 1){ var mid = (lo + hi) >> 1; if(w.t[mid] < tc) lo = mid; else hi = mid; }
       var j = (tc - w.t[lo] < w.t[hi] - tc) ? lo : hi;
       ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, Hd); ctx.stroke();
-      var ref = (mode === 'single' && trig.state !== 'armed') ? trig.t0 : w.t1;
-      $('cursorRead').textContent = '游標：' + (mode === 'single' && trig.state !== 'armed' ? '觸發後 ' : '距現在 ') +
-        ((w.t[j] - ref) * 1000).toFixed(1) + ' ms，CH1 = ' + w.a[j].toFixed(2) + ' V' + (st.ch2 ? '，CH2 = ' + w.b[j].toFixed(2) + ' V' : '');
+      var trg = mode === 'single' && trig.state !== 'armed', ref = trg ? trig.t0 : w.t1;
+      $('cursorRead').textContent = '游標：' + (trg ? '觸發後 ' : '距現在 ') + ((w.t[j] - ref) * 1000).toFixed(1) +
+        ' ms，CH1 Vm = ' + w.a[j].toFixed(2) + ' V' + (st.ch2 ? '，CH2 ' + st.ch2 + ' = ' + w.b[j].toFixed(2) + ' V' : '');
     }
   }
   cv.addEventListener('pointermove', function(e){ var r = cv.getBoundingClientRect(); cursorX = e.clientX - r.left; });
@@ -753,7 +578,7 @@ var SCH = (function(){
   function uA(x){ return (x * 1e6).toFixed(1) + ' µA'; }
   var lastUI = 0;
   function updateUI(){
-    var vm = AM.v('VM');
+    var vm = AM.v('Vm');
     var qp = AM.q('pass'), q4 = AM.q('fi4403'), q6 = AM.q('so4403');
     var Is = -qp[0], If = -q4[0], Io = q6[2];
     $('rVm').textContent = vm.toFixed(2) + ' V';
@@ -764,15 +589,10 @@ var SCH = (function(){
     $('cSW').textContent = st.sw ? 'SW 按下' : 'SW 放開'; $('cSW').classList.toggle('on', st.sw);
     $('cFI').textContent = fiOn ? 'Fast inward 導通' : 'Fast inward 關'; $('cFI').classList.toggle('on', fiOn);
     $('cSO').textContent = soOn ? 'Slow out 導通' : 'Slow out 關'; $('cSO').classList.toggle('on', soOn);
-    /* schematic */
-    var set = function(id, s){ var e = $(id); if(e) e.textContent = s; };
-    var f2 = function(n){ return AM.v(n).toFixed(2) + ' V'; };
-    set('nVM', 'Vm = ' + vm.toFixed(2) + ' V'); set('nVP', 'V+ ' + st.vplus.toFixed(1) + ' V');
-    ['P', 'Q', 'R', 'B1', 'X', 'E3', 'E4', 'S', 'T', 'Y', 'Z'].forEach(function(n){ set('n' + n, f2(n)); });
-    set('nVPF', f2('VPF'));
-    set('iStim', 'I_stim ' + uA(Is)); set('iFi', 'I_FI ' + uA(If)); set('iSo', 'I_SO ' + uA(Io));
-    var on = {qPass:-qp[0], qSense:-AM.q('sense')[0], qFi3904:AM.q('fi3904')[0], qFi4403:If, qSo3904:AM.q('so3904')[0], qSo4403:-q6[0]};
-    for(var id in on){ var c = $(id); if(c) c.classList.toggle('on', on[id] > 2e-6); }
+    SCH.setValues(function(code){ return AM.v(code); });
+    SCH.setCurrents({iStim:Is, iFi:If, iSo:Io});
+    SCH.setOn({qPass:-qp[0] > 2e-6, qSense:-AM.q('sense')[0] > 2e-6, qFi3904:AM.q('fi3904')[0] > 2e-6,
+      qFi4403:If > 2e-6, qSo3904:AM.q('so3904')[0] > 2e-6, qSo4403:-q6[0] > 2e-6});
   }
 
   /* ---- main loop ---- */

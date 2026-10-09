@@ -4,7 +4,7 @@
 """
 import os, sys, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sim import Circuit, dc, transient, press
+from sim import Circuit, dc, transient, press, rest
 
 T_ON, T_OFF, T_END, DT = 0.15, 0.55, 0.9, 2e-4
 seed = int(sys.argv[1]) if len(sys.argv) > 1 else 1
@@ -21,9 +21,9 @@ for k in range(runs):
     rpot = random.choice([0.0, 5e3, 10e3])
     kw = dict(so_vm=False) if mode == 'so_open' else {}
     c = Circuit(rpot=rpot, models=models, **kw)
-    V, _ = dc(c)
-    out, _ = transient(c, press(T_ON, T_OFF), T_END, DT, V0=V, record=['VM'])
-    vm = [(t, d['VM']) for t, d, _ in out]
+    V = rest(c)
+    out, _ = transient(c, press(T_ON, T_OFF), T_END, DT, V0=V, record=['Vm'])
+    vm = [(t, d['Vm']) for t, d, _ in out]
     pre = [v for t, v in vm if t < T_ON]
     dur = [v for t, v in vm if T_ON <= t <= T_OFF]
     late = [v for t, v in vm if T_ON + 0.15 <= t <= T_OFF]

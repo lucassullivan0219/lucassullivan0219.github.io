@@ -6,7 +6,7 @@ SW is pressed at 0.05 s and released at 0.45 s.
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sim import Circuit, dc, transient, press
+from sim import Circuit, dc, transient, press, rest
 
 T_ON, T_OFF, T_END, DT = 0.05, 0.45, 0.9, 2e-4
 
@@ -22,9 +22,9 @@ CASES = [
 
 def run(name, rpot, **kw):
     c = Circuit(rpot=rpot, **kw)
-    V, _ = dc(c)
-    out, _ = transient(c, press(T_ON, T_OFF), T_END, DT, V0=V, record=['VM', 'S', 'VPF'])
-    vm = [(t, d['VM']) for t, d, _ in out]
+    V = rest(c)
+    out, _ = transient(c, press(T_ON, T_OFF), T_END, DT, V0=V, record=['Vm', 'SO.S', 'FI.V+'])
+    vm = [(t, d['Vm']) for t, d, _ in out]
     at = lambda tq: min(vm, key=lambda p: abs(p[0] - tq))[1]
     held = [v for t, v in vm if T_ON <= t <= T_OFF]
     pk = max(held)
@@ -43,9 +43,9 @@ for rpot in (0.0, 10e3):
 
 print('\n--- test 7: Fast inward V+ pin floating, probe on that pin (pot 5 k) ---')
 for so in (False, True):
-    c = Circuit(rpot=5e3, fi_vplus=False, so_vm=so, probe='VPF')
-    V, _ = dc(c)
-    out, _ = transient(c, press(T_ON, 0.35), 0.6, 5e-4, V0=V, record=['VM', 'VPF'])
+    c = Circuit(rpot=5e3, fi_vplus=False, so_vm=so, probe='FI.V+')
+    V = rest(c)
+    out, _ = transient(c, press(T_ON, 0.35), 0.6, 5e-4, V0=V, record=['Vm', 'FI.V+'])
     print('  Slow out ' + ('connected' if so else 'open'))
     for t, d, _ in out[::80]:
-        print(f'    t={t:4.2f}s  VM={d["VM"]:4.2f}  FI V+ pin={d["VPF"]:4.2f}')
+        print(f'    t={t:4.2f}s  VM={d["Vm"]:4.2f}  FI V+ pin={d["FI.V+"]:4.2f}')

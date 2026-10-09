@@ -8,7 +8,7 @@ happens to be in progress.  spontaneous() checks the no-press behaviour separate
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sim import Circuit, dc, transient, press
+from sim import Circuit, dc, transient, press, rest
 
 DT = 2e-4
 
@@ -16,12 +16,12 @@ DT = 2e-4
 def evoked(t_press=0.35, window=0.15, **kw):
     """Press SW at 1 ms for t_press seconds. Returns a dict of AP measures."""
     c = Circuit(**kw)
-    V, _ = dc(c)
-    base = c.v(V, 'VM')
+    V = rest(c)
+    base = c.v(V, 'Vm')
     t_on = 1e-3
-    out, _ = transient(c, press(t_on, t_on + t_press), t_on + t_press + 0.25, DT, V0=V, record=['VM'])
+    out, _ = transient(c, press(t_on, t_on + t_press), t_on + t_press + 0.25, DT, V0=V, record=['Vm'])
     t = [p[0] for p in out]
-    v = [p[1]['VM'] for p in out]
+    v = [p[1]['Vm'] for p in out]
     w = [i for i, ti in enumerate(t) if t_on <= ti <= t_on + window]
     ip = max(w, key=lambda i: v[i])
     half = base + (v[ip] - base) / 2
@@ -39,10 +39,10 @@ def evoked(t_press=0.35, window=0.15, **kw):
 def spontaneous(tstop=1.5, **kw):
     """No SW press. Returns (number of bumps > 0.3 V above rest, max Vm)."""
     c = Circuit(**kw)
-    V, _ = dc(c)
-    base = c.v(V, 'VM')
-    out, _ = transient(c, [], tstop, DT, V0=V, record=['VM'])
-    v = [p[1]['VM'] for p in out]
+    V = rest(c)
+    base = c.v(V, 'Vm')
+    out, _ = transient(c, [], tstop, DT, V0=V, record=['Vm'])
+    v = [p[1]['Vm'] for p in out]
     n, armed = 0, True
     for x in v:
         if armed and x > base + 0.3:

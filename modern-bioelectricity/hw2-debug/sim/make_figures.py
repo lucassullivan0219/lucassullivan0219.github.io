@@ -5,16 +5,16 @@
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from sim import Circuit, dc, transient, press
+from sim import Circuit, dc, transient, press, rest
 
 DT = 2e-4
 
 
 def trace(t_on, t_off, t_end, every, **kw):
     c = Circuit(**kw)
-    V, _ = dc(c)
-    out, _ = transient(c, press(t_on, t_off), t_end, DT, V0=V, record=['VM'])
-    pts = [(0.0, round(c.v(V, 'VM'), 3))] + [(round(t, 4), round(d['VM'], 3)) for t, d, _ in out]
+    V = rest(c)
+    out, _ = transient(c, press(t_on, t_off), t_end, DT, V0=V, record=['Vm'])
+    pts = [(0.0, round(c.v(V, 'Vm'), 3))] + [(round(t, 4), round(d['Vm'], 3)) for t, d, _ in out]
     return pts[::every]
 
 

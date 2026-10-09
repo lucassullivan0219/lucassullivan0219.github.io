@@ -117,6 +117,7 @@ figure.viz figcaption{font-size:13.5px;color:var(--muted);margin-top:6px;max-wid
 <div class="crumbs">
   <a href="../">← Modern Bioelectricity</a>
   <a href="../hw2/">HW2 實驗講解</a>
+  <a href="nodes.html">節點命名</a>
   <a href="../active-membrane-sim/">互動電路模擬 →</a>
 </div>
 
@@ -125,8 +126,10 @@ figure.viz figcaption{font-size:13.5px;color:var(--muted);margin-top:6px;max-wid
   <p class="lede">整理示波器量到的 10 筆紀錄、從講義 PCB 圖追出的實際接法、每一步手算，以及電路模擬怎麼做、怎麼和量測對上。最後是只用示波器就能做的下一步檢查。</p>
   <div class="cta">
     <a class="btn primary" href="../active-membrane-sim/">開啟互動電路模擬</a>
+    <a class="btn" href="nodes.html">節點命名</a>
     <a class="btn" href="sim/">Python 模擬程式</a>
   </div>
+  <p class="small muted" style="margin-top:12px">節點名稱（例如 <code>FI.B3</code>、<code>SO.S</code>）的定義、焊墊位置與預期電壓見<a href="nodes.html">節點命名</a>。</p>
 </header>
 
 <nav class="toc" aria-label="目錄">
@@ -152,10 +155,11 @@ figure.viz figcaption{font-size:13.5px;color:var(--muted);margin-top:6px;max-wid
 <ol class="specs">
   <li><b>Fast inward（FI）板本身是好的。</b>它單獨量到的 DC 電壓，正好是一個正常、已經自鎖（latch）的 FI；迴路裡每一顆元件都流著該有的電流（<a href="#s4">§4</a>）。</li>
   <li><b>問題在板子之間的連接，而且時好時壞。</b>FI 的 V+ 常常沒接上（測試 2、7），Slow out 在測試 10c 完全沒有作用。晃板子、重插就改變行為（測試 9、10d），也是接觸不良的特徵（<a href="#s5">§5</a>、<a href="#s6">§6</a>）。</li>
-  <li><b>就算全部接好，PCB 實際值做出的 AP 也很小。</b>按下 SW 後只在 15–20 ms 出現一個比基線高約 1.3–1.7 V 的小峰，之後 Slow out 把 Vm 鉗在約 0.7 V 直到放開。拔掉 FI 時這個峰也還有約 1.3 V，所以 FI 只多貢獻約 0.5 V（<a href="#s7">§7</a>）。</li>
+  <li><b>就算全部接好，PCB 實際值做出的 AP 也很小。</b>按下 SW 後只在 10–20 ms 出現一個比基線高約 1–1.3 V 的小峰，之後 Slow out 把 Vm 鉗在約 0.7 V 直到放開。拔掉 FI 時這個峰幾乎一樣大（模擬 1.82 V 對 1.80 V），也就是 FI 幾乎看不出貢獻（<a href="#s7">§7</a>）。</li>
   <li><b>「按住出現平台」或「放開後卡在 3–4 V」都不是正常接好的樣子</b>，代表有板子沒接上。正常接好時按住 SW，Vm 不可能停在 5–7 V。</li>
+  <li><b>沒有 Slow out 時，FI 可能不按 SW 就自己鎖住。</b>Stimulator 放開時漏出的約 6 µA 把 Vm 墊到 0.6 V，剛好在 FI 的門檻附近；用典型參數模擬，只接 ST + LK + FI 時 FI 一通電就自己鎖在 3.04 V。這和測試 10d「晃一下就卡在 3 V」一致。</li>
 </ol>
-<p class="note-inf"><span class="tag inf">推論</span>第 1 點來自量測加手算，最可靠。第 3 點來自模擬：小峰的確切高度依電晶體參數而變（隨機參數下 0.7–2.9 V），但「Slow out 正常就鉗在 ≈0.7 V」與「沒有 Slow out 就自鎖在 ≈3 V」在每一組參數下都成立（<a href="#s9-mc">§9</a>）。</p>
+<p class="note-inf"><span class="tag inf">推論</span>第 1 點來自量測加手算，最可靠。第 3、5 點來自模擬：小峰的確切高度依電晶體參數而變（隨機參數下 0.7–2.9 V），沒有 Slow out 時會不會「自己」鎖住也看參數；但「Slow out 正常就鉗在 ≈0.7 V」與「沒有 Slow out、FI 一觸發就鎖在 ≈3 V」在每一組參數下都成立（<a href="#s9-mc">§9</a>）。</p>
 
 <!-- ===================== 1 ===================== -->
 <h2 id="s1"><span class="no">1</span>量測紀錄</h2>
@@ -205,34 +209,34 @@ figure.viz figcaption{font-size:13.5px;color:var(--muted);margin-top:6px;max-wid
 </div>
 <p class="small muted">用「同一排／對角」描述，從正面或背面看都不會弄反。</p>
 
-<h3 id="s2-net">各板接法（節點名稱和後面的計算、模擬一致）</h3>
+<h3 id="s2-net">各板接法（節點名稱見<a href="nodes.html">節點命名</a>）</h3>
 <div class="scroll">
 <table>
   <thead><tr><th>板子</th><th>元件</th><th>接到</th></tr></thead>
   <tbody>
     <tr class="grp"><td colspan="3">Neuron Stimulator</td></tr>
-    <tr><td></td><td>SW</td><td>V+ ↔ 可變電阻中間腳（節點 P）</td></tr>
-    <tr><td></td><td>可變電阻 103K（10 kΩ）＋ 7K-R1</td><td>P → R1 → 節點 Q（可變電阻第三腳空接）</td></tr>
-    <tr><td></td><td>Q1 2N4403（Q<sub>pass</sub>）</td><td>E = Q、B = 節點 R、C = Intracellular（Vm）</td></tr>
-    <tr><td></td><td>Q2 2N4403（Q<sub>sense</sub>）</td><td>E = <b>V+（SW 之前）</b>、B = Q、C = R</td></tr>
-    <tr><td></td><td>7K-R2</td><td>R → GND</td></tr>
+    <tr><td></td><td>SW</td><td>V+ ↔ 可變電阻中間腳（ST.P）</td></tr>
+    <tr><td></td><td>可變電阻 103K（10 kΩ）＋ 7K-R1</td><td>ST.P → 可變電阻 → ST.K → 7K-R1 → ST.Q（可變電阻第三腳空接）</td></tr>
+    <tr><td></td><td>Q1 2N4403（Q<sub>pass</sub>）</td><td>E = ST.Q、B = ST.R、C = Intracellular（Vm）</td></tr>
+    <tr><td></td><td>Q2 2N4403（Q<sub>sense</sub>）</td><td>E = <b>V+（SW 之前）</b>、B = ST.Q、C = ST.R</td></tr>
+    <tr><td></td><td>7K-R2</td><td>ST.R → GND</td></tr>
     <tr class="grp"><td colspan="3">Passive unit（當 Leak）</td></tr>
-    <tr><td></td><td>1UF-C1 ∥ 100K-R1</td><td>Vm → GND</td></tr>
+    <tr><td></td><td>1UF-C1 ∥ 100K-R1</td><td>LK.Vm → GND</td></tr>
     <tr class="grp"><td colspan="3">Fast Inward</td></tr>
-    <tr><td></td><td>1N4148 D1</td><td>陽極（+）= Vm，陰極（−）= 節點 B1</td></tr>
-    <tr><td></td><td>3M-R1</td><td>B1 → GND</td></tr>
-    <tr><td></td><td>Q2 2N3904</td><td>B = B1、E = E3、C = X</td></tr>
-    <tr><td></td><td>100K-R2</td><td>E3 → GND</td></tr>
-    <tr><td></td><td>Q1 2N4403</td><td>B = X、C = Vm、E = E4</td></tr>
-    <tr><td></td><td>100K-R13</td><td>E4 → V+（2×2 排針對角那支）</td></tr>
+    <tr><td></td><td>1N4148 D1</td><td>陽極（+）= FI.Vm，陰極（−）= FI.B3</td></tr>
+    <tr><td></td><td>3M-R1</td><td>FI.B3 → FI.GND</td></tr>
+    <tr><td></td><td>Q2 2N3904</td><td>B = FI.B3、E = FI.E3、C = FI.B4</td></tr>
+    <tr><td></td><td>100K-R2</td><td>FI.E3 → FI.GND</td></tr>
+    <tr><td></td><td>Q1 2N4403</td><td>B = FI.B4、C = FI.Vm、E = FI.E4</td></tr>
+    <tr><td></td><td>100K-R13</td><td>FI.E4（上端）→ FI.V+（下端，2×2 排針對角那支）</td></tr>
     <tr class="grp"><td colspan="3">Slow Out</td></tr>
-    <tr><td></td><td>100K-R1</td><td>Vm → 節點 S</td></tr>
-    <tr><td></td><td>1UF-C1</td><td>S → GND</td></tr>
-    <tr><td></td><td>1N4148 D1</td><td>陽極 = S，陰極 = 節點 T</td></tr>
-    <tr><td></td><td>3M-R2</td><td>T → GND</td></tr>
-    <tr><td></td><td>Q2 2N3904</td><td>B = T、E = GND、C = 節點 Y</td></tr>
-    <tr><td></td><td>Q1 2N4403</td><td>B = Y、E = Vm、C = 節點 Z</td></tr>
-    <tr><td></td><td>1K-R3</td><td>Z → GND</td></tr>
+    <tr><td></td><td>100K-R1</td><td>SO.Vm（上端）→ SO.S（下端）</td></tr>
+    <tr><td></td><td>1UF-C1</td><td>SO.S → SO.GND</td></tr>
+    <tr><td></td><td>1N4148 D1</td><td>陽極 = SO.S，陰極 = SO.B3</td></tr>
+    <tr><td></td><td>3M-R2</td><td>SO.B3（下端）→ SO.GND（上端）</td></tr>
+    <tr><td></td><td>Q2 2N3904</td><td>B = SO.B3、E = SO.GND、C = SO.B4</td></tr>
+    <tr><td></td><td>Q1 2N4403</td><td>B = SO.B4、E = SO.Vm、C = SO.C4</td></tr>
+    <tr><td></td><td>1K-R3</td><td>SO.C4 → SO.GND</td></tr>
   </tbody>
 </table>
 </div>
@@ -252,7 +256,7 @@ figure.viz figcaption{font-size:13.5px;color:var(--muted);margin-top:6px;max-wid
 <!-- ===================== 3 ===================== -->
 <h2 id="s3"><span class="no">3</span>Stimulator 手算</h2>
 <h3>按住 SW：定電流</h3>
-<p>SW 接通時 P = V+，Q<sub>sense</sub> 的 E–B 正好跨在「可變電阻 + 7 kΩ」（R<sub>set</sub>）兩端。電流一大，R<sub>set</sub> 上的電壓到約 0.65 V，Q<sub>sense</sub> 導通、把 Q<sub>pass</sub> 關小，所以：</p>
+<p>SW 接通時 ST.P = V+，Q<sub>sense</sub> 的 E–B 正好跨在「可變電阻 + 7 kΩ」（R<sub>set</sub>）兩端。電流一大，R<sub>set</sub> 上的電壓到約 0.65 V，Q<sub>sense</sub> 導通、把 Q<sub>pass</sub> 關小，所以：</p>
 <div class="calc">I_stim ≈ V_EB(sense) / R_set ＋ I_B(sense)
        ≈ 0.65 V / (0–10 kΩ + 7 kΩ) ＋ 約 6 µA
        ≈ <b>44–99 µA</b>          <span class="c">（模擬：pot 10 k → 44 µA、5 k → 60 µA）</span>
@@ -262,10 +266,10 @@ figure.viz figcaption{font-size:13.5px;color:var(--muted);margin-top:6px;max-wid
 <p>pot 轉到 0 時 93 µA × 100 kΩ = 9.3 V，超過上限，所以 Vm 停在約 7.1 V，就是 10b 量到的 7.2 V。</p>
 
 <h3 id="s3-leak">放開 SW：為什麼還有 6 µA</h3>
-<p>PCB 上 Q<sub>sense</sub> 的 E 接在 SW 之前的 V+。SW 打開時 P 浮接、R<sub>set</sub> 沒有電流，電流只剩這條路：V+ → Q<sub>sense</sub> 的 E→B → 節點 Q → Q<sub>pass</sub> 的 E → 從 C 流出到 Vm。</p>
-<div class="calc">節點 Q 的 KCL：  I_E(pass) = I_B(sense)        <span class="c">（Q 沒有別條路）</span>
-節點 R 的電壓：  V_R = V+ − V_EB(sense) − V_EB(pass)
-               ≈ 7.8 − 0.65 − 0.53 = 6.62 V   <span class="c">（模擬：Q = 7.147、R = 6.623）</span>
+<p>PCB 上 Q<sub>sense</sub> 的 E 接在 SW 之前的 V+。SW 打開時 ST.P 浮接、R<sub>set</sub> 沒有電流，電流只剩這條路：V+ → Q<sub>sense</sub> 的 E→B → ST.Q → Q<sub>pass</sub> 的 E → 從 C 流出到 Vm。</p>
+<div class="calc">ST.Q 的 KCL：    I_E(pass) = I_B(sense)        <span class="c">（ST.Q 沒有別條路）</span>
+ST.R 的電壓：    V(ST.R) = V+ − V_EB(sense) − V_EB(pass)
+               ≈ 7.8 − 0.65 − 0.53 = 6.62 V   <span class="c">（模擬：ST.Q = 7.147、ST.R = 6.623）</span>
 7 kΩ 的電流：   I = 6.62 V / 7 kΩ = 0.946 mA ≈ I_C(sense)
 Q_sense 的 base：I_B(sense) = I_C / β = 0.946 mA / 150 = <b>6.3 µA</b>
 Q_pass 送出：    I_out ≈ I_E(pass) ≈ 6.3 µA
@@ -273,20 +277,20 @@ Q_pass 送出：    I_out ≈ I_E(pass) ≈ 6.3 µA
 接 Leak 100 kΩ： Vm = 6.3 µA × 100 kΩ = <b>0.63 V</b>       <span class="c">← 10b 基線 0.6 V</span>
 只接探棒 10 MΩ：6.3 µA × 10 MΩ = 63 V &gt; 上限 → 停在 <b>≈7.1 V</b> <span class="c">← 10a 基線 7 V</span>
 （若是 ×1 探棒 1 MΩ：6.3 V；量到 7 V，表示探棒在 ×10）</div>
-<p>這個漏電流和 β 成反比：β = 100 時 9.4 µA（基線 0.93 V），β = 250 時 3.8 µA（0.37 V）。它不是故障，但會讓靜止的 Vm 和 Slow out 的電容都停在約 0.5–0.6 V，離兩個 channel 的門檻都很近。§7 和 §9 會用到這點。</p>
+<p>這個漏電流和 β 成反比：β = 100 時 9.4 µA（基線 0.93 V），β = 250 時 3.8 µA（0.37 V）。它不是故障，但會讓靜止的 Vm 和 Slow out 的電容（SO.S）都停在約 0.5–0.6 V，離兩個 channel 的門檻都很近。§7 和 §9 會用到這點。</p>
 
 <!-- ===================== 4 ===================== -->
 <h2 id="s4"><span class="no">4</span>Fast inward 手算：為什麼判定板子是好的</h2>
-<p>測試 4–5：FI 的 Vm 斷開（只剩探棒 10 MΩ 掛在它的 Vm 腳上），量到：</p>
+<p>測試 4–5：FI:Vm 斷開（只剩探棒 10 MΩ 掛在 FI.Vm 上），量到：</p>
 <div class="scroll">
 <table class="narrow">
   <thead><tr><th>節點</th><th>是哪些腳</th><th class="num">實測</th></tr></thead>
   <tbody>
-    <tr><td>Vm 腳</td><td>2N4403 C、D1 陽極</td><td class="num">4.0 V</td></tr>
-    <tr><td>E4</td><td>2N4403 E、R13 下端</td><td class="num">4.0 V</td></tr>
-    <tr><td>X</td><td>2N4403 B = 2N3904 C</td><td class="num">3.5 V</td></tr>
-    <tr><td>B1</td><td>2N3904 B、D1 陰極、3M</td><td class="num">3.7 V</td></tr>
-    <tr><td>E3</td><td>2N3904 E、100K-R2</td><td class="num">3.0 V</td></tr>
+    <tr><td>FI.Vm</td><td>2N4403 C、D1 陽極</td><td class="num">4.0 V</td></tr>
+    <tr><td>FI.E4</td><td>2N4403 E、R13 上端</td><td class="num">4.0 V</td></tr>
+    <tr><td>FI.B4</td><td>2N4403 B = 2N3904 C</td><td class="num">3.5 V</td></tr>
+    <tr><td>FI.B3</td><td>2N3904 B、D1 陰極、3M 上端</td><td class="num">3.7 V</td></tr>
+    <tr><td>FI.E3</td><td>2N3904 E、100K-R2 上端</td><td class="num">3.0 V</td></tr>
   </tbody>
 </table>
 </div>
@@ -300,10 +304,10 @@ Q_pass 送出：    I_out ≈ I_E(pass) ≈ 6.3 µA
 <span class="c">② 2N4403</span>
    V_EB = 4.0 − 3.5 = 0.5 V   → 導通
    V_EC ≈ 4.0 − 4.0 ≈ 0       → 飽和（被 2N3904 拉滿）
-   I_B  = 2N3904 的 I_C = 30 µA   <span class="c">（X 只接這兩隻腳）</span>
+   I_B  = 2N3904 的 I_C = 30 µA   <span class="c">（FI.B4 只接這兩隻腳）</span>
 
 <span class="c">③ 2N4403 的集極電流去哪裡</span>
-   Vm 腳只接 D1 和探棒：
+   FI.Vm 只接 D1 和探棒：
    D1：  3.7 V / 3 MΩ ＋ 30 µA/β(3904) = 1.2 ＋ 0.15 ≈ 1.4 µA
    探棒：4.0 V / 10 MΩ = 0.4 µA
    I_C(4403) ≈ <b>1.8 µA</b>
@@ -312,17 +316,17 @@ Q_pass 送出：    I_out ≈ I_E(pass) ≈ 6.3 µA
    I_R13 = I_E(4403) = I_B ＋ I_C ≈ 30 ＋ 1.8 ≈ 32 µA
    R13 = (7.8 − 4.0) V / 32 µA ≈ <b>119 kΩ</b>
    讀數各差 ±0.2 V 時 → 約 105–135 kΩ：是「100 kΩ 等級」
-   如果 R13 是電路圖的 1 kΩ：壓降 = 32 µA × 1 kΩ = 0.03 V → E4 應該 ≈ <b>7.77 V</b>，不是 4.0 V
+   如果 R13 是電路圖的 1 kΩ：壓降 = 32 µA × 1 kΩ = 0.03 V → FI.E4 應該 ≈ <b>7.77 V</b>，不是 4.0 V
 
 <span class="c">⑤ D1</span>
    V_F = 4.0 − 3.7 = 0.3 V，約 1.4 µA
    1N4148 在 1 µA 附近本來就是 0.3–0.4 V   → 方向正確、有導通</div>
 
 <h3 id="s4-half">為什麼剛好是「½ V+」</h3>
-<p>自鎖時 2N4403 飽和，E4 ≈ Vm 腳。R13 和 2N3904 的 R2 都是 100 kΩ，而 2N4403 的集極幾乎沒有地方可去，所以流過 R13 的電流幾乎全部變成 2N3904 的電流：</p>
-<div class="calc">(V+ − Vm) / 100 kΩ  ≈  (Vm − V_D − V_BE) / 100 kΩ
-          V+ − Vm  ≈  Vm − 0.3 − 0.7
-               Vm  ≈  (V+ ＋ V_D ＋ V_BE) / 2 = (7.8 ＋ 1.0) / 2 = <b>4.4 V</b>
+<p>自鎖時 2N4403 飽和，FI.E4 ≈ FI.Vm。R13 和 2N3904 的 R2 都是 100 kΩ，而 2N4403 的集極幾乎沒有地方可去，所以流過 R13 的電流幾乎全部變成 2N3904 的電流：</p>
+<div class="calc">(V+ − FI.Vm) / 100 kΩ  ≈  (FI.Vm − V_D − V_BE) / 100 kΩ
+             V+ − FI.Vm  ≈  FI.Vm − 0.3 − 0.7
+                  FI.Vm  ≈  (V+ ＋ V_D ＋ V_BE) / 2 = (7.8 ＋ 1.0) / 2 = <b>4.4 V</b>
 <span class="c">實測 4.0 V；模擬 4.24 V。「約 ½ V+」正是正常自鎖該有的值。</span></div>
 
 <h3 id="s4-bus">接回去時自鎖在多少（測試 10d）</h3>
@@ -338,49 +342,49 @@ KCL：  (V+ − Vm) − (Vm − 0.85) ＋ 6.3 µA×100 kΩ = Vm
 <table>
   <thead><tr><th>元件</th><th>量測看到的</th><th>如果它壞了、裝反或沒焊好</th></tr></thead>
   <tbody>
-    <tr><td><span class="name">D1 1N4148</span></td><td>順向 0.3 V、約 1.4 µA，方向正確</td><td>裝反或開路：B1 只剩 3 MΩ 拉到 0 V，2N3904 不會導通，不可能自鎖</td></tr>
+    <tr><td><span class="name">D1 1N4148</span></td><td>順向 0.3 V、約 1.4 µA，方向正確</td><td>裝反或開路：FI.B3 只剩 3 MΩ 拉到 0 V，2N3904 不會導通，不可能自鎖</td></tr>
     <tr><td><span class="name">2N3904</span></td><td>V<sub>BE</sub> 0.7 V、V<sub>CE</sub> 0.5 V、I<sub>E</sub> 30 µA</td><td>E/C 對調或壞掉：V<sub>BE</sub> 不會是 0.7 V，E 不會穩定在 3.0 V</td></tr>
-    <tr><td><span class="name">100K-R2</span></td><td>3.0 V 對應 30 µA</td><td>開路：E3 浮接；短路：E3 = 0 V</td></tr>
-    <tr><td><span class="name">2N4403</span></td><td>V<sub>EB</sub> 0.5 V、E ≈ C（飽和）</td><td>裝反或壞掉：E、C 不會相等，Vm 腳不會被拉到 4 V</td></tr>
-    <tr><td><span class="name">100K-R13</span></td><td>3.8 V 壓降、約 32 µA，等級 100 kΩ</td><td>1 kΩ：E4 會在 7.7 V；開路：沒有電流，不能自鎖</td></tr>
-    <tr><td><span class="name">3M-R1</span></td><td>只有約 1.2 µA，量不出來</td><td>只影響關閉時 B1 的放電，不影響能不能觸發</td></tr>
-    <tr><td><span class="name">整個迴路</span></td><td>自鎖狀態存在，Vm 腳 ≈ (V+ + V<sub>D</sub> + V<sub>BE</sub>)/2；接回去時 ≈ 3 V</td><td>迴路中任何一顆斷掉或裝反，這個狀態都不存在</td></tr>
+    <tr><td><span class="name">100K-R2</span></td><td>3.0 V 對應 30 µA</td><td>開路：FI.E3 浮接；短路：FI.E3 = 0 V</td></tr>
+    <tr><td><span class="name">2N4403</span></td><td>V<sub>EB</sub> 0.5 V、E ≈ C（飽和）</td><td>裝反或壞掉：E、C 不會相等，FI.Vm 不會被拉到 4 V</td></tr>
+    <tr><td><span class="name">100K-R13</span></td><td>3.8 V 壓降、約 32 µA，等級 100 kΩ</td><td>1 kΩ：FI.E4 會在 7.7 V；開路：沒有電流，不能自鎖</td></tr>
+    <tr><td><span class="name">3M-R1</span></td><td>只有約 1.2 µA，量不出來</td><td>只影響關閉時 FI.B3 的放電，不影響能不能觸發</td></tr>
+    <tr><td><span class="name">整個迴路</span></td><td>自鎖狀態存在，FI.Vm ≈ (V+ + V<sub>D</sub> + V<sub>BE</sub>)/2；接回去時 ≈ 3 V</td><td>迴路中任何一顆斷掉或裝反，這個狀態都不存在</td></tr>
   </tbody>
 </table>
 </div>
-<p class="note"><span class="tag req">重點</span>「板子是好的」指的是：D1、2N3904、R2、2N4403、R13 都在、方向正確、焊點導通，而且數值對。這不包括<b>排針和其他板子之間的接觸</b>，那正是下一節的問題。</p>
+<p class="note"><span class="tag req">重點</span>「板子是好的」指的是：D1、2N3904、R2、2N4403、R13 都在、方向正確、焊點導通，而且數值對。這不包括<b>排針和其他板子之間的接觸</b>（FI:Vm、FI:V+、FI:GND），那正是下一節的問題。</p>
 
 <!-- ===================== 5 ===================== -->
 <h2 id="s5"><span class="no">5</span>Fast inward 的 V+ 為什麼是「沒接上」</h2>
 <div class="calc"><span class="c">FI 從 V+ 最多能拉多少電流？</span>
-   就算 E4 被拉到 0 V：I_max = 7.8 V / R13 = 7.8 V / 100 kΩ = <b>78 µA</b>
+   就算 FI.E4 被拉到 0 V：I_max = 7.8 V / R13 = 7.8 V / 100 kΩ = <b>78 µA</b>
    電池就算快沒電、內阻有幾十 Ω：78 µA × 50 Ω ≈ 4 mV 的壓降
 
-→ 只要 V+ 真的接到電池，FI 的 V+ 腳一定是 7.8 V。
-  量到 0.4 V（測試 2），代表那支腳和電池之間的電阻遠大於 100 kΩ，也就是<b>斷開</b>。</div>
+→ 只要 FI:V+ 真的接上，FI.V+ 一定是 7.8 V。
+  量到 0.4 V（測試 2），代表 FI.V+ 和電池之間的電阻遠大於 100 kΩ，也就是 FI:V+ <b>斷開</b>。</div>
 <ul class="specs">
   <li><b>0.4 V 而且上下震盪</b>：浮接的節點透過 10 MΩ 探棒，會撿到 60 Hz 市電雜訊。這是「沒接上」在示波器上的典型樣子。</li>
-  <li><b>測試 7：V+ 腳跟著 Vm 走，只是稍小</b>：V+ 斷開時，這支腳只剩 R13 → 2N4403 → Vm 這條路。2N4403 的 C–B 接面順偏，電流從 Vm 倒灌，經 R13 流進探棒。探棒只吃 0.3 µA，在 R13 上只掉 0.03 V，所以 V+ 腳 ≈ Vm − 0.03 V。模擬重現了一模一樣的結果（§9）。</li>
+  <li><b>測試 7：FI.V+ 跟著 Vm 走，只是稍小</b>：FI:V+ 斷開時，FI.V+ 只剩 R13 → 2N4403 → FI.Vm 這條路。2N4403 的 C–B 接面順偏，電流從 Vm 倒灌，經 R13 流進探棒。探棒只吃 0.3 µA，在 R13 上只掉 0.03 V，所以 FI.V+ ≈ Vm − 0.03 V。模擬重現了一模一樣的結果（§9）。</li>
   <li><b>測試 3「斷開 Vm 後 V+ 恢復」不是因果</b>：照上面的上限，FI 不可能把一個真的接著的 V+ 拉到 0.4 V。比較可能是拔 Vm 時動到板子，讓 V+ 的接點重新接上。</li>
   <li><b>測試 8 短路 R13 沒有差</b>：當時 V+ 根本沒進到這塊板子，短路 R13 也沒有電可以送。</li>
 </ul>
 
 <!-- ===================== 6 ===================== -->
 <h2 id="s6"><span class="no">6</span>Slow out 手算：正常時 Vm 會被鉗住</h2>
-<p>Slow out 是一個增益很高的負回饋：Vm 一升高，S（1 µF）經 100 kΩ 慢慢跟上；S 到門檻後 2N3904 導通、把 2N4403 的 base 拉低，2N4403 從 Vm 經 1 kΩ 把電流放到地。按住 SW 時，它最後會停在「剛好把刺激電流全部吃掉」的位置：</p>
+<p>Slow out 是一個增益很高的負回饋：Vm 一升高，SO.S（1 µF）經 100 kΩ 慢慢跟上；SO.S 到門檻後 2N3904 導通、把 2N4403 的 base 拉低，2N4403 從 Vm 經 1 kΩ 把電流放到地。按住 SW 時，它最後會停在「剛好把刺激電流全部吃掉」的位置：</p>
 <div class="calc">要吃掉的電流：I_SO = I_stim − Vm/100k ≈ 99 − 7 = 92 µA     <span class="c">（pot 0；Leak 分走 7 µA）</span>
 
 2N4403（Q1）：I_B = 92 µA / 150 = 0.61 µA = 2N3904 的 I_C
-2N3904（Q2）：V_BE = V_T·ln(I_C / I_S) = 0.02585 × ln(0.61 µA / 6.7 fA) = <b>0.47 V</b>   → 節點 T
+2N3904（Q2）：V_BE = V_T·ln(I_C / I_S) = 0.02585 × ln(0.61 µA / 6.7 fA) = <b>0.47 V</b>   → SO.B3
 3 MΩ：       0.47 V / 3 MΩ = 0.16 µA ≫ 2N3904 的 I_B（3 nA）→ D1 電流 ≈ 0.16 µA
 D1：         V_D = n·V_T·ln(I / I_S) = 1.752 × 0.02585 × ln(0.16 µA / 2.52 nA) = 0.19 V
-S：          0.47 ＋ 0.19 = <b>0.66 V</b>
-Vm：         S ＋ 0.16 µA × 100 kΩ = <b>0.68 V</b>
-2N3904 的 C（Y）：Vm − V_EB(4403 @ 92 µA) = 0.68 − 0.59 = <b>0.09 V</b>
-<span class="c">模擬（pot 0）：Vm 0.688、S 0.670、T 0.475、Y 0.095、I_stim 98.9 µA、I_SO 91.7 µA</span></div>
+SO.S：       0.47 ＋ 0.19 = <b>0.66 V</b>
+Vm：         SO.S ＋ 0.16 µA × 100 kΩ = <b>0.68 V</b>
+SO.B4：      Vm − V_EB(4403 @ 92 µA) = 0.68 − 0.59 = <b>0.09 V</b>
+<span class="c">模擬（pot 0）：Vm 0.688、SO.S 0.670、SO.B3 0.475、SO.B4 0.095、I_stim 98.9 µA、I_SO 91.7 µA</span></div>
 <ul class="specs">
   <li><b>Stimulator 打不過它</b>：2N4403 經 1 kΩ 可以吃到好幾 mA，Stimulator 最多不到 100 µA。</li>
-  <li><b>反應很快</b>：靜止時 S ≈ 0.53 V（§3 的漏電流造成），只要再升約 0.1 V 就啟動。Vm 升到 2 V 時 S 以 (2 − 0.55) V / (100 kΩ × 1 µF) ≈ 15 V/s 上升，約 7 ms 就多 0.1 V。</li>
+  <li><b>反應很快</b>：靜止時 SO.S ≈ 0.53–0.6 V（§3 的漏電流造成），只要再升約 0.1 V 就啟動。Vm 升到 2 V 時 SO.S 以 (2 − 0.55) V / (100 kΩ × 1 µF) ≈ 15 V/s 上升，約 7 ms 就多 0.1 V。</li>
   <li><b>所以 10c 的結果說明 Slow out 沒在電路裡</b>：只要它接好，按住 SW 時 Vm 在約 20 ms 內就被拉到 0.65–0.78 V，不可能停在 7.2 V。這個結論在所有隨機參數下都成立（§9）。</li>
   <li><b>測試 9 前半「按 SW 連刺激波形都沒有」</b>，反而最像 Slow out 那時有接上：小峰只有十幾 ms、1 V 多，在 20–50 ms/div、2 V/div 下很容易看不到。</li>
 </ul>
@@ -397,12 +401,13 @@ Vm：         S ＋ 0.16 µA × 100 kΩ = <b>0.68 V</b>
    拔掉 FI：(99 − 10) µA / 1 µF ≈ 90 V/s → 10 ms 升約 0.9 V
 
 <span class="c">Slow out 在 10–20 ms 內就啟動（§6），把上升截斷</span>
-   → 有 FI：峰值約 2.2 V；沒有 FI：約 1.8 V。<b>FI 只多貢獻約 0.5 V</b>
+   → 模擬：有 FI 峰值 1.82 V；拔掉 FI 1.80 V。<b>FI 幾乎看不出貢獻</b>
+     （FI 在靜止時就有一部分在導通，Slow out 也已經在吃電流，兩者互相抵消）
 
 <span class="c">對照：R13 = 1 kΩ（電路圖的值）</span>
    I_FI 可達 (7.8 − 1) V / 1 kΩ ≈ 6.8 mA → 6800 V/s
    1 ms 內就衝到接近 V+，Slow out 來不及反應 → 完整的 AP，峰值約 7 V</div>
-<p>也就是說，PCB 實際值做出的 AP 和「被 Slow out 截斷的被動反應」只差一點點。這可能也是全班都看不到 AP 的原因之一：就算接好了，預期的波形也不像課本上的尖峰。電路圖寫 1 kΩ、PCB 是 100 kΩ，建議問助教原本的設計是哪一個。</p>
+<p>也就是說，PCB 實際值做出的「AP」和「被 Slow out 截斷的被動反應」幾乎一樣。這可能也是全班都看不到 AP 的原因之一：就算接好了，預期的波形也不像課本上的尖峰。電路圖寫 1 kΩ、PCB 是 100 kΩ，建議問助教原本的設計是哪一個。</p>
 
 <!-- ===================== 8 ===================== -->
 <h2 id="s8"><span class="no">8</span>模擬怎麼做</h2>
@@ -410,13 +415,13 @@ Vm：         S ＋ 0.16 µA × 100 kΩ = <b>0.68 V</b>
 <ol class="steps">
   <li><b class="t">照 PCB 建電路</b>
     <ul>
-      <li>用 §2 追出的 netlist，不是講義的電路圖。Q<sub>sense</sub> 的 E 接 SW 之前的 V+，R13 = 100 kΩ。</li>
-      <li>每塊板和排針之間的接點都是一顆「開關電阻」：接上 0.05 Ω、斷開 10¹³ Ω。這樣就能模擬「FI 的 V+ 沒接上」「Slow out 的 Vm 沒接上」等狀況。</li>
+      <li>用 §2 追出的 netlist，不是講義的電路圖。Q<sub>sense</sub> 的 E 接 SW 之前的 V+，R13 = 100 kΩ。節點名稱和<a href="nodes.html">節點命名</a>一致。</li>
+      <li>每塊板和排針之間的接點都是一顆「開關電阻」：接上 0.05 Ω、斷開 10¹³ Ω。這樣就能模擬「FI:V+ 沒接上」「SO:Vm 沒接上」等狀況。</li>
       <li>示波器探棒是 10 MΩ 接地（×10 探棒）。每個節點另外有 10⁻¹² S 到地，讓浮接的節點也解得出來。</li>
     </ul></li>
   <li><b class="t">每個節點寫 KCL（修正節點分析，MNA）</b>
     <ul>
-      <li>未知數是每個節點的電壓（Stimulator 的 P、Q、R，Vm，FI 的 B1、E3、X、E4，Slow out 的 S、T、Y、Z 等共 17 個）；GND = 0、V+ = 7.8 V 固定。</li>
+      <li>未知數是每個節點的電壓（ST.P、ST.K、ST.Q、ST.R、Vm、LK.Vm，FI.Vm、FI.B3、FI.E3、FI.B4、FI.E4、FI.V+、FI.GND，SO.Vm、SO.S、SO.B3、SO.B4、SO.C4、SO.GND，共 19 個）；GND = 0、V+ = 7.8 V 固定。</li>
       <li>對每個節點：流出的電流總和 F(V) = 0。電阻是 (V<sub>a</sub> − V<sub>b</sub>)/R；電容和半導體見下。</li>
     </ul></li>
   <li><b class="t">電容：backward Euler</b>
@@ -434,10 +439,17 @@ Vm：         S ＋ 0.16 µA × 100 kΩ = <b>0.68 V</b>
       <li>算出 F(V) 和 Jacobian J = ∂F/∂V（解析導數），解 J·ΔV = −F，更新 V，重複到 |ΔV| &lt; 0.1 µV。</li>
       <li>每次迭代任何節點最多只動 0.1 V（阻尼），避免指數函數爆掉。不收斂時把這一步切成 10 個小步。</li>
     </ul></li>
-  <li><b class="t">先解 DC，再跑時間</b>
+  <li><b class="t">DC 工作點：Newton，不收斂就用 gmin stepping</b>
     <ul>
-      <li>DC（電容當開路）給出靜止狀態。FI 是雙穩態：給「關」的初始猜測解出靜止點，給「開」的猜測解出自鎖點，用來對照測試 4–5、10d。</li>
-      <li>時間模擬從 DC 靜止點開始，在指定時間把 SW 的電阻從 10¹³ Ω 改成 0.05 Ω。</li>
+      <li>DC（電容當開路）用來對照測試 4–5、10d。FI 是雙穩態：給「開」的初始猜測就解出自鎖點。</li>
+      <li>FI 關著時 FI.B4 幾乎浮接，Newton 會在那裡卡住。這時改用 SPICE 常用的 gmin stepping：先在每個節點並一個大電導（10⁻⁴ S）解，再每次縮小 10 倍、用上一個解當起點，一路縮到 10⁻¹²。</li>
+      <li><span class="tag warn">更正</span>這頁的初版沒有這一步，「全部接好」的 DC 其實沒有收斂，FI 內部節點的值不可靠，時間模擬又是從那個點出發。現在所有數字都已重算：結論沒變，但「FI 多貢獻多少」和 Q4 掃描的數值有修正（§7、§9）。</li>
+    </ul></li>
+  <li><b class="t">「從靜止按 SW」的起點：模擬開機</b>
+    <ul>
+      <li>每次都從所有節點 0 V 開始（等於接上電池），SW 放開跑 1 秒，再等到 Vm 的下一個最低點才按 SW。</li>
+      <li>原因：全部接好時，依電晶體參數不同，電路可能安靜地停在 0.4–0.7 V，也可能每 0.2 秒左右自己冒一個小峰（典型參數是後者）。從最低點開始，兩種情況才能比較。開機的行為見 <a href="sim/power_on.py">power_on.py</a>。</li>
+      <li>按 SW 就是把 SW 的電阻從 10¹³ Ω 改成 0.05 Ω。</li>
     </ul></li>
 </ol>
 <h3 id="s8-params">模型參數</h3>
@@ -480,59 +492,59 @@ Vm：         S ＋ 0.16 µA × 100 kΩ = <b>0.68 V</b>
 <h3 id="s9-wave">波形：應該看到的 vs 你看到的</h3>
 <figure class="viz" id="figPanels">
   <div class="multi" id="panels"></div>
-  <figcaption>Vm 對時間，PCB 實際值、pot 轉到 0。陰影是按住 SW 的 0.4 秒。滑過圖可讀數值。「全部接好」的 0.5 秒後那些小峰是自發發放：靜止點離門檻很近，用典型參數模擬時大約每 0.2 秒冒一次，實際電路不一定會出現。</figcaption>
+  <figcaption>Vm 對時間，PCB 實際值、pot 轉到 0，從開機後的靜止點開始。陰影是按住 SW 的 0.4 秒。滑過圖可讀數值。「全部接好」放開後那些小峰是自發發放：用典型參數模擬時大約每 0.2 秒冒一次，約一半的參數組合不會。「Slow out 沒接上」在按 SW 之前就已經自己鎖在 3.04 V。</figcaption>
 </figure>
 
 <h3 id="s9-zoom">放大到 AP：PCB 實際值 vs 電路圖數值</h3>
 <figure class="viz" id="figZoom">
   <div class="legend" id="zoomLegend"></div>
   <div id="zoom"></div>
-  <figcaption>按下 SW 後的前 120 ms（pot 0）。PCB 實際值的 AP 和拔掉 Fast inward 的被動反應只差約 0.5 V；電路圖數值（R13 = 1 kΩ）才是一個完整的 AP。</figcaption>
+  <figcaption>按下 SW 後的前 120 ms（pot 0）。PCB 實際值的「AP」和拔掉 Fast inward 的被動反應幾乎一樣高（1.82 V 對 1.80 V），只是早幾 ms 到頂；電路圖數值（R13 = 1 kΩ）才是一個完整的 AP。</figcaption>
 </figure>
 <div class="scroll">
 <table>
   <thead><tr><th>全部接好，換設計值</th><th class="num">靜止</th><th class="num">峰值</th><th class="num">振幅</th><th class="num">到峰時間</th><th class="num">半高寬</th><th class="num">按住時</th><th>不按也自發？</th></tr></thead>
   <tbody>
-    <tr><td>PCB 實際值，pot 10 k</td><td class="num">0.53</td><td class="num">1.83</td><td class="num">1.30</td><td class="num">19.4</td><td class="num">16.8</td><td class="num">0.66</td><td>有，小峰（≤1.5 V）</td></tr>
-    <tr><td>PCB 實際值，pot 0</td><td class="num">0.53</td><td class="num">2.24</td><td class="num">1.71</td><td class="num">15.4</td><td class="num">13.6</td><td class="num">0.71</td><td>有，小峰</td></tr>
+    <tr><td>PCB 實際值，pot 10 k</td><td class="num">0.53</td><td class="num">1.49</td><td class="num">0.96</td><td class="num">15.8</td><td class="num">14.8</td><td class="num">0.68</td><td>有，小峰（≤1.4 V）</td></tr>
+    <tr><td>PCB 實際值，pot 0</td><td class="num">0.53</td><td class="num">1.82</td><td class="num">1.29</td><td class="num">12.4</td><td class="num">12.2</td><td class="num">0.71</td><td>有，小峰</td></tr>
     <tr><td>拔掉 Fast inward（pot 0）</td><td class="num">0.54</td><td class="num">1.80</td><td class="num">1.26</td><td class="num">18.4</td><td class="num">16.6</td><td class="num">0.69</td><td>無</td></tr>
     <tr><td>Q<sub>sense</sub> 改到 SW 之後（無漏電）</td><td class="num">0.00</td><td class="num">3.43</td><td class="num">3.43</td><td class="num">37.4</td><td class="num">27.0</td><td class="num">0.71</td><td>無</td></tr>
-    <tr><td>R13 = 1 kΩ</td><td class="num">0.52</td><td class="num">7.15</td><td class="num">6.63</td><td class="num">6.4</td><td class="num">7.2</td><td class="num">0.71</td><td>有，完整 AP</td></tr>
-    <tr><td>V+ = 12 V</td><td class="num">0.50</td><td class="num">2.69</td><td class="num">2.18</td><td class="num">15.2</td><td class="num">12.6</td><td class="num">0.71</td><td>有，更頻繁</td></tr>
+    <tr><td>R13 = 1 kΩ</td><td class="num">0.53</td><td class="num">6.37</td><td class="num">5.84</td><td class="num">6.0</td><td class="num">10.0</td><td class="num">0.71</td><td>有，而且是完整 AP（約 7 V）</td></tr>
+    <tr><td>V+ = 12 V</td><td class="num">0.56</td><td class="num">1.19</td><td class="num">0.63</td><td class="num">8.4</td><td class="num">10.0</td><td class="num">0.71</td><td>有，更頻繁</td></tr>
     <tr><td>電路圖：9 V、1 kΩ、Q<sub>sense</sub> 在 SW 後</td><td class="num">0.00</td><td class="num">8.36</td><td class="num">8.36</td><td class="num">15.2</td><td class="num">15.0</td><td class="num">0.71</td><td>無</td></tr>
   </tbody>
 </table>
 </div>
-<p class="small muted">單位：V、ms。按住 SW 0.35 秒；「按住時」是放開前一刻的 Vm。來源：<a href="sim/variants.py">variants.py</a>、<a href="sim/sweep_q4.py">sweep_q4.py</a>。</p>
+<p class="small muted">單位：V、ms。從開機後的靜止點按住 SW 0.35 秒；「按住時」是放開前一刻的 Vm。有自發小峰的情況，數值會隨按下的時機變動約 ±0.3 V。來源：<a href="sim/variants.py">variants.py</a>、<a href="sim/sweep_q4.py">sweep_q4.py</a>。</p>
 
 <h3 id="s9-mc">隨機參數：哪些結論站得住</h3>
-<p>β<sub>F</sub>（2N3904 100–300、2N4403 100–250）、I<sub>S</sub>（各 10 倍範圍）、二極體 I<sub>S</sub> 與 n 隨機抽，pot 隨機選 0／5／10 k（<a href="sim/monte_carlo.py">monte_carlo.py</a>）：</p>
+<p>β<sub>F</sub>（2N3904 100–300、2N4403 100–250）、I<sub>S</sub>（各 10 倍範圍）、二極體 I<sub>S</sub> 與 n 隨機抽，pot 隨機選 0／5／10 k（<a href="sim/monte_carlo.py">monte_carlo.py</a>、<a href="sim/power_on.py">power_on.py</a>）：</p>
 <div class="scroll">
 <table>
   <thead><tr><th>情況</th><th class="num">組數</th><th>按住 SW 時的 Vm</th><th>放開後</th><th>其他</th></tr></thead>
   <tbody>
-    <tr><td>全部接好</td><td class="num">12</td><td><b class="ok">0.65–0.77 V（每一組）</b></td><td>回到 0.4–0.7 V</td><td>開頭小峰 0.7–2.9 V；一半的組會自發發放</td></tr>
-    <tr><td>Slow out 沒接上</td><td class="num">8</td><td><b class="bad">4.2–6.3 V 平台（每一組）</b></td><td>自鎖在 2.97–3.14 V（每一組）</td><td>2N4403 β 偏低的 3 組，按 SW 前就自己鎖住了</td></tr>
+    <tr><td>全部接好</td><td class="num">12</td><td><b class="ok">0.65–0.77 V（每一組）</b></td><td>回到 0.4–0.7 V</td><td>開頭小峰 0.7–2.9 V；開機後 8 組中 4 組會自發冒小峰（2N4403 β 偏低的那幾組），另外 4 組安靜</td></tr>
+    <tr><td>Slow out 沒接上</td><td class="num">8</td><td><b class="bad">4.2–6.3 V 平台（每一組）</b></td><td>自鎖在 2.97–3.14 V（每一組）</td><td>其中 3 組按 SW 前就自己鎖住了；典型參數也會自己鎖住</td></tr>
   </tbody>
 </table>
 </div>
 
 <h3 id="s9-q4">#2-2 Q4：把電阻換成 50k–3M</h3>
-<p>講義說「紅箭頭指的電阻」。模擬器電路圖上的紅箭頭落在 2N3904 的 100 kΩ 附近，但 DIP 開關版的 Fast Inward 板換掉的是 <b>V+ 到 2N4403 E 的那顆</b>（R13 的位置）。兩顆都掃了（pot 0，全部接好）：</p>
+<p>講義說「紅箭頭指的電阻」。模擬器電路圖上的紅箭頭落在 2N3904 的 100 kΩ 附近，但 DIP 開關版的 Fast Inward 板換掉的是 <b>V+ 到 2N4403 E 的那顆</b>（R13 的位置，FI.V+ 到 FI.E4）。兩顆都掃了（pot 0，全部接好，從開機後的靜止點按）：</p>
 <div class="scroll">
 <table>
   <thead><tr><th>電阻值</th><th class="num">R13：峰值</th><th class="num">振幅</th><th class="num">到峰</th><th class="num">半高寬</th><th class="num">2N3904 E 電阻：峰值</th><th class="num">振幅</th><th class="num">到峰</th><th class="num">半高寬</th></tr></thead>
   <tbody>
-    <tr><td>50 k</td><td class="num">2.44</td><td class="num">1.88</td><td class="num">12.4</td><td class="num">11.2</td><td class="num">2.20</td><td class="num">1.67</td><td class="num">15.8</td><td class="num">14.4</td></tr>
-    <tr><td>100 k</td><td class="num">2.24</td><td class="num">1.71</td><td class="num">15.4</td><td class="num">13.6</td><td class="num">2.24</td><td class="num">1.71</td><td class="num">15.4</td><td class="num">13.6</td></tr>
-    <tr><td>300 k</td><td class="num">2.01</td><td class="num">1.50</td><td class="num">18.6</td><td class="num">16.6</td><td class="num">2.29</td><td class="num">1.76</td><td class="num">15.6</td><td class="num">13.4</td></tr>
-    <tr><td>820 k</td><td class="num">1.87</td><td class="num">1.35</td><td class="num">19.0</td><td class="num">17.4</td><td class="num">1.98</td><td class="num">1.40</td><td class="num">13.2</td><td class="num">12.0</td></tr>
-    <tr><td>3 M</td><td class="num">1.80</td><td class="num">1.28</td><td class="num">19.2</td><td class="num">17.6</td><td class="num">2.05</td><td class="num">1.49</td><td class="num">16.0</td><td class="num">12.8</td></tr>
+    <tr><td>50 k</td><td class="num">1.90</td><td class="num">1.37</td><td class="num">10.2</td><td class="num">10.0</td><td class="num">1.61</td><td class="num">1.08</td><td class="num">11.2</td><td class="num">12.0</td></tr>
+    <tr><td>100 k</td><td class="num">1.82</td><td class="num">1.29</td><td class="num">12.4</td><td class="num">12.2</td><td class="num">1.82</td><td class="num">1.29</td><td class="num">12.4</td><td class="num">12.2</td></tr>
+    <tr><td>300 k</td><td class="num">1.51</td><td class="num">0.98</td><td class="num">13.4</td><td class="num">14.0</td><td class="num">1.79</td><td class="num">0.56*</td><td class="num">6.4</td><td class="num">7.6</td></tr>
+    <tr><td>820 k</td><td class="num">1.40</td><td class="num">0.79</td><td class="num">12.8</td><td class="num">14.0</td><td class="num">1.68</td><td class="num">1.15</td><td class="num">12.4</td><td class="num">11.6</td></tr>
+    <tr><td>3 M</td><td class="num">1.57</td><td class="num">1.00</td><td class="num">15.6</td><td class="num">15.6</td><td class="num">2.05</td><td class="num">1.49</td><td class="num">16.0</td><td class="num">12.8</td></tr>
     <tr><td>沒有 FI</td><td class="num">1.80</td><td class="num">1.26</td><td class="num">18.4</td><td class="num">16.6</td><td colspan="4" class="muted">同左</td></tr>
   </tbody>
 </table>
 </div>
-<p class="small muted">單位：V、ms。R13 變大時趨勢清楚（振幅變小、變慢，3 M 時和沒有 FI 一樣）；2N3904 E 電阻的影響小而且不單調。</p>
+<p class="small muted">單位：V、ms。*這一格按下時 Vm 正在自發小峰上（起點 1.23 V），振幅被低估。兩顆電阻的趨勢都<b>不單調</b>，差異也只有零點幾伏：PCB 實際值下 FI 本來就幾乎看不出貢獻，換電阻主要改變的是「會不會自發冒小峰」（R13 ≥ 820 k 時不再自發）。這一題的模擬只能當參考，請以實測為準。</p>
 
 <!-- ===================== 10 ===================== -->
 <h2 id="s10"><span class="no">10</span>每筆觀察的解讀</h2>
@@ -540,18 +552,18 @@ Vm：         S ＋ 0.16 µA × 100 kΩ = <b>0.68 V</b>
 <table>
   <thead><tr><th>#</th><th>觀察</th><th>解讀</th></tr></thead>
   <tbody>
-    <tr><td>1</td><td>平滑上升、平台、平滑下降</td><td>FI 沒有 V+，Slow out 也沒作用。兩個問題同時發生（模擬平台 5.27 V）</td></tr>
-    <tr><td>2</td><td>FI 的 V+ 腳 0.4 V、震盪</td><td>V+ 沒接上，浮接撿到 60 Hz</td></tr>
+    <tr><td>1</td><td>平滑上升、平台、平滑下降</td><td>FI:V+ 沒接上，SO 也沒作用。兩個問題同時發生（模擬平台 5.27 V）</td></tr>
+    <tr><td>2</td><td>FI 的 V+ 腳 0.4 V、震盪</td><td>FI:V+ 沒接上，FI.V+ 浮接撿到 60 Hz</td></tr>
     <tr><td>3</td><td>斷開 Vm 後 V+ 恢復</td><td>不是因果；動到板子讓接點重新接上</td></tr>
     <tr><td>4–5</td><td>½ V+ 與各腳電壓</td><td>FI 正常自鎖，元件都好（§4）</td></tr>
     <tr><td>6</td><td>接回 Slow out 仍無 AP</td><td>Slow out 沒有實際接進電路，或 FI 當時也沒電</td></tr>
-    <tr><td>7</td><td>V+ 腳跟著 Vm</td><td>V+ 沒接上，電流從 Vm 經 2N4403 倒灌</td></tr>
+    <tr><td>7</td><td>V+ 腳跟著 Vm</td><td>FI:V+ 沒接上，電流從 Vm 經 2N4403 倒灌到 FI.V+</td></tr>
     <tr><td>8</td><td>短路 R13 沒差</td><td>當時 V+ 根本沒進來，這個測試無效</td></tr>
-    <tr><td>9</td><td>先沒反應 → 卡在 4 V → 自己回到 0.6 V</td><td>先是 Slow out 有接上（鉗住）；後來 Slow out 斷了、FI 有電而自鎖；最後 FI 的 V+ 又斷了。接點一直在變</td></tr>
+    <tr><td>9</td><td>先沒反應 → 卡在 4 V → 自己回到 0.6 V</td><td>先是 SO:Vm 有接上（鉗住）；後來 SO 斷了、FI:V+ 接上而自鎖；最後 FI:V+ 又斷了。接點一直在變</td></tr>
     <tr><td>10a</td><td>只有 Stimulator，基線 7 V</td><td>Q<sub>sense</sub> 的 6 µA 漏電流灌進 10 MΩ 探棒，頂到上限 7.1 V。正常</td></tr>
     <tr><td>10b</td><td>＋ Leak：0.6 V／7.2 V</td><td>6.3 µA × 100 kΩ；按住時頂到上限。正常</td></tr>
     <tr><td>10c</td><td>＋ Slow out 沒變</td><td>Slow out 沒有作用（接好時應該被鉗在 0.7 V）</td></tr>
-    <tr><td>10d</td><td>晃動後卡在 3 V，重插回 0.6 V</td><td>晃一下 V+ 接上，FI 照設計自鎖在 (V+ + 0.85 + 0.63)/3 = 3.1 V；重插讓它斷電重置</td></tr>
+    <tr><td>10d</td><td>晃動後卡在 3 V，重插回 0.6 V</td><td>晃一下 FI:V+ 接上，FI 照設計自鎖在 (V+ + 0.85 + 0.63)/3 = 3.1 V；模擬中這一步甚至不需要按 SW。重插讓它斷電重置</td></tr>
   </tbody>
 </table>
 </div>
@@ -568,42 +580,42 @@ Vm：         S ＋ 0.16 µA × 100 kΩ = <b>0.68 V</b>
   <li><b class="t">每塊板的電源和訊號都要到位</b>
     <div class="scroll">
     <table class="narrow">
-      <thead><tr><th>板子／訊號</th><th>量哪裡</th><th>應該是</th></tr></thead>
+      <thead><tr><th>節點（接點）</th><th>量哪裡</th><th>應該是</th></tr></thead>
       <tbody>
-        <tr><td>FI 的 V+</td><td>R13 靠 Extracellular 那一端</td><td>一直 7.8 V，按 SW、晃板子都不動</td></tr>
-        <tr><td>FI 的 GND</td><td>3M-R1、100K-R2 的下端</td><td>0 V</td></tr>
-        <tr><td>Slow out 的 Vm</td><td>100K-R1 上端</td><td>和 Stimulator 的 Vm 相同</td></tr>
-        <tr><td>Slow out 的 GND</td><td>C1 下腳或 1K-R3 下端</td><td>0 V，按 SW 時也不動</td></tr>
+        <tr><td>FI.V+（測 FI:V+）</td><td>R13 下端</td><td>一直 7.8 V，按 SW、晃板子都不動</td></tr>
+        <tr><td>FI.GND（測 FI:GND）</td><td>100K-R2 或 3M-R1 的下端</td><td>0 V</td></tr>
+        <tr><td>SO.Vm（測 SO:Vm）</td><td>100K-R1 上端</td><td>和 Vm 相同</td></tr>
+        <tr><td>SO.GND（測 SO:GND）</td><td>1K-R3 下端或 C1 下腳</td><td>0 V，按 SW 時也不動</td></tr>
       </tbody>
     </table>
     </div></li>
   <li><b class="t">只接 Stimulator ＋ Leak ＋ Slow out，pot 轉到電流最大，按住 SW</b>
     <ul>
       <li>預期：Vm 先冒一個 1.2–1.8 V 的小峰（約 20 ms），然後停在 ≈ 0.67 V 直到放開。</li>
-      <li>同時：S（R1 下端 = D1「+」= C1 上腳）≈ 0.65 V；T（D1「−」）≈ 0.47 V；2N3904 的 C（最上面那支、非方形焊墊）≈ 0.1 V。</li>
+      <li>同時：SO.S（C1 上腳）≈ 0.67 V；SO.B3（D1「−」端）≈ 0.48 V；SO.B4（2N4403 中間腳）≈ 0.1 V。</li>
     </ul>
     <div class="scroll">
     <table class="narrow">
       <thead><tr><th>量到</th><th>判斷</th></tr></thead>
       <tbody>
-        <tr><td>S ≈ 0，R1 上端也 ≈ 0</td><td>Slow out 的 Vm 沒接上</td></tr>
-        <tr><td>R1 上端 = Vm，但 S ≈ 0</td><td>R1 開路，或 C1 短路</td></tr>
-        <tr><td>S &gt; 1.5 V，一路往 Vm 爬</td><td>D1 裝反、2N3904 裝錯／轉向／和 2N4403 對調，或 Slow out 的 GND 沒接</td></tr>
-        <tr><td>S ≈ 0.6–0.8 V，但 Vm 仍高</td><td>看 2N3904 的 C：高 → 2N3904 有問題；≈ 0.1 V → 2N4403、R3 或 GND 有問題</td></tr>
+        <tr><td>SO.S ≈ 0，SO.Vm 也 ≈ 0</td><td>SO:Vm 沒接上</td></tr>
+        <tr><td>SO.Vm = Vm，但 SO.S ≈ 0</td><td>100K-R1 開路，或 C1 短路</td></tr>
+        <tr><td>SO.S &gt; 1.5 V，一路往 Vm 爬</td><td>D1 裝反、2N3904 裝錯／轉向／和 2N4403 對調，或 SO:GND 沒接</td></tr>
+        <tr><td>SO.S ≈ 0.6–0.8 V，但 Vm 仍高</td><td>看 SO.B4：高 → 2N3904 有問題；≈ 0.1 V → 2N4403、1K-R3 或 SO:GND 有問題</td></tr>
       </tbody>
     </table>
     </div></li>
   <li><b class="t">只接 Stimulator ＋ Leak ＋ FI</b>
     <ul>
-      <li>點一下 SW，放開後 Vm 應該停在 ≈ 3 V 不下來。這是正常的：沒有 Slow out 就沒有東西把它拉回來。</li>
-      <li>拔掉 V+ 再接回就會重置。</li>
+      <li>確定 FI.V+ 是 7.8 V 之後，Vm 可能不按 SW 就自己停在 ≈ 3 V；沒有的話點一下 SW，放開後應該停在 ≈ 3 V 不下來。這是正常的：沒有 Slow out 就沒有東西把它拉回來。</li>
+      <li>此時 FI.E3 ≈ 2.2 V、FI.E4 − FI.B4 ≈ 0.6 V。拔掉 V+ 再接回就會重置。</li>
     </ul></li>
   <li><b class="t">全部接上看 AP</b>
     <ul>
       <li>示波器：1 V/div（或 500 mV/div）、10–25 ms/div、上升緣觸發，Level 約 1 V（要高於 0.5–0.6 V 的基線），Single Sequence。</li>
       <li>pot 轉到電流最大；每按一次至少隔 1 秒，讓 Slow out 的電容放電。</li>
-      <li>預期：按下後 10–30 ms 出現一個約 2 V 的小峰，接著快速掉到 ≈ 0.7 V 並停住。</li>
-      <li>不按 SW 也偶爾出現小峰，不是雜訊（靜止點離門檻很近）。</li>
+      <li>預期：按下後 10–20 ms 出現一個約 1.5–2 V 的小峰，接著快速掉到 ≈ 0.7 V 並停住。</li>
+      <li>不按 SW 也可能每 0.2 秒左右冒一個小峰，這不是雜訊（靜止點離門檻很近）；在兩個小峰之間按。</li>
       <li>放開後卡在 ≈ 3 V，代表 Slow out 又斷了。</li>
     </ul></li>
 </ol>
@@ -621,6 +633,8 @@ Vm：         S ＋ 0.16 µA × 100 kΩ = <b>0.68 V</b>
     <tr><td><a href="sim/variants.py">variants.py</a></td><td>§9 換設計值的表</td></tr>
     <tr><td><a href="sim/sweep_q4.py">sweep_q4.py</a></td><td>§9 Q4 掃描</td></tr>
     <tr><td><a href="sim/monte_carlo.py">monte_carlo.py</a></td><td>§9 隨機參數</td></tr>
+    <tr><td><a href="sim/node_table.py">node_table.py</a></td><td><a href="nodes.html">節點命名</a>頁的預期電壓</td></tr>
+    <tr><td><a href="sim/power_on.py">power_on.py</a></td><td>開機後會不會自發冒小峰（§8、§9）</td></tr>
     <tr><td><a href="sim/measure.py">measure.py</a></td><td>峰值、半高寬等量測函式</td></tr>
     <tr><td><a href="sim/make_figures.py">make_figures.py</a></td><td>這頁的波形資料 <code>fig-data.js</code></td></tr>
   </tbody>

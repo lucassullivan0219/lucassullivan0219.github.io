@@ -8,22 +8,27 @@ Method
     (no node may move more than 0.1 V per iteration, so the exponentials stay tame).
   * Every node has 1e-12 S to ground (gmin) so floating nodes stay solvable.
 
-Circuit (node names in capitals, matching the analysis page)
-  Stimulator   SW: VP -> P          (switch closed = 0.05 ohm, open = 1e13 ohm)
-               P -> Q: pot + R1 (rpot + 7 kohm)
-               Q1 2N4403 Qpass : E=Q,  B=R, C=VM
-               Q2 2N4403 Qsense: E=VP (PCB: before the switch!), B=Q, C=R
-               R2 7 kohm: R -> GND
-  Leak         1 uF || 100 kohm: VM -> GND
-  Fast inward  contacts: VM--VMF, VP--VPF, GND--GF
-               D1 1N4148: VMF -> B1;  R1 3 Mohm: B1 -> GF
-               Q3 2N3904: B=B1, E=E3, C=X;  R2 100 kohm: E3 -> GF
-               Q4 2N4403: E=E4, B=X, C=VMF;  R13 (PCB 100 kohm): VPF -> E4
-  Slow out     contacts: VM--VMS, GND--GS
-               R1 100 kohm: VMS -> S;  C1 1 uF: S -> GS
-               D1 1N4148: S -> T;  R2 3 Mohm: T -> GS
-               Q5 2N3904: B=T, E=GS, C=Y
-               Q6 2N4403: E=VMS, B=Y, C=Z;  R3 1 kohm: Z -> GS
+Circuit.  Node names follow the node dictionary (../nodes.html):
+board code + node, ST = Stimulator, LK = Leak, FI = Fast inward, SO = Slow out;
+B3/E3 = 2N3904 base/emitter node, B4/E4/C4 = 2N4403 base/emitter/collector node.
+'V+' and 'GND' are the battery terminals on the Stimulator (ST.V+, ST.GND);
+'Vm' is the Stimulator's output (ST.Vm), the point CH1 normally probes.
+
+  Stimulator   SW: V+ -> ST.P       (switch closed = 0.05 ohm, open = 1e13 ohm)
+               pot: ST.P -> ST.K;  7K-R1: ST.K -> ST.Q
+               Q1 2N4403 Qpass : E=ST.Q, B=ST.R, C=Vm
+               Q2 2N4403 Qsense: E=V+ (PCB: before the switch!), B=ST.Q, C=ST.R
+               7K-R2: ST.R -> GND
+  Leak         contact Vm--LK.Vm;  1 uF || 100 kohm: LK.Vm -> GND
+  Fast inward  contacts Vm--FI.Vm, V+--FI.V+, GND--FI.GND
+               D1 1N4148: FI.Vm -> FI.B3;  3M-R1: FI.B3 -> FI.GND
+               2N3904: B=FI.B3, E=FI.E3, C=FI.B4;  100K-R2: FI.E3 -> FI.GND
+               2N4403: E=FI.E4, B=FI.B4, C=FI.Vm;  R13 (PCB 100 kohm): FI.V+ -> FI.E4
+  Slow out     contacts Vm--SO.Vm, GND--SO.GND
+               100K-R1: SO.Vm -> SO.S;  C1 1 uF: SO.S -> SO.GND
+               D1 1N4148: SO.S -> SO.B3;  3M-R2: SO.B3 -> SO.GND
+               2N3904: B=SO.B3, E=SO.GND, C=SO.B4
+               2N4403: E=SO.Vm, B=SO.B4, C=SO.C4;  1K-R3: SO.C4 -> SO.GND
   Scope probe  10 Mohm from the probed node to GND (x10 probe)
 
 Only the Python standard library is used.
@@ -93,47 +98,49 @@ def diode(va, vk, Is, n):
 
 class Circuit:
     def __init__(self, vplus=7.8, sw=False, rpot=5e3, r13=100e3, r_fi_e=100e3,
-                 stim=True, leak=True, fi=True, so=True,
+                 stim=True, leak=True, fi=True, so=True, lk_vm=True,
                  fi_vm=True, fi_vplus=True, fi_gnd=True, so_vm=True, so_gnd=True,
-                 qsense_on_switched=False, rleak=100e3, probe='VM', rprobe=10e6,
+                 qsense_on_switched=False, rleak=100e3, probe='Vm', rprobe=10e6,
                  models=None):
         m = {k: dict(v) for k, v in DEFAULT_MODELS.items()}
         for k, v in (models or {}).items():
             m[k].update(v)
         self.models = m
-        self.fixed = {'GND': 0.0, 'VP': vplus}
+        self.fixed = {'GND': 0.0, 'V+': vplus}
         self.R, self.C, self.D, self.Q = [], [], [], []
         R, C, D, Q = self.R, self.C, self.D, self.Q
         link = lambda ok: SHORT if ok else OPEN
         if stim:
-            R.append(['VP', 'P', link(sw), 'sw'])
-            R.append(['P', 'Q', rpot + 7e3, 'rset'])
-            Q.append(('pnp', 'VM', 'R', 'Q', '4403'))                                   # Qpass
-            Q.append(('pnp', 'R', 'Q', 'P' if qsense_on_switched else 'VP', '4403'))    # Qsense
-            R.append(['R', 'GND', 7e3, None])
+            R.append(['V+', 'ST.P', link(sw), 'sw'])
+            R.append(['ST.P', 'ST.K', max(rpot, 1.0), 'pot'])   # a real pot never reaches 0 ohm
+            R.append(['ST.K', 'ST.Q', 7e3, None])
+            Q.append(('pnp', 'Vm', 'ST.R', 'ST.Q', '4403'))                                     # Qpass
+            Q.append(('pnp', 'ST.R', 'ST.Q', 'ST.P' if qsense_on_switched else 'V+', '4403'))   # Qsense
+            R.append(['ST.R', 'GND', 7e3, None])
         if leak:
-            C.append(('VM', 'GND', 1e-6))
-            R.append(['VM', 'GND', rleak, None])
+            R.append(['LK.Vm', 'Vm', link(lk_vm), 'lk_vm'])
+            C.append(('LK.Vm', 'GND', 1e-6))
+            R.append(['LK.Vm', 'GND', rleak, None])
         if fi:
-            R.append(['VMF', 'VM', link(fi_vm), 'fi_vm'])
-            R.append(['VPF', 'VP', link(fi_vplus), 'fi_vplus'])
-            R.append(['GF', 'GND', link(fi_gnd), 'fi_gnd'])
-            D.append(('VMF', 'B1'))
-            R.append(['B1', 'GF', 3e6, None])
-            Q.append(('npn', 'X', 'B1', 'E3', '3904'))
-            R.append(['E3', 'GF', r_fi_e, None])
-            Q.append(('pnp', 'VMF', 'X', 'E4', '4403'))
-            R.append(['E4', 'VPF', r13, None])
+            R.append(['FI.Vm', 'Vm', link(fi_vm), 'fi_vm'])
+            R.append(['FI.V+', 'V+', link(fi_vplus), 'fi_vplus'])
+            R.append(['FI.GND', 'GND', link(fi_gnd), 'fi_gnd'])
+            D.append(('FI.Vm', 'FI.B3'))
+            R.append(['FI.B3', 'FI.GND', 3e6, None])
+            Q.append(('npn', 'FI.B4', 'FI.B3', 'FI.E3', '3904'))
+            R.append(['FI.E3', 'FI.GND', r_fi_e, None])
+            Q.append(('pnp', 'FI.Vm', 'FI.B4', 'FI.E4', '4403'))
+            R.append(['FI.E4', 'FI.V+', r13, None])
         if so:
-            R.append(['VMS', 'VM', link(so_vm), 'so_vm'])
-            R.append(['GS', 'GND', link(so_gnd), 'so_gnd'])
-            R.append(['VMS', 'S', 100e3, None])
-            C.append(('S', 'GS', 1e-6))
-            D.append(('S', 'T'))
-            R.append(['T', 'GS', 3e6, None])
-            Q.append(('npn', 'Y', 'T', 'GS', '3904'))
-            Q.append(('pnp', 'Z', 'Y', 'VMS', '4403'))
-            R.append(['Z', 'GS', 1e3, None])
+            R.append(['SO.Vm', 'Vm', link(so_vm), 'so_vm'])
+            R.append(['SO.GND', 'GND', link(so_gnd), 'so_gnd'])
+            R.append(['SO.Vm', 'SO.S', 100e3, None])
+            C.append(('SO.S', 'SO.GND', 1e-6))
+            D.append(('SO.S', 'SO.B3'))
+            R.append(['SO.B3', 'SO.GND', 3e6, None])
+            Q.append(('npn', 'SO.B4', 'SO.B3', 'SO.GND', '3904'))
+            Q.append(('pnp', 'SO.C4', 'SO.B4', 'SO.Vm', '4403'))
+            R.append(['SO.C4', 'SO.GND', 1e3, None])
         if probe:
             R.append([probe, 'GND', rprobe, None])
         nodes = []
@@ -161,7 +168,7 @@ class Circuit:
         return self.fixed[n] if n in self.fixed else V[self.idx[n]]
 
     # ---- one Newton solve (DC if dt is None) ----------------------------
-    def solve(self, V0, Vprev=None, dt=None, maxit=300):
+    def solve(self, V0, Vprev=None, dt=None, maxit=300, gmin=GMIN):
         N = len(self.nodes)
         idx = self.idx
         V = list(V0)
@@ -186,7 +193,7 @@ class Circuit:
             for a, b, r, _t in self.R:
                 stamp_g(a, b, 1.0 / r)
             for n in self.nodes:
-                stamp_g(n, 'GND', GMIN)
+                stamp_g(n, 'GND', gmin)
             if dt is not None:
                 for a, b, c in self.C:
                     g = c / dt
@@ -246,11 +253,23 @@ def _gauss(A, b):
 
 
 def dc(ckt, guess=None):
-    """DC operating point (capacitors open). guess picks the branch of a bistable circuit."""
+    """DC operating point (capacitors open). guess picks the branch of a bistable circuit.
+
+    Plain Newton first.  If it stalls (FI.B4 is almost floating while the Fast inward
+    is off), fall back to gmin stepping: solve with a conductance g on every node,
+    then shrink g tenfold at a time down to GMIN, each solve starting from the last.
+    """
     V = [0.0] * len(ckt.nodes)
     for n, val in (guess or {}).items():
         if n in ckt.idx:
             V[ckt.idx[n]] = val
+    Vn, ok = ckt.solve(V, maxit=3000)
+    if ok:
+        return Vn, ok
+    g = 1e-9 if guess else 1e-4      # start gentler when following a latched branch
+    while g > GMIN * 1.01:
+        V, ok = ckt.solve(V, maxit=3000, gmin=g)
+        g /= 10
     return ckt.solve(V, maxit=3000)
 
 
@@ -277,3 +296,25 @@ def transient(ckt, events, tstop, dt, V0=None, record=('VM',)):
 def press(t_on, t_off):
     """Events for pressing SW at t_on and releasing it at t_off."""
     return [(t_on, lambda c: c.set_sw(True)), (t_off, lambda c: c.set_sw(False))]
+
+
+def rest(ckt, dt=2e-4, settle=1.0, wait=0.6):
+    """Starting state for "press SW from rest", the way it happens on the bench.
+
+    Power on with every capacitor at 0 V, wait `settle` seconds with SW released,
+    then keep going until Vm reaches a local minimum (at most `wait` s more).
+    Depending on the transistor parameters the circuit then either sits still near
+    0.4-0.7 V or fires small spontaneous bumps about every 0.2 s (it does so with
+    the default parameters); starting in the quiet trough makes both comparable.
+    """
+    V = [0.0] * len(ckt.nodes)
+    _, V = transient(ckt, [], settle, dt, V0=V, record=[])
+    prev, falling, t = ckt.v(V, 'Vm'), False, 0.0
+    while t < wait:
+        _, Vn = transient(ckt, [], dt, dt, V0=V, record=[])
+        vm = ckt.v(Vn, 'Vm')
+        if falling and vm > prev:
+            return V                     # V is the local minimum
+        falling = vm < prev - 1e-7
+        prev, V, t = vm, Vn, t + dt
+    return V
