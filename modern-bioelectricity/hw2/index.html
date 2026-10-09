@@ -169,7 +169,7 @@ footer{margin-top:50px;font-size:13.5px;color:var(--muted)}
 </head>
 <body class="">
 <aside class="side" id="side" aria-label="目錄">
-  <p style="margin:0 0 10px;font-size:13px"><a href="../" style="color:var(--muted);text-decoration:none">← Modern Bioelectricity</a></p>
+  <p style="margin:0 0 10px;font-size:13px"><a href="../" style="color:var(--muted);text-decoration:none">← Modern Bioelectricity</a><br><a href="../hw2-debug/" style="color:var(--muted);text-decoration:none">#2-2 除錯分析 →</a></p>
   <div class="side-head">
     <p class="brand">Homework 2</p>
     <button class="btn" id="sideClose" type="button" aria-label="收合目錄">收合 ‹</button>
@@ -308,7 +308,7 @@ flowchart LR
     <tr><td>Passive unit</td><td>被動單元</td><td>一塊小板：1 µF 電容並聯 100 kΩ 電阻，代表一小段細胞膜。</td></tr>
     <tr><td>Leak channel</td><td>漏電通道</td><td>Active membrane 裡的那個 1 µF ∥ 100 kΩ（就是一個 Passive unit）。</td></tr>
     <tr><td>Fast inward channel</td><td>快速內向電流通道</td><td>Vm 超過門檻就把電流灌進細胞內，類比 voltage-gated Na⁺ channel。</td></tr>
-    <tr><td>Slow outward channel</td><td>慢速外向電流通道</td><td>延遲一段時間後把 Vm 拉回 0 V，類比 delayed-rectifier K⁺ channel。</td></tr>
+    <tr><td>Slow outward channel</td><td>慢速外向電流通道</td><td>延遲一段時間後把 Vm 拉回約 0.7 V（2N4403 需要約 0.6 V 的 V<sub>EB</sub>，拉不到 0），類比 delayed-rectifier K⁺ channel。</td></tr>
     <tr><td>Neuron Stimulator</td><td>刺激器</td><td>按住 SW 時輸出固定電流，用旋鈕調電流大小。</td></tr>
     <tr><td>Stimulation current</td><td>刺激電流</td><td>刺激器輸出的電流，單位 A（實際約數十 µA）。</td></tr>
     <tr><td>Stimulation duration</td><td>刺激時間</td><td>SW 按住多久。</td></tr>
@@ -343,7 +343,7 @@ flowchart LR
     <tr><td><span class="name">Passive Unit</span></td><td><ul><li>1UF-C1（1 µF 電容）</li><li>100K-R1（100 kΩ 電阻）</li></ul></td><td>電容與電阻並聯，跨在 Intracellular 與 Extracellular 之間。</td><td>一小段膜：C = 膜電容（membrane capacitance），R = 膜電阻（leak）</td></tr>
     <tr><td><span class="name">Passive membrane PCB</span><span class="muted small">（底板）</span></td><td><ul><li>上排 R2、R5、R9、R6（Intracellular Solution）</li><li>下排 R3、R4、R8、R7（Extracellular Solution）</li><li>5 組插槽</li></ul></td><td>把 Passive unit 串起來。上排電阻 10 kΩ，下排 100 Ω（依講義電路圖）。</td><td>上排 = 細胞質的軸向電阻（axial resistance）；下排 = 細胞外液電阻</td></tr>
     <tr><td><span class="name">Fast Inward</span></td><td><ul><li>2N4403TA-Q1（PNP）</li><li>2N3904-Q2（NPN）</li><li>1N4148-D1（二極體）</li><li>3M-R1、100K-R2、100K-R13</li></ul></td><td>Vm 超過門檻後把電流灌進細胞內，而且越灌越多（正回饋）。</td><td>Voltage-gated Na⁺ channel</td></tr>
-    <tr><td><span class="name">Fast Inward（DIP 版）</span></td><td><ul><li>同上，但其中一顆電阻換成 5 顆電阻＋DIP 開關（可見 820K-R3）</li></ul></td><td>#2-2 Q4 用：撥 DIP 開關切換紅箭頭電阻的值。</td><td>改變 Na⁺ channel 的強度</td></tr>
+    <tr><td><span class="name">Fast Inward（DIP 版）</span></td><td><ul><li>同上，但 R13（V+ 到 2N4403 E）換成 5 顆電阻＋DIP 開關（可見 820K-R3）</li></ul></td><td>#2-2 Q4 用：撥 DIP 開關切換 R13 的值（講義稱「紅箭頭電阻」，見 <a href="#s3-channels">#2-2 兩個 channel 的接法</a>）。</td><td>改變 Na⁺ channel 的最大導電度</td></tr>
     <tr><td><span class="name">Slow Out</span></td><td><ul><li>2N4403TA-Q1（PNP）</li><li>2N3904-Q2（NPN）</li><li>1N4148-D1</li><li>100K-R1、3M-R2、1K-R3</li><li>1UF-C1</li></ul></td><td>Vm 升高一段時間後，把 Vm 拉回 0 V。</td><td>Delayed-rectifier K⁺ channel</td></tr>
   </tbody>
 </table>
@@ -352,7 +352,8 @@ flowchart LR
   <p><span class="tag warn">注意</span>實體 PCB 和模擬器電路圖有幾處不一樣，報告裡請用<b>實體板子上的值</b>：</p>
   <ul class="specs">
     <li>刺激器電源：PCB 是 12 V 端子，模擬器畫的是 9 V 電池；可變電阻 PCB 是 103K（10 kΩ），模擬器是 23 kΩ。</li>
-    <li>Fast inward：PCB 上是 3M、100K、100K 三顆電阻，模擬器是 3 MΩ、100 kΩ、1 kΩ，而且模擬器有一顆 9 V 電池，PCB 上沒有。<span class="tag inf">推論</span>實體板子應該是從 PCB 的電源線取電，請用三用電表量實際電壓。</li>
+    <li>Fast inward：PCB 上是 3M-R1、100K-R2、100K-R13；模擬器對應的是 3 MΩ、100 kΩ、<b>1 kΩ</b>（外加一顆 9 V 電池）。<b>R13 就是電路圖上那顆 1 kΩ，實體是 100 kΩ</b>，這是實際 AP 很小的主要原因（見<a href="../hw2-debug/#s7">除錯頁 §7</a>）。FI 的電源從 2×2 排針的 V+（和方形焊墊對角那支）來，量 FI.V+（R13 下端）應該等於電池電壓。</li>
+    <li>Stimulator：Q<sub>sense</sub>（Q2）的 emitter 在 PCB 上接在 SW <b>之前</b>的電源 +，模擬器畫在 SW 之後。所以 SW 放開時刺激器仍漏出約 6 µA，基線不是 0（見下方 <a href="#s1-stim">Neuron Stimulator</a>）。</li>
     <li>講義在 Slow Out 板的照片旁標了「1MΩ →」，但 PCB 上印的是 3M-R2。可能代表實際使用的 Slow Out 板有一顆 1 MΩ，請看電阻色碼（1 MΩ 是棕黑綠，3 MΩ 是橙黑綠）或問助教。</li>
   </ul>
 </div>
@@ -368,7 +369,7 @@ flowchart LR
   R --> B(("B"))
   B -->|"emitter → collector"| QP["Q_pass<br/>2N4403"]:::stim
   QP -->|"I_stim"| OUT["Intracellular<br/>接到第 1 個單元"]:::pas
-  QS["Q_sense 2N4403<br/>emitter 接 A，base 接 B"]:::stim -->|"collector：電流太大時<br/>把 Q_pass 的 base 拉高"| QP
+  QS["Q_sense 2N4403<br/>base 接 B<br/>emitter：模擬器接 A<br/>PCB 接 SW 之前的電源 +"]:::stim -->|"collector：電流太大時<br/>把 Q_pass 的 base 拉高"| QP
   RB["7 kΩ 到 GND<br/>平常把 Q_pass 的 base 拉低"]:::node --> QP
   classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
   classDef pas fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
@@ -381,7 +382,8 @@ flowchart LR
   <li>結果 R_set 兩端被鎖在約 0.65 V，所以：</li>
 </ol>
 <p><span class="formula">I_stim ≈ 0.65 V ÷ (R_旋鈕 + 7 kΩ)</span></p>
-<p class="note-inf"><span class="tag inf">推論</span>依電路圖估算：PCB（10 kΩ 旋鈕）約 38–93 µA；模擬器（23 kΩ）約 22–93 µA。V<sub>EB</sub> 會隨溫度與電晶體不同而變，報告裡的電流一定要用量的，不要用這個式子算。</p>
+<p class="note-inf"><span class="tag inf">推論</span>依電路圖估算：PCB（10 kΩ 旋鈕）約 44–99 µA（含 Q<sub>sense</sub> 的 base 電流約 6 µA）；模擬器（23 kΩ）約 22–93 µA。V<sub>EB</sub> 會隨溫度與電晶體不同而變，報告裡的電流一定要用量的，不要用這個式子算。</p>
+<p class="note-warn"><span class="tag warn">注意</span>PCB 上 Q<sub>sense</sub> 的 emitter 接在 SW 之前，所以 <b>SW 放開時刺激器仍漏出約 6 µA</b>（大小和 2N4403 的 β 有關，約 4–9 µA）。只接一個 Passive unit 時基線約 0.6 V，只接示波器探棒時會頂到約 7 V。這不是故障，但基線不是 0：amplitude 一律用「波峰 − 基線」，觸發準位也要設在基線之上。推導見<a href="../hw2-debug/#s3-leak">除錯頁 §3</a>。</p>
 
 <h3 id="s1-current">量 stimulation current（三種方法）</h3>
 <p>每個題目都要寫出 stimulation current。按可靠程度排序：</p>
@@ -396,7 +398,7 @@ flowchart LR
   <li><b class="t">方法 B：用一個 Passive unit 換算</b>
     <ul>
       <li>只接刺激器 + 1 個 Passive unit，按住 SW 超過 0.5 秒，等 Vm 變平。</li>
-      <li>平台電壓 V<sub>ss</sub> = I × 100 kΩ，所以 I = V<sub>ss</sub> ÷ 100 kΩ。例如 V<sub>ss</sub> = 5 V → I = 50 µA。</li>
+      <li>平台電壓 V<sub>ss</sub> = I × 100 kΩ，所以 I = V<sub>ss</sub> ÷ 100 kΩ。例如 V<sub>ss</sub> = 5 V → I = 50 µA。V<sub>ss</sub> 要用<b>對 GND 的電壓</b>，不要減掉基線（SW 按住時，放開時那 6 µA 漏電流就被定電流取代了）。</li>
       <li><span class="tag warn">注意</span>只能用在單一個 Passive unit。串了 5 個單元時，第 1 個單元看到的等效電阻只有約 30 kΩ（電流會流到後面的單元），不能直接除以 100 kΩ。</li>
     </ul></li>
   <li><b class="t">方法 C：量電阻估算（最粗略）</b>
@@ -418,17 +420,17 @@ flowchart LR
   <li><b class="t">垂直（Vertical）</b>
     <ul>
       <li>Coupling 設 <b>DC</b>（AC 會把慢的波形扭曲）。</li>
-      <li>Passive membrane：0.2–0.5 V/div；Active membrane：1–2 V/div；Extracellular（#2-3 Q5）：10–50 mV/div 起試。</li>
+      <li>Passive membrane：0.2–0.5 V/div；Active membrane：0.5–1 V/div（PCB 實際值的 AP 只有 1–2 V）；Extracellular（#2-3 Q5）：10–50 mV/div 起試。</li>
       <li>把 0 V 基線移到畫面下方約第 1 格的位置，讓波形有空間往上長。</li>
     </ul></li>
   <li><b class="t">水平（Horizontal）</b>
     <ul>
       <li>Passive membrane 的時間常數約 100 ms，先用 100–200 ms/div。</li>
-      <li>Active membrane 先用 20–50 ms/div，看到 AP 後再調整到一個 AP 佔畫面一半左右。</li>
+      <li>Active membrane 先用 10–20 ms/div：PCB 實際值的 AP 只出現在按下 SW 後 10–20 ms，寬約 10–15 ms。看到後再調整到一個 AP 佔畫面一半左右。</li>
     </ul></li>
   <li><b class="t">觸發（Trigger）</b>
     <ul>
-      <li>Source 選有接刺激點的通道（通常是 CH1），Slope 選 Rising，Level 設在 0.1–0.3 V。</li>
+      <li>Source 選有接刺激點的通道（通常是 CH1），Slope 選 Rising，Level 設在<b>比基線高約 0.1–0.2 V</b>。基線不是 0：刺激器放開時仍漏出約 6 µA，#2-1 第 1 個單元的基線約 0.2 V，active membrane 約 0.5–0.6 V。</li>
       <li>Mode 選 <b>Single</b>（或 Normal）：按一次 SW 就抓一張波形並停住，方便量測。</li>
       <li>把觸發點放在畫面左邊約 1–2 格，才看得到刺激前的基線。</li>
     </ul></li>
@@ -627,6 +629,7 @@ flowchart TD
 
 <h3 id="s2-expect">預期結果</h3>
 <p>下表是用理想元件模擬的數值，條件：電流 50 µA，5 個單元，忽略 100 Ω 的細胞外電阻（只比 10 kΩ 小 1%）。你的實測值會因為元件誤差、探棒負載和實際電流不同而有差，但<b>趨勢</b>應該一樣。</p>
+<p class="note-inf"><span class="tag inf">推論</span>實際刺激器在 SW 放開時仍漏出約 6 µA，所以按 SW 之前第 1 個單元就有約 0.2 V、第 5 個約 0.1 V 的基線。表中的 amplitude 是「波峰 − 基線」，量的時候也一樣扣掉基線。</p>
 <div class="scroll">
 <table>
   <thead><tr><th class="num">刺激時間</th><th>單元</th><th class="num">Amplitude</th><th class="num">Delay of peak</th><th class="num">Rise τ</th><th class="num">Decay τ</th><th class="num">Half-width</th></tr></thead>
@@ -697,6 +700,15 @@ flowchart TD
 <summary><span class="no">3</span><h2>#2-2 Active membrane</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
 <div class="body">
 
+<div class="note-warn">
+  <p><span class="tag warn">注意</span>這一節原本照講義的模擬器電路圖寫。實體 PCB 有兩處不同，會讓 AP 小很多、行為也不一樣：</p>
+  <ul class="specs">
+    <li>Fast inward 的 R13（V+ → 2N4403 E）是 <b>100 kΩ</b>，電路圖畫的是 1 kΩ。FI 最多只能送約 70 µA，上升慢，峰值只有 1–2 V，和拔掉 FI 的被動反應差不多。</li>
+    <li>Stimulator 的 Q<sub>sense</sub> 的 emitter 接在 SW 之前，SW 放開時仍漏出約 6 µA，所以靜止 Vm 約 0.5–0.6 V，不是 0。</li>
+  </ul>
+  <p>下面的內容已依實體 PCB 修正。完整分析、量測對照與除錯步驟見 <a href="../hw2-debug/">HW2 #2-2 除錯</a>；節點名稱（FI.B3、SO.S…）見<a href="../hw2-debug/nodes.html">節點命名</a>；也可以在<a href="../active-membrane-sim/">互動模擬</a>直接試。</p>
+</div>
+
 <h3 id="s3-circuit">電路架構</h3>
 <p>這次只有一個膜電位節點 Vm，三種 channel 和刺激器全部並聯在 Vm 與 Extracellular 之間。講義指定用 1 塊 active membrane PCB。</p>
 <div class="flow">
@@ -705,7 +717,7 @@ flowchart LR
   ST["Neuron Stimulator"]:::stim -->|"I_stim 流入"| VM(("Vm<br/>Intracellular"))
   VM --- LK["Leak channel<br/>1 µF ∥ 100 kΩ<br/>膜電容與漏電"]:::pas
   VM --- FI["Fast inward channel<br/>從電源把電流灌入 Vm<br/>把 Vm 往上推"]:::inw
-  VM --- SO["Slow outward channel<br/>把 Vm 的電流放到 Extracellular<br/>把 Vm 拉回 0 V"]:::outw
+  VM --- SO["Slow outward channel<br/>把 Vm 的電流放到 Extracellular<br/>把 Vm 拉回約 0.7 V"]:::outw
   LK & FI & SO --- EX["Extracellular（GND）"]:::node
   CH["CH1 探棒"]:::scope -.-> VM
   classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
@@ -718,18 +730,18 @@ flowchart LR
 </div>
 
 <h3 id="s3-channels">兩個 channel 的接法</h3>
-<p>依講義的模擬器電路圖整理。兩塊板子結構很像，差別在「門檻前面有沒有一個 RC 延遲」，以及「電流往哪裡流」。</p>
+<p>依實體 PCB 的接法整理（和講義模擬器電路圖不同的地方已標出），圓圈裡是<a href="../hw2-debug/nodes.html">節點名稱</a>。兩塊板子結構很像，差別在「門檻前面有沒有一個 RC 延遲」，以及「電流往哪裡流」。</p>
 <h4>Fast inward channel（類比 Na⁺ channel）</h4>
 <div class="flow">
 <pre class="mermaid">
 flowchart TB
-  VM(("Vm")) -->|"anode → cathode"| D["1N4148 二極體"]:::inw
-  D --> X(("X"))
-  X --> R3["3 MΩ 到 Extracellular<br/>沒觸發時把 X 拉回 0 V"]:::node
+  VM(("FI.Vm")) -->|"anode → cathode"| D["1N4148 二極體"]:::inw
+  D --> X(("FI.B3"))
+  X --> R3["3M-R1 到 Extracellular<br/>沒觸發時把 FI.B3 拉回 0 V"]:::node
   X -->|"base"| Q2["2N3904（NPN）"]:::inw
-  Q2 -->|"emitter"| RE["100 kΩ 到 Extracellular<br/>講義紅色箭頭指的電阻"]:::risk
-  Q2 -->|"collector 把 base 拉低"| Q1["2N4403（PNP）"]:::inw
-  PS["電源 +<br/>模擬器：9 V 經 1 kΩ"]:::node -->|"emitter"| Q1
+  Q2 -->|"emitter（FI.E3）"| RE["100K-R2 到 Extracellular"]:::node
+  Q2 -->|"collector（FI.B4）把 base 拉低"| Q1["2N4403（PNP）"]:::inw
+  PS["V+（FI.V+）經 R13<br/>PCB：100 kΩ<br/>模擬器：1 kΩ ＋ 9 V"]:::risk -->|"emitter（FI.E4）"| Q1
   Q1 -->|"collector：inward current"| VM
   classDef inw fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
   classDef risk fill:#FBE3DE,stroke:#A33A2B,stroke-width:3px,color:#4A120A,stroke-dasharray:6 3
@@ -737,45 +749,45 @@ flowchart TB
 </pre>
 </div>
 <ul class="specs">
-  <li>Vm 要先超過「二極體壓降 + 2N3904 的 V<sub>BE</sub>」，2N3904 才會導通。<span class="tag inf">推論</span>這就是門檻（threshold），約 1 V 上下，實際值請從波形量。</li>
-  <li>2N3904 一導通，就把 2N4403 的 base 拉低，2N4403 打開，電流從電源灌進 Vm。Vm 更高 → 2N3904 更開 → 灌更多：這是<b>正回饋</b>，所以 AP 的上升很快。</li>
-  <li>紅箭頭電阻（2N3904 的 emitter 電阻）限制 2N3904 的電流，等於決定正回饋有多強。#2-2 Q4 就是改這顆。</li>
+  <li>Vm 要先超過「二極體壓降 + 2N3904 的 V<sub>BE</sub>」，2N3904 才會導通。<span class="tag inf">推論</span>這就是門檻（threshold），約 0.6–1 V（電流只有 µA 時兩者都小於 0.7 V），實際值請從波形量。</li>
+  <li>2N3904 一導通，就把 2N4403 的 base 拉低，2N4403 打開，電流從電源灌進 Vm。Vm 更高 → 2N3904 更開 → 灌更多：這是<b>正回饋</b>。上升有多快取決於 R13：FI 最多只能送 (V+ − Vm)/R13 的電流。電路圖的 1 kΩ 可以送好幾 mA，AP 會很快衝高；<b>PCB 的 100 kΩ 只能送約 70 µA</b>，上升慢、峰值只有 1–2 V。</li>
+  <li><b>#2-2 Q4 要換的電阻</b>：DIP 版 Fast Inward 板換的是 <b>R13</b>（V+ 到 2N4403 E），它決定 FI 最多能送多少電流，類比 Na⁺ channel 的最大導電度。<span class="tag warn">注意</span>講義模擬器電路圖上的紅箭頭畫在 2N3904 的 100 kΩ 附近，和 DIP 板不一致；報告裡寫清楚實際換的是哪一顆，或問助教。</li>
 </ul>
 <h4>Slow outward channel（類比 K⁺ channel）</h4>
 <div class="flow">
 <pre class="mermaid">
 flowchart TB
-  VM(("Vm")) --> R1["100 kΩ"]:::outw
-  R1 --> Y(("Y"))
-  Y --> C["1 µF 到 Extracellular<br/>Y 跟著 Vm 慢慢充電"]:::outw
+  VM(("SO.Vm")) --> R1["100K-R1"]:::outw
+  R1 --> Y(("SO.S"))
+  Y --> C["1 µF 到 Extracellular<br/>SO.S 跟著 Vm 慢慢充電"]:::outw
   Y -->|"anode → cathode"| D["1N4148 二極體"]:::outw
-  D --> Z(("Z"))
-  Z --> R3["3 MΩ 到 Extracellular"]:::node
+  D --> Z(("SO.B3"))
+  Z --> R3["3M-R2 到 Extracellular"]:::node
   Z -->|"base"| Q2["2N3904（NPN）<br/>emitter 直接接 Extracellular"]:::outw
-  Q2 -->|"collector 把 base 拉低"| Q1["2N4403（PNP）"]:::outw
+  Q2 -->|"collector（SO.B4）把 base 拉低"| Q1["2N4403（PNP）"]:::outw
   VM -->|"emitter"| Q1
-  Q1 -->|"collector：outward current"| RL["1 kΩ 到 Extracellular"]:::outw
+  Q1 -->|"collector（SO.C4）：outward current"| RL["1K-R3 到 Extracellular"]:::outw
   classDef outw fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
   classDef node fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
 </pre>
 </div>
 <ul class="specs">
-  <li>門檻前面多了一組 100 kΩ + 1 µF（時間常數 100 ms）：Vm 升高後，Y 要慢慢充電才會到門檻，所以這個 channel 會<b>延遲</b>打開。</li>
-  <li>打開後，電流從 Vm 經 2N4403 和 1 kΩ 流到 Extracellular，把 Vm 拉回接近 0 V。這是<b>負回饋</b>。</li>
-  <li>Vm 回到 0 V 以後，1 µF 還要一段時間才放完電，這段時間 outward 仍然開著。</li>
+  <li>門檻前面多了一組 100 kΩ + 1 µF（時間常數 100 ms）：Vm 升高後，SO.S 要慢慢充電才會到門檻，所以這個 channel 會<b>延遲</b>打開。不過靜止時 SO.S 已經被刺激器的漏電流墊到約 0.5–0.6 V，只差約 0.1 V 就啟動，實際延遲只有 10–20 ms。</li>
+  <li>打開後，電流從 Vm 經 2N4403 和 1 kΩ 流到 Extracellular，把 Vm 拉到約 0.7 V（2N4403 需要約 0.6 V 的 V<sub>EB</sub>，拉不到 0）。這是<b>負回饋</b>，而且增益很高：SW 一直按著時，它會把 Vm <b>鉗在約 0.7 V</b>，剛好吃掉全部刺激電流。</li>
+  <li>放開 SW 以後，1 µF 還要一段時間才放完電，這段時間 outward 仍然開著。</li>
 </ul>
 
 <h3 id="s3-ap">Action potential 怎麼產生</h3>
 <div class="flow">
 <pre class="mermaid">
 flowchart TD
-  A["① 靜止：Vm ≈ 0 V<br/>兩個 channel 都關著"]:::node --> B["② 按住 SW<br/>I_stim 對 1 µF 充電<br/>Vm 沿 RC 曲線上升"]:::stim
-  B --> C{"Vm 超過門檻？<br/>約 1 V：二極體 + V_BE"}:::chk
+  A["① 靜止：Vm ≈ 0.5–0.6 V<br/>（刺激器漏電流）<br/>兩個 channel 幾乎都關著"]:::node --> B["② 按住 SW<br/>I_stim 對 1 µF 充電<br/>Vm 沿 RC 曲線上升"]:::stim
+  B --> C{"Vm 超過門檻？<br/>約 0.6–1 V：二極體 + V_BE"}:::chk
   C -->|"否：放開 SW 後<br/>Vm 沿 RC 曲線回到 0"| A
   C -->|是| D["③ Fast inward 打開<br/>電源電流灌入，Vm 再升高<br/>2N3904 開更大（正回饋）"]:::inw
-  D --> E["④ Vm 快速衝向電源電壓<br/>上升相 depolarization"]:::inw
+  D --> E["④ Vm 往上衝（上升相）<br/>電路圖 1 kΩ：衝到接近電源<br/>PCB 100 kΩ：只到 1–2 V"]:::inw
   E --> F["⑤ Slow outward 的 1 µF<br/>經 100 kΩ 慢慢充到門檻後打開"]:::outw
-  F --> G["⑥ Vm 經 1 kΩ 被拉回 0 V<br/>Vm 低於門檻，fast inward 關閉<br/>下降相 repolarization"]:::outw
+  F --> G["⑥ Vm 經 1 kΩ 被拉到約 0.7 V<br/>fast inward 關閉<br/>下降相 repolarization"]:::outw
   G --> H["⑦ 1 µF 還沒放完電，outward 仍開著<br/>這段時間很難再觸發<br/>refractory period"]:::outw
   H --> A
   classDef stim fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
@@ -785,7 +797,7 @@ flowchart TD
   classDef chk fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
 </pre>
 </div>
-<p class="note-inf"><span class="tag inf">推論</span>依電路圖分析的運作順序。如果 SW 一直按著，⑦ 結束後 Vm 會再被充到門檻，出現<b>連續發放</b>（repetitive firing）；電流越大，發放越快。</p>
+<p class="note-inf"><span class="tag inf">推論</span>依實體 PCB 的模擬推得的運作順序。<b>SW 一直按著時不會連續發放</b>：Slow out 會把 Vm 鉗在約 0.7 V，剛好吃掉全部刺激電流，所以只有開頭一個 AP（隨機元件參數下每一組都是這樣）。要再看一個 AP，放開 SW、等約 1 秒再按。另外，PCB 實際值的靜止點離門檻很近，不按 SW 也可能每 0.2 秒左右自己冒一個小峰。</p>
 
 <h3 id="s3-flow">實驗流程</h3>
 <div class="flow">
@@ -797,7 +809,7 @@ flowchart TD
   S3 --> S4["旋鈕從小電流開始慢慢加大<br/>找到剛好能觸發 AP 的電流"]:::stim
   S4 --> S5["Q2：選一個電流記錄一個 AP<br/>量五個參數"]:::scope
   S5 --> S6["Q3：從門檻往上取 5 個電流<br/>每個都量 I_stim 與五個參數"]:::scope
-  S6 --> S7["Q4：紅箭頭電阻換成<br/>50k、100k、300k、820k、3M<br/>電流固定並記下"]:::inw
+  S6 --> S7["Q4：R13（DIP 開關）換成<br/>50k、100k、300k、820k、3M<br/>電流固定並記下"]:::inw
   S7 --> S8["Q5：靜止電位與兩個 reversal potential"]:::scope
   S8 --> S9["Q6：拔掉 Fast inward 模擬 TTX<br/>或拔掉 Slow outward 模擬 TEA"]:::risk
   S9 --> S10(["作圖、回答 Q7"]):::ok
@@ -815,16 +827,16 @@ flowchart TD
   <li><b class="t">組裝並拍照（Q1）</b>
     <ul>
       <li>在 active membrane PCB 上插：Neuron Stimulator、1 個 Passive unit（當 Leak channel）、Fast Inward、Slow Out。</li>
-      <li>拍照並標出每塊板子的名稱，以及 Fast Inward、Slow Out 上的 2N4403、2N3904、1N4148、各電阻與電容。紅箭頭電阻要特別標出來。</li>
+      <li>拍照並標出每塊板子的名稱，以及 Fast Inward、Slow Out 上的 2N4403、2N3904、1N4148、各電阻與電容。Q4 要換的 R13 要特別標出來。</li>
     </ul></li>
   <li><b class="t">讀靜止電位</b>
     <ul>
-      <li>CH1 夾 Vm，1–2 V/div、20–50 ms/div，Trigger CH1 Rising，Level 先設 0.5 V。</li>
-      <li>不按 SW，記下基線電壓。應該接近 0 V。</li>
+      <li>CH1 夾 Vm，0.5–1 V/div、10–20 ms/div，Trigger CH1 Rising，Level 設約 1 V（要高於 0.5–0.6 V 的基線）。</li>
+      <li>不按 SW，記下基線電壓。PCB 實際約 0.5–0.6 V（刺激器漏電流），不是 0。如果基線是 3 V 左右而且下不來，代表 Slow out 沒接上、FI 已經自己鎖住（見<a href="../hw2-debug/">除錯頁</a>）。</li>
     </ul></li>
   <li><b class="t">找門檻電流</b>
     <ul>
-      <li>旋鈕轉到電流最小，按住 SW 約 1 秒，看有沒有 AP（Vm 突然往上衝）。</li>
+      <li>旋鈕轉到電流最小，按一下 SW，用 Single 抓按下後 100 ms 內的波形，看有沒有 AP：比單純 RC 上升更快的上衝，接著被拉回約 0.7 V。</li>
       <li>沒有就把電流加大一點再按，直到剛好出現 AP。記下這個電流，Q3 就從這裡往上取。</li>
       <li><span class="tag warn">注意</span>如果旋鈕轉到最小還是會觸發，代表門檻比最小電流還低；直接從最小電流開始取 5 個點即可，報告裡註明。</li>
     </ul></li>
@@ -832,7 +844,7 @@ flowchart TD
     <ul>
       <li>選一個比門檻稍大的電流，用 Single 抓一個完整 AP。</li>
       <li>調 s/div 讓 AP 佔畫面約一半，量五個參數並在圖上標出。</li>
-      <li>如果按太久出現好幾個 AP，量第一個就好；或縮短按壓時間。</li>
+      <li>按住期間 Vm 會停在約 0.7 V，這是 Slow out 正常在工作；每按一次只會有開頭一個 AP。</li>
     </ul></li>
   <li><b class="t">五個刺激電流（Q3）</b>
     <ul>
@@ -841,9 +853,9 @@ flowchart TD
       <li>四張圖，橫軸都是 stimulation current。</li>
       <li><span class="tag opt">提示</span>同時記下「按下 SW 到 AP 波峰」的時間（latency），討論時很好用。</li>
     </ul></li>
-  <li><b class="t">換紅箭頭電阻（Q4）</b>
+  <li><b class="t">換 R13（講義的「紅箭頭電阻」，Q4）</b>
     <ul>
-      <li>換上 DIP 版的 Fast Inward 板（或助教提供的換法），用 DIP 開關依序切到 50k、100k、300k、820k、3M。</li>
+      <li>換上 DIP 版的 Fast Inward 板（或助教提供的換法），用 DIP 開關依序把 R13 切到 50k、100k、300k、820k、3M。</li>
       <li><b>電流固定</b>，寫下用的 stimulation current。建議選一個在 100k 時能穩定觸發的電流。</li>
       <li>每個電阻值記錄一次。如果某個值完全沒有 AP，那個點記錄為「no AP」，並把 Vm 的波形也存下來。</li>
       <li>四張圖，橫軸是電阻值。電阻跨 50k 到 3M，<span class="tag opt">提示</span>橫軸用對數刻度（log scale）比較好看。</li>
@@ -851,8 +863,8 @@ flowchart TD
   <li><b class="t">靜止電位與 reversal potential（Q5）</b>
     <ul>
       <li>Resting membrane potential：步驟 2 讀到的基線。</li>
-      <li>Inward current 的 reversal potential：inward current 會把 Vm 推向的上限。用三用電表量 Fast inward 的電源電壓；AP 的波峰會接近但略低於它。</li>
-      <li>Outward current 的 reversal potential：outward current 把 Vm 拉向的電壓，也就是 Extracellular（0 V）。看 AP 結束後 Vm 被拉到哪裡。</li>
+      <li>Inward current 的 reversal potential：inward current 會把 Vm 推向的上限，也就是 FI 的電源電壓（量 FI.V+，約 7.8 V）。PCB 實際值的 AP 峰值只有 1–2 V，遠低於它：inward current 還沒把 Vm 推過去，Slow out 就啟動了。</li>
+      <li>Outward current 的 reversal potential：outward current 把 Vm 拉向的電壓，也就是 Extracellular（0 V）。實際上 2N4403 需要約 0.6 V 的 V<sub>EB</sub>，所以 Vm 只會被拉到約 0.7 V；看 AP 結束後 Vm 停在哪裡。</li>
     </ul></li>
   <li><b class="t">模擬 TTX 或 TEA（Q6）</b>
     <ul>
@@ -864,15 +876,15 @@ flowchart TD
 </ol>
 
 <h3 id="s3-expect">預期趨勢</h3>
-<p><span class="tag inf">推論</span>以下由電路圖分析推得，沒有實測數值；請以你們量到的為準，量到不一樣的趨勢也是好的討論材料。</p>
+<p><span class="tag inf">推論</span>以下由實體 PCB 接法的模擬推得（數值見<a href="../hw2-debug/#s9">除錯頁 §9</a>），沒有實測數值；請以你們量到的為準，量到不一樣的趨勢也是好的討論材料。</p>
 <div class="scroll">
 <table>
   <thead><tr><th>改變</th><th>Peak amplitude</th><th>Half-width</th><th>Rise τ</th><th>Decay τ</th><th>其他現象</th></tr></thead>
   <tbody>
-    <tr><td><span class="name">加大 stimulation current</span>（Q3）</td><td>幾乎不變（all-or-none，上限由電源決定）</td><td>大致不變</td><td>變短：更快到門檻</td><td>大致不變：由 slow outward 決定</td><td>Latency 變短；長按時發放頻率變高</td></tr>
-    <tr><td><span class="name">加大紅箭頭電阻</span>（Q4）</td><td>可能變小</td><td>可能改變，看實測</td><td>變長：正回饋變弱</td><td>看實測</td><td>門檻電流變高；820k、3M 可能不再觸發 AP</td></tr>
-    <tr><td><span class="name">TTX：拔 Fast inward</span>（Q6）</td><td>小很多，約 I × R</td><td>由刺激時間決定</td><td>接近 RC 充電</td><td>接近 RC 放電</td><td>沒有 AP，只剩被動反應；Vm 夠高時 slow outward 仍可能把它往下拉</td></tr>
-    <tr><td><span class="name">TEA：拔 Slow outward</span>（Q6）</td><td>接近或略高於正常 AP</td><td>大幅變長</td><td>和正常 AP 相近</td><td>很長，甚至不回落</td><td>沒有東西把 Vm 拉回來，Vm 可能卡在高電位，要斷電才會重置</td></tr>
+    <tr><td><span class="name">加大 stimulation current</span>（Q3）</td><td>跟著變大（模擬：pot 10 k 約 1.5 V、pot 0 約 1.8 V）。不是 all-or-none：Slow out 在 10–20 ms 內就截斷上升</td><td>大致不變（10–15 ms）</td><td>變短：更快到門檻</td><td>大致不變：由 slow outward 決定</td><td>Latency 變短；長按不會連續發放，Vm 停在約 0.7 V</td></tr>
+    <tr><td><span class="name">加大 R13</span>（Q4）</td><td>模擬中變化不單調、只差零點幾伏：PCB 值下 FI 本來就幾乎看不出貢獻</td><td>看實測</td><td>看實測</td><td>看實測</td><td>R13 越大，FI 能送的電流越小；≥ 820 k 時和拔掉 FI 差不多，也不再自發冒小峰</td></tr>
+    <tr><td><span class="name">TTX：拔 Fast inward</span>（Q6）</td><td>和 PCB 實際值的 AP 幾乎一樣（模擬約 1.8 V）</td><td>約 15 ms</td><td>接近 RC 充電</td><td>被 Slow out 拉回</td><td>按住時一樣被拉回約 0.7 V。用電路圖數值（R13 = 1 kΩ）才看得出差別：有 FI 約 8 V，拔掉約 1.8 V</td></tr>
+    <tr><td><span class="name">TEA：拔 Slow outward</span>（Q6）</td><td>按住時一路升到 4–6 V 的平台</td><td>大幅變長</td><td>接近 RC 充電</td><td>不回落</td><td>放開後鎖在約 3 V，要斷電才會重置；FI 甚至可能不按 SW 就自己鎖住</td></tr>
   </tbody>
 </table>
 </div>
@@ -880,7 +892,7 @@ flowchart TD
 <h3 id="s3-q">題目對應</h3>
 <div class="qa">
   <h4>Q1 電路照片並標註元件</h4>
-  <dl><dt>要交</dt><dd>標好四塊板子與主要元件的照片，紅箭頭電阻要標出來。</dd></dl>
+  <dl><dt>要交</dt><dd>標好四塊板子與主要元件的照片，R13（Q4 要換的電阻）要標出來。</dd></dl>
 </div>
 <div class="qa">
   <h4>Q2 量 action potential 的性質</h4>
@@ -895,25 +907,25 @@ flowchart TD
   </dl>
 </div>
 <div class="qa">
-  <h4>Q4 加大紅箭頭電阻</h4>
+  <h4>Q4 加大紅箭頭電阻（DIP 板上換的是 R13）</h4>
   <p class="en">Keywords: positive feedback, conductance, channel density, threshold</p>
   <dl>
     <dt>要交</dt><dd>stimulation current，以及四張圖（resistor vs amplitude、half-width、rise τ、decay τ）。</dd>
-    <dt>想法</dt><dd>這顆電阻越大，2N3904 能流的電流越小，2N4403 被打開得越少，inward current 越弱。可以類比為 Na⁺ channel 變少或導電度（conductance）變小。</dd>
+    <dt>想法</dt><dd>R13 越大，FI 最多能送的電流 (V+ − Vm)/R13 越小，inward current 越弱。可以類比為 Na⁺ channel 變少，或最大導電度 g<sub>Na,max</sub> 變小。</dd>
   </dl>
 </div>
 <div class="qa">
   <h4>Q5 Resting potential 與 reversal potential</h4>
   <dl>
     <dt>要交</dt><dd>三個電壓值，以及怎麼量到的。</dd>
-    <dt>想法</dt><dd>Leak 只接到 Extracellular，沒有電池，所以靜止時 Vm 停在 0 V。Inward 的電流來自電源，最多把 Vm 推到接近電源電壓；outward 的電流流到 Extracellular，最多把 Vm 拉回 0 V。可以和真實神經元比較：真實的靜止電位約 −70 mV、E<sub>Na</sub> 約 +50 mV、E<sub>K</sub> 約 −90 mV；這個電路把整個範圍平移成 0 V 以上，而且 outward 的反轉電位等於靜止電位，所以不會有 after-hyperpolarization。</dd>
+    <dt>想法</dt><dd>Leak 只接到 Extracellular，沒有電池，靜止時 Vm 本來應該是 0 V；但 PCB 的刺激器在 SW 放開時仍漏出約 6 µA，所以實測約 0.5–0.6 V。Inward 的電流來自 FI 的電源，最多把 Vm 推到接近電源電壓（約 7.8 V）；outward 的電流流到 Extracellular，最多把 Vm 拉向 0 V（實際停在約 0.7 V）。可以和真實神經元比較：真實的靜止電位約 −70 mV、E<sub>Na</sub> 約 +50 mV、E<sub>K</sub> 約 −90 mV；這個電路把整個範圍平移成 0 V 以上，而且 outward 的反轉電位和靜止電位幾乎相同，所以不會有 after-hyperpolarization。</dd>
   </dl>
 </div>
 <div class="qa">
   <h4>Q6 模擬 TTX 或 TEA</h4>
   <p class="en">Keywords: TTX blocks voltage-gated Na⁺ channels; TEA blocks K⁺ channels</p>
   <dl>
-    <dt>為什麼這樣做</dt><dd>TTX 讓 Na⁺ channel 完全不導通，等於把 fast inward channel 從電路中拿掉；TEA 對 K⁺ channel 也一樣，對應 slow outward channel。拔板子就是 100% 阻斷。部分阻斷可以用加大紅箭頭電阻來模擬（就是 Q4）。</dd>
+    <dt>為什麼這樣做</dt><dd>TTX 讓 Na⁺ channel 完全不導通，等於把 fast inward channel 從電路中拿掉；TEA 對 K⁺ channel 也一樣，對應 slow outward channel。拔板子就是 100% 阻斷。部分阻斷可以用加大 R13 來模擬（就是 Q4）。</dd>
     <dt>要交</dt><dd>stimulation current、阻斷前後的波形對照、五個參數的比較表。</dd>
   </dl>
 </div>
@@ -1109,9 +1121,11 @@ flowchart TD
     <tr><td>波形被切掉（頂到畫面上緣）</td><td>V/div 太小</td><td>調大 V/div，或把基線往下移</td></tr>
     <tr><td>Passive 波形看起來像斜線，沒有彎</td><td>s/div 太小，只看到一小段</td><td>調到 100–200 ms/div</td></tr>
     <tr><td>基線一直抖、雜訊很大</td><td>探棒鱷魚夾太長或沒夾好、旁邊有手機等干擾</td><td>夾好 GND、縮短接線；示波器可開 averaging 或 bandwidth limit</td></tr>
-    <tr><td>Active membrane 一按就連續發放很多 AP</td><td>電流大且按太久</td><td>縮短按壓時間，或只量第一個 AP</td></tr>
-    <tr><td>Active membrane 怎麼按都沒有 AP</td><td>電流太小、板子插反、Fast Inward 沒有電源</td><td>旋鈕轉大；檢查 Intracellular／Extracellular 方向；用電表量 Fast inward 的電源</td></tr>
-    <tr><td>Vm 衝上去後下不來</td><td>Slow Out 沒插好或被拔掉（TEA 情況）</td><td>斷電重置；正常實驗時檢查 Slow Out 是否插好</td></tr>
+    <tr><td>基線約 0.6 V，不是 0</td><td>正常：刺激器 SW 放開時仍漏出約 6 µA</td><td>不用處理；amplitude 用「波峰 − 基線」，觸發準位設在基線之上</td></tr>
+    <tr><td>按住 SW 時 Vm 停在約 0.7 V</td><td>正常：Slow out 把刺激電流全部吃掉</td><td>只量按下後 10–20 ms 的那個 AP；要再一個就放開、等 1 秒再按</td></tr>
+    <tr><td>Active membrane 怎麼按都沒有 AP</td><td>PCB 實際值的 AP 本來就只有 1–2 V、10–20 ms；時間軸太慢；FI:V+ 沒接上</td><td>用 10–20 ms/div、觸發約 1 V、Single；量 FI.V+（R13 下端）是不是 7.8 V；量元件的腳、不要量排針（見<a href="../hw2-debug/#s11">除錯頁</a>）</td></tr>
+    <tr><td>按住 SW 時 Vm 停在 5–7 V 的平台</td><td>Slow out 沒有作用（SO:Vm 或 SO:GND 沒接上）</td><td>量 SO.Vm（100K-R1 上端）是否等於 Vm、SO.GND 是否為 0 V</td></tr>
+    <tr><td>Vm 卡在約 3 V 下不來（不按 SW 也可能）</td><td>Slow out 沒接上，FI 自鎖（或 TEA 情況）</td><td>斷電重置；同上檢查 Slow out 的接點</td></tr>
     <tr><td>Extracellular 訊號完全看不到</td><td>V/div 太大，或夾錯點</td><td>用 10 mV/div 以下；確認夾的是 active 端的 Extracellular 線</td></tr>
     <tr><td>同一個條件每次量的不一樣</td><td>手按時間不同、電容還沒放完電就再按</td><td>每次刺激間隔至少 1 秒；同一條件量 2–3 次取平均</td></tr>
   </tbody>
@@ -1120,7 +1134,7 @@ flowchart TD
 </div>
 </details>
 
-<footer>依據 Homework 2 講義（2026）的題目與電路圖整理。標示「推論」的內容來自電路分析或理想元件模擬，不是實測數據；元件值以實體 PCB 為準。</footer>
+<footer>依據 Homework 2 講義（2026）的題目與電路圖整理；#2-2 已依實體 PCB 的接法修正，分析與模擬見 <a href="../hw2-debug/">HW2 #2-2 除錯</a>。標示「推論」的內容來自電路分析或模擬，不是實測數據；元件值以實體 PCB 為準。</footer>
 </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
