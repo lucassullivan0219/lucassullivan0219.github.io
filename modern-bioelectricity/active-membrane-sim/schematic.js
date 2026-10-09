@@ -6,7 +6,7 @@
    s.setCurrents({iStim, iFi, iSo})   amps
    s.setOn({qPass: true, ...})        highlight conducting transistors
    s.setContacts(state)   state.sw / leak / fi_vm / fi_vplus / fi_gnd / so_vm / so_gnd
-   s.setQsense('pcb'|'sw'); s.setResistors(r13, rfe)
+   s.setQsense('pcb'|'sw'|'rx'); s.setResistors(r13, rfe, soR2)
    Node codes follow hw2-debug/nodes.html: board + node, e.g. FI.B3.
 */
 (function(){
@@ -130,6 +130,7 @@
     dot(196, 110); tag('ST.Q', 'Q', 200, 96);
     L([[196, 110], [200, 110]]);
     bjt(230, 124, 'p', -90, true, 'qPass'); txt(242, 160, 'Q_pass', 'lab');
+    out.push('<text id="lRx" class="cur" x="242" y="176" style="display:none">E–B 並 22k</text>');
     L([[260, 110], [276, 110], [276, 70]]);
     cur('iStim', 272, 62, 'end');
     L([[230, 144], [230, 200]]);
@@ -183,7 +184,8 @@
     capV(740, 230, 405, 320); txt(756, 324, '1µF', 'lab');
     diodeH(230, 740, 840, 772, 802); txt(787, 216, 'D1', 'lab', 'middle');
     dot(840, 230); tag('SO.B3', 'B3', 834, 272, 'end');
-    resV(840, 230, 405, 290, 360); txt(850, 330, '3M', 'lab');
+    resV(840, 230, 405, 290, 360);
+    out.push('<text id="lSoR2" class="lab" x="850" y="330">3M</text>');   /* TA: 1 Mohm; kit shipped 100 ohm */
     L([[840, 230], [860, 230]]);
     bjt(880, 230, 'n', 0, false, 'qSo3904'); txt(910, 236, '3904', 'lab');
     L([[894, 200], [894, 170], [960, 170]]); dot(894, 170); tag('SO.B4', 'B4', 900, 160);
@@ -201,7 +203,7 @@
     svg.innerHTML = out.join('');
 
     var tags = Array.prototype.slice.call(svg.querySelectorAll('[data-node]'));
-    function fmtR(x){ return x >= 1e6 ? (x / 1e6) + ' MΩ' : (x / 1e3) + ' kΩ'; }
+    function fmtR(x){ return x >= 1e6 ? (x / 1e6) + ' MΩ' : x >= 1e3 ? (x / 1e3) + ' kΩ' : x + ' Ω'; }
     return {
       setValues: function(fn){
         tags.forEach(function(t){
@@ -230,15 +232,18 @@
           b.setAttribute('x2', closed ? x : x + 14); b.setAttribute('y2', closed ? y1 : y1 + 4);
         });
       },
+      /* 'pcb' as built, 'sw' Qsense emitter moved after SW, 'rx' 22 kohm across Qpass E-B */
       setQsense: function(mode){
         var pcb = mode !== 'sw';
         svg.querySelector('#wQsPcb').style.display = pcb ? '' : 'none';
         svg.querySelector('#dQsPcb').style.display = pcb ? '' : 'none';
         svg.querySelector('#wQsSw').style.display = pcb ? 'none' : '';
+        svg.querySelector('#lRx').style.display = mode === 'rx' ? '' : 'none';
       },
-      setResistors: function(r13, rfe){
+      setResistors: function(r13, rfe, soR2){
         svg.querySelector('#lR13').textContent = 'R13 ' + fmtR(r13);
         svg.querySelector('#lRfe').textContent = fmtR(rfe);
+        if(soR2) svg.querySelector('#lSoR2').textContent = fmtR(soR2);
       }
     };
   };

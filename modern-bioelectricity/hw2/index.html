@@ -354,7 +354,7 @@ flowchart LR
     <li>刺激器電源：PCB 是 12 V 端子，模擬器畫的是 9 V 電池；可變電阻 PCB 是 103K（10 kΩ），模擬器是 23 kΩ。</li>
     <li>Fast inward：PCB 上是 3M-R1、100K-R2、100K-R13；模擬器對應的是 3 MΩ、100 kΩ、<b>1 kΩ</b>（外加一顆 9 V 電池）。<b>R13 就是電路圖上那顆 1 kΩ，實體是 100 kΩ</b>，這是實際 AP 很小的主要原因（見<a href="../hw2-debug/#s7">除錯頁 §7</a>）。FI 的電源從 2×2 排針的 V+（和方形焊墊對角那支）來，量 FI.V+（R13 下端）應該等於電池電壓。</li>
     <li>Stimulator：Q<sub>sense</sub>（Q2）的 emitter 在 PCB 上接在 SW <b>之前</b>的電源 +，模擬器畫在 SW 之後。所以 SW 放開時刺激器仍漏出約 6 µA，基線不是 0（見下方 <a href="#s1-stim">Neuron Stimulator</a>）。</li>
-    <li>講義在 Slow Out 板的照片旁標了「1MΩ →」，但 PCB 上印的是 3M-R2。可能代表實際使用的 Slow Out 板有一顆 1 MΩ，請看電阻色碼（1 MΩ 是棕黑綠，3 MΩ 是橙黑綠）或問助教。</li>
+    <li><b>Slow Out 的 3M-R2 要換成 1 MΩ</b>（助教指定；講義照片旁標的「1MΩ →」就是這顆）。1 MΩ 的色碼是棕黑綠，3 MΩ 是橙黑綠。<span class="tag warn">注意</span>套件可能給成 100 Ω（棕黑棕）：裝成 100 Ω 時 Slow out 的 2N3904 永遠不導通，FI 一觸發就鎖在約 2.4 V 下不來（見<a href="../hw2-debug/#s9-bb">除錯頁 §9</a>）。</li>
   </ul>
 </div>
 
@@ -704,7 +704,7 @@ flowchart TD
   <p><span class="tag warn">注意</span>這一節原本照講義的模擬器電路圖寫。實體 PCB 有兩處不同，會讓 AP 小很多、行為也不一樣：</p>
   <ul class="specs">
     <li>Fast inward 的 R13（V+ → 2N4403 E）是 <b>100 kΩ</b>，電路圖畫的是 1 kΩ。FI 最多只能送約 70 µA，上升慢，峰值只有 1–2 V，和拔掉 FI 的被動反應差不多。</li>
-    <li>Stimulator 的 Q<sub>sense</sub> 的 emitter 接在 SW 之前，SW 放開時仍漏出約 6 µA，所以靜止 Vm 約 0.5–0.6 V，不是 0。</li>
+    <li>Stimulator 的 Q<sub>sense</sub> 的 emitter 接在 SW 之前，SW 放開時仍漏出約 6 µA，所以靜止 Vm 約 0.5–0.6 V，不是 0。這個電壓剛好在 FI 的門檻附近：實測（Slow out 的 R2 = 1 MΩ）<b>不按 SW 也每 0.1 秒左右自己冒一個約 1.6 V 的小峰</b>。消除方法見<a href="../hw2-debug/#s11">除錯頁 §11</a>。</li>
   </ul>
   <p>下面的內容已依實體 PCB 修正。完整分析、量測對照與除錯步驟見 <a href="../hw2-debug/">HW2 #2-2 除錯</a>；節點名稱（FI.B3、SO.S…）見<a href="../hw2-debug/nodes.html">節點命名</a>；也可以在<a href="../active-membrane-sim/">互動模擬</a>直接試。</p>
 </div>
@@ -773,7 +773,7 @@ flowchart TB
 </div>
 <ul class="specs">
   <li>門檻前面多了一組 100 kΩ + 1 µF（時間常數 100 ms）：Vm 升高後，SO.S 要慢慢充電才會到門檻，所以這個 channel 會<b>延遲</b>打開。不過靜止時 SO.S 已經被刺激器的漏電流墊到約 0.5–0.6 V，只差約 0.1 V 就啟動，實際延遲只有 10–20 ms。</li>
-  <li>打開後，電流從 Vm 經 2N4403 和 1 kΩ 流到 Extracellular，把 Vm 拉到約 0.7 V（2N4403 需要約 0.6 V 的 V<sub>EB</sub>，拉不到 0）。這是<b>負回饋</b>，而且增益很高：SW 一直按著時，它會把 Vm <b>鉗在約 0.7 V</b>，剛好吃掉全部刺激電流。</li>
+  <li>打開後，電流從 Vm 經 2N4403 和 1 kΩ 流到 Extracellular，把 Vm 拉到約 0.7 V（2N4403 需要約 0.6 V 的 V<sub>EB</sub>，拉不到 0）。這是<b>負回饋</b>，而且增益很高：SW 一直按著時，它把 Vm 壓在約 0.7–0.8 V：R2 = 3 MΩ 的模型是穩穩鉗住；實測（R2 = 1 MΩ）是在 0.6–1.0 V 之間約 40 Hz 小幅震盪，也就是很小的連續發放。</li>
   <li>放開 SW 以後，1 µF 還要一段時間才放完電，這段時間 outward 仍然開著。</li>
 </ul>
 
@@ -797,7 +797,7 @@ flowchart TD
   classDef chk fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
 </pre>
 </div>
-<p class="note-inf"><span class="tag inf">推論</span>依實體 PCB 的模擬推得的運作順序。<b>SW 一直按著時不會連續發放</b>：Slow out 會把 Vm 鉗在約 0.7 V，剛好吃掉全部刺激電流，所以只有開頭一個 AP（隨機元件參數下每一組都是這樣）。要再看一個 AP，放開 SW、等約 1 秒再按。另外，PCB 實際值的靜止點離門檻很近，不按 SW 也可能每 0.2 秒左右自己冒一個小峰。</p>
+<p class="note-inf"><span class="tag inf">推論</span>依實體 PCB 的模擬推得的運作順序。<b>SW 一直按著時，連續發放很小</b>：Slow out 把 Vm 壓在約 0.7–0.8 V。實測（R2 = 1 MΩ）在 0.6–1.0 V 之間約 40 Hz 震盪；R13 = 100 kΩ 時每一下只有零點幾伏。模擬中 R13 換成 10 kΩ，才會變成明顯的連續發放（約 20 Hz、0.6–2.2 V）。另外，Stimulator 的漏電流把靜止點墊在門檻附近，實測不按 SW 也每 0.1 秒左右自己冒一個約 1.6 V 的小峰，修正方法見<a href="../hw2-debug/#s11">除錯頁 §11</a>。</p>
 
 <h3 id="s3-flow">實驗流程</h3>
 <div class="flow">
@@ -844,7 +844,7 @@ flowchart TD
     <ul>
       <li>選一個比門檻稍大的電流，用 Single 抓一個完整 AP。</li>
       <li>調 s/div 讓 AP 佔畫面約一半，量五個參數並在圖上標出。</li>
-      <li>按住期間 Vm 會停在約 0.7 V，這是 Slow out 正常在工作；每按一次只會有開頭一個 AP。</li>
+      <li>按住期間 Vm 會停在約 0.7–0.8 V（實測會在 0.6–1.0 V 間約 40 Hz 小幅震盪），這是 Slow out 正常在工作；量開頭第一個 AP 就好。</li>
     </ul></li>
   <li><b class="t">五個刺激電流（Q3）</b>
     <ul>
@@ -881,7 +881,7 @@ flowchart TD
 <table>
   <thead><tr><th>改變</th><th>Peak amplitude</th><th>Half-width</th><th>Rise τ</th><th>Decay τ</th><th>其他現象</th></tr></thead>
   <tbody>
-    <tr><td><span class="name">加大 stimulation current</span>（Q3）</td><td>跟著變大（模擬：pot 10 k 約 1.5 V、pot 0 約 1.8 V）。不是 all-or-none：Slow out 在 10–20 ms 內就截斷上升</td><td>大致不變（10–15 ms）</td><td>變短：更快到門檻</td><td>大致不變：由 slow outward 決定</td><td>Latency 變短；長按不會連續發放，Vm 停在約 0.7 V</td></tr>
+    <tr><td><span class="name">加大 stimulation current</span>（Q3）</td><td>跟著變大（模擬：pot 10 k 約 1.5 V、pot 0 約 1.8 V）。不是 all-or-none：Slow out 在 10–20 ms 內就截斷上升</td><td>大致不變（10–15 ms）</td><td>變短：更快到門檻</td><td>大致不變：由 slow outward 決定</td><td>Latency 變短；長按時 Vm 停在約 0.7–0.8 V，實測有約 40 Hz 的小幅震盪</td></tr>
     <tr><td><span class="name">加大 R13</span>（Q4）</td><td>模擬中變化不單調、只差零點幾伏：PCB 值下 FI 本來就幾乎看不出貢獻</td><td>看實測</td><td>看實測</td><td>看實測</td><td>R13 越大，FI 能送的電流越小；≥ 820 k 時和拔掉 FI 差不多，也不再自發冒小峰</td></tr>
     <tr><td><span class="name">TTX：拔 Fast inward</span>（Q6）</td><td>和 PCB 實際值的 AP 幾乎一樣（模擬約 1.8 V）</td><td>約 15 ms</td><td>接近 RC 充電</td><td>被 Slow out 拉回</td><td>按住時一樣被拉回約 0.7 V。用電路圖數值（R13 = 1 kΩ）才看得出差別：有 FI 約 8 V，拔掉約 1.8 V</td></tr>
     <tr><td><span class="name">TEA：拔 Slow outward</span>（Q6）</td><td>按住時一路升到 4–6 V 的平台</td><td>大幅變長</td><td>接近 RC 充電</td><td>不回落</td><td>放開後鎖在約 3 V，要斷電才會重置；FI 甚至可能不按 SW 就自己鎖住</td></tr>
@@ -1122,10 +1122,11 @@ flowchart TD
     <tr><td>Passive 波形看起來像斜線，沒有彎</td><td>s/div 太小，只看到一小段</td><td>調到 100–200 ms/div</td></tr>
     <tr><td>基線一直抖、雜訊很大</td><td>探棒鱷魚夾太長或沒夾好、旁邊有手機等干擾</td><td>夾好 GND、縮短接線；示波器可開 averaging 或 bandwidth limit</td></tr>
     <tr><td>基線約 0.6 V，不是 0</td><td>正常：刺激器 SW 放開時仍漏出約 6 µA</td><td>不用處理；amplitude 用「波峰 − 基線」，觸發準位設在基線之上</td></tr>
-    <tr><td>按住 SW 時 Vm 停在約 0.7 V</td><td>正常：Slow out 把刺激電流全部吃掉</td><td>只量按下後 10–20 ms 的那個 AP；要再一個就放開、等 1 秒再按</td></tr>
+    <tr><td>按住 SW 時 Vm 停在約 0.7–0.8 V，或在 0.6–1.0 V 間約 40 Hz 震盪</td><td>正常：Slow out 把刺激電流吃掉；R13 = 100 kΩ 讓每一下都很小</td><td>量按下後 10–20 ms 的那個 AP；要明顯的 AP 見<a href="../hw2-debug/#s11">除錯頁 §11</a></td></tr>
+    <tr><td>不按 SW 也每 0.1 秒左右冒一個約 1.6 V 的小峰</td><td>Stimulator 放開時仍漏出約 6 µA，把 Vm 墊在 FI 的門檻附近</td><td>修正 Stimulator 的漏電：Q<sub>sense</sub> 的 emitter 改接 SW 之後，或在 Q<sub>pass</sub> 的 E–B 並 22 kΩ（先問助教，見<a href="../hw2-debug/#s11">除錯頁 §11</a>）</td></tr>
     <tr><td>Active membrane 怎麼按都沒有 AP</td><td>PCB 實際值的 AP 本來就只有 1–2 V、10–20 ms；時間軸太慢；FI:V+ 沒接上</td><td>用 10–20 ms/div、觸發約 1 V、Single；量 FI.V+（R13 下端）是不是 7.8 V；量元件的腳、不要量排針（見<a href="../hw2-debug/#s11">除錯頁</a>）</td></tr>
-    <tr><td>按住 SW 時 Vm 停在 5–7 V 的平台</td><td>Slow out 沒有作用（SO:Vm 或 SO:GND 沒接上）</td><td>量 SO.Vm（100K-R1 上端）是否等於 Vm、SO.GND 是否為 0 V</td></tr>
-    <tr><td>Vm 卡在約 3 V 下不來（不按 SW 也可能）</td><td>Slow out 沒接上，FI 自鎖（或 TEA 情況）</td><td>斷電重置；同上檢查 Slow out 的接點</td></tr>
+    <tr><td>按住 SW 時 Vm 停在 5–7 V 的平台</td><td>Slow out 沒有作用：SO:Vm 或 SO:GND 沒接上，或 Slow out 的 R2 裝成 100 Ω</td><td>量 SO.Vm（100K-R1 上端）是否等於 Vm、SO.GND 是否為 0 V</td></tr>
+    <tr><td>Vm 卡在約 2.4–3 V 下不來（不按 SW 也可能）</td><td>Slow out 沒作用，FI 自鎖。約 3 V：Slow out 沒接上（或 TEA 情況）；約 2.4 V：Slow out 的 R2 是 100 Ω</td><td>斷電重置；同上檢查 Slow out 的接點</td></tr>
     <tr><td>Extracellular 訊號完全看不到</td><td>V/div 太大，或夾錯點</td><td>用 10 mV/div 以下；確認夾的是 active 端的 Extracellular 線</td></tr>
     <tr><td>同一個條件每次量的不一樣</td><td>手按時間不同、電容還沒放完電就再按</td><td>每次刺激間隔至少 1 秒；同一條件量 2–3 次取平均</td></tr>
   </tbody>

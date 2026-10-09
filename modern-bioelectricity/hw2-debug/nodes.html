@@ -105,6 +105,7 @@ footer{margin-top:56px;font-size:13.5px;color:var(--muted);border-top:1px solid 
   <b>D</b><span>只接 ST + LK + SO（沒有 FI）、SW 按住（電流最大）。</span>
   <b>E</b><span>ST + LK + FI，但 FI:Vm 斷開、FI 已自鎖，探棒在 FI.Vm。對應測試 4–5。</span>
 </div>
+<p class="note-warn"><span class="tag warn">注意</span>這張表用 PCB 標示的 3M-R2（3 MΩ）計算。助教指定（也是目前電路）的 1 MΩ：B、D 狀態的 Vm、SO.S、SO.B4 約高 0.05–0.07 V，其他節點差異在 0.05 V 內；A 狀態實測約每 0.1 秒冒一個 1.6 V 的小峰。修正 Stimulator 的漏電後，A 狀態的 Vm、FI、SO 節點都會變成約 0 V 且不再自發（見<a href="./#s11">除錯分析 §11</a>）。</p>
 <div class="scroll">
 <table>
   <thead><tr><th>名稱</th><th>包含哪些焊墊</th><th>最好量哪裡</th><th class="num">A</th><th class="num">B</th><th class="num">C</th><th class="num">D</th><th class="num">E</th></tr></thead>

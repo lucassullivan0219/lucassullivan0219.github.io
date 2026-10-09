@@ -102,7 +102,7 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
   <a href="../hw2/">HW2 實驗講解</a>
 </div>
 <h1>Active membrane 互動模擬</h1>
-<p class="lede">照 PCB 實際接法（R13 = 100 kΩ、Q<sub>sense</sub> 的 E 接在 SW 之前）即時計算。按住 SW 看 Vm，點電路圖上的接點可以斷開排針，重現「FI:V+ 沒接上」「SO:Vm 沒接上」等狀況。節點和接點的名稱見<a href="../hw2-debug/nodes.html">節點命名</a>。模型和<a href="../hw2-debug/#s8">分析頁</a>的 Python 版相同。</p>
+<p class="lede">照 PCB 實際接法（R13 = 100 kΩ、Q<sub>sense</sub> 的 E 接在 SW 之前、Slow out 的 R2 照助教指定用 1 MΩ）即時計算。按住 SW 看 Vm，點電路圖上的接點可以斷開排針，重現「FI:V+ 沒接上」「SO:Vm 沒接上」等狀況。節點和接點的名稱見<a href="../hw2-debug/nodes.html">節點命名</a>。模型和<a href="../hw2-debug/#s8">分析頁</a>的 Python 版相同。</p>
 
 <div class="top">
   <section class="card scope-wrap" aria-label="示波器">
@@ -141,7 +141,10 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
     <div>
       <h2>情境</h2>
       <div class="presets" id="presets">
-        <button type="button" class="btn" data-p="pcb">全部接好（PCB）</button>
+        <button type="button" class="btn" data-p="pcb">目前電路（R2 = 1 MΩ）</button>
+        <button type="button" class="btn" data-p="r2bad">SO 的 R2 = 100 Ω（套件給錯）</button>
+        <button type="button" class="btn" data-p="fix">修正 1：消除漏電</button>
+        <button type="button" class="btn" data-p="fixap">修正 1 + 2：R13 = 10 kΩ</button>
         <button type="button" class="btn" data-p="t1">測試 1：FI 沒 V+、SO 沒接</button>
         <button type="button" class="btn" data-p="so">SO 沒接（測試 9、10d）</button>
         <button type="button" class="btn" data-p="leak">只有 Stim + Leak（10b）</button>
@@ -155,9 +158,10 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
       <h2>元件</h2>
       <div class="row"><span>可變電阻</span><input type="range" id="pot" min="0" max="10" step="0.1" value="0"><span class="val" id="potV"></span></div>
       <div class="row"><span>V+</span><input type="range" id="vplus" min="6" max="12" step="0.1" value="7.8"><span class="val" id="vplusV"></span></div>
-      <div class="row"><span>R13（V+→4403 E）</span><select id="r13"><option value="1e3">1 kΩ</option><option value="5e4">50 kΩ</option><option value="1e5" selected>100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select><span></span></div>
+      <div class="row"><span>R13（V+→4403 E）</span><select id="r13"><option value="1e3">1 kΩ</option><option value="1e4">10 kΩ</option><option value="5e4">50 kΩ</option><option value="1e5" selected>100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select><span></span></div>
       <div class="row"><span>FI 3904 E 電阻</span><select id="rfe"><option value="5e4">50 kΩ</option><option value="1e5" selected>100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select><span></span></div>
-      <div class="row"><span>Q<sub>sense</sub> 的 E</span><select id="qs"><option value="pcb" selected>V+（PCB 實際）</option><option value="sw">SW 之後（電路圖）</option></select><span></span></div>
+      <div class="row"><span>Stimulator 漏電</span><select id="qs"><option value="pcb" selected>原樣（Q_sense 的 E 接 V+）</option><option value="sw">修正：Q_sense 的 E 改接 SW 後</option><option value="rx">修正：Q_pass E–B 並 22 kΩ</option></select><span></span></div>
+      <div class="row"><span>SO 的 R2</span><select id="so_r2"><option value="100">100 Ω（套件給錯的）</option><option value="1e6" selected>1 MΩ（助教指定）</option><option value="3e6">3 MΩ（PCB 標示）</option></select><span></span></div>
       <div class="row"><span>探棒</span><select id="probe"><option value="1e7" selected>×10（10 MΩ）</option><option value="1e6">×1（1 MΩ）</option></select><span></span></div>
     </div>
     <fieldset>
@@ -188,11 +192,13 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
 <section class="notes">
   <h2>可以試試看</h2>
   <ul>
-    <li><b>全部接好</b>：剛開（或按「斷電重置」）時，用典型參數模擬會看到 Vm 每 0.2 秒左右自己冒一個 0.5→1.4 V 的小峰。實際電路不一定會這樣，大約一半的參數組合會安靜地停在 0.4–0.7 V。</li>
-    <li><b>全部接好再按 SW</b>：時間/div 調到 10 ms、觸發 1 V、Single，在兩個小峰之間按一下。開頭 10–20 ms 有一個約 1–2 V 的小峰，接著 Slow out 把 Vm 鉗在約 0.7 V，按住期間一直停在那裡。</li>
+    <li><b>目前電路（R2 = 1 MΩ）</b>：剛開（或按「斷電重置」）時，Vm 每 0.13 秒左右自己冒一個約 1.5 V 的小峰，和實測（約每 0.1 秒、1.6 V）相符。按住 SW 時模型停在約 0.78 V；實測是在 0.6–1.0 V 之間 40 Hz 震盪，平均值相同。模型剛好在會不會震盪的邊緣：R13 換成 50 kΩ 就會 36 Hz 震盪。</li>
+    <li><b>SO 的 R2 切成 100 Ω</b>，按一下 SW：FI 鎖在約 2.4 V 下不來。這就是套件給錯電阻時看到的現象。</li>
+    <li><b>修正 1</b>（Stimulator 漏電選「Q_sense 的 E 改接 SW 後」或「Q_pass E–B 並 22 kΩ」）：小峰消失，Vm 靜止在 0 V；按 SW 才有一個 AP。</li>
+    <li><b>修正 1 + 2</b>（再把 R13 換成 10 kΩ）：按下 SW 有約 6 V 的 AP，按住時連續發放。時間/div 用 20–50 ms、觸發 1 V、Single 抓第一個。</li>
     <li><b>斷開 SO:Vm</b>：FI 會自己（或按一下 SW 後）鎖在約 3 V，下不來（測試 9、10d）。只有「斷電重置」或斷開 FI:V+ 能讓它回來。</li>
     <li><b>斷開 FI:V+</b>，CH2 選 FI.V+：這支腳跟著 Vm 走，只比 Vm 小一點（測試 7）。</li>
-    <li><b>電路圖數值</b>（R13 = 1 kΩ）：AP 變成接近 8 V 的完整尖峰。對照 PCB 的 100 kΩ，就知道為什麼實際電路的 AP 這麼小。</li>
+    <li><b>電路圖數值</b>（9 V、R13 = 1 kΩ、R2 = 3 MΩ）：AP 變成接近 8 V 的完整尖峰。</li>
     <li>模型沒有 60 Hz 雜訊，所以浮接的腳在這裡是平的；實際示波器上會看到上下震盪。</li>
   </ul>
 </section>
@@ -213,7 +219,7 @@ var AM = (function(){
   NODES.forEach(function(n, i){ IDX[n] = i; });
 
   var st = {
-    vplus:7.8, sw:false, rpot:0, r13:1e5, rfe:1e5, qs:'pcb', rprobe:1e7, ch2:'',
+    vplus:7.8, sw:false, rpot:0, r13:1e5, rfe:1e5, qs:'pcb', so_r2:1e6, rprobe:1e7, ch2:'',
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true
   };
   var V = new Float64Array(N), Vprev = new Float64Array(N);
@@ -231,6 +237,7 @@ var AM = (function(){
     r('ST.K', 'ST.Q', 7e3);
     Q.push(['p', IDX['Vm'], IDX['ST.R'], IDX['ST.Q'], M4403, 'pass']);
     Q.push(['p', IDX['ST.R'], IDX['ST.Q'], st.qs === 'sw' ? IDX['ST.P'] : IDX['V+'], M4403, 'sense']);
+    if(st.qs === 'rx') r('ST.Q', 'ST.R', 22e3);      /* fix: 22 kohm across Qpass E-B */
     r('ST.R', 'GND', 7e3);
     /* Leak */
     r('Vm', 'LK.Vm', link(st.leak));
@@ -248,7 +255,7 @@ var AM = (function(){
     r('SO.Vm', 'SO.S', 1e5);
     C.push([IDX['SO.S'], IDX['SO.GND'], 1e-6]);
     D.push([IDX['SO.S'], IDX['SO.B3']]);
-    r('SO.B3', 'SO.GND', 3e6);
+    r('SO.B3', 'SO.GND', st.so_r2);                 /* 3M-R2 position: TA 1 Mohm, kit 100 ohm */
     Q.push(['n', IDX['SO.B4'], IDX['SO.B3'], IDX['SO.GND'], M3904, 'so3904']);
     Q.push(['p', IDX['SO.C4'], IDX['SO.B4'], IDX['SO.Vm'], M4403, 'so4403']);
     r('SO.C4', 'SO.GND', 1e3);
@@ -406,12 +413,12 @@ var SCH = MembraneSchematic(document.getElementById('sch'), {live:true});
   function readControls(){
     st.rpot = +$('pot').value * 1e3; st.vplus = +$('vplus').value;
     st.r13 = +$('r13').value; st.rfe = +$('rfe').value; st.qs = $('qs').value; st.rprobe = +$('probe').value;
-    st.ch2 = $('ch2').value;
+    st.ch2 = $('ch2').value; st.so_r2 = +$('so_r2').value;
     document.querySelectorAll('#contacts input').forEach(function(c){ st[c.dataset.c] = c.checked; });
     syncLabels(); syncSchematic(); rebuild();
   }
   ['pot', 'vplus'].forEach(function(id){ $(id).addEventListener('input', readControls); });
-  ['r13', 'rfe', 'qs', 'probe', 'ch2'].forEach(function(id){ $(id).addEventListener('change', readControls); });
+  ['r13', 'rfe', 'qs', 'so_r2', 'probe', 'ch2'].forEach(function(id){ $(id).addEventListener('change', readControls); });
   document.querySelectorAll('#contacts input').forEach(function(c){ c.addEventListener('change', readControls); });
 
   function toggleContact(key){
@@ -423,7 +430,7 @@ var SCH = MembraneSchematic(document.getElementById('sch'), {live:true});
     g.addEventListener('click', function(){ toggleContact(g.dataset.c); });
     g.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleContact(g.dataset.c); } });
   });
-  function syncSchematic(){ SCH.setContacts(st); SCH.setQsense(st.qs); SCH.setResistors(st.r13, st.rfe); }
+  function syncSchematic(){ SCH.setContacts(st); SCH.setQsense(st.qs); SCH.setResistors(st.r13, st.rfe, st.so_r2); }
 
   /* ---- SW ---- */
   function setSW(on){
@@ -453,17 +460,20 @@ var SCH = MembraneSchematic(document.getElementById('sch'), {live:true});
 
   /* ---- presets ---- */
   var PRESETS = {
-    pcb:{note:'PCB 實際值，所有接點都接上。用典型參數時，不按 SW 也會每 0.2 秒左右自己冒一個小峰；實際電路不一定會。'},
+    pcb:{note:'目前的電路：PCB 實際值、SO 的 R2 = 1 MΩ（助教指定）、所有接點都接上。不按 SW 時每 0.13 秒左右自己冒一個約 1.5 V 的小峰（實測：約每 0.1 秒、1.6 V）。原因是 Stimulator 放開時漏出的約 6 µA 把 Vm 墊在 FI 的門檻附近。'},
+    r2bad:{so_r2:'100', note:'SO 的 R2 用了套件給的 100 Ω：SO.B3 被拉到地，2N3904 永遠不導通，Slow out 只剩 100 kΩ 串一個二極體。按一下 SW，FI 就鎖在約 2.4 V 下不來（第二輪麵包板量到的現象）。'},
+    fix:{qs:'sw', note:'修正 1：Q_sense 的 E 改接到 SW 之後（照講義電路圖），放開時不再漏電，Vm 停在 0 V，不再自己冒小峰。但 R13 仍是 100 kΩ，AP 還是小：約 3.4 V，拔掉 FI 也有 2.9 V。'},
+    fixap:{qs:'sw', r13:'1e4', note:'修正 1 + 2：再把 R13 換成 10 kΩ。按下 SW 有約 6 V 的 AP，按住時約 20 Hz 連續發放（0.6–2.2 V）。R13 是 Q4 要改的電阻，換之前先問助教。'},
     t1:{fi_vplus:false, so_vm:false, note:'FI:V+ 和 SO:Vm 都斷開：按住 SW 出現平台，放開後平滑回到基線（測試 1）。'},
     so:{so_vm:false, note:'SO:Vm 斷開：FI 會自己（或按一下 SW 之後）鎖在約 3 V，下不來（測試 9、10d）。'},
     leak:{fi_vm:false, fi_vplus:false, fi_gnd:false, so_vm:false, so_gnd:false, note:'只有 ST + LK：基線約 0.6 V（Q_sense 漏電流），按住到約 7.1 V 上限（測試 10b）。'},
     ttx:{fi_vm:false, fi_vplus:false, fi_gnd:false, note:'拔掉 FI：剩被動反應，按住時仍被 Slow out 拉回約 0.7 V。'},
     tea:{so_vm:false, so_gnd:false, note:'拔掉 SO：FI 一觸發就沒有東西把 Vm 拉回來。'},
-    sch:{vplus:9, r13:'1e3', qs:'sw', note:'講義電路圖的數值：9 V、R13 = 1 kΩ、Q_sense 在 SW 之後。'}
+    sch:{vplus:9, r13:'1e3', qs:'sw', so_r2:'3e6', note:'講義電路圖的數值：9 V、R13 = 1 kΩ、Q_sense 在 SW 之後、SO 的 R2 = 3 MΩ。'}
   };
   function applyPreset(k){
     var p = PRESETS[k];
-    $('vplus').value = p.vplus || 7.8; $('r13').value = p.r13 || '1e5'; $('rfe').value = '1e5'; $('qs').value = p.qs || 'pcb';
+    $('vplus').value = p.vplus || 7.8; $('r13').value = p.r13 || '1e5'; $('rfe').value = '1e5'; $('qs').value = p.qs || 'pcb'; $('so_r2').value = p.so_r2 || '1e6';
     document.querySelectorAll('#contacts input').forEach(function(c){ c.checked = p[c.dataset.c] !== false; });
     $('presetNote').textContent = p.note;
     document.querySelectorAll('#presets .btn').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.p === k ? 'true' : 'false'); });

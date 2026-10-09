@@ -26,7 +26,8 @@ B3/E3 = 2N3904 base/emitter node, B4/E4/C4 = 2N4403 base/emitter/collector node.
                2N4403: E=FI.E4, B=FI.B4, C=FI.Vm;  R13 (PCB 100 kohm): FI.V+ -> FI.E4
   Slow out     contacts Vm--SO.Vm, GND--SO.GND
                100K-R1: SO.Vm -> SO.S;  C1 1 uF: SO.S -> SO.GND
-               D1 1N4148: SO.S -> SO.B3;  3M-R2: SO.B3 -> SO.GND
+               D1 1N4148: SO.S -> SO.B3;  3M-R2: SO.B3 -> SO.GND   (r_so_r2: PCB label 3 Mohm,
+                                                    TA spec 1 Mohm, kit shipped 100 ohm)
                2N3904: B=SO.B3, E=SO.GND, C=SO.B4
                2N4403: E=SO.Vm, B=SO.B4, C=SO.C4;  1K-R3: SO.C4 -> SO.GND
   Scope probe  10 Mohm from the probed node to GND (x10 probe)
