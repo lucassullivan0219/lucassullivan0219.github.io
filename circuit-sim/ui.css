@@ -69,7 +69,7 @@ canvas.plot.short{height:200px}
 table.data{border-collapse:collapse;width:100%;font-size:14px}
 table.data th,table.data td{border-bottom:1px solid var(--rule);padding:4px 8px;text-align:left;vertical-align:top}
 table.data th{color:var(--muted);font-weight:700;font-size:13px}
-table.data td.num{text-align:right;font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+table.data td.num{text-align:right;font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
 .scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .reads{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
 .read{border:1px solid var(--rule);border-radius:6px;padding:5px 9px;min-width:0}

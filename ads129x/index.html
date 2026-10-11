@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ADS129x 前端模擬</title>
+<meta name="description" content="ADS1299、ADS1294 與 ADS1299EEG-FE PDK 的電路與訊號模擬總覽：規格比較、模擬方法、極限，以及開發 ADS1299 電路時要注意的事。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../circuit-sim/ui.css">
+<link rel="stylesheet" href="afe.css">
+</head>
+<body>
+<div class="wrap">
+<div class="crumbs">
+  <a href="../">← All projects</a>
+  <a href="../circuit-sim/">電路模擬器</a>
+  <a href="test.html">模型測試</a>
+</div>
+<h1>ADS129x 前端模擬</h1>
+<p class="lede">TI 生醫類比前端的三個模擬，各自一頁。電極、導線、輸入濾波、BIAS／RLD 迴路、WCT 和人體對市電的耦合，用<a href="../circuit-sim/">電路模擬器</a>的引擎解（DC、AC、雜訊）；晶片內部照資料手冊做 PGA、sinc3、雜訊表、lead-off 比較器和 24-bit 輸出，即時產生資料。每頁都有示波器、頻譜、統計、前端電路分析和暫存器／初始化程式碼。</p>
+
+<div class="cards3">
+  <a class="card" href="ads1299/"><h3>ADS1299</h3><p>8 通道 EEG。參考式接法（SRB1）、BIAS 迴路、lead-off、測試訊號、Δ-Σ 與 sinc3 示意。10 個情境，從輸入短路雜訊到「單電源但人體接 0 V」。</p></a>
+  <a class="card" href="ads1294/"><h3>ADS1294</h3><p>4 通道 ECG。Lead I、II、V1、V2、WCT、RLD、節律器脈衝、HR／LP 模式；導出 III、aVR、aVL、aVF。</p></a>
+  <a class="card" href="ads1299-pdk/"><h3>ADS1299EEG-FE PDK</h3><p>TI 評估板。照 SLAU443B 的電路圖與跳線（JP1、JP6、JP8、JP25、J6），重現使用手冊第 7、8 章的測試並附手冊實測值。</p></a>
+</div>
+
+<section class="card" style="margin-top:16px">
+  <h2>規格比較（TI 資料手冊）</h2>
+  <div class="scroll-x">
+  <table class="data">
+    <thead><tr><th></th><th>ADS1299</th><th>ADS1294</th><th>ADS1299EEG-FE（PDK）</th></tr></thead>
+    <tbody>
+      <tr><td>通道</td><td>8（另有 -4、-6）</td><td>4（家族另有 ADS1296／1298；R 版有呼吸量測）</td><td>ADS1299 × 1；J6 36-pin 接頭、AIN1 SMA</td></tr>
+      <tr><td>增益</td><td>1、2、4、6、8、12、24</td><td>1、2、3、4、6、8、12</td><td>同 ADS1299</td></tr>
+      <tr><td>資料速率</td><td>250 SPS – 16 kSPS（fMOD = fCLK/2）</td><td>HR 500 SPS – 32 kSPS；LP 250 SPS – 16 kSPS</td><td>同 ADS1299</td></tr>
+      <tr><td>輸入雜訊</td><td>1 µVpp（增益 24、250 SPS、0.01–70 Hz）</td><td>4 µVpp（增益 6、150 Hz 頻寬）；表 1：3.5 µVpp</td><td>手冊實測：短路 &lt; 1 µVpp；5 kΩ 接 VCM 1.27 µVpp</td></tr>
+      <tr><td>類比電源／參考</td><td>5 V（單電源或 ±2.5 V）；內部 4.5 V</td><td>2.7–5.25 V；內部 2.4 V 或 4 V</td><td>出廠 5 V 單電源；可改 ±2.5 V</td></tr>
+      <tr><td>CMRR</td><td>−110 dB 最小、−120 dB 典型</td><td>−105 dB 最小、−115 dB 典型</td><td>還要看輸入濾波的元件誤差</td></tr>
+      <tr><td>輸入偏壓電流</td><td>±300 pA（最大）；PDK 手冊：典型 200 pA</td><td>200 pA（典型）</td><td>SRB1 共同參考時 8 個通道的電流都流進參考電極</td></tr>
+      <tr><td>Lead-off</td><td>直流、7.8 Hz、31.2 Hz、fDR/4；6 nA、24 nA、6 µA、24 µA</td><td>直流、fDR/4；6、12、18、24 nA 或 10 MΩ 電阻</td><td>韌體開機預設直流 6 nA、95 %</td></tr>
+      <tr><td>偏壓／參考</td><td>BIAS 放大器、SRB1、SRB2</td><td>RLD 放大器、WCT（3 個緩衝器）、節律器</td><td>BIAS_ELEC＝U11 緩衝中點；R8 392 kΩ ∥ C20 10 nF</td></tr>
+      <tr><td>功耗</td><td>約 5 mW／通道（8 通道 39 mW）</td><td>0.75 mW／通道（3 V）</td><td>由 MMB0 主板供電；手冊 §9.4 建議用電池（例如 4 顆 1.5 V），減少 50/60 Hz 干擾</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="card notes" style="margin-top:16px">
+  <h2>開發 ADS1299 電路時要注意的（模擬裡都可以試）</h2>
+  <ol>
+    <li><b>共模範圍</b>：PGA 輸出離電源要留 200 mV，可用的輸入共模大約是 AVSS + 0.2 V +（增益 × 最大差模 / 2）到 AVDD − 0.2 V −（同一項）。用 5 V 單電源時，一定要用 BIAS 把人體拉到 2.5 V；直接把人體接電路地，PGA 就飽和（ADS1299 頁「單電源但人體接 0 V」）。±2.5 V 雙電源時人體在 0 V 附近，比較寬鬆。</li>
+    <li><b>輸入濾波</b>：P、N 各一顆 4.99 kΩ，熱雜訊合計在 65 Hz 頻寬內約 0.1 µVrms，和晶片自己（0.14 µVrms）同一個量級，電阻不要再大。對地電容的 10 % 誤差會把 60 Hz 共模轉成差模；資料手冊建議用跨在 P、N 之間的差動電容，對地電容小 10–20 倍。</li>
+    <li><b>參考電極的漏電流</b>：SRB1 接法讓 8 個負輸入共用參考電極，200 pA × 8 = 1.6 nA，乘上乾電極的 MΩ 阻抗就是 mV 級偏移。用運放緩衝可以解決，但會多運放的雜訊（PDK §8.4）。</li>
+    <li><b>BIAS 迴路穩定性</b>：DC 增益 = Rf × 感測數 / 220 kΩ（資料手冊圖 38；式 11 寫 330 kΩ）。電極阻抗和導線電容會在迴路裡多加極點，「前端電路」分頁的共模頻率響應出現峰值，就表示相位餘裕不夠，要加大 Cf 或減少感測數。</li>
+    <li><b>Lead-off</b>：參考式接法時只在參考那一側用一個電流源（資料手冊 10.2.2）。要邊記錄邊量阻抗，用 fDR/4、nA 級電流（μA 級的雜訊會蓋過腦波）。資料手冊 10.1.2.1 的範例 <span class="kbd">LOFF 0x13</span> 是 ADS1298 的寫法，在 ADS1299 上 FLEAD_OFF = 11 是 fDR/4 交流。</li>
+    <li><b>資料速率</b>：EEG 用 250–1000 SPS；8 kSPS 以上量化雜訊開始主導（Δ-Σ 示意分頁）。sinc3 的 −3 dB 在 0.262 fDR，零點在 fDR 的整數倍；用內部振盪器時頻率有 ±0.5 %（25 °C）誤差。</li>
+    <li><b>SPI</b>：mode 1（CPOL = 0、CPHA = 1），多位元組指令之間要隔 4 tCLK；連續讀取模式下寫暫存器前要先送 SDATAC。每筆資料 24 bits 狀態 ＋ 8 × 24 bits，250 SPS 只要 54 kbit/s，但要在下一個 DRDY 前讀完。</li>
+  </ol>
+</section>
+
+<section class="card notes" style="margin-top:16px">
+  <h2>模擬怎麼做的、哪裡不準</h2>
+  <p>前端電路（電極 Randles 模型、導線、輸入 RC、輸入腳、BIAS／RLD 運放、WCT、市電—人體—大地—電路地的電容）是一個 MNA 電路，用 <a href="../circuit-sim/">circuit-sim</a> 的引擎解 DC 工作點、市電頻率的 AC 轉移、10 Hz 的「電極源 → 通道」混合矩陣、lead-off 激勵的轉移，以及伴隨法雜訊（再乘 sinc3 響應積分）。晶片內部是行為模型：PGA 兩個輸出各自限制在離電源 200 mV 內，sinc3 在 2–8 倍輸出速率下計算，加上資料手冊雜訊表的值，量化成 24-bit。</p>
+  <ul>
+    <li>晶片雜訊是表格的典型值、當白雜訊加；偏移是隨機抽的量級。沒有串音、增益誤差、INL、溫度漂移。</li>
+    <li>PGA 抽頭（BIAS 推導）和 WCT 緩衝器是理想受控源；PGA 頻寬、迴轉率沒有進時域模型。</li>
+    <li>電極是線性模型，沒有運動偽跡、電極的過量雜訊；腦波和心電是示意訊號。</li>
+    <li>ADS1294 的雜訊表從 PDF 的表格文字整理，若有個別數字錯位，以資料手冊為準。</li>
+  </ul>
+  <p class="src">資料來源：SBAS499C（ADS1299，2017）、SBAS459K（ADS1294／6／8，2015）、SLAU443B（ADS1299EEG-FE，2016）。<a href="test.html">模型測試</a>：暫存器值對照資料手冊上電流程、雜訊表、sinc3、PDK §8.2 雜訊、§7.2.2 交流 lead-off、WCT。</p>
+</section>
+<footer>這些頁面是開發輔助，不是醫療設備的設計驗證；接觸人體的電路請照醫療安全規範（IEC 60601）另行驗證。</footer>
+</div>
+</body>
+</html>

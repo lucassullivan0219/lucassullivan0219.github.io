@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ADS1294 前端模擬</title>
+<meta name="description" content="ADS1294 4 通道 ECG 前端的電路與訊號模擬：Lead I、Lead II、V1、V2，Wilson 中心端（WCT）、右腳驅動（RLD）、lead-off、HR／LP 模式與節律器脈衝；暫存器與初始化程式碼。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../circuit-sim/ui.css">
+<link rel="stylesheet" href="../afe.css">
+</head>
+<body>
+<div class="wrap">
+<div class="crumbs">
+  <a href="../../">← All projects</a>
+  <a href="../">ADS129x 前端模擬</a>
+  <a href="../ads1299/">ADS1299</a>
+  <a href="../ads1299-pdk/">ADS1299EEG-FE PDK</a>
+  <a href="../../circuit-sim/">電路模擬器</a>
+</div>
+<h1>ADS1294：4 通道 ECG 前端</h1>
+<p class="lede">ADS1294 是 ADS129x 家族的 4 通道版本（ADS1296／ADS1298 是 6／8 通道），為心電設計：內建 Wilson 中心端（WCT）、右腳驅動（RLD）和節律器偵測。這裡接成 CH1 = Lead I（LA − RA）、CH2 = Lead II（LL − RA）、CH3 = V1 − WCT、CH4 = V2 − WCT；RA、LA、LL 經 WCTA／B／C 平均出 WCT，WCT 腳在外部接到 IN3N、IN4N；右腳電極由 RLD 驅動。Lead III、aVR、aVL、aVF 由 CH1、CH2 計算（勾「導出導程」）。</p>
+
+<div id="app"></div>
+
+<section class="card notes" style="margin-top:16px">
+  <h2>和 ADS1299 不一樣的地方</h2>
+  <ul>
+    <li><b>電源與參考</b>：類比電源 2.7–5.25 V；內部參考 2.4 V（3 V 電源）或 4 V（VREF_4V = 1，只能用 5 V 電源）。ADS1299 固定 5 V 電源、4.5 V 參考。</li>
+    <li><b>兩種模式</b>：HR（fMOD = fCLK/4，500 SPS–32 kSPS）和 LP（fMOD = fCLK/8，250 SPS–16 kSPS，較省電）。雜訊表依電源（3 V／5 V）和模式分四張（資料手冊表 1–4）。</li>
+    <li><b>增益</b>：1、2、3、4、6、8、12，沒有 24；暫存器編碼 000 是 6（不是 1）。</li>
+    <li><b>雜訊</b>：增益 6、500 SPS 約 3.5 µVpp，是 ADS1299（增益 24、250 SPS 約 1 µVpp）的數倍；對 ECG（mV 級）足夠，對 EEG（µV 級）偏高。</li>
+    <li><b>Lead-off</b>：電流只有 6、12、18、24 nA，或 10 MΩ 上拉／下拉電阻；交流只有 fDR/4。沒有 SRB1／SRB2，參考用 WCT 或 RLD 輸入多工器。</li>
+    <li><b>WCT</b>：三個緩衝器經 3 × 30 kΩ 加總，內部 80 pF，建議外加 100 pF；驅動能力弱，只能接高阻抗輸入。雜訊：開一個 540 nVrms、兩個 382、三個 312（150 Hz 頻寬，資料手冊表 6）。</li>
+  </ul>
+  <h2 style="margin-top:14px">模型與極限</h2>
+  <ul>
+    <li>心電訊號：心臟電偶極是 P、Q、R、S、T 五個高斯波的和，投影到各電極的導程向量（RA、LA、LL 在 Einthoven 三角形上，平均為 0；V1、V2 主要朝前）。示意用，不是臨床波形；Lead II 的 R 波約 1.3 mV。</li>
+    <li>RLD 與 WCT 的緩衝器用受控電流源代表（理想緩衝、不吃輸入電流）；WCT 的 chopper 方波（約 5 mVpp）、WCT 腳的漏電流沒有模擬。</li>
+    <li>其餘同 ADS1299 頁：晶片雜訊用表格值、PGA 用 200 mV 餘裕硬限幅、sinc3 在 R 倍輸出速率計算。呼吸阻抗量測（ADS1294R 才有）與硬體節律器放大器沒有模擬。</li>
+  </ul>
+  <p class="src">資料來源：TI ADS1294／6／8 資料手冊 SBAS459K（2015）表 1–7、圖 35、43、暫存器表 16–35。</p>
+</section>
+<footer>電路部分用 <a href="../../circuit-sim/engine.js">circuit-sim/engine.js</a>；晶片部分見 <a href="../afe.js">afe.js</a>。<a href="../test.html">模型測試</a>。</footer>
+</div>
+<script src="../../circuit-sim/engine.js"></script>
+<script src="../../circuit-sim/plots.js"></script>
+<script src="../afe.js"></script>
+<script src="../afe-ui.js"></script>
+<script>
+var app = AFEApp({
+  kind: 'ads1294',
+  mount: document.getElementById('app'),
+  channelLabels: function () { return ['CH1 Lead I', 'CH2 Lead II', 'CH3 V1', 'CH4 V2']; },
+  maskLabels: ['1', '2', '3', '4'],
+  electrodeNames: function () { return ['RA', 'LA', 'LL', 'V1', 'V2', 'RL']; },
+  derived: [
+    {name: 'III', f: function (v) { return v[1] - v[0]; }},
+    {name: 'aVR', f: function (v) { return -(v[0] + v[1]) / 2; }},
+    {name: 'aVL', f: function (v) { return v[0] - v[1] / 2; }},
+    {name: 'aVF', f: function (v) { return v[1] - v[0] / 2; }}
+  ],
+  presets: [
+    {id: 'ecg', label: '標準 ECG（3 V、HR 500 SPS）', note: '3 V 單電源、VREF 2.4 V、HR 模式 500 SPS、增益 6；RLD 由 RA、LA、LL 驅動（1 MΩ ∥ 1.5 nF，51 kΩ 保護電阻）；WCT = RA、LA、LL 平均，外加 100 pF。顯示濾波「0.5–40 Hz＋市電陷波」。勾「導出導程」看 III、aVR、aVL、aVF。', scale: '5e-4', dfilt: 'ecg'},
+    {id: 'short', label: '輸入短路雜訊', note: 'MUX = 001。3 V、HR、500 SPS、增益 6 時資料手冊表 1 是 0.6 µVrms、3.5 µVpp（電氣特性表：256 點 4 µVpp 典型）。換成 5 V／LP 或其他增益，看表 2–4 的數字。', tab: 'stats', scale: '5e-6', dfilt: 'raw',
+      set: function (s) { s.mux = [1, 1, 1, 1]; }},
+    {id: 'test', label: '內部測試訊號', note: 'CONFIG2 = 10h、CHnSET = 15h（增益 1、MUX 101）：±VREF/2400 = ±1 mV、約 0.98 Hz 方波。', scale: '1e-3', dfilt: 'raw',
+      set: function (s) { s.testInt = true; s.mux = [5, 5, 5, 5]; s.gain = [1, 1, 1, 1]; }},
+    {id: 'pace', label: '節律器脈衝（HR 8 kSPS）', note: '每拍前有 0.5 ms、5 mV 的節律器脈衝。500 SPS 時 sinc3 頻寬只有 131 Hz，脈衝被抹平；改成 HR 8 kSPS（−3 dB 2.1 kHz）才看得清楚，這就是 ADS129x 支援「軟體節律器偵測」需要高資料速率的原因。時間改成 2 s。', scale: 'auto', dfilt: 'raw',
+      set: function (s) { s.dr = 2; s.sig.pace = true; }},
+    {id: 'lp', label: 'LP 模式 250 SPS', note: '低功耗模式（CONFIG1.HR = 0）：fMOD = fCLK/8，最低 250 SPS。對照雜訊表 2（3 V、LP）。', scale: '5e-4', dfilt: 'ecg',
+      set: function (s) { s.hr = false; s.dr = 6; }},
+    {id: 'nowct', label: '胸導程沒有 WCT', note: '把 WCTA／B／C 都關掉：WCT 腳只剩 80 pF＋100 pF 和輸入漏電，IN3N、IN4N 等於浮接。V1、V2 通道的直流飄到哪裡由輸入偏壓電流決定，市電干擾也大增（看「前端電路」）。', tab: 'fe', scale: 'auto', dfilt: 'dc',
+      set: function (s) { s.wctA = ''; s.wctB = ''; s.wctC = ''; }},
+    {id: 'leadoff', label: 'RA 脫落＋直流 lead-off', note: 'LOFF：直流電流源 6 nA、95 %／5 %、FLEAD = 11；LOFF_SENSP／N = 0Fh、CONFIG4 = 02h。RA 拿掉後 IN1N、IN2N 被下拉到 AVSS，LOFF_STATN 亮 bit 0、1；Lead I、Lead II 飽和，V1、V2 也因 WCT 少了一個輸入而偏掉。', scale: 'auto', dfilt: 'raw',
+      set: function (s) { s.loffMode = 'dc'; s.ilead = 0; s.loffP = 0x0F; s.loffN = 0x0F; s.compOn = true; s.contact = {RA: false}; }},
+    {id: 'rldoff', label: '關 RLD＋插電筆電', note: 'RLD 關掉、改用 USB 接插電筆電（電路地對大地 200 pF），電極阻抗不匹配 ±50 %：人體 60 Hz 共模變大，經阻抗不匹配變成差模。', tab: 'fe', scale: '5e-4', dfilt: 'dc',
+      set: function (s) { s.biasOn = false; s.env.Ciso = 200e-12; s.zSpread = 0.5; }},
+    {id: 'v5', label: '5 V、VREF 4 V', note: '5 V 電源加 VREF_4V：輸入範圍從 ±0.4 V 變 ±0.67 V（增益 6），適合大的電極偏移或運動偽跡；雜訊改看表 3。', scale: '5e-4', dfilt: 'ecg',
+      set: function (s) { s.avdd = 5; s.vref4 = true; }}
+  ]
+});
+</script>
+</body>
+</html>

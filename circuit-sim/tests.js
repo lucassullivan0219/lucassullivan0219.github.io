@@ -164,6 +164,23 @@ test('astable multivibrator oscillates with half periods 0.69*RB*C (step cutting
   close(lo, 0.693 * 47e3 * 4.7e-6, 0.08 * 0.153, 'short half period');
   close(hi, 0.693 * 47e3 * 10e-6, 0.08 * 0.326, 'long half period');
 });
+test('acMulti and noiseMulti agree with ac and noise (pivoting with several sources)', function () {
+  var c = new CS.Circuit();
+  c.V('VM', 'MID', '0', 1.5); c.V('Vs', 'in', 'MID', {dc: 0, ac: 1}); c.V('Vt', 'in2', 'MID', {dc: 0, ac: 0});
+  c.U('U', 'BREF', 'INV', 'OUT', {A0: 1e5, GBW: 100e3, VMAX: 2.95, VMIN: 0.05, ROUT: 50, EN: 20e-9});
+  c.R('Rb', 'MID', 'BREF', 1); c.R('Rf', 'OUT', 'INV', 1e6); c.C('Cf', 'OUT', 'INV', 1.5e-9);
+  c.G('G1', '0', 'INV', 'in', '0', 1 / 220e3); c.R('Rt1', 'INV', '0', 220e3);
+  c.G('G2', '0', 'INV', 'in2', '0', 1 / 220e3); c.R('Rt2', 'INV', '0', 220e3);
+  var s = new CS.Sim(c); ok(s.op().ok);
+  close(Math.hypot.apply(null, s.vac(s.ac(10), 'OUT')), 1e6 / 220e3 / Math.hypot(1, 2 * Math.PI * 10 * 1e6 * 1.5e-9), 0.01, '|ac|');
+  var m = s.acMulti(10, [{name: 'Vs', mag: 1}, {name: 'Vt', mag: 2}]);
+  var a = s.vac(s.ac(10, {Vs: [1, 0]}), 'OUT'), b = s.vac(m[0], 'OUT');
+  close(b[0], a[0], 1e-9, 'acMulti re'); close(b[1], a[1], 1e-9, 'acMulti im');
+  var b2 = s.vac(m[1], 'OUT'), a2 = s.vac(s.ac(10, {Vt: [2, 0]}), 'OUT');
+  close(b2[0], a2[0], 1e-9, 'second source');
+  var f = [1, 10, 100, 1000], n1 = s.noise('OUT', null, f), n2 = s.noiseMulti([['OUT', null]], f)[0];
+  for (var k = 0; k < f.length; k++) close(n2.total[k] / n1.total[k], 1, 1e-6, 'noise at ' + f[k] + ' Hz');
+});
 test('SPICE export lists every element', function () {
   var txt = CS.toSpice(membrane(true), {title: 'membrane'});
   ok(/^Qpass Vm ST\.R ST\.Q Q_Qpass$/m.test(txt), 'BJT line');

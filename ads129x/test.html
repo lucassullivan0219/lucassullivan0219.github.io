@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ADS129x model tests</title>
+<style>
+:root{--bg:#fafaf7;--fg:#1c1c1a;--ok:#2e7d4f;--bad:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#161614;--fg:#ecece6;--ok:#6fcf97;--bad:#ff7b6b}}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 ui-monospace,Consolas,monospace;padding:24px 16px}
+li.ok{color:var(--ok)} li.fail{color:var(--bad);font-weight:700}
+#sum{font-size:16px;font-weight:700}
+</style>
+</head>
+<body>
+<p><a href="./">← ADS129x 前端模擬</a></p>
+<h1>ADS129x 模型測試</h1>
+<p>暫存器編碼對照資料手冊範例、資料速率、雜訊表、sinc3、前端電路（PDK 第 8.2 節雜訊、WCT、lead-off）。</p>
+<p id="sum">執行中…</p>
+<ul id="out"></ul>
+<script src="../circuit-sim/engine.js"></script>
+<script src="afe.js"></script>
+<script src="tests.js"></script>
+<script>
+var r = runTests(document.getElementById('out'));
+document.getElementById('sum').textContent = r.pass + ' / ' + r.total + ' 通過';
+</script>
+</body>
+</html>

@@ -52,7 +52,7 @@
     var a = Math.abs(v);
     for (var i = 0; i < PREFIX.length; i++) {
       if (a >= PREFIX[i][0] * 0.99995) {
-        var s = (v / PREFIX[i][0]).toPrecision(digits);
+        var xv = v / PREFIX[i][0], s = Math.abs(xv) >= Math.pow(10, digits) - 0.5 ? xv.toFixed(0) : xv.toPrecision(digits);
         if (s.indexOf('e') < 0 && s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
         return s + ' ' + PREFIX[i][1] + unit;
       }
@@ -193,10 +193,61 @@
     return true;
   }
 
+  /* complex LU with partial pivoting, kept for several right-hand sides */
+  function luComplex(Ar, Ai, n) {
+    var piv = new Int32Array(n);
+    for (var c = 0; c < n; c++) {
+      var p = c, best = Ar[c * n + c] * Ar[c * n + c] + Ai[c * n + c] * Ai[c * n + c];
+      for (var r = c + 1; r < n; r++) {
+        var v = Ar[r * n + c] * Ar[r * n + c] + Ai[r * n + c] * Ai[r * n + c];
+        if (v > best) { best = v; p = r; }
+      }
+      piv[c] = p;
+      if (best < 1e-300) return null;
+      /* LINPACK style: swap only columns c.. so earlier multipliers stay put; luSolveComplex
+         then applies each interchange just before its elimination step */
+      if (p !== c) for (var k = c; k < n; k++) {
+        var t = Ar[c * n + k]; Ar[c * n + k] = Ar[p * n + k]; Ar[p * n + k] = t;
+        t = Ai[c * n + k]; Ai[c * n + k] = Ai[p * n + k]; Ai[p * n + k] = t;
+      }
+      var pr = Ar[c * n + c], pi = Ai[c * n + c], pd = pr * pr + pi * pi;
+      for (r = c + 1; r < n; r++) {
+        var ar = Ar[r * n + c], ai = Ai[r * n + c];
+        if (ar === 0 && ai === 0) continue;
+        var fr = (ar * pr + ai * pi) / pd, fi = (ai * pr - ar * pi) / pd;
+        Ar[r * n + c] = fr; Ai[r * n + c] = fi;                     // L below the diagonal
+        for (k = c + 1; k < n; k++) {
+          var cr = Ar[c * n + k], ci = Ai[c * n + k];
+          Ar[r * n + k] -= fr * cr - fi * ci; Ai[r * n + k] -= fr * ci + fi * cr;
+        }
+      }
+    }
+    return {Ar: Ar, Ai: Ai, piv: piv, n: n};
+  }
+  function luSolveComplex(lu, br, bi) {
+    var n = lu.n, Ar = lu.Ar, Ai = lu.Ai, piv = lu.piv, r, k, t;
+    for (r = 0; r < n; r++) {
+      var p = piv[r];
+      if (p !== r) { t = br[r]; br[r] = br[p]; br[p] = t; t = bi[r]; bi[r] = bi[p]; bi[p] = t; }
+      for (k = r + 1; k < n; k++) {
+        var fr = Ar[k * n + r], fi = Ai[k * n + r];
+        if (fr === 0 && fi === 0) continue;
+        br[k] -= fr * br[r] - fi * bi[r]; bi[k] -= fr * bi[r] + fi * br[r];
+      }
+    }
+    for (r = n - 1; r >= 0; r--) {
+      var sr = br[r], si = bi[r];
+      for (k = r + 1; k < n; k++) { var mr = Ar[r * n + k], mi = Ai[r * n + k]; sr -= mr * br[k] - mi * bi[k]; si -= mr * bi[k] + mi * br[k]; }
+      var dr = Ar[r * n + r], di = Ai[r * n + r], dd = dr * dr + di * di;
+      br[r] = (sr * dr + si * di) / dd; bi[r] = (si * dr - sr * di) / dd;
+    }
+  }
+
   /* ================= circuit ================= */
   var TYPES = {
     R: {pins: 2}, C: {pins: 2}, L: {pins: 2, br: 1}, V: {pins: 2, br: 1}, I: {pins: 2},
-    D: {pins: 2}, SW: {pins: 2}, Q: {pins: 3}, M: {pins: 3}, U: {pins: 3, xi: 1}
+    D: {pins: 2}, SW: {pins: 2}, Q: {pins: 3}, M: {pins: 3}, U: {pins: 3, xi: 1},
+    G: {pins: 4}        // VCCS: current gm*(v(c+) - v(c-)) from n+ through the element to n- (programmatic only)
   };
 
   function Circuit() {
@@ -227,6 +278,7 @@
   Circuit.prototype.V = function (n, a, b, p) { return this.add('V', n, [a, b], typeof p === 'object' ? p : {wave: p}); };
   Circuit.prototype.I = function (n, a, b, p) { return this.add('I', n, [a, b], typeof p === 'object' ? p : {wave: p}); };
   Circuit.prototype.U = function (n, ip, im, o, p) { return this.add('U', n, [ip, im, o], p); };
+  Circuit.prototype.G = function (n, a, b, cp, cm, gm) { return this.add('G', n, [a, b, cp, cm], {value: gm}); };
 
   var DEFAULTS = {
     D: {IS: 2.52e-9, N: 1.752, BV: 0, CJ: 4e-12},                        // 1N4148-like
@@ -252,7 +304,7 @@
       if (out.VC === undefined) out.VC = 0;
     }
     ['value', 'IS', 'N', 'BV', 'BF', 'BR', 'CJ', 'CJE', 'CJC', 'KP', 'VT', 'LAMBDA', 'A0', 'GBW', 'VMAX', 'VMIN', 'ROUT', 'ILIM', 'VOS', 'EN', 'FC', 'IN',
-      'RON', 'ROFF', 'ac', 'acph', 'NOISE', 'VC'].forEach(function (key) {
+      'RON', 'ROFF', 'ac', 'acph', 'NOISE', 'NFC', 'VC'].forEach(function (key) {
       if (typeof out[key] === 'string') out[key] = num(out[key]);
     });
     if (typeof out.on === 'string') out.on = !/^(off|0|false|open)$/i.test(out.on);
@@ -352,6 +404,12 @@
         case 'R': G(a, b, 1 / p.value); break;
         case 'SW': G(a, b, 1 / (p.on ? p.RON : p.ROFF)); break;
         case 'C': break;
+        case 'G': {
+          var gmv = p.value, ig = gmv * (V(u[2]) - V(u[3]));
+          aF(a, ig); aF(b, -ig);
+          aJ(a, u[2], gmv); aJ(a, u[3], -gmv); aJ(b, u[2], -gmv); aJ(b, u[3], gmv);
+          break;
+        }
         case 'L': {
           var k = el.br;
           aF(a, x[k]); aF(b, -x[k]); aJ(a, k, 1); aJ(b, k, -1);
@@ -615,6 +673,7 @@
     switch (el.type) {
       case 'R': return (V(u[0]) - V(u[1])) / p.value;
       case 'SW': return (V(u[0]) - V(u[1])) / (p.on ? p.RON : p.ROFF);
+      case 'G': return p.value * (V(u[2]) - V(u[3]));
       case 'C': {
         if (!this.dt || !this.xlast) return 0;
         var xl = this.xlast, la = u[0] < 0 ? 0 : xl[u[0]], lb = u[1] < 0 ? 0 : xl[u[1]];
@@ -698,6 +757,75 @@
     }
     if (!solveComplex(M.Ar, M.Ai, br, bi, n)) return null;
     return {re: br, im: bi};
+  };
+  /* several separate excitations at one frequency, one factorisation: list = [{name, mag, ph}] -> [{re, im}] */
+  Sim.prototype.acMulti = function (f, list) {
+    var n = this.n, M = this.acMatrix(f), lu = luComplex(M.Ar, M.Ai, n), out = [], self = this;
+    if (!lu) return null;
+    list.forEach(function (s) {
+      var el = self.c.byName[s.name], br = new Float64Array(n), bi = new Float64Array(n);
+      var mag = s.mag === undefined ? 1 : s.mag, ph = (s.ph || 0) * Math.PI / 180, re = mag * Math.cos(ph), im = mag * Math.sin(ph);
+      if (el.type === 'V') { br[el.br] = re; bi[el.br] = im; }
+      else {
+        if (el.u[0] >= 0) { br[el.u[0]] -= re; bi[el.u[0]] -= im; }
+        if (el.u[1] >= 0) { br[el.u[1]] += re; bi[el.u[1]] += im; }
+      }
+      luSolveComplex(lu, br, bi);
+      out.push({re: br, im: bi});
+    });
+    return out;
+  };
+  /* output noise of several differential outputs [[p, n], ...] with one factorisation per frequency.
+     Returns [{total: Float64Array, parts: {name: Float64Array}}] like noise(); V/I sources may carry
+     NOISE= (density) and NFC= (1/f corner). */
+  Sim.prototype.noiseMulti = function (outs, freqs, opts) {
+    opts = opts || {};
+    var n = this.n, els = this.c.elements, self = this, x = this.x, idx = this.c.nodeIdx;
+    function V(i) { return i < 0 ? 0 : x[i]; }
+    this.linearize();
+    var res = outs.map(function () {
+      var o = {total: new Float64Array(freqs.length), parts: {}};
+      if (opts.parts !== false) els.forEach(function (el) { o.parts[el.name] = new Float64Array(freqs.length); });
+      return o;
+    });
+    var src = [];
+    els.forEach(function (el) {
+      var p = el.p, u = el.u;
+      if (el.type === 'R') src.push({el: el, a: u[0], b: u[1], s: 4 * KT / p.value});
+      else if (el.type === 'D') src.push({el: el, a: u[0], b: u[1], s: 2 * QE * Math.abs(self.i(el))});
+      else if (el.type === 'Q') {
+        var pc = self.pinCurrents(el);
+        src.push({el: el, a: u[0], b: u[2], s: 2 * QE * Math.abs(pc[0])});
+        src.push({el: el, a: u[1], b: u[2], s: 2 * QE * Math.abs(pc[1])});
+      }
+      else if (el.type === 'M') src.push({el: el, a: u[0], b: u[2], s: 8 / 3 * KT * Math.abs(mosfet(p, V(u[0]), V(u[1]), V(u[2])).gm)});
+      else if (el.type === 'U') {
+        if (p.EN) src.push({el: el, a: el.xi, b: -1, s: opampGm() * opampGm() * p.EN * p.EN, fc: p.FC || 0});
+        if (p.IN) { src.push({el: el, a: u[0], b: -1, s: p.IN * p.IN}); src.push({el: el, a: u[1], b: -1, s: p.IN * p.IN}); }
+      }
+      else if (el.type === 'V' && p.NOISE) src.push({el: el, a: el.br, b: -1, s: p.NOISE * p.NOISE, fc: p.NFC || 0});
+      else if (el.type === 'I' && p.NOISE) src.push({el: el, a: u[0], b: u[1], s: p.NOISE * p.NOISE, fc: p.NFC || 0});
+    });
+    for (var k = 0; k < freqs.length; k++) {
+      var M = this.acMatrix(freqs[k]), Tr = new Float64Array(n * n), Ti = new Float64Array(n * n), f = freqs[k];
+      for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) { Tr[c * n + r] = M.Ar[r * n + c]; Ti[c * n + r] = M.Ai[r * n + c]; }
+      var lu = luComplex(Tr, Ti, n);
+      if (!lu) continue;
+      for (var oi = 0; oi < outs.length; oi++) {
+        var o = outs[oi], yr = new Float64Array(n), yi = new Float64Array(n), ip = idx[o[0]], im = o[1] ? idx[o[1]] : 0;
+        if (ip > 0) yr[ip - 1] += 1;
+        if (im > 0) yr[im - 1] -= 1;
+        luSolveComplex(lu, yr, yi);
+        var R = res[oi];
+        for (var q = 0; q < src.length; q++) {
+          var sq = src[q], ar = sq.a >= 0 ? yr[sq.a] : 0, ai = sq.a >= 0 ? yi[sq.a] : 0, b2r = sq.b >= 0 ? yr[sq.b] : 0, b2i = sq.b >= 0 ? yi[sq.b] : 0;
+          var v = sq.s * (1 + (sq.fc || 0) / f) * ((ar - b2r) * (ar - b2r) + (ai - b2i) * (ai - b2i));
+          R.total[k] += v;
+          if (R.parts[sq.el.name]) R.parts[sq.el.name][k] += v;
+        }
+      }
+    }
+    return res;
   };
   Sim.prototype.vac = function (res, node) {
     var id = typeof node === 'number' ? node : this.c.nodeIdx[node];
@@ -957,6 +1085,7 @@
         case 'C': L.push(pre('C', name) + ' ' + n[0] + ' ' + n[1] + ' ' + spiceNum(p.value)); break;
         case 'L': L.push(pre('L', name) + ' ' + n[0] + ' ' + n[1] + ' ' + spiceNum(p.value)); break;
         case 'SW': L.push(pre('R', name) + ' ' + n[0] + ' ' + n[1] + ' ' + spiceNum(p.on ? p.RON : p.ROFF) + ' ; switch ' + (p.on ? 'closed' : 'open')); break;
+        case 'G': L.push(pre('G', name) + ' ' + n[0] + ' ' + n[1] + ' ' + n[2] + ' ' + n[3] + ' ' + spiceNum(p.value)); break;
         case 'V': case 'I': {
           var w = p.w, s = pre(el.type, name) + ' ' + n[0] + ' ' + n[1] + ' DC ' + spiceNum(w.dc);
           if (p.ac) s += ' AC ' + spiceNum(p.ac) + (p.acph ? ' ' + p.acph : '');
@@ -1013,7 +1142,7 @@
   global.CircuitSim = {
     Circuit: Circuit, Sim: Sim, parseDoc: parseDoc, buildFromDoc: buildFromDoc, toSpice: toSpice,
     num: num, fmt: fmt, spiceNum: spiceNum, makeWave: makeWave, integrate: integrate, logspace: logspace,
-    rng: rng, gauss: gauss, pinsOf: pinsOf, TYPES: TYPES, KT: KT, QE: QE, VT: VT,
+    rng: rng, gauss: gauss, pinsOf: pinsOf, TYPES: TYPES, KT: KT, QE: QE, VT: VT, luComplex: luComplex, luSolveComplex: luSolveComplex,
     _solveReal: solveReal, _solveComplex: solveComplex
   };
 })(typeof window !== 'undefined' ? window : this);

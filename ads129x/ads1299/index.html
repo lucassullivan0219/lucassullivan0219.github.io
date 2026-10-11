@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ADS1299 前端模擬</title>
+<meta name="description" content="ADS1299 8 通道 EEG 前端的電路與訊號模擬：電極、輸入濾波、SRB1 參考、BIAS 迴路、市電耦合用電路模擬器解，晶片內部用資料手冊的 PGA、sinc3、雜訊表；即時輸出、頻譜、統計、暫存器與初始化程式碼。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../circuit-sim/ui.css">
+<link rel="stylesheet" href="../afe.css">
+</head>
+<body>
+<div class="wrap">
+<div class="crumbs">
+  <a href="../../">← All projects</a>
+  <a href="../">ADS129x 前端模擬</a>
+  <a href="../ads1294/">ADS1294</a>
+  <a href="../ads1299-pdk/">ADS1299EEG-FE PDK</a>
+  <a href="../../circuit-sim/">電路模擬器</a>
+</div>
+<h1>ADS1299：8 通道 EEG 前端</h1>
+<p class="lede">參考式接法（資料手冊圖 73）：Fp1、Fp2、C3、C4、P3、P4、O1、O2 接 IN1P–IN8P，參考電極接 SRB1（MISC1.SRB1 = 1），BIAS 電極由晶片的 BIAS 放大器驅動。電極、導線、輸入 RC、輸入腳、BIAS 迴路和人體對市電的耦合是一個真的電路，用<a href="../../circuit-sim/">電路模擬器</a>解 DC、AC 和雜訊；晶片內部照資料手冊做 PGA（含 200 mV 餘裕）、sinc3、雜訊表和 24-bit 輸出。改任何設定都會重算，暫存器分頁同步給出要寫的值。</p>
+
+<div id="app"></div>
+
+<section class="card notes" style="margin-top:16px">
+  <h2>這頁怎麼算的</h2>
+  <ol>
+    <li><b>前端電路</b>：每個電極是 Randles 模型（Rs 串 Rct ∥ Cdl）加一個電壓源（半電池電位當 DC、訊號用 AC 求轉移），經接觸開關、導線電容到輸入 RC，再到輸入腳（20 pF、1 GΩ、200 pA 偏壓電流）。BIAS 放大器是運放巨集模型（GBW 100 kHz、短路電流 1.1 mA、2 µVrms 雜訊）；每個被選的輸入以 220 kΩ 接到 BIASINV（用受控電流源代表 PGA 抽頭，不吃輸入電流）。人體經 Cpow 耦合到市電、經 Cbody 對大地，電路地經 Ciso 對大地。</li>
+    <li><b>電路分析</b>：DC 工作點給出每個輸入的電壓（檢查 PGA 共模範圍、lead-off 比較器）；在市電頻率（和 3 次諧波）解 AC 得到每通道的差模干擾；在 10 Hz 解每個電極源到每個通道的轉移（混合矩陣）；lead-off 激勵電流的轉移就是電極阻抗；伴隨法雜訊分析給出每個電阻、放大器的雜訊，乘上 sinc3 的響應後積分。</li>
+    <li><b>晶片行為模型</b>：輸入 = 混合後的腦波 + 市電 + lead-off 方波 + DC；PGA 兩個輸出各自限制在離電源 200 mV 內；以 R 倍輸出速率（R = 2–8）做 sinc3 抽取（和 1.024 MHz 下的真實響應差 &lt; 0.3 dB）；加上資料手冊表 1–4 的輸入雜訊（依增益、資料速率）；量化成 24-bit 二補數。</li>
+    <li><b>腦波</b>：1/f 背景（部分共同）、後腦 10.2 Hz alpha（閉眼時約 30 µV）、Fp1／Fp2 眨眼（約 150 µV）、顳側肌電。是示意訊號，不是真實記錄。</li>
+  </ol>
+  <h2 style="margin-top:14px">極限</h2>
+  <ul>
+    <li>PGA 抽頭用輸入腳電壓近似（真實的抽頭在 PGA 輸出，含放大後的差模成分）；BIAS 的加總電阻資料手冊圖 38 寫 220 kΩ、式 11 寫 330 kΩ，這裡用 220 kΩ。</li>
+    <li>晶片雜訊用表格值當白雜訊加在輸出端；沒有模擬 1/f 形狀、通道間串音、增益誤差、INL。偏移是隨機抽的典型量級，不是某顆晶片的實測。</li>
+    <li>PGA 頻寬（增益 24 時 27 kHz）和迴轉率沒有進時域模型；輸入超過 PGA 共模範圍時用硬限幅近似。</li>
+    <li>電極模型是線性的、沒有運動偽跡與電極本身的過量雜訊；市電耦合用集總電容。</li>
+    <li>交流 lead-off 用方波的 1、3、5 次諧波合成；直流 lead-off 的電流源有 50 mV 的順從電壓。</li>
+  </ul>
+  <p class="src">資料來源：TI ADS1299 資料手冊 SBAS499C（2017）表 1–5、圖 18、38、72–73、暫存器表 11–28；ADS1299EEG-FE 使用手冊 SLAU443B（偏壓電流 200 pA）。模型測試：<a href="../test.html">ADS129x 模型測試</a>、<a href="../../circuit-sim/test.html">電路引擎測試</a>。</p>
+</section>
+<footer>電路部分用 <a href="../../circuit-sim/engine.js">circuit-sim/engine.js</a>（修正節點分析、伴隨法雜訊）；晶片部分見 <a href="../afe.js">afe.js</a>。</footer>
+</div>
+<script src="../../circuit-sim/engine.js"></script>
+<script src="../../circuit-sim/plots.js"></script>
+<script src="../afe.js"></script>
+<script src="../afe-ui.js"></script>
+<script>
+var FS1299 = [1, 2, 4, 6, 8, 12, 24];
+var app = AFEApp({
+  kind: 'ads1299',
+  mount: document.getElementById('app'),
+  deltaSigma: true,
+  electrodeNames: function (st) { return st.labels.concat(['REF', 'BIAS']); },
+  presets: [
+    {id: 'eeg', label: '閉眼 EEG（預設）', note: '±2.5 V、250 SPS、增益 24、SRB1 參考式、BIAS 由 8 個正輸入的平均驅動（1 MΩ ∥ 1.5 nF）。顯示濾波選「0.5–45 Hz＋市電陷波」可以看到 O1、O2 的 alpha 和 Fp1、Fp2 的眨眼。', dfilt: 'band', scale: '50e-6'},
+    {id: 'short', label: '輸入短路雜訊', note: '所有通道 MUX = 001（內部短路）：這就是資料手冊表 1–4 的量測條件。到「統計」按「擷取」：250 SPS、增益 24 時應約 0.14 µVrms、0.98 µVpp（資料手冊）。改資料速率和增益，對照表格怎麼變。', tab: 'stats', scale: '5e-6', dfilt: 'raw',
+      set: function (s) { s.mux = s.mux.map(function () { return 1; }); }},
+    {id: 'test', label: '內部測試訊號', note: 'CONFIG2 = D0h、CHnSET = 05h（增益 1、MUX = 101）：±VREF/2400 = ±1.875 mV、fCLK/2²¹ ≈ 0.98 Hz 的方波，和資料手冊圖 67 的上電流程一樣。用來確認整條訊號鏈有在動。', scale: '1e-3', dfilt: 'raw',
+      set: function (s) { s.testInt = true; s.mux = s.mux.map(function () { return 5; }); s.gain = s.gain.map(function () { return 1; }); }},
+    {id: 'cmfail', label: '單電源但人體接 0 V', note: '常見錯誤：用 5 V 單電源，卻沒有用 BIAS 把人體拉到中點，而是把 BIAS 電極接到電路地。輸入共模約 0 V，低於 AVSS + 0.2 V，PGA 兩個輸出都被壓在下限，差值歸零或亂跳。「前端電路」分頁的共模範圍欄會標紅。', tab: 'fe',
+      set: function (s) { s.supply = 'uni'; s.biasOn = false; s.biasToGnd = true; }},
+    {id: 'nobias', label: '關掉 BIAS（插電筆電）', note: '關掉 BIAS 放大器、改成 USB 接插電的筆電（電路地對大地 200 pF）。人體的 60 Hz 共模大幅上升；兩個電極阻抗不同時就變成差模疊在腦波上。「前端電路」分頁比較人體共模和各通道差模。', tab: 'fe', dfilt: 'dc',
+      set: function (s) { s.biasOn = false; s.env.Ciso = 200e-12; s.zSpread = 0.5; }},
+    {id: 'dry', label: '乾電極', note: '乾電極 |Z(10 Hz)| 約 850 kΩ，阻抗不匹配 ±100 %。電極的熱雜訊、輸入偏壓電流造成的偏移（200 pA × 阻抗）、60 Hz 的共模轉差模都變大。到「前端電路」看雜訊預算。', tab: 'fe',
+      set: function (s) { s.elec = AFE.ELECTRODES.dry; s.zSpread = 1; }},
+    {id: 'leadoff', label: 'O1 脫落＋直流 lead-off', note: 'LOFF = 00h（直流、6 nA、95 % / 5 %）、LOFF_SENSP = FFh、CONFIG4 = 02h。O1 的電極拿掉後，6 nA 把 IN7P 拉到接近 AVDD，比較器亮起 LOFF_STATP bit 6，輸出飽和在 7FFFFFh。狀態列和 DOUT 的第一個字都看得到。', dfilt: 'raw', scale: 'auto',
+      set: function (s) { s.loffMode = 'dc'; s.ilead = 0; s.compTh = 0; s.loffP = 0xFF; s.compOn = true; s.contact = {O1: false}; }},
+    {id: 'acimp', label: '量電極阻抗（31.2 Hz）', note: '交流 lead-off：6 µA、31.2 Hz 方波打進 IN1P 和 SRB1（LOFF_SENSN 只開一個，因為參考電極共用）。頻譜上 31.2 Hz 的大小正比於電極阻抗：峰對峰 ≈ 2 × I ×（Z_P + Z_N）。這是帶內頻率，量測時不能同時記腦波。', tab: 'fft', dfilt: 'raw', scale: 'auto',
+      set: function (s) { s.loffMode = 'ac31'; s.ilead = 2; s.loffP = 0x01; s.loffN = 0x01; s.gain = s.gain.map(function () { return 1; }); }},
+    {id: 'fdr4', label: '邊記錄邊量阻抗（fDR/4）', note: '4 kSPS、交流 lead-off 在 fDR/4 = 1 kHz、6 nA：在腦波頻帶外，可以和 EEG 同時進行，之後用帶通取出 1 kHz、用低通取出腦波（使用手冊 §7.2.2 建議只用 nA 級電流）。', tab: 'fft', dfilt: 'band',
+      set: function (s) { s.dr = 2; s.loffMode = 'acdr4'; s.ilead = 0; s.loffP = 0xFF; s.loffN = 0x01; }},
+    {id: 'fast', label: '16 kSPS 的量化雜訊', note: '16 kSPS（DR = 000）時抽取比只有 64，二階 Δ-Σ 的量化雜訊還沒被濾乾淨：資料手冊增益 1 時 21.7 µVrms，8 kSPS 只有 6.9 µVrms。看「Δ-Σ 示意」分頁。', tab: 'ds', dfilt: 'raw', scale: 'auto',
+      set: function (s) { s.dr = 0; s.mux = s.mux.map(function () { return 1; }); s.gain = s.gain.map(function () { return 1; }); }}
+  ]
+});
+</script>
+</body>
+</html>

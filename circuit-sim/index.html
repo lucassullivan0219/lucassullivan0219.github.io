@@ -40,7 +40,7 @@
 <div class="crumbs">
   <a href="../">← All projects</a>
   <a href="../modern-bioelectricity/active-membrane-sim/">Active membrane 專用模擬</a>
-  <a href="test.html">引擎測試（14 項）</a>
+  <a href="test.html">引擎測試（15 項）</a>
   <a href="#how">怎麼做的、極限、開發方向</a>
 </div>
 <h1>電路互動模擬器（概念示範）</h1>
@@ -260,10 +260,10 @@
     <div class="dir"><h4>作業／實驗模式</h4><p>題目給一個有故障的電路（例如 HW2 的排針沒接好），學生只能「量」節點，靠量測推斷故障點；也能設定通過條件自動檢查。</p><p class="meta">價值高（教學） · 工作量小</p></div>
     <div class="dir"><h4>極零點、靈敏度、失真</h4><p>AC 矩陣已經有了：靈敏度用伴隨法一次算出所有元件的 ∂輸出/∂參數；極零點用廣義特徵值；失真用暫態＋FFT。</p><p class="meta">價值中 · 工作量中</p></div>
   </div>
-  <p class="hint" style="margin-top:12px">下一步的實際應用：ADS1299／ADS1294／PDK 的前端模擬會用這個引擎算電極、輸入濾波、BIAS／RLD 迴路和 60 Hz 耦合，晶片內部再用資料手冊的行為模型。</p>
+  <p class="hint" style="margin-top:12px">實際應用：<a href="../ads129x/">ADS1299／ADS1294／PDK 前端模擬</a>用這個引擎算電極、輸入濾波、BIAS／RLD 迴路、WCT 和 60 Hz 耦合（DC、AC、伴隨法雜訊），晶片內部再用資料手冊的行為模型。</p>
 </section>
 
-<footer>引擎：修正節點分析、阻尼 Newton、backward Euler／梯形法、稠密 LU（<a href="engine.js">engine.js</a>）。驗證：<a href="test.html">14 項測試</a>，含 HW2 主動膜對 Python sim.py 的 DC 與 AP 波形、多諧振盪器的週期。元件參數為典型值。</footer>
+<footer>引擎：修正節點分析、阻尼 Newton、backward Euler／梯形法、稠密 LU（<a href="engine.js">engine.js</a>）。驗證：<a href="test.html">15 項測試</a>，含 HW2 主動膜對 Python sim.py 的 DC 與 AP 波形、多諧振盪器的週期。元件參數為典型值。</footer>
 </div>
 
 <script src="engine.js"></script>

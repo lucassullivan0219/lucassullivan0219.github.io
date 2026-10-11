@@ -1,0 +1,30 @@
+/* ADS129x pages: on top of ../circuit-sim/ui.css */
+.grid2.afe{grid-template-columns:minmax(0,1.75fr) minmax(0,1fr)}
+@media (max-width:980px){.grid2.afe{grid-template-columns:1fr}}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets .btn{font-size:13.5px}
+#presetNote{max-width:70em}
+.settings details{margin-top:8px;padding:6px 10px}
+.settings details summary{font-size:14.5px}
+.sbody{padding:4px 0 2px}
+.srow{display:grid;grid-template-columns:7.2em minmax(0,1fr);gap:6px 10px;align-items:center;font-size:14px;margin:6px 0}
+.slabel{color:var(--muted);font-size:13px}
+.srow select{width:100%}
+.shint{font-size:12.5px;color:var(--muted);margin:-2px 0 6px;line-height:1.5}
+.numw{white-space:nowrap;font-size:13px;color:var(--muted)}
+.numw input{width:6em}
+.masks{display:flex;flex-wrap:wrap;gap:2px 8px}
+.mask{display:inline-flex;align-items:center;gap:2px;font-size:12.5px;color:var(--ink)}
+table.chtable{font-size:13px}
+table.chtable td,table.chtable th{padding:3px 5px}
+table.chtable select{font-size:12.5px;padding:1px 3px;max-width:10.5em}
+canvas.scopecv{display:block;width:100%;height:420px;border-radius:6px;margin-top:6px}
+.warnlist{margin:8px 0;padding-left:1.2em;color:var(--warn);font-size:14px}
+td.warn{color:var(--warn);font-weight:700}
+li.warn{color:var(--warn)}
+.cards3{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.cards3 a.card{display:block;text-decoration:none;color:inherit}
+.cards3 a.card:hover{border-color:var(--link)}
+.cards3 a.card h3{margin:0 0 4px}
+.cards3 a.card p{margin:0;color:var(--muted);font-size:14.5px}
+.src{font-size:13px;color:var(--muted)}

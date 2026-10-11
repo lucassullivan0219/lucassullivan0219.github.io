@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ADS1299EEG-FE PDK 模擬</title>
+<meta name="description" content="TI ADS1299EEG-FE 評估套件（PDK）的電路與訊號模擬：照使用手冊 SLAU443B 的電路圖與跳線（JP1、JP6、JP7、JP8、JP25、J6），重現第 7、8 章的雜訊、參考、lead-off 與 BIAS 測試。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../circuit-sim/ui.css">
+<link rel="stylesheet" href="../afe.css">
+</head>
+<body>
+<div class="wrap">
+<div class="crumbs">
+  <a href="../../">← All projects</a>
+  <a href="../">ADS129x 前端模擬</a>
+  <a href="../ads1299/">ADS1299</a>
+  <a href="../ads1294/">ADS1294</a>
+  <a href="../../circuit-sim/">電路模擬器</a>
+</div>
+<h1>ADS1299EEG-FE PDK：評估板模擬</h1>
+<p class="lede">TI 的 ADS1299 評估套件（ADS1299EEGFE-PDK＝ADS1299EEG-FE 前端板＋MMB0 主板＋電腦軟體）。這頁照使用手冊 SLAU443B 的電路圖建模：每個 AINxP／N 都有 4.99 kΩ ＋ 4.7 nF 對地的輸入濾波，BIAS_ELEC 由 U11（OPA376）緩衝中點電壓（R23／R24 2 MΩ 分壓），REF_ELEC 經 JP8 直接或經 U4（OPA376）緩衝接到 SRB1，BIAS 迴路是 R8 392 kΩ ∥ C20 10 nF。跳線可以在右邊的「PDK 跳線」切換。上方情境依使用手冊第 7、8 章的測試排列，說明裡附上手冊的實測值可以對照。</p>
+
+<section class="card notes" style="margin-bottom:16px">
+  <h2>板子上的關鍵元件與出廠跳線（SLAU443B 表 1、表 3、圖 58–60、BOM）</h2>
+  <div class="scroll-x">
+  <table class="data">
+    <thead><tr><th>項目</th><th>出廠設定</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td>類比電源 JP2／JP20</td><td>2-3／1-2</td><td>5 V 單電源（AVSS = 0）。改 1-2／2-3 並由 TPS73225／TPS72325 產生 ±2.5 V。</td></tr>
+      <tr><td>BIAS_ELEC JP6</td><td>1-2</td><td>中點電壓經 U11（OPA376）緩衝後送到 BIAS_ELEC（VCM）。2-3 則把中點接到 BIASIN 腳。</td></tr>
+      <tr><td>BIAS_DRV JP1</td><td>不裝</td><td>裝 1-2 才讓 ADS1299 的 BIASOUT（BIAS_DRV）推 BIAS_ELEC，形成回授迴路。</td></tr>
+      <tr><td>REF_ELEC JP8／JP7</td><td>1-2／1-2</td><td>JP8 1-2：REF_ELEC 直接接 SRB1；JP8 2-3＋JP7 1-2：經 U4（OPA376）緩衝。</td></tr>
+      <tr><td>JP25</td><td>—</td><td>1-2：Ain− 接 VCM；3-4：Ain+ 接 VCM；5-6：VCM 經 R11 推 REF_ELEC。J6 跳線全裝時，所有 AINxP 接 Ain+、AINxN 接 Ain−。</td></tr>
+      <tr><td>時脈 JP18／JP19</td><td>2-3／1-2</td><td>用板上 2.048 MHz 振盪器（FXO-HC735）。</td></tr>
+      <tr><td>輸入濾波</td><td>R80–R95、C72–C93</td><td>4.99 kΩ（1 %）＋ 4.7 nF 對地（10 % X7R），截止約 6.8 kHz。</td></tr>
+      <tr><td>BIAS 迴路</td><td>R8、C20</td><td>392 kΩ ∥ 10 nF（迴路頻寬約 40 Hz）；手冊建議依自己的電極和線材重新檢查穩定性。</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<div id="app"></div>
+
+<section class="card notes" style="margin-top:16px">
+  <h2>和 TI 軟體的對應</h2>
+  <ul>
+    <li>「示波器」分頁相當於 GUI 的 Analysis → Scope；「統計」分頁的平均、rms、峰對峰和直方圖相當於 Scope 表格與 Histogram（手冊 §6.1、§6.2）；「頻譜」相當於 FFT（§6.3）。</li>
+    <li>「暫存器」分頁相當於 ADC Register 的 Channel Registers、LOFF and BIAS、GPIO and Other、Register Map 子分頁；值會隨右邊的設定更新。</li>
+    <li>手冊 §8.1 的實測：輸入短路、增益 24、500 SPS、5000 點（10 秒）時偏移 23 µV、雜訊小於 1 µVpp。偏移是那一顆晶片的值；這裡的偏移是隨機抽的典型量級。</li>
+  </ul>
+  <h2 style="margin-top:14px">手冊裡的小矛盾</h2>
+  <ul>
+    <li>§8.2 寫「JP25 short (1-2) and (2-3)」，電路圖上的 JP25 說明是「(1-2), (3-4)：External Input Short to VCM」。這裡照電路圖。</li>
+    <li>表 1 的跳線和說明欄在 PDF 裡沒有一一對齊；本頁的對應是和 §4.1、§4.2、表 3、表 5、表 9 交叉核對過的結果。</li>
+  </ul>
+  <h2 style="margin-top:14px">極限</h2>
+  <ul>
+    <li>OPA376 用運放巨集模型：GBW 5.5 MHz、7.5 nV/√Hz、1/f 轉角約 53 Hz（由 0.1–10 Hz 0.8 µVpp 推算），軌對軌輸出。MMB0 主板、USB、數位雜訊沒有模擬。</li>
+    <li>J6 的接法簡化成兩條匯流排（Ain+、Ain−）；R10 放在 BIAS_ELEC 到 VCM 匯流排之間（手冊說 R10 在 BIAS_ELEC 路徑上）。</li>
+    <li>其餘限制同 <a href="../ads1299/">ADS1299 頁</a>。</li>
+  </ul>
+  <p class="src">資料來源：TI SLAU443B《EEG Front-End Performance Demonstration Kit》（2016）第 2、4、7、8、9 章；ADS1299 資料手冊 SBAS499C；OPA376 產品頁（GBW 5.5 MHz、7.5 nV/√Hz、0.8 µVpp）。</p>
+</section>
+<footer>電路部分用 <a href="../../circuit-sim/engine.js">circuit-sim/engine.js</a>；晶片部分見 <a href="../afe.js">afe.js</a>。<a href="../test.html">模型測試</a>含 §8.2 雜訊與 §7.2.2 交流 lead-off 的對照。</footer>
+</div>
+<script src="../../circuit-sim/engine.js"></script>
+<script src="../../circuit-sim/plots.js"></script>
+<script src="../afe.js"></script>
+<script src="../afe-ui.js"></script>
+<script>
+function all(v) { return [v, v, v, v, v, v, v, v]; }
+var app = AFEApp({
+  kind: 'pdk',
+  mount: document.getElementById('app'),
+  channelLabels: function (st) { return st.source === 'body' ? st.labels.map(function (l, i) { return 'CH' + (i + 1) + ' ' + l; }) : all(0).map(function (x, i) { return 'CH' + (i + 1) + ' AIN' + (i + 1); }); },
+  maskLabels: ['1', '2', '3', '4', '5', '6', '7', '8'],
+  electrodeNames: function (st) { return st.labels.concat(['REF', 'BIAS']); },
+  presets: [
+    {id: 's81', label: '§8.1 晶片內部短路', note: 'MUX = 001、增益 24、500 SPS（CONFIG1 = 95h、CHnSET = 61h）。手冊實測：偏移 23 µV、雜訊 &lt; 1 µVpp（5000 點、10 秒，那一顆晶片）。模擬用資料手冊表 4 的典型值：0.20 µVrms、1.39 µVpp（500 SPS、增益 24）。內部短路時外部的電阻、運放雜訊都進不來。到「統計」按「擷取」。', tab: 'stats', scale: '5e-6', dfilt: 'raw'},
+    {id: 's82', label: '§8.2 經 5 kΩ 接 VCM', note: 'JP25 1-2、3-4，J6 跳線全裝：每個輸入經自己的 4.99 kΩ 濾波電阻接到 VCM（BIAS_ELEC）。U11 和 R10 的雜訊是共模，被擋掉；剩下兩顆 5 kΩ 的熱雜訊（手冊：65 Hz 頻寬內約 0.67 µVpp）加上晶片雜訊。手冊實測平均 1.27 µVpp（250 SPS）。', tab: 'stats', scale: '5e-6', dfilt: 'raw',
+      set: function (s) { s.dr = 6; s.mux = all(0); }},
+    {id: 's83', label: '§8.3 SRB1 共同參考', note: 'JP25 3-4、5-6，JP8 1-2，MISC1.SRB1 = 1：所有正輸入接 VCM，VCM 經 R11（5 kΩ）推 REF_ELEC，REF_ELEC 直接到 SRB1。雜訊來源是兩顆 5 kΩ（正輸入濾波、R11）和晶片。手冊實測 1.28 µVpp。注意 8 個負輸入的偏壓電流都流進參考電極。', tab: 'stats', scale: '5e-6', dfilt: 'raw',
+      set: function (s) { s.dr = 6; s.mux = all(0); s.srb1 = true; s.jp.jp25_12 = false; s.jp.jp25_34 = true; s.jp.jp25_56 = true; }},
+    {id: 's84', label: '§8.4 緩衝的參考（OPA376）', note: '同 §8.3，但 JP8 2-3、JP7 1-2：REF_ELEC 經 U4（OPA376）緩衝後才接 SRB1，參考電極不再承受 8 × 200 pA 的漏電流，代價是多了運放的雜訊（尤其 1/f），手冊說這是四種接法中最吵的。', tab: 'stats', scale: '5e-6', dfilt: 'raw',
+      set: function (s) { s.dr = 6; s.mux = all(0); s.srb1 = true; s.jp.jp25_12 = false; s.jp.jp25_34 = true; s.jp.jp25_56 = true; s.jp.refBuf = true; }},
+    {id: 's85', label: '§8.5 內部測試訊號', note: 'CONFIG2 = D0h、CHnSET = 65h（增益 24、MUX = 101）：±1.875 mV、約 0.98 Hz 方波。增益 24 時滿刻度 ±187.5 mV，測試訊號只用到 1 %。', scale: '1e-3', dfilt: 'raw',
+      set: function (s) { s.testInt = true; s.mux = all(5); }},
+    {id: 's86', label: '§8.6 SMA 正弦輸入', note: 'JP25 只裝 1-2（Ain− 接 VCM），拔掉 3-4：AIN1 的 SMA 經 R12（4.99 kΩ）＋ C75 推 Ain+ 匯流排，等於 8 個通道都收到同一個單端訊號。這裡是 10 Hz、1 mV 峰值正弦；可在「訊號產生器」改頻率，看 sinc3 的 −3 dB 與零點。', tab: 'fft', scale: '1e-3', dfilt: 'raw',
+      set: function (s) { s.mux = all(0); s.source = 'gen'; s.jp.jp25_34 = false; s.gen = {f: 10, amp: 1e-3, shape: 'sine'}; }},
+    {id: 's721', label: '§7.2.1 直流 lead-off', note: '韌體開機時的設定：直流 6 nA、95 %／5 %、LOFF_SENSP／N = FFh、CONFIG4 = 02h。這裡把 JP25 全拔掉（輸入沒接任何東西）：每個 P 被拉到 AVDD、N 被拉到 AVSS，LOFF_STATP／N 全亮，DOUT 狀態字變成 CFFFF0h。改回 JP25 1-2、3-4 就全部熄滅。', dfilt: 'raw', scale: 'auto',
+      set: function (s) { s.mux = all(0); s.gain = all(1); s.loffMode = 'dc'; s.ilead = 0; s.loffP = 0xFF; s.loffN = 0xFF; s.compOn = true; s.jp.jp25_12 = false; s.jp.jp25_34 = false; }},
+    {id: 's722', label: '§7.2.2 交流 lead-off 量阻抗', note: '6 µA、31.25 Hz（FLEAD = 10、ILEAD = 10），每邊 5 kΩ（輸入經濾波電阻接 VCM）：手冊理論值 2 ×（6 µA × 5 kΩ ＋ 6 µA × 5 kΩ）= 120 mVpp，實測 128 mVpp。增益 1。這裡的方波只用 1、3、5 次諧波合成，有 Gibbs 過衝，峰對峰會略高於 120 mVpp；要看阻抗請讀頻譜上 31.25 Hz 的大小（基頻振幅 = 4/π × 60 mV）。', tab: 'fft', dfilt: 'raw', scale: 'auto',
+      set: function (s) { s.mux = all(0); s.gain = all(1); s.loffMode = 'ac31'; s.ilead = 2; s.loffP = 0x01; s.loffN = 0x01; }},
+    {id: 's713', label: '§7.1.3 BIAS 回授迴路', note: 'J6 接電極、JP1 1-2（BIAS_DRV 推 BIAS_ELEC），CONFIG3 = ECh，BIAS_SENSP／N = 03h（通道 1、2）。手冊的檢查方法：量 R8 兩端都應該接近中點（2.5 V）。「前端電路」分頁有 BIASOUT 和人體電壓；比較打開、關掉 BIAS 時的 60 Hz。', tab: 'fe', dfilt: 'band', scale: '50e-6',
+      set: function (s) { s.mux = all(0); s.source = 'body'; s.srb1 = true; s.biasOn = true; s.biasP = 0x03; s.biasN = 0x03; s.jp.biasElec = 'drv'; }},
+    {id: 'eeg', label: '接電極量 EEG', note: 'J6 跳線拔掉、8 個電極接 AIN1P–AIN8P，參考電極接 REF_ELEC（經 JP8 到 SRB1），BIAS 迴路推 BIAS 電極（JP1）。這就是把 PDK 直接拿來量腦波的接法；手冊提醒 EVM 不是醫療設備，人體接觸的安全要自己負責。', dfilt: 'band', scale: '50e-6',
+      set: function (s) { s.mux = all(0); s.dr = 6; s.source = 'body'; s.srb1 = true; s.biasOn = true; s.biasP = 0xFF; s.biasN = 0; s.jp.biasElec = 'drv'; }}
+  ]
+});
+</script>
+</body>
+</html>
