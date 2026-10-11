@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>仿生專題構想：控制肢體 × 運動學習</title>
+<meta name="description" content="仿生科技專題構想：參考章魚、斷肢再生與截肢復健設計肌電控制的擴增手指；參考脊椎動物運動學習理論設計跑姿監控與回饋系統。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F1; --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72;
+  --link:#1F5FA8; --req:#2F5D3A; --opt:#8A6100; --infer:#7A3E8F; --warn:#A33A2B; --rule:#CCD3CE;
+  --grid:rgba(47,93,58,.07);
+  --side:270px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+    --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+    --grid:rgba(127,176,137,.08);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+  --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+  --grid:rgba(127,176,137,.08);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px);scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  font-size:16.5px;line-height:1.8}
+a{color:var(--link);text-underline-offset:3px}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--link);outline-offset:2px;border-radius:3px}
+code,pre{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:14px}
+p{margin:0 0 14px;max-width:46em}
+
+/* ---------- reading progress ---------- */
+.progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--req);z-index:40;pointer-events:none}
+
+/* ---------- sidebar ---------- */
+.side{position:fixed;top:0;left:0;bottom:0;width:var(--side);background:var(--surface);border-right:1.5px solid var(--ink);
+  padding:calc(env(safe-area-inset-top,0px) + 20px) 16px 24px;overflow-y:auto;z-index:30;transition:transform .2s ease}
+.side-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.side .brand{font-weight:900;font-size:16px;line-height:1.3;margin:0}
+.side .find{width:100%;font:inherit;font-size:14px;padding:5px 10px;margin:0 0 12px;border:1.5px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink)}
+.side .find::placeholder{color:var(--muted)}
+.side .none{font-size:13.5px;color:var(--muted);margin:4px 10px}
+.side nav ul{list-style:none;margin:0;padding:0}
+.side nav > ul > li{margin-bottom:4px}
+.side nav a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:15px;line-height:1.4}
+.side nav a:hover{background:var(--grid)}
+.side nav > ul > li > a{font-weight:700}
+.side nav ul ul a{padding-left:22px;font-size:13.5px;color:var(--muted);font-weight:400}
+.side nav a.active{background:var(--grid);box-shadow:inset 3px 0 0 var(--req)}
+.side .tools{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.btn{font:inherit;font-size:13.5px;padding:4px 12px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:999px;cursor:pointer;line-height:1.5}
+.btn:hover{background:var(--grid)}
+.fab{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:25;display:none;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.totop{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:25;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.totop[hidden]{display:none}
+main{margin-left:var(--side);transition:margin-left .2s ease}
+body.side-closed .side{transform:translateX(-102%)}
+body.side-closed main{margin-left:0}
+body.side-closed .fab{display:inline-block}
+.scrim{display:none}
+@media (max-width:1000px){
+  main{margin-left:0}
+  body:not(.side-closed) .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:28}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.side,main{transition:none}}
+.wrap{max-width:940px;margin:0 auto;padding:44px 26px 80px}
+body.side-closed .wrap{padding-top:64px}
+@media (max-width:560px){.wrap{padding-left:16px;padding-right:16px}}
+
+/* ---------- header ---------- */
+h1{font-weight:900;font-size:clamp(28px,5vw,42px);line-height:1.2;letter-spacing:-.01em;margin:0 0 14px}
+.lede{font-size:18px;color:var(--muted);max-width:40em}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--muted);margin:14px 0 0}
+
+/* ---------- sections ---------- */
+details.sec{border-top:2px solid var(--ink);margin-top:36px}
+details.sec > summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:14px;padding:16px 0 6px}
+details.sec > summary::-webkit-details-marker{display:none}
+details.sec > summary .no{font-weight:900;font-size:30px;line-height:1;color:var(--req);font-variant-numeric:tabular-nums;min-width:1.2em}
+details.sec > summary h2{font-weight:900;font-size:26px;margin:0;line-height:1.3;flex:1}
+details.sec > summary .hint{font-size:13px;color:var(--muted);white-space:nowrap}
+details.sec[open] > summary .hint .c{display:none}
+details.sec:not([open]) > summary .hint .o{display:none}
+.body{padding:6px 0 4px}
+h3{font-weight:900;font-size:20px;margin:36px 0 10px;padding-top:4px}
+h3:first-child{margin-top:8px}
+h4{font-weight:700;font-size:17px;margin:20px 0 6px}
+
+/* ---------- atoms ---------- */
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:0 7px;border-radius:999px;border:1.5px solid currentColor;vertical-align:2px;margin-right:5px;white-space:nowrap;line-height:1.6}
+.req{color:var(--req)} .opt{color:var(--opt)} .inf{color:var(--infer)} .warn{color:var(--warn)}
+.note{border-left:3px solid var(--req);padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.note-inf{border-left:3px solid var(--infer);padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.note-opt{border-left:3px solid var(--opt);padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.note-warn{border-left:3px solid var(--warn);padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.note p,.note-inf p,.note-opt p,.note-warn p{margin:0 0 6px}
+.note p:last-child,.note-inf p:last-child,.note-opt p:last-child,.note-warn p:last-child{margin-bottom:0}
+.muted{color:var(--muted)} .small{font-size:14.5px}
+ul.specs,ol.specs{margin:6px 0 10px;padding-left:1.2em;font-size:15.5px}
+.specs li{margin:3px 0}
+a.cite{font-size:12.5px;font-weight:500;text-decoration:none;white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:1px}
+a.cite:hover{text-decoration:underline}
+pre.code{background:var(--surface);border:1px solid var(--rule);padding:12px 14px;overflow-x:auto;line-height:1.6;margin:10px 0 14px}
+
+/* findings list */
+ol.find{counter-reset:fd;list-style:none;padding:0;margin:12px 0}
+ol.find > li{counter-increment:fd;position:relative;padding:10px 0 10px 46px;border-bottom:1px solid var(--rule);font-size:15.5px}
+ol.find > li::before{content:counter(fd);position:absolute;left:0;top:11px;width:30px;height:30px;border-radius:6px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-weight:900;font-size:15px}
+ol.find b.t{display:block;font-size:16.5px;margin-bottom:2px}
+ol.find .so{display:block;color:var(--muted);font-size:14.5px;margin-top:2px}
+
+/* proposal cards */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin:14px 0 6px}
+.pcard{background:var(--surface);border:1.5px solid var(--ink);border-radius:10px;padding:14px 16px;font-size:15.5px}
+.pcard h4{margin:0 0 6px;font-size:17px}
+.pcard p{margin:0 0 8px}
+.pcard dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:8px 0 0;font-size:14px}
+.pcard dt{color:var(--muted);font-weight:700}
+.pcard dd{margin:0}
+.pcard.a{box-shadow:inset 0 4px 0 #1F5FA8}
+.pcard.b{box-shadow:inset 0 4px 0 #2F5D3A}
+.pcard.c{box-shadow:inset 0 4px 0 #8A6100}
+
+/* tables */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px 0 6px;border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;min-width:680px;font-size:14.5px;background:var(--surface)}
+table.narrow{min-width:520px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:700;font-size:13px;color:var(--muted);background:var(--paper)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td ul{margin:0;padding-left:1.1em} td li{margin:1px 0}
+td .name{font-weight:700;display:block}
+
+/* flow */
+.flow{margin:14px -26px 0;padding:22px;background:
+  linear-gradient(var(--grid) 1px,transparent 1px) 0 0/22px 22px,
+  linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/22px 22px,var(--surface);
+  border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);overflow-x:auto}
+@media (max-width:560px){.flow{margin-left:-16px;margin-right:-16px;padding:16px}}
+.flow pre.mermaid{background:transparent;margin:0;text-align:center;min-width:620px}
+.flow.big pre.mermaid{min-width:900px}
+.flow-cap{font-size:14px;color:var(--muted);margin:8px 0 0}
+.keys{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;margin:12px 0 0}
+.key{display:inline-flex;align-items:center;gap:7px}
+.sw{width:18px;height:14px;border-radius:3px;border:2px solid}
+.sw.bio{background:#DCEFD9;border-color:#2F5D3A}
+.sw.hum{background:#E3ECF7;border-color:#1F5FA8}
+.sw.rule{background:#F3E1F7;border-color:#7A3E8F}
+.sw.idea{background:#FBEFD2;border-color:#8A6100}
+.sw.risk{background:#FBE3DE;border-color:#A33A2B}
+
+/* steps */
+ol.steps{counter-reset:st;list-style:none;padding:0;margin:12px 0}
+ol.steps > li{counter-increment:st;position:relative;padding:12px 0 12px 52px;border-bottom:1px solid var(--rule)}
+ol.steps > li::before{content:counter(st);position:absolute;left:0;top:12px;width:34px;height:34px;border-radius:6px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-weight:900}
+ol.steps b.t{display:block;font-size:16.5px;margin-bottom:2px}
+ol.steps ul{margin:4px 0 0;padding-left:1.2em;font-size:15.5px}
+
+ul.check{list-style:none;padding:0;margin:8px 0}
+ul.check li{position:relative;padding:6px 0 6px 30px;border-bottom:1px solid var(--rule);font-size:15.5px}
+ul.check li::before{content:"";position:absolute;left:2px;top:11px;width:16px;height:16px;border:1.8px solid var(--ink);border-radius:3px}
+
+/* references */
+h4.rgrp{margin:26px 0 4px;font-size:15px;color:var(--muted);text-transform:none}
+ol.refs{margin:0;padding-left:2.6em;font-size:14.5px;line-height:1.65}
+ol.refs li{margin:0 0 8px;padding:4px 6px;border-radius:6px;scroll-margin-top:80px}
+ol.refs li:target{background:var(--grid);box-shadow:inset 3px 0 0 var(--req)}
+ol.refs .why{display:block;color:var(--muted);font-size:13.5px}
+footer{margin-top:50px;font-size:13.5px;color:var(--muted)}
+</style>
+</head>
+<body class="">
+<div class="progress" id="progress" aria-hidden="true"></div>
+<aside class="side" id="side" aria-label="目錄">
+  <p style="margin:0 0 10px;font-size:13px"><a href="../" style="color:var(--muted);text-decoration:none">← 仿生科技</a></p>
+  <div class="side-head">
+    <p class="brand">專題構想</p>
+    <button class="btn" id="sideClose" type="button" aria-label="收合目錄">收合 ‹</button>
+  </div>
+  <input class="find" id="find" type="search" placeholder="篩選目錄…" aria-label="篩選目錄">
+  <nav id="toc">
+    <ul>
+      <li><a href="#s0">0 總覽</a>
+        <ul>
+          <li><a href="#s0-tldr">一頁看完</a></li>
+          <li><a href="#s0-map">思路總圖</a></li>
+          <li><a href="#s0-lit">文獻地圖</a></li>
+        </ul></li>
+      <li><a href="#s1">1 方向 A：生物怎麼控制肢體</a>
+        <ul>
+          <li><a href="#s1-q">把問題拆成三個</a></li>
+          <li><a href="#s1-octo">章魚：控制下放到手臂</a></li>
+          <li><a href="#s1-regen">斷肢再生：神經不只是電線</a></li>
+          <li><a href="#s1-maps">大腦會保留舊地圖</a></li>
+          <li><a href="#s1-rehab">肢體重建患者怎麼學</a></li>
+          <li><a href="#s1-aug">擴增肢體與腦機介面</a></li>
+          <li><a href="#s1-rules">五個快速適應原則</a></li>
+        </ul></li>
+      <li><a href="#s2">2 提案 A：肌電控制第六指</a>
+        <ul>
+          <li><a href="#s2-scene">生活場景與問題</a></li>
+          <li><a href="#s2-arch">系統架構</a></li>
+          <li><a href="#s2-hw">材料與成本</a></li>
+          <li><a href="#s2-train">適應訓練流程</a></li>
+          <li><a href="#s2-exp">實驗設計與指標</a></li>
+          <li><a href="#s2-eeg">腦電版本（進階）</a></li>
+          <li><a href="#s2-risk">風險與簡化版</a></li>
+        </ul></li>
+      <li><a href="#s3">3 方向 B：脊椎動物怎麼學會動</a>
+        <ul>
+          <li><a href="#s3-three">三種學習訊號</a></li>
+          <li><a href="#s3-cpg">節律由脊髓產生</a></li>
+          <li><a href="#s3-var">變異是探索</a></li>
+          <li><a href="#s3-energy">身體自己找省力解</a></li>
+          <li><a href="#s3-feedback">回饋怎麼給才學得會</a></li>
+          <li><a href="#s3-run">跑姿再訓練的證據</a></li>
+        </ul></li>
+      <li><a href="#s4">4 提案 B：跑姿監控與回饋</a>
+        <ul>
+          <li><a href="#s4-scene">生活場景與問題</a></li>
+          <li><a href="#s4-what">要監控什麼</a></li>
+          <li><a href="#s4-arch">系統架構</a></li>
+          <li><a href="#s4-logic">回饋邏輯</a></li>
+          <li><a href="#s4-hw">材料與成本</a></li>
+          <li><a href="#s4-exp">實驗設計與指標</a></li>
+          <li><a href="#s4-risk">風險與簡化版</a></li>
+        </ul></li>
+      <li><a href="#s5">5 交集與選題建議</a>
+        <ul>
+          <li><a href="#s5-common">共同原理</a></li>
+          <li><a href="#s5-compare">兩案比較</a></li>
+          <li><a href="#s5-pick">建議</a></li>
+          <li><a href="#s5-plan">時程</a></li>
+        </ul></li>
+      <li><a href="#s6">6 參考文獻</a></li>
+    </ul>
+    <p class="none" id="findNone" hidden>沒有符合的章節</p>
+  </nav>
+  <div class="tools">
+    <button class="btn" id="openAll" type="button">全部展開</button>
+    <button class="btn" id="closeAll" type="button">全部收合</button>
+  </div>
+</aside>
+<div class="scrim" id="scrim"></div>
+<button class="btn fab" id="sideOpen" type="button" aria-controls="side">› 目錄</button>
+<button class="btn totop" id="toTop" type="button" hidden>↑ 頂端</button>
+
+<main>
+<div class="wrap">
+<header>
+  <h1>仿生專題構想：控制肢體 × 運動學習</h1>
+  <p class="lede">兩個方向其實問同一件事：生物怎麼讓一個複雜的身體「好控制、學得快」？這頁從章魚、斷肢再生、截肢復健與脊椎動物的運動學習理論出發，整理成兩個貼近生活、做得出來的專題提案。</p>
+  <div class="legend">
+    <span><a class="cite" href="#s6" style="vertical-align:0">[n]</a> 期刊文獻，點了跳到出處</span>
+    <span><span class="tag inf">推論</span>由文獻延伸的想法，尚未被直接驗證</span>
+    <span><span class="tag opt">提案</span>專題設計建議，可依器材調整</span>
+    <span><span class="tag warn">注意</span>限制、風險或文獻的保留</span>
+  </div>
+  <div class="legend">
+    <span class="key"><span class="sw bio"></span>生物機制</span>
+    <span class="key"><span class="sw hum"></span>人類臨床／實驗</span>
+    <span class="key"><span class="sw rule"></span>設計原則</span>
+    <span class="key"><span class="sw idea"></span>專題提案</span>
+    <span class="key"><span class="sw risk"></span>限制與要求</span>
+  </div>
+</header>
+
+<!-- ===================== 0 總覽 ===================== -->
+<details class="sec" id="s0" open>
+<summary><span class="no">0</span><h2>總覽</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s0-tldr">一頁看完</h3>
+<p>老師希望專題<b>貼近生活、不要太複雜</b>；我想從「控制肢體的方法」和「運動學習方法」兩個方向發想。整理文獻後，兩個方向各收斂成一個提案，而且共用同一套論述：<b>人只負責低維的「目標」，細節交給下層處理；回饋要精準、而且會逐漸淡出。</b></p>
+<div class="pgrid">
+  <div class="pcard a">
+    <h4>提案 A｜肌電控制的「第六指」</h4>
+    <p>戴在小指外側的 3D 列印手指。用一條肌肉的肌電訊號下「夾／放」，手指自己依指尖壓力把力道調好（章魚式本地控制），再照截肢復健的分階段方式訓練，看人幾天能上手。</p>
+    <dl><dt>場景</dt><dd>一手同時拿手機和飲料、扶碗攪拌</dd><dt>難度</dt><dd>★★★（EMG＋機構＋韌體）</dd><dt>成本</dt><dd>約 NT$2,000–3,500（估計）</dd></dl>
+  </div>
+  <div class="pcard b">
+    <h4>提案 B｜跑姿監控與回饋系統</h4>
+    <p>小腿綁一顆 IMU（或只用手機），即時量步頻與脛骨衝擊，只在超出範圍時用耳機提示，並照運動學習理論逐週淡出回饋，最後測拿掉回饋後還留下多少。</p>
+    <dl><dt>場景</dt><dd>一般人慢跑，減少膝蓋與小腿負擔</dd><dt>難度</dt><dd>★★（手機版只要寫程式）</dd><dt>成本</dt><dd>NT$0（手機版）～約 NT$600（IMU 版，估計）</dd></dl>
+  </div>
+  <div class="pcard c">
+    <h4>建議</h4>
+    <p>只做一個：<b>選 B</b>，最貼近生活、資料最好收、風險最低。想挑戰肌電就做 <b>A 的簡化版</b>（先用腳踏開關，再換 EMG）。兩案共用同一套仿生論述，報告可以講成一條線。</p>
+    <p class="small muted">詳見 <a href="#s5-pick">§5 建議</a>。</p>
+  </div>
+</div>
+
+<h3 id="s0-map">思路總圖</h3>
+<p>從出發點到提案的推導過程。左邊是限制與興趣，中間是借鏡的生物與臨床案例，右邊收斂成設計原則和提案。</p>
+<div class="flow big">
+<pre class="mermaid">
+flowchart LR
+  T["老師的要求<br/>貼近生活、不要太複雜"]:::risk
+  M["我的興趣"]:::hum
+  M --> QA["A：怎麼讓人快速學會<br/>控制一隻新的肢體？"]:::hum
+  M --> QB["B：怎麼讓人學會<br/>更好的跑姿？"]:::hum
+  QA --> BA1["章魚<br/>手臂自己算細節"]:::bio
+  QA --> BA2["斷肢再生<br/>神經提供生長訊號"]:::bio
+  QA --> BA3["截肢與移植<br/>大腦保留舊地圖"]:::bio
+  QA --> BA4["擴增肢體與 BCI<br/>學習的限制"]:::hum
+  QB --> BB1["小腦與基底核<br/>誤差學習 vs 獎勵學習"]:::bio
+  QB --> BB2["脊髓 CPG<br/>節律自己產生"]:::bio
+  QB --> BB3["鳴禽<br/>變異是探索"]:::bio
+  QB --> BB4["人會自動<br/>把能耗降到最低"]:::hum
+  BA1 & BA2 & BA3 & BA4 --> PA["五個快速適應原則<br/>P1–P5"]:::rule
+  BB1 & BB2 & BB3 & BB4 --> PB["五個回饋原則<br/>L1–L5"]:::rule
+  PA --> XA["提案 A<br/>肌電控制第六指"]:::idea
+  PB --> XB["提案 B<br/>跑姿監控與回饋"]:::idea
+  T -.->|"篩選：成本、時間、安全"| XA
+  T -.->|"篩選：成本、時間、安全"| XB
+  XA & XB --> C["共同主軸<br/>人給目標，下層處理細節<br/>回饋精準、逐漸淡出"]:::rule
+  classDef bio fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef hum fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef rule fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef idea fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2A00
+  classDef risk fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+</pre>
+</div>
+
+<h3 id="s0-lit">文獻地圖</h3>
+<p>這頁引用的 41 篇文獻都是期刊論文，依主題分枝如下。每一節的引用編號都可以點，跳到 <a href="#s6">§6 參考文獻</a> 看完整出處；滑鼠停在編號上也會顯示出處。</p>
+<div class="flow big">
+<pre class="mermaid">
+mindmap
+  root((仿生專題))
+    A 控制肢體
+      章魚
+        周邊運動程式 Sumbre 2001
+        臨時關節 Sumbre 2006
+        沒有身體地圖 Zullo 2009
+        神經索分節 Olson 2025
+        軟體手臂 Laschi 2012
+      再生與神經重構
+        神經依賴 Kumar 2007
+        Neuregulin-1 Farkas 2016
+        幻肢的手指地圖 Kikkert 2016
+        換手後皮質重組 Giraux 2001
+      重建與復健
+        TMR Kuiken 2009
+        AMI Clites 2018 / Song 2024
+        骨整合義肢 Ortiz-Catalan 2020
+        鏡像治療 Chan 2007
+        幻肢運動執行 Ortiz-Catalan 2016
+      擴增肢體與 BCI
+        Third Thumb 2021 / 2024
+        資源分配 Dominijanni 2021
+        腦控第三手臂 Penaloza 2018
+        內在流形 Sadtler 2014
+        穩定皮質地圖 Ganguly 2009
+        共同學習 Perdikis 2018
+    B 運動學習
+      學習系統
+        三種學習 Doya 1999
+        學習原理 Wolpert 2011
+        最佳回饋控制 Todorov 2002
+      節律與探索
+        CPG Ijspeert 2008
+        鳴禽 Ölveczky 2005 / Tumer 2007
+        變異預測學習 Wu 2014
+        能耗最佳化 Selinger 2015
+      回饋設計
+        減少回饋 Winstein 1990
+        外在焦點 Wulf 2013
+        多感官回饋 Sigrist 2013
+        穿戴回饋 Van Hooren 2020 / 2024
+      跑姿再訓練
+        脛骨衝擊 Crowell 2011
+        步頻 Heiderscheit 2011
+        著地方式 Lieberman 2010
+        影片姿態估計 Menychtas 2023
+</pre>
+</div>
+<p class="note-warn"><span class="tag warn">注意</span>文中的數字取自各篇的摘要與出版者頁面。寫進報告前，請再對照全文確認，特別是樣本數小的研究（標示「樣本小」或「無對照」的）。</p>
+</div>
+</details>
+
+<!-- ===================== 1 方向 A ===================== -->
+<details class="sec" id="s1" open>
+<summary><span class="no">1</span><h2>方向 A：生物怎麼控制肢體</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s1-q">把問題拆成三個</h3>
+<p>「怎麼讓人快速適應一隻用腦電或肌電控制的擴增肢體」太大，拆成三個比較好回答的問題：</p>
+<ol class="specs">
+  <li><b>控制放在哪裡？</b>大腦要算每一個細節，還是肢體自己處理一部分？→ 章魚</li>
+  <li><b>訊號從哪裡來？</b>要大腦學一張新地圖，還是接上已經有的地圖？→ 斷肢再生、截肢與移植</li>
+  <li><b>怎麼練？</b>回饋給什麼、訓練怎麼排？→ 截肢復健、擴增肢體與腦機介面研究</li>
+</ol>
+
+<h3 id="s1-octo">章魚：把控制下放到手臂</h3>
+<p>章魚的手臂沒有骨頭，可以往任何方向彎，自由度幾乎無限。如果大腦要算每一段肌肉怎麼收縮，計算量會大到不可能。章魚的做法是：<b>大腦不算細節。</b></p>
+<ol class="find">
+  <li><b class="t">「怎麼伸手」寫在手臂裡</b>把手臂和大腦切斷後，用電刺激或碰觸仍然能引發伸手動作，而且動作特徵和正常伸手幾乎一樣。作者認為這種周邊運動程式大幅簡化了控制 <a class="cite" href="#r1">[1]</a>。
+    <span class="so">→ 大腦只需要「觸發」，不需要逐步指揮。</span></li>
+  <li><b class="t">需要精準時，臨時長出「關節」</b>把食物送進嘴巴時，手臂會彎出三個關節，變成類似人類上臂、前臂、手的分段結構，再用關節角度控制 <a class="cite" href="#r2">[2]</a>。
+    <span class="so">→ 把無限自由度暫時降成少數幾個，問題就變簡單。</span></li>
+  <li><b class="t">大腦沒有「身體地圖」</b>刺激章魚的高階運動中樞，引發的是整體、複雜的動作，找不到「這一區管第三條手臂」這種對應 <a class="cite" href="#r3">[3]</a>。
+    <span class="so">→ 大腦處理「要做什麼」，不處理「哪條手臂的哪段肌肉」。</span></li>
+  <li><b class="t">手臂神經是一節一節的模組</b>手臂的軸神經索沿長軸分成一段段，每個吸盤在神經索上有對應的位置；作者認為這些模組可以當作軟組織運動控制的模型 <a class="cite" href="#r4">[4]</a>。
+    <span class="so">→ 局部感覺、局部反應，不必每件事都回報大腦。</span></li>
+</ol>
+<p>工程上已經有人照章魚的肌肉結構做軟體機械手臂，用纜線和形狀記憶合金彈簧做出伸長、縮短和彎曲 <a class="cite" href="#r5">[5]</a>。</p>
+<div class="flow">
+<pre class="mermaid">
+flowchart TB
+  B["腦：高階運動中樞<br/>沒有各條手臂的地圖"]:::bio
+  B -->|"低維指令：伸出去、抓回來"| C1
+  subgraph ARM["一條手臂：神經索分節"]
+    C1["近端模組"]:::bio --> C2["中段模組"]:::bio --> C3["遠端模組"]:::bio
+    S1(("吸盤")):::bio -->|"局部感覺"| C1
+    S2(("吸盤")):::bio -->|"局部感覺"| C2
+    S3(("吸盤")):::bio -->|"局部感覺"| C3
+  end
+  C3 -->|"彎曲沿手臂傳下去<br/>切斷的手臂也做得到"| OUT["伸手、抓取"]:::bio
+  OUT ==>|"借到工程"| ENG["擴增手指：人只下「夾／放」<br/>本地控制器處理力量與接觸"]:::idea
+  classDef bio fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef idea fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2A00
+</pre>
+</div>
+<div class="note-inf">
+  <p><span class="tag inf">推論</span>對擴增肢體的啟示：如果每根手指的每顆馬達都要使用者用肌電或腦電去控制，學習負擔會很大，而且這兩種訊號的頻寬本來就有限。比照章魚，讓使用者只下低維的<b>目標</b>（夾、放、保持），裝置用自己的感測器處理<b>細節</b>（碰到東西就停、維持夾力、東西滑了自動補力）。機器人學稱這種分工為共享控制（shared control）。</p>
+</div>
+
+<h3 id="s1-regen">斷肢再生：神經不只是電線</h3>
+<p>蠑螈和美西螈能長回整隻腳，但有個前提：<b>斷面要有神經</b>。把神經切掉，斷面就長不出再生芽基（blastema），腳也長不回來。神經在這裡提供的不只是控制訊號，還有讓組織生長的化學訊號：</p>
+<ul class="specs">
+  <li>在蠑螈身上，斷肢後神經鞘細胞和傷口表皮會表現一種蛋白 nAG；把 nAG 送進神經已被切除的斷肢，腳仍然長得回來 <a class="cite" href="#r6">[6]</a>。</li>
+  <li>在美西螈身上，Neuregulin-1 能讓去神經的肢體再生到指頭；阻斷這條訊號，即使有神經也長不出芽基 <a class="cite" href="#r7">[7]</a>。</li>
+</ul>
+<div class="note-inf">
+  <p><span class="tag inf">推論</span>再生的肢體是<b>和神經一起長出來</b>的，不是先長好再接線。借到擴增肢體：與其先把裝置做完、再要人去適應，不如讓人和裝置一起調整，也就是腦機介面研究說的「共同學習」<a class="cite" href="#r23">[23]</a>（見下方 <a href="#s1-aug">擴增肢體與腦機介面</a>）。</p>
+</div>
+<p class="note-warn"><span class="tag warn">注意</span>人類和其他哺乳類不會斷肢再生。人類現在做得到的是<b>神經重構</b>：把殘留的神經接到新的地方，讓它重新有用（見 <a href="#s1-rehab">肢體重建患者怎麼學</a>）。</p>
+
+<h3 id="s1-maps">大腦會保留舊地圖</h3>
+<p>截肢之後，大腦裡負責那隻手的區域會怎樣？兩個研究顯示它<b>沒有消失</b>：</p>
+<ul class="specs">
+  <li>截肢數十年的人，請他動「幻肢」的單根手指，初級體感皮質仍出現每根手指各自的活化模式，和雙手健全的人相似 <a class="cite" href="#r8">[8]</a>。</li>
+  <li>一位雙手移植的患者，截肢後被鄰近區域佔走的手部運動區，在移植後重新擴張回來 <a class="cite" href="#r9">[9]</a>。</li>
+</ul>
+<p class="note"><span class="tag req">重點</span>如果新裝置的控制方式能接上既有的地圖（例如「想著動手指」），學起來會比要大腦憑空建一張新地圖快。這和腦機介面的「內在流形」實驗結果一致 <a class="cite" href="#r20">[20]</a>。</p>
+
+<h3 id="s1-rehab">肢體重建患者怎麼學</h3>
+<p>截肢患者學用義肢，是現實中最接近「學會控制一隻新肢體」的情境。下面五種做法分別處理訊號、回饋和訓練：</p>
+<div class="scroll">
+<table>
+  <thead><tr><th style="width:17%">做法</th><th style="width:30%">怎麼做</th><th style="width:30%">結果</th><th>給專題的啟示</th></tr></thead>
+  <tbody>
+    <tr><td><span class="name">TMR</span>標靶肌肉神經重建 <a class="cite" href="#r10">[10]</a></td><td>把殘肢的手臂神經改接到胸肌等附近肌肉，這些肌肉就變成神經訊號的放大器，再用圖形辨識解碼表面肌電。</td><td>5 位患者控制虛擬手臂，手肘與手腕動作完成率 96.3%（對照組 100%）。</td><td>使用者只要「想著動原本的手」就能控制：<b>用舊地圖</b>。</td></tr>
+    <tr><td><span class="name">AMI</span>拮抗肌神經介面 <a class="cite" href="#r11">[11]</a><a class="cite" href="#r12">[12]</a></td><td>截肢手術時把一對拮抗肌接成「一條收、一條被拉長」，保留肌肉的位置感（本體感覺）。</td><td>受試者覺得義肢像自己身體的一部分，上下樓梯時的落腳控制與反射更好 <a class="cite" href="#r11">[11]</a>；7 位 AMI 受試者的最快步行速度比傳統截肢者高約 41%，接近沒有截肢的人 <a class="cite" href="#r12">[12]</a>。</td><td>只靠眼睛看不夠，<b>身體感覺的回饋</b>讓裝置變成身體。</td></tr>
+    <tr><td><span class="name">骨整合神經肌肉義肢</span><a class="cite" href="#r13">[13]</a></td><td>義肢直接固定在骨頭上，電極植入神經與肌肉，可以雙向傳訊（控制＋觸覺）。</td><td>4 位上臂截肢者在日常生活中使用 3–7 年，不需要正式訓練，控制與感覺隨每天使用持續變好。</td><td>每天、在真實情境裡用，本身就是訓練。</td></tr>
+    <tr><td><span class="name">鏡像治療</span><a class="cite" href="#r14">[14]</a></td><td>用鏡子讓健側腳的動作看起來像截肢那側在動。</td><td>18 位下肢截肢者：鏡子組 6 人都回報幻肢痛減輕；遮住鏡子的組只有 1 人減輕，只用想像的組多數反而更痛（樣本小）。</td><td>讓大腦<b>看見</b>動作完成，是第一步。</td></tr>
+    <tr><td><span class="name">幻肢運動執行</span><a class="cite" href="#r15">[15]</a></td><td>殘肢的肌電即時驅動擴增實境與遊戲裡的虛擬手臂。</td><td>14 位慢性幻肢痛患者，12 次療程後疼痛約減半（單組、無對照）。</td><td>先在螢幕上練，遊戲化讓大量重複不無聊。</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="flow">
+<pre class="mermaid">
+flowchart TB
+  A["截肢"]:::risk --> B["大腦的手部地圖<br/>還在，只是沒用到"]:::bio
+  B --> C{"把意圖接出來"}
+  C -->|"TMR：神經改接<br/>到其他肌肉"| D["表面肌電<br/>辨識多種動作"]:::hum
+  C -->|"AMI：保留<br/>拮抗肌配對"| E["肌電＋本體感覺"]:::hum
+  V["鏡像治療、幻肢運動執行<br/>先讓大腦看見動作完成"]:::hum --> B
+  D --> F["訓練：虛擬手臂 → 實體義肢"]:::hum
+  E --> F
+  F --> G["每天使用<br/>控制變準、感覺變敏銳<br/>覺得是身體的一部分"]:::hum
+  classDef bio fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef hum fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef risk fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+</pre>
+</div>
+<p class="note"><span class="tag req">重點</span>復健的順序可以直接借來排訓練：<b>先讓意圖被看見 → 在虛擬環境大量重複 → 換成實體 → 在生活中每天用</b>；感覺回饋則讓裝置從「工具」變成「身體」。</p>
+
+<h3 id="s1-aug">擴增肢體與腦機介面</h3>
+<p>擴增肢體是給健康的人多一隻手或一根手指。下面這些研究回答「多快能學會」和「什麼會讓它變難」：</p>
+<ol class="find">
+  <li><b class="t">Third Thumb：多天訓練後大腦表徵改變</b>用腳趾下的壓力感測器控制戴在小指外側的機械拇指。受試者經多天訓練後能單手完成精細動作，越來越覺得它是身體的一部分；大腦對原本手指的表徵也改變了，一週後部分恢復 <a class="cite" href="#r16">[16]</a>。</li>
+  <li><b class="t">好設計幾乎不用學</b>596 位 3 到 96 歲的民眾試戴 Third Thumb，98% 在第一分鐘內就能用它拿起物品 <a class="cite" href="#r17">[17]</a>。</li>
+  <li><b class="t">訊號要從哪裡「借」？</b>控制額外肢體的訊號一定得從身體某處借來；借的地方如果正在做別的事，就會互相干擾。作者稱之為神經資源分配問題 <a class="cite" href="#r18">[18]</a>。Third Thumb 用腳趾，正好避開雙手原本的工作。</li>
+  <li><b class="t">腦電控制第三隻手臂，個人差異大</b>受試者雙手平衡一顆球，同時用運動想像的腦電控制機械手臂去抓瓶子；15 人的成功率約 52%–85% <a class="cite" href="#r19">[19]</a>。</li>
+  <li><b class="t">落在「內在流形」內的就學得快</b>猴子用腦機介面控制游標：需要的神經活動模式如果落在牠原本就常出現的範圍（內在流形）內，幾小時就學會；落在範圍外就很難 <a class="cite" href="#r20">[20]</a>。</li>
+  <li><b class="t">解碼器固定，大腦才會形成穩定地圖</b>解碼器保持不變時，猴子的運動皮質會形成穩定的控制模式，像記憶一樣隨時叫得出來；稍微改變解碼器就會打亂表現 <a class="cite" href="#r21">[21]</a>。</li>
+  <li><b class="t">對應關係不必像自然動作</b>「抽象」肌電控制中，肌肉和控制目標的對應不模仿自然動作，使用者練習後也能學會 <a class="cite" href="#r22">[22]</a>。</li>
+  <li><b class="t">人和機器一起學</b>腦機介面有兩個學習者：使用者和解碼器。用共同學習的方法，兩位四肢癱瘓者在 Cybathlon 2016 的腦機介面比賽中取得優異成績（只有兩人、無對照）<a class="cite" href="#r23">[23]</a>。</li>
+  <li><b class="t">有些人怎麼練都控制不好</b>運動想像型的腦機介面，估計 15%–30% 的使用者無法達到可用的控制；共同適應的校正可以幫到其中一部分人 <a class="cite" href="#r24">[24]</a>。</li>
+</ol>
+<p class="note-warn"><span class="tag warn">注意</span>腦電控制的個人差異大、需要校正，放在「貼近生活、不要太複雜」的專題裡風險很高。表面肌電的振幅大約是頭皮腦電的 10–100 倍，也穩定得多，是比較實際的起點；腦電可以當進階對照（見 <a href="#s2-eeg">§2 腦電版本</a>）。</p>
+
+<h3 id="s1-rules">五個快速適應原則</h3>
+<p>把上面的生物與臨床發現收斂成五條設計原則，提案 A 每個設計決定都對應其中一條：</p>
+<div class="scroll">
+<table>
+  <thead><tr><th style="width:26%">原則</th><th style="width:30%">依據</th><th>在提案 A 裡怎麼做</th></tr></thead>
+  <tbody>
+    <tr><td><span class="name">P1 借用舊地圖</span>選使用者本來就能獨立、穩定控制的訊號</td><td>幻肢的手指地圖仍在 <a class="cite" href="#r8">[8]</a>；TMR 用原本的神經 <a class="cite" href="#r10">[10]</a>；內在流形內學得快 <a class="cite" href="#r20">[20]</a></td><td>只用「一條肌肉收縮多強」當訊號，不要求新的肌肉組合</td></tr>
+    <tr><td><span class="name">P2 不搶資源</span>訊號來源不能是任務正在用的部位</td><td>神經資源分配問題 <a class="cite" href="#r18">[18]</a>；Third Thumb 用腳趾 <a class="cite" href="#r16">[16]</a><a class="cite" href="#r17">[17]</a></td><td>雙手在做事時，用小腿前側的脛前肌（翹腳尖）當訊號源</td></tr>
+    <tr><td><span class="name">P3 中央給目標、周邊做細節</span></td><td>章魚的周邊運動程式與分節神經 <a class="cite" href="#r1">[1]</a><a class="cite" href="#r3">[3]</a><a class="cite" href="#r4">[4]</a></td><td>使用者只下「夾／放」；手指用指尖壓力感測器自己控制夾力、碰到就停</td></tr>
+    <tr><td><span class="name">P4 給回饋，最好像身體感覺</span></td><td>AMI 的本體感覺 <a class="cite" href="#r11">[11]</a><a class="cite" href="#r12">[12]</a>；骨整合義肢的觸覺 <a class="cite" href="#r13">[13]</a>；鏡像治療 <a class="cite" href="#r14">[14]</a></td><td>指尖壓力轉成手腕上的震動強度（感覺替代）</td></tr>
+    <tr><td><span class="name">P5 先固定再共同適應；先虛擬再實體</span></td><td>穩定皮質地圖 <a class="cite" href="#r21">[21]</a>；共同學習 <a class="cite" href="#r23">[23]</a><a class="cite" href="#r24">[24]</a>；幻肢運動執行 <a class="cite" href="#r15">[15]</a></td><td>每天開始時校正一次、當天門檻不動；先在螢幕上練，再戴實體</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="flow">
+<pre class="mermaid">
+flowchart LR
+  subgraph SRC["生物與臨床"]
+    direction TB
+    MP["截肢與移植<br/>舊地圖保留"]:::bio
+    BCI["擴增肢體與 BCI<br/>資源、流形、共同學習"]:::hum
+    O["章魚<br/>周邊自主"]:::bio
+    RH["義肢與復健<br/>感覺回饋、分階段"]:::hum
+    R["再生<br/>神經與組織一起長"]:::bio
+  end
+  subgraph PR["五個原則"]
+    direction TB
+    P1["P1 借用舊地圖"]:::rule
+    P2["P2 不搶資源"]:::rule
+    P3["P3 中央給目標<br/>周邊做細節"]:::rule
+    P4["P4 身體感覺回饋"]:::rule
+    P5["P5 先固定再共同適應<br/>先虛擬再實體"]:::rule
+  end
+  MP --> P1
+  BCI --> P1
+  BCI --> P2
+  O --> P3
+  RH --> P4
+  RH --> P5
+  R --> P5
+  BCI -.-> P5
+  P1 & P2 & P3 & P4 & P5 --> X["提案 A<br/>肌電控制第六指"]:::idea
+  classDef bio fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef hum fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef rule fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef idea fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2A00
+</pre>
+</div>
+</div>
+</details>
+
+<!-- ===================== 2 提案 A ===================== -->
+<details class="sec" id="s2" open>
+<summary><span class="no">2</span><h2>提案 A：肌電控制的「第六指」</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s2-scene">生活場景與問題</h3>
+<p>雙手常常不夠用。戴在小指外側、多一根能夾東西的手指，可以：</p>
+<ul class="specs">
+  <li>一隻手同時拿手機和飲料，或拿著杯子用同一隻手滑手機。</li>
+  <li>一手扶碗、一手攪拌時，第六指夾住湯匙或碗緣。</li>
+  <li>提著購物袋時，用剩下的手指按電梯、開門。</li>
+  <li>延伸應用：單手受傷或握力不足的人。<span class="tag warn">注意</span>專題只測健康成人，不涉及患者。</li>
+</ul>
+<p class="note-opt"><span class="tag opt">提案</span><b>研究問題</b>：一般人第一次戴上用肌電控制的額外手指，要練多久才能自然地用在生活任務上？章魚式的本地控制（P3）能不能縮短這個時間、降低心理負荷？</p>
+
+<h3 id="s2-arch">系統架構</h3>
+<div class="flow big">
+<pre class="mermaid">
+flowchart TB
+  subgraph SIG["① 人只下指令：一個維度"]
+    direction LR
+    U(("使用者<br/>想夾住")):::hum --> EMG["脛前肌 EMG<br/>翹腳尖"]:::hum --> ENV["整流＋包絡<br/>約 100 ms 平滑"]:::idea --> DEC{"解碼<br/>雙門檻＋遲滯"}
+  end
+  subgraph LC["② 本地控制器：章魚式"]
+    direction LR
+    CMD["目標狀態<br/>張開／夾住"]:::idea --> CTRL["力量控制<br/>到目標夾力就停<br/>夾力突降就補力"]:::idea --> FIN["伺服馬達<br/>帶動第六指"]:::idea --> FSR["指尖壓力 FSR<br/>量接觸力"]:::idea
+  end
+  subgraph FB["③ 回饋給人，再回到 ①"]
+    direction LR
+    VIB["手腕震動馬達<br/>夾力 → 震動強度"]:::idea --> SEN["觸覺：夾得多緊"]:::hum
+    SEE["視覺：手指的位置"]:::hum
+  end
+  SIG -->|"短收一下＝切換 夾／放"| LC
+  LC -->|"FSR 讀數回到力量控制<br/>同時送到手腕"| FB
+  classDef hum fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef idea fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2A00
+</pre>
+</div>
+<ol class="steps">
+  <li><b class="t">訊號源：脛前肌（P1、P2）</b>
+    <ul>
+      <li>坐著做桌上任務時，翹腳尖不會影響雙手，和 Third Thumb 用腳趾的理由一樣 <a class="cite" href="#r16">[16]</a><a class="cite" href="#r18">[18]</a>。</li>
+      <li>只用「收縮強度」一個維度，任何人都會做，不必學新的肌肉組合。</li>
+      <li>備案：咬肌（咬緊牙關），訊號大，但說話、吃東西會誤觸。</li>
+    </ul></li>
+  <li><b class="t">解碼：雙門檻＋遲滯（P5）</b>
+    <ul>
+      <li>包絡超過上門檻約 150–500 ms 後落回下門檻以下，算一次「點擊」，切換夾／放。用切換而不是一直出力，腳不會累。</li>
+      <li>門檻設在最大自主收縮的某個比例（例如 30% 與 15%），每天開始時校正一次，當天固定不動 <a class="cite" href="#r21">[21]</a>。</li>
+    </ul></li>
+  <li><b class="t">本地控制：章魚式（P3）</b>
+    <ul>
+      <li>收到「夾」：馬達慢慢合，FSR 讀數達到目標夾力就停住並保持。</li>
+      <li>夾力突然下降（東西在滑）：自動多合一點。收到「放」：張開。</li>
+      <li>對照組「直接控制」：EMG 包絡直接對應手指角度（比例控制），沒有本地反射。</li>
+    </ul></li>
+  <li><b class="t">回饋：震動（P4）</b>
+    <ul>
+      <li>FSR 讀數對應到手腕震動馬達的 PWM 強度：夾得越緊震得越強，放開就停。</li>
+    </ul></li>
+</ol>
+
+<h3 id="s2-hw">材料與成本</h3>
+<div class="scroll">
+<table class="narrow">
+  <thead><tr><th>項目</th><th>用途</th><th class="num">估計價格（NT$）</th></tr></thead>
+  <tbody>
+    <tr><td>肌電感測模組（MyoWare 2.0 或同級類比 EMG 模組）＋拋棄式電極</td><td>量脛前肌 EMG 包絡</td><td class="num">800–1,500</td></tr>
+    <tr><td>ESP32 或 Arduino Nano</td><td>解碼、本地控制、藍牙送資料</td><td class="num">200–400</td></tr>
+    <tr><td>伺服馬達（MG90S 等小型金屬齒輪）</td><td>驅動手指（可用拉線帶動）</td><td class="num">100–300</td></tr>
+    <tr><td>FSR 壓力感測器（如 FSR 402）</td><td>指尖接觸力</td><td class="num">150–300</td></tr>
+    <tr><td>震動馬達＋電晶體</td><td>手腕觸覺回饋</td><td class="num">50–100</td></tr>
+    <tr><td>3D 列印手指、魔鬼氈綁帶、釣魚線</td><td>機構</td><td class="num">學校設備／100–300</td></tr>
+    <tr><td>行動電源或鋰電池</td><td>供電（必須電池供電）</td><td class="num">300–500</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small muted">價格為估計值，依通路與型號差很多；學校實驗室若已有 EMG 或 Arduino，成本可以再降。</p>
+
+<h3 id="s2-train">適應訓練流程</h3>
+<p>照截肢復健的順序排（先看見 → 虛擬重複 → 實體 → 生活），每一階達到門檻才進下一階：</p>
+<div class="flow big">
+<pre class="mermaid">
+flowchart LR
+  S0["第 0 階：校正<br/>量最大自主收縮<br/>設上下門檻"]:::idea --> S1["第 1 階：螢幕練習<br/>EMG 控制畫面上的手指<br/>點擊準確率"]:::idea
+  S1 -->|"10 次內 ≥ 8 次正確"| S2["第 2 階：實體單任務<br/>只用第六指夾放 5 種物品"]:::idea
+  S2 -->|"成功率 ≥ 80%"| S3["第 3 階：雙工<br/>雙手疊積木<br/>同時第六指夾住紙杯"]:::idea
+  S3 -->|"成功率 ≥ 80%"| S4["第 4 階：生活任務<br/>單手拿兩樣東西<br/>扶碗攪拌"]:::idea
+  R1["參考：幻肢運動執行<br/>先在螢幕上練"]:::hum -.-> S1
+  R2["參考：義肢訓練<br/>虛擬到實體"]:::hum -.-> S2
+  R3["參考：神經資源分配<br/>和既有動作共存"]:::hum -.-> S3
+  R4["參考：骨整合義肢<br/>每天在生活中用"]:::hum -.-> S4
+  classDef hum fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef idea fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2A00
+</pre>
+</div>
+<p class="flow-cap">參考依據：第 1 階 <a class="cite" href="#r15">[15]</a>、第 2 階 <a class="cite" href="#r10">[10]</a>、第 3 階 <a class="cite" href="#r18">[18]</a>、第 4 階 <a class="cite" href="#r13">[13]</a>。門檻數字是 <span class="tag opt">提案</span>，可以依先導測試調整。</p>
+
+<h3 id="s2-exp">實驗設計與指標</h3>
+<ul class="check">
+  <li><b>受試者</b>：6–10 位健康成人（同學），知情同意。</li>
+  <li><b>設計</b>：交叉設計，每人「直接控制」和「章魚式本地控制」都做，順序隨機對調，比較同一個人在兩種控制下的差異。</li>
+  <li><b>訓練量</b>：每種控制各 3–5 次、每次 20 分鐘，隔天進行。</li>
+  <li><b>任務</b>：固定的一組物品（海綿、紙杯、筆、乒乓球、手機）與雙工任務，每次都一樣。</li>
+  <li><b>表現指標</b>：完成時間、成功率、掉落次數、學習曲線（達到 80% 成功率需要幾次嘗試）。</li>
+  <li><b>主觀指標</b>：NASA-TLX 工作負荷；簡化的具身感問卷（例如「第六指感覺像我身體的一部分」，1–7 分）。</li>
+  <li><b>保留測試</b>：最後一次訓練後隔一週，不練習直接測一次。</li>
+</ul>
+<p class="note-inf"><span class="tag inf">推論</span>預期：章魚式組在前幾次成功率較高、負荷較低（使用者不用自己控制力量）；直接控制組在需要細緻力量的任務上，上限可能較高。若兩組差異小，代表單一 EMG 通道「點擊」已經夠簡單，結論一樣有價值。</p>
+
+<h3 id="s2-eeg">腦電版本（進階）</h3>
+<p>可以接本站的 <a href="../../neeg/">NEEG-2 兩通道腦電接收器</a>：電極放在頭頂兩側（C3、C4 附近），想像手部動作時感覺運動區的 mu／beta 節律會下降，用這個變化當開關。</p>
+<ul class="specs">
+  <li><span class="tag warn">注意</span>成功率個人差異大、校正時間長 <a class="cite" href="#r19">[19]</a><a class="cite" href="#r24">[24]</a>，不建議當主實驗。</li>
+  <li><span class="tag opt">提案</span>當延伸實驗：本地控制器完全不變，只把訊號源從 EMG 換成 EEG，比較學習曲線。</li>
+  <li><span class="tag inf">推論</span>這個比較剛好檢驗 P3：如果章魚式本地控制能補償腦電「頻寬低、雜訊大」的缺點，換成 EEG 後表現掉得會比直接控制少。</li>
+</ul>
+
+<h3 id="s2-risk">風險與簡化版</h3>
+<ul class="check">
+  <li><b>電氣安全</b>：戴在身上的電路只用電池供電，不接市電，也不接插著電源充電的筆電；資料用藍牙傳。</li>
+  <li><b>夾傷</b>：伺服馬達軟體限制最大角度與夾力，機構用拉線驅動，卡住時線會先鬆。</li>
+  <li><b>皮膚</b>：拋棄式電極一次一片；皮膚過敏就停用。</li>
+  <li><b>時間不夠的簡化版</b>：先用腳踏式 FSR 開關取代 EMG，也就是 Third Thumb 的做法 <a class="cite" href="#r16">[16]</a><a class="cite" href="#r17">[17]</a>，專心做本地控制與訓練實驗；EMG 做好再換上去。</li>
+</ul>
+</div>
+</details>
+
+<!-- ===================== 3 方向 B ===================== -->
+<details class="sec" id="s3" open>
+<summary><span class="no">3</span><h2>方向 B：脊椎動物怎麼學會動</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+<p>跑步是脊椎動物最古老的技能之一。想做「跑姿優化」，先問神經系統本來怎麼學動作。下面五個理論，各自對應一條回饋設計原則（L1–L5，見 <a href="#s4-logic">§4 回饋邏輯</a>）。</p>
+
+<h3 id="s3-three">三種學習訊號</h3>
+<p>Doya 提出：小腦、基底核、大腦皮質各擅長一種學習 <a class="cite" href="#r25">[25]</a>：</p>
+<ul class="specs">
+  <li><b>小腦：監督式學習</b>。有明確的「誤差」（差多少、往哪邊），用誤差修正動作。</li>
+  <li><b>基底核：強化式學習</b>。只知道結果「好」或「不好」，靠嘗試找出得到獎勵的做法。</li>
+  <li><b>大腦皮質：非監督式學習</b>。從大量經驗中整理出規律與表徵。</li>
+</ul>
+<p>人類運動學習的綜述也整理出類似的多種機制：誤差導向的適應、強化學習、重複使用帶來的學習，以及大腦對動作結果的預測 <a class="cite" href="#r26">[26]</a>。另一個重要觀點是<b>最佳回饋控制</b>：神經系統只修正會影響任務目標的偏差，和任務無關的變異就放著不管 <a class="cite" href="#r27">[27]</a>。</p>
+<div class="flow">
+<pre class="mermaid">
+flowchart LR
+  subgraph BRAIN["脊椎動物的三種學習"]
+    direction TB
+    CB["小腦<br/>監督式：用誤差修正"]:::bio
+    BG["基底核<br/>強化式：用好壞選擇"]:::bio
+    CX["大腦皮質<br/>非監督式：整理規律"]:::bio
+  end
+  CPG["脊髓 CPG<br/>產生跑步節律"]:::bio
+  CB --> CPG
+  BG --> CPG
+  CB -.->|"對應"| F1["即時誤差回饋<br/>節拍器：早一點、晚一點"]:::idea
+  BG -.->|"對應"| F2["成功提示<br/>這一段 90% 的步在範圍內"]:::idea
+  CX -.->|"對應"| F3["跑後報告<br/>影片與趨勢圖自己看"]:::idea
+  classDef bio fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef idea fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2A00
+</pre>
+</div>
+<p class="note-inf"><span class="tag inf">推論</span>把三種學習對應到三種回饋，是這頁的設計假設，不是文獻的直接結論。好處是每一種回饋都有明確的理由，報告時容易說明。</p>
+
+<h3 id="s3-cpg">節律由脊髓產生</h3>
+<p>脊椎動物的走路、跑步、游泳節律由中樞模式產生器（CPG）產生：這些神經迴路只要接收<b>簡單、低維的輸入</b>，就能輸出協調的、高維的節律訊號 <a class="cite" href="#r28">[28]</a>。大腦主要負責調整速度、步頻這類「高層參數」。</p>
+<p class="note-inf"><span class="tag inf">推論</span>改跑姿時，與其逐一糾正膝蓋、腳踝、軀幹，不如調整節律這個高層參數。例如用節拍器把步頻提高 5%–10%，步長、身體上下起伏和膝蓋彎曲角度會跟著一起變 <a class="cite" href="#r39">[39]</a>。這和章魚「大腦只給低維指令」是同一個概念，也是兩個方向的交集。</p>
+
+<h3 id="s3-var">變異是探索，不是雜訊</h3>
+<ul class="specs">
+  <li><b>幼鳥</b>：斑胸草雀學唱歌時，基底核相關的迴路（LMAN）會主動製造變異；暫時抑制它，歌聲的變異立刻變小 <a class="cite" href="#r29">[29]</a>。</li>
+  <li><b>成鳥</b>：用即時系統只在牠唱出某些音高時播放噪音，鳥會很快把那個音高移開，而且改變只發生在被針對的那個特徵 <a class="cite" href="#r30">[30]</a>。</li>
+  <li><b>人類</b>：任務相關方向的動作變異越大，學得越快；訓練還會改變變異的結構，讓它對準要學的任務 <a class="cite" href="#r31">[31]</a>。</li>
+</ul>
+<div class="flow">
+<pre class="mermaid">
+flowchart LR
+  V["每次唱都不太一樣<br/>LMAN 製造變異"]:::bio --> E["只有某些音高<br/>被噪音干擾"]:::bio --> S["只有被針對的特徵<br/>往避開的方向移"]:::bio
+  S ==>|"借到跑步"| R["只對超出範圍的步給提示<br/>其他步允許自由變化"]:::idea
+  classDef bio fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef idea fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2A00
+</pre>
+</div>
+<p class="note"><span class="tag req">重點</span>回饋應該<b>只針對一個特徵、只在超出範圍時給</b>，其他方向允許自由變化。不要要求每一步都一模一樣。</p>
+
+<h3 id="s3-energy">身體自己會找省力解</h3>
+<p>研究者用外骨骼改變走路時「最省力的步頻」，受試者在幾分鐘內就自己移到新的最省力點，即使省下的能量不到 5% <a class="cite" href="#r32">[32]</a>。</p>
+<div class="note-inf">
+  <p><span class="tag inf">推論</span>跑者原本的步頻很可能已經接近自己最省力的點，所以這個系統的目標<b>不是追求「最標準的姿勢」</b>，而是降低特定的、和受傷有關的負荷（衝擊、跨步過大）。改了之後要給身體幾週重新最佳化，剛開始覺得比較累是可預期的。</p>
+</div>
+<p class="note-warn"><span class="tag warn">注意</span>這個研究的對象是走路，不是跑步；用在跑步是類推。</p>
+
+<h3 id="s3-feedback">回饋怎麼給才學得會</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th style="width:20%">原則</th><th style="width:44%">依據</th><th>在跑步怎麼做</th></tr></thead>
+  <tbody>
+    <tr><td><span class="name">回饋要逐漸減少</span></td><td>只在一半的嘗試給結果回饋，練習當下表現較差，但隔一段時間的保留測試反而較好；每次都給會讓人依賴外部回饋 <a class="cite" href="#r33">[33]</a>。</td><td>第 1 週全程提示，之後只在超出範圍時提示，最後全部拿掉。</td></tr>
+    <tr><td><span class="name">外在焦點</span></td><td>注意動作的「效果」比注意「身體部位」學得好 <a class="cite" href="#r34">[34]</a>。</td><td>「讓腳步聲變輕」「踩在節拍上」，不說「膝蓋多彎一點」。</td></tr>
+    <tr><td><span class="name">選對感官</span></td><td>視覺、聽覺、觸覺回饋各有適合的任務，綜述整理了各自的設計準則 <a class="cite" href="#r35">[35]</a>。</td><td>跑步時眼睛要看路，即時回饋用耳機的聲音；細節留到跑後看影片。</td></tr>
+    <tr><td><span class="name">即時＋延遲混合</span></td><td>穿戴式跑步回饋的綜述：最有效的回饋模式與頻率因變數和人而異，混合多種模式、即時加延遲最有效；強調勝任感、自主性和外在焦點的回饋有助動機 <a class="cite" href="#r36">[36]</a>。</td><td>跑中只給一種聲音提示；跑後給報告和成就感（例如「這次 85% 的步在範圍內」）。</td></tr>
+    <tr><td><span class="name">一次只改一件事</span></td><td>神經系統只修正任務相關的偏差 <a class="cite" href="#r27">[27]</a>。</td><td>一次只追一個目標變數，達標後再換下一個。</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="s3-run">跑姿再訓練的證據</h3>
+<ol class="find">
+  <li><b class="t">即時回饋可以把脛骨衝擊降一半</b>10 位脛骨衝擊偏高（峰值 &gt; 8 g）的跑者在跑步機上看即時加速度回饋；訓練後脛骨衝擊降約 50%、垂直負荷率降約 30%、衝擊峰降約 20%，一個月後仍維持 <a class="cite" href="#r38">[38]</a>。</li>
+  <li><b class="t">步頻提高 5%–10%，膝和髖的負荷就下降</b>45 位休閒跑者：步頻提高 5% 時膝關節吸收的能量就減少，提高 10% 時髖關節負荷也下降；步頻降低 10% 則各關節負荷都增加 <a class="cite" href="#r39">[39]</a>。</li>
+  <li><b class="t">著地方式和衝擊有關</b>習慣赤腳跑的人多用前腳掌著地，著地衝擊較小 <a class="cite" href="#r40">[40]</a>。
+    <span class="so"><span class="tag warn">注意</span>改著地方式會改變受力分布（例如小腿和跟腱的負擔可能增加），不適合當入門專題的目標。</span></li>
+  <li><b class="t">穿戴回饋不一定能預防受傷</b>220 位休閒跑者用壓力鞋墊即時回饋，依原分組分析時受傷率和對照組沒有顯著差異（不少人裝置設定錯誤）<a class="cite" href="#r37">[37]</a>。
+    <span class="so">→ 專題要量的是生物力學的變化，不宣稱能預防受傷。</span></li>
+  <li><b class="t">手機影片可以看大方向，看不準細節</b>OpenPose、MediaPipe 這類姿態估計可以接近光學動作捕捉，但幅度小的關節動作容易漏掉，腳踝的位置有時會認錯 <a class="cite" href="#r41">[41]</a>。
+    <span class="so">→ 影片只用來看跨步、軀幹前傾、膝蓋角度這類大方向。</span></li>
+</ol>
+</div>
+</details>
+
+<!-- ===================== 4 提案 B ===================== -->
+<details class="sec" id="s4" open>
+<summary><span class="no">4</span><h2>提案 B：跑姿監控與回饋系統</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s4-scene">生活場景與問題</h3>
+<p>很多人下班慢跑、準備路跑，常見的問題是膝蓋痛、小腿前側痛；但一般人沒錢請教練，也不會去實驗室做步態分析。目標：用手機加一顆幾百元的感測器，做一個<b>會自己淡出的跑步教練</b>。</p>
+<p class="note-opt"><span class="tag opt">提案</span><b>研究問題</b>：依運動學習理論設計的淡出式回饋，能不能讓跑者在 3 週內提高步頻、降低脛骨衝擊，而且在拿掉回饋後保留下來？</p>
+
+<h3 id="s4-what">要監控什麼</h3>
+<p>只挑有證據、量得到、和受傷負荷有關的變數，而且一次只訓練一個（L1）。</p>
+<div class="scroll">
+<table>
+  <thead><tr><th style="width:17%">變數</th><th style="width:28%">為什麼</th><th style="width:30%">怎麼量</th><th>目標 <span class="tag opt">提案</span></th></tr></thead>
+  <tbody>
+    <tr><td><span class="name">步頻</span>步／分</td><td>提高 5%–10% 能降低膝、髖負荷 <a class="cite" href="#r39">[39]</a></td><td>手機或 IMU 的加速度峰值計數，算相鄰兩步的時間間隔</td><td>個人基準 +5%，適應後再到 +7.5%</td></tr>
+    <tr><td><span class="name">脛骨衝擊峰值</span>g</td><td>即時回饋可降約一半 <a class="cite" href="#r38">[38]</a></td><td>小腿內側下段綁 IMU，量程 ±16 g、取樣 500 Hz 以上（建議值），取每步著地後的軸向加速度峰值</td><td>比個人基準低，先從小幅下降開始</td></tr>
+    <tr><td><span class="name">跨步過大</span>跑後看</td><td>步頻提高時步長、煞車衝量和膝蓋最大彎曲角度都會變小 <a class="cite" href="#r39">[39]</a></td><td>側拍影片＋姿態估計：著地瞬間腳踝在膝蓋前方多遠 <a class="cite" href="#r41">[41]</a></td><td>著地時小腿接近垂直</td></tr>
+    <tr><td><span class="name">心率、主觀用力</span>對照用</td><td>確認新跑法沒有變得太累 <a class="cite" href="#r32">[32]</a></td><td>心率錶；跑完填 RPE（6–20 分）</td><td>同配速下心率沒有明顯上升</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note-warn"><span class="tag warn">注意</span>手機的加速度計取樣率多半只有 100–200 Hz，算步頻夠用，但抓不準衝擊峰值；要量脛骨衝擊就需要綁在小腿上的 IMU。</p>
+
+<h3 id="s4-arch">系統架構</h3>
+<div class="flow big">
+<pre class="mermaid">
+flowchart LR
+  subgraph RUN["跑步中：即時"]
+    direction TB
+    IMU["小腿 IMU<br/>ESP32＋加速度計"]:::hum --> FE["特徵<br/>步頻、脛骨衝擊峰值"]:::idea
+    PH["手機臂套<br/>步頻備援"]:::hum --> FE
+    SCH["回饋排程<br/>逐週淡出"]:::rule --> J
+    FE --> J{"超出目標範圍？"}
+    J -->|"是"| FB["耳機提示<br/>節拍器或短音"]:::idea
+    J -->|"否"| Q["安靜<br/>不打擾"]:::idea
+  end
+  subgraph AFTER["跑完：延遲"]
+    direction TB
+    VID["手機側拍影片"]:::hum --> POSE["姿態估計<br/>MediaPipe"]:::idea
+    POSE --> REP["跑後報告<br/>跨步、膝角、趨勢圖<br/>範圍內步數比例"]:::idea
+    LOG["IMU 紀錄"]:::idea --> REP
+  end
+  FB --> USER(("跑者")):::bio
+  REP --> USER
+  USER -->|"調整跑法"| IMU
+  classDef bio fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef hum fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef rule fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef idea fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2A00
+</pre>
+</div>
+<ul class="specs">
+  <li><b>接收端</b>：可以沿用本站 <a href="../../serial-terminal/">Serial Terminal</a> 和 <a href="../../neeg/">NEEG-2</a> 的做法，用網頁的 Web Bluetooth 接 ESP32，聲音用 Web Audio 產生。<span class="tag warn">注意</span>iPhone 的 Safari 不支援 Web Bluetooth，需要改用 Android 的 Chrome 或 iOS 上支援的瀏覽器 App。</li>
+  <li><b>步頻</b>：加速度合成值低通濾波後找峰值，取最近 10 步的平均間隔換算成步／分。</li>
+  <li><b>脛骨衝擊</b>：每步著地後約 50 ms 內，沿小腿軸向的加速度最大值。</li>
+  <li><b>跑後報告</b>：Python 跑 MediaPipe Pose 處理側拍影片，加上 IMU 紀錄畫出每次跑步的趨勢圖。</li>
+</ul>
+
+<h3 id="s4-logic">回饋邏輯</h3>
+<p>把 §3 的理論整理成五條回饋原則：</p>
+<div class="scroll">
+<table class="narrow">
+  <thead><tr><th style="width:34%">原則</th><th style="width:22%">依據</th><th>做法</th></tr></thead>
+  <tbody>
+    <tr><td><span class="name">L1 一次只盯一個變數</span></td><td><a class="cite" href="#r27">[27]</a></td><td>前 3 週只練步頻；衝擊只記錄、不提示（或反過來）</td></tr>
+    <tr><td><span class="name">L2 在範圍內就安靜</span></td><td><a class="cite" href="#r30">[30]</a><a class="cite" href="#r31">[31]</a><a class="cite" href="#r33">[33]</a></td><td>只對超出範圍的步給提示，範圍內允許自由變化</td></tr>
+    <tr><td><span class="name">L3 逐週淡出</span></td><td><a class="cite" href="#r33">[33]</a><a class="cite" href="#r36">[36]</a></td><td>全程 → 只在超出時 → 只看跑後報告 → 全部拿掉</td></tr>
+    <tr><td><span class="name">L4 外在焦點的提示語</span></td><td><a class="cite" href="#r34">[34]</a><a class="cite" href="#r36">[36]</a></td><td>「腳步聲輕一點」「跟著節拍」</td></tr>
+    <tr><td><span class="name">L5 先調節律、再看細節</span></td><td><a class="cite" href="#r28">[28]</a><a class="cite" href="#r39">[39]</a></td><td>先用節拍器改步頻，跨步與膝角從跑後影片看變化</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="flow big">
+<pre class="mermaid">
+flowchart LR
+  W0["第 0 週：基準<br/>不給回饋<br/>量 2 次"]:::hum --> W1["第 1 週<br/>節拍器全程開<br/>超出就提示"]:::idea
+  W1 --> W2["第 2 週<br/>節拍器隔段開關<br/>只在超出時提示"]:::idea
+  W2 --> W3["第 3 週<br/>沒有即時回饋<br/>只看跑後報告"]:::idea
+  W3 --> W4["第 4–5 週<br/>保留測試：全部拿掉<br/>轉移測試：換場地或速度"]:::rule
+  classDef hum fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef rule fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef idea fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2A00
+</pre>
+</div>
+<p>每一步的判斷邏輯大約是這樣（虛擬碼）：</p>
+<pre class="code">每一步著地時：
+  cadence = 最近 10 步的平均步頻
+  inRange = |cadence − target| ≤ 容許範圍（例如 ±3 步／分）
+  記錄這一步（給跑後報告用）
+
+  依本週排程：
+    第 1 週：節拍器一直響；連續 5 步不在範圍內 → 播「跟著節拍」
+    第 2 週：節拍器每 2 分鐘開 1 分鐘；連續 10 步不在範圍內才提示
+    第 3 週：不發聲；跑完顯示「範圍內步數比例」與趨勢圖
+    保留測試：不發聲、跑完也不顯示（只存資料）</pre>
+
+<h3 id="s4-hw">材料與成本</h3>
+<div class="scroll">
+<table class="narrow">
+  <thead><tr><th>版本</th><th>內容</th><th>能量什麼</th><th class="num">估計價格（NT$）</th></tr></thead>
+  <tbody>
+    <tr><td><span class="name">手機版</span></td><td>手機（臂套或腰包）＋耳機＋腳架側拍</td><td>步頻、跑後影片</td><td class="num">0</td></tr>
+    <tr><td><span class="name">IMU 版</span></td><td>ESP32（含藍牙）＋ 6 軸 IMU（±16 g）＋小鋰電池＋彈性綁帶</td><td>步頻、脛骨衝擊、即時回饋</td><td class="num">300–600</td></tr>
+    <tr><td><span class="name">加分</span></td><td>心率帶或運動手錶（借用即可）</td><td>心率（對照用）</td><td class="num">0–1,500</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="s4-exp">實驗設計與指標</h3>
+<ul class="check">
+  <li><b>受試者</b>：自己＋3–5 位沒有受傷的休閒跑者，知情同意。</li>
+  <li><b>設計</b>：A-B-A 單一受試者設計：基準（無回饋）→ 再訓練（3 週淡出回饋）→ 保留（拿掉回饋）。每個人都和自己比。</li>
+  <li><b>固定條件</b>：同一雙鞋、同一配速（跑步機或操場固定圈速）、每次 20–30 分鐘、感測器每次綁在同一位置（用筆做記號）。</li>
+  <li><b>指標</b>：每次的平均步頻、脛骨衝擊中位數、變異係數、範圍內步數比例、同配速心率、RPE；影片量著地時腳踝在膝蓋前方的距離。</li>
+  <li><b>分析</b>：畫每個人的學習曲線，比較「基準」和「保留測試」；有轉移測試的話再比「換場地」時保留多少。</li>
+  <li><b>進階對照</b>：分兩組，一組回饋全程不淡出、一組淡出，直接檢驗「回饋要逐漸減少」<a class="cite" href="#r33">[33]</a>。</li>
+</ul>
+
+<h3 id="s4-risk">風險與簡化版</h3>
+<ul class="check">
+  <li><b>一次改太多會受傷</b>：步頻從 +5% 起步；跑量不增加；有疼痛就停。</li>
+  <li><b>不是醫療器材</b>：不做診斷、不宣稱能預防受傷 <a class="cite" href="#r37">[37]</a>；只報告生物力學數值的變化。</li>
+  <li><b>感測器鬆動</b>：綁不緊會讓衝擊數值偏高，綁在小腿骨內側下段、用彈性綁帶加魔鬼氈。</li>
+  <li><b>最簡化版</b>：只用手機量步頻、播節拍器，跑後拍側面影片，不做脛骨衝擊。這樣就只剩寫程式，硬體成本為零。</li>
+</ul>
+</div>
+</details>
+
+<!-- ===================== 5 交集 ===================== -->
+<details class="sec" id="s5" open>
+<summary><span class="no">5</span><h2>交集與選題建議</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s5-common">共同原理</h3>
+<p>兩個方向看起來不同，其實借的是同一套生物策略：</p>
+<div class="flow big">
+<pre class="mermaid">
+flowchart TB
+  subgraph BIO["生物的策略"]
+    direction LR
+    G1["分層控制<br/>章魚手臂、脊髓 CPG<br/>上層給目標、下層做細節"]:::bio
+    G2["保留與重用<br/>舊地圖、內在流形<br/>用已經有的迴路"]:::bio
+    G3["精準的學習訊號<br/>小腦誤差、基底核獎勵<br/>鳴禽只改被針對的特徵"]:::bio
+    G4["變異與自我最佳化<br/>探索、能耗最小化"]:::bio
+  end
+  G1 --> A1["A：使用者只下夾／放<br/>手指自己控制力量"]:::idea
+  G1 --> B1["B：只調步頻這個高層參數<br/>其他跟著變"]:::idea
+  G2 --> A2["A：一條肌肉的收縮強度<br/>當訊號"]:::idea
+  G3 --> A3["A：觸覺回饋＋分階段"]:::idea
+  G3 --> B3["B：超出範圍才提示<br/>逐週淡出"]:::idea
+  G4 --> B4["B：允許變異<br/>不追求標準姿勢"]:::idea
+  A1 & A2 & A3 --> PA["提案 A"]:::rule
+  B1 & B3 & B4 --> PB["提案 B"]:::rule
+  PA & PB --> T["報告主軸<br/>從生物學到「學得快」的人機介面"]:::rule
+  classDef bio fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2px,color:#16301C
+  classDef rule fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef idea fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2A00
+</pre>
+</div>
+<p class="note"><span class="tag req">重點</span>兩案共同的一句話：<b>人只負責低維的目標，細節交給下層（手臂神經、脊髓、裝置的本地控制器）；回饋要只針對一件事，而且會逐漸淡出。</b></p>
+
+<h3 id="s5-compare">兩案比較</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th style="width:18%">面向</th><th style="width:41%">提案 A：肌電控制第六指</th><th>提案 B：跑姿監控與回饋</th></tr></thead>
+  <tbody>
+    <tr><td>貼近生活</td><td>中：日常會用到，但大家沒想過需要第六指</td><td>高：很多人在跑步，痛點明確</td></tr>
+    <tr><td>技術難度</td><td>高：EMG 訊號處理＋機構＋韌體＋回饋</td><td>低到中：手機版只要寫程式；IMU 版加一塊 ESP32</td></tr>
+    <tr><td>成本</td><td>約 NT$2,000–3,500（估計）</td><td>NT$0–600（估計）</td></tr>
+    <tr><td>受試者負擔與安全</td><td>中：要貼電極、戴裝置；需注意電氣安全與夾傷</td><td>低：本來就在跑步；需控制改變幅度</td></tr>
+    <tr><td>資料好不好收</td><td>每次要找人來實驗室</td><td>自己每次跑步就是一筆資料</td></tr>
+    <tr><td>仿生論述</td><td>強：章魚、再生、復健都用得上</td><td>強：小腦、基底核、CPG、鳴禽都用得上</td></tr>
+    <tr><td>展示效果</td><td>很強：現場戴上就能示範</td><td>中：影片、趨勢圖、現場聽回饋聲</td></tr>
+    <tr><td>最大風險</td><td>EMG 不穩、機構卡住，時間花在除錯</td><td>效果因人而異；要固定測試條件</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="s5-pick">建議</h3>
+<div class="note-opt">
+  <p><span class="tag opt">提案</span><b>只做一個：選提案 B。</b>它最符合老師「貼近生活、不要太複雜」的要求，手機版當天就能開始收資料，而且運動學習的理論能完整地講出「為什麼這樣設計回饋」。</p>
+  <p><b>如果組員有 Arduino 經驗、又想做控制肢體</b>：做提案 A 的簡化版，先用腳踏開關驗證「章魚式本地控制」和分階段訓練，EMG 當加分項；腦電只當延伸。</p>
+  <p><b>不建議兩個都做完整版</b>。比較好的做法是報告前半用 §1 與 §3 講共同的仿生原理，後半只實作一案，另一案寫成「未來方向」。</p>
+</div>
+
+<h3 id="s5-plan">時程</h3>
+<p>以期中報告在 11 月初、期末展示在 1 月初為例（約 12 週）。A、B 兩條線擇一。</p>
+<div class="flow big">
+<pre class="mermaid">
+gantt
+  title 建議時程（約 12 週）
+  todayMarker off
+  dateFormat YYYY-MM-DD
+  axisFormat %m/%d
+  section 共同
+  文獻整理與定題        :c1, 2026-10-19, 14d
+  期中提案報告          :milestone, m1, 2026-11-02, 0d
+  section 提案 B 跑姿
+  手機版 步頻＋節拍器    :b1, 2026-11-02, 7d
+  IMU 與網頁接收         :b2, after b1, 14d
+  基準量測              :b3, after b2, 7d
+  再訓練與淡出 3 週      :b4, after b3, 21d
+  保留測試與分析         :b5, after b4, 10d
+  section 提案 A 第六指
+  機構與 EMG 校正        :a1, 2026-11-02, 14d
+  本地控制與震動回饋      :a2, after a1, 7d
+  先導測試              :a3, after a2, 7d
+  正式實驗 3 週          :a4, after a3, 21d
+  分析                  :a5, after a4, 10d
+  section 期末
+  報告與展示             :f1, 2027-01-04, 7d
+</pre>
+</div>
+</div>
+</details>
+
+<!-- ===================== 6 參考文獻 ===================== -->
+<details class="sec" id="s6" open>
+<summary><span class="no">6</span><h2>參考文獻</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+<p class="small muted">連結優先指向 DOI 或期刊頁；少數指向 PubMed Central 或 Google Scholar 搜尋。每條後面的灰字是這頁引用它的原因。</p>
+
+<h4 class="rgrp">A1 章魚與軟體機器人</h4>
+<ol class="refs" start="1">
+  <li id="r1">Sumbre G, Gutfreund Y, Fiorito G, Flash T, Hochner B. Control of octopus arm extension by a peripheral motor program. <i>Science</i> 293:1845–1848 (2001). <a href="https://scholar.google.com/scholar?q=%22Control+of+octopus+arm+extension+by+a+peripheral+motor+program%22">Scholar</a><span class="why">切斷的手臂仍能做出正常的伸手動作。</span></li>
+  <li id="r2">Sumbre G, Fiorito G, Flash T, Hochner B. Octopuses use a human-like strategy to control precise point-to-point arm movements. <i>Current Biology</i> 16:767–772 (2006). <a href="https://scholar.google.com/scholar?q=%22Octopuses+use+a+human-like+strategy+to+control+precise+point-to-point+arm+movements%22">Scholar</a><span class="why">送食物時手臂形成三個臨時關節。</span></li>
+  <li id="r3">Zullo L, Sumbre G, Agnisola C, Flash T, Hochner B. Nonsomatotopic organization of the higher motor centers in octopus. <i>Current Biology</i> 19:1632–1636 (2009). <a href="https://scholar.google.com/scholar?q=%22Nonsomatotopic+organization+of+the+higher+motor+centers+in+octopus%22">Scholar</a><span class="why">高階運動中樞沒有身體地圖。</span></li>
+  <li id="r4">Olson CS, Schulz NG, Ragsdale CW. Neuronal segmentation in cephalopod arms. <i>Nature Communications</i> 16:443 (2025). <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11736069/">PMC</a><span class="why">手臂神經索分節，吸盤有對應位置。</span></li>
+  <li id="r5">Laschi C, Cianchetti M, Mazzolai B, Margheri L, Follador M, Dario P. Soft robot arm inspired by the octopus. <i>Advanced Robotics</i> 26:709–727 (2012). <a href="https://doi.org/10.1163/156855312X626343">doi:10.1163/156855312X626343</a><span class="why">仿章魚肌肉結構的軟體機械手臂。</span></li>
+</ol>
+
+<h4 class="rgrp">A2 斷肢再生與神經重構</h4>
+<ol class="refs" start="6">
+  <li id="r6">Kumar A, Godwin JW, Gates PB, Garza-Garcia AA, Brockes JP. Molecular basis for the nerve dependence of limb regeneration in an adult vertebrate. <i>Science</i> 318:772–777 (2007). <a href="https://scholar.google.com/scholar?q=%22Molecular+basis+for+the+nerve+dependence+of+limb+regeneration+in+an+adult+vertebrate%22">Scholar</a><span class="why">蠑螈再生依賴神經，nAG 可替代神經。</span></li>
+  <li id="r7">Farkas JE, Freitas PD, Bryant DM, Whited JL, Monaghan JR. Neuregulin-1 signaling is essential for nerve-dependent axolotl limb regeneration. <i>Development</i> 143:2724–2731 (2016). <a href="https://scholar.google.com/scholar?q=%22Neuregulin-1+signaling+is+essential+for+nerve-dependent+axolotl+limb+regeneration%22">Scholar</a><span class="why">美西螈 NRG1 可讓去神經的肢體再生。</span></li>
+  <li id="r8">Kikkert S, Kolasinski J, Jbabdi S, Tracey I, Beckmann CF, Johansen-Berg H, Makin TR. Revealing the neural fingerprints of a missing hand. <i>eLife</i> 5:e15292 (2016). <a href="https://doi.org/10.7554/eLife.15292">doi:10.7554/eLife.15292</a><span class="why">截肢數十年後，手指地圖仍在。</span></li>
+  <li id="r9">Giraux P, Sirigu A, Schneider F, Dubernard JM. Cortical reorganization in motor cortex after graft of both hands. <i>Nature Neuroscience</i> 4:691–692 (2001). <a href="https://doi.org/10.1038/89472">doi:10.1038/89472</a><span class="why">換手後，手部運動區重新擴張。</span></li>
+</ol>
+
+<h4 class="rgrp">A3 肢體重建與復健</h4>
+<ol class="refs" start="10">
+  <li id="r10">Kuiken TA, Li G, Lock BA, et al. Targeted muscle reinnervation for real-time myoelectric control of multifunction artificial arms. <i>JAMA</i> 301:619–628 (2009). <a href="https://doi.org/10.1001/jama.2009.116">doi:10.1001/jama.2009.116</a><span class="why">神經改接後用肌電直覺控制多功能義肢。</span></li>
+  <li id="r11">Clites TR, Carty MJ, Ullauri JB, et al. Proprioception from a neurally controlled lower-extremity prosthesis. <i>Science Translational Medicine</i> 10:eaap8373 (2018). <a href="https://doi.org/10.1126/scitranslmed.aap8373">doi:10.1126/scitranslmed.aap8373</a><span class="why">AMI 提供本體感覺，義肢更像身體。</span></li>
+  <li id="r12">Song H, Hsieh TH, Yeon SH, et al. Continuous neural control of a bionic limb restores biomimetic gait after amputation. <i>Nature Medicine</i> (2024). <a href="https://doi.org/10.1038/s41591-024-02994-9">doi:10.1038/s41591-024-02994-9</a><span class="why">AMI 受試者的步行速度與地形適應。</span></li>
+  <li id="r13">Ortiz-Catalan M, Mastinu E, Sassu P, Aszmann O, Brånemark R. Self-contained neuromusculoskeletal arm prostheses. <i>New England Journal of Medicine</i> 382:1732–1738 (2020). <a href="https://doi.org/10.1056/NEJMoa1917537">doi:10.1056/NEJMoa1917537</a><span class="why">骨整合、雙向傳訊的義肢在日常生活中使用數年。</span></li>
+  <li id="r14">Chan BL, Witt R, Charrow AP, et al. Mirror therapy for phantom limb pain. <i>New England Journal of Medicine</i> 357:2206–2207 (2007). <a href="https://scholar.google.com/scholar?q=%22Mirror+therapy+for+phantom+limb+pain%22+Chan+2007">Scholar</a><span class="why">視覺回饋降低幻肢痛（樣本小）。</span></li>
+  <li id="r15">Ortiz-Catalan M, Guðmundsdóttir RA, Kristoffersen MB, et al. Phantom motor execution facilitated by machine learning and augmented reality as treatment for phantom limb pain. <i>The Lancet</i> 388:2885–2894 (2016). <a href="https://doi.org/10.1016/S0140-6736(16)31598-7">doi:10.1016/S0140-6736(16)31598-7</a><span class="why">肌電驅動虛擬手臂的遊戲化訓練。</span></li>
+</ol>
+
+<h4 class="rgrp">A4 擴增肢體與腦機介面學習</h4>
+<ol class="refs" start="16">
+  <li id="r16">Kieliba P, Clode D, Maimon-Mor RO, Makin TR. Robotic hand augmentation drives changes in neural body representation. <i>Science Robotics</i> 6:eabd7935 (2021). <a href="https://doi.org/10.1126/scirobotics.abd7935">doi:10.1126/scirobotics.abd7935</a><span class="why">Third Thumb 訓練改變手的大腦表徵。</span></li>
+  <li id="r17">Clode D, et al. Evaluating initial usability of a hand augmentation device across a large and diverse sample. <i>Science Robotics</i> 9:eadk5183 (2024). <a href="https://doi.org/10.1126/scirobotics.adk5183">doi:10.1126/scirobotics.adk5183</a><span class="why">596 人中 98% 第一分鐘就會用。</span></li>
+  <li id="r18">Dominijanni G, Shokur S, et al. The neural resource allocation problem when enhancing human bodies with extra robotic limbs. <i>Nature Machine Intelligence</i> 3:850–860 (2021). <a href="https://doi.org/10.1038/s42256-021-00398-9">doi:10.1038/s42256-021-00398-9</a><span class="why">控制訊號要從哪裡借、會不會干擾。</span></li>
+  <li id="r19">Penaloza CI, Nishio S. BMI control of a third arm for multitasking. <i>Science Robotics</i> 3:eaat1228 (2018). <a href="https://doi.org/10.1126/scirobotics.aat1228">doi:10.1126/scirobotics.aat1228</a><span class="why">腦電控制第三手臂，成功率個人差異大。</span></li>
+  <li id="r20">Sadtler PT, Quick KM, Golub MD, et al. Neural constraints on learning. <i>Nature</i> 512:423–426 (2014). <a href="https://scholar.google.com/scholar?q=%22Neural+constraints+on+learning%22+Sadtler">Scholar</a><span class="why">內在流形內的模式容易學。</span></li>
+  <li id="r21">Ganguly K, Carmena JM. Emergence of a stable cortical map for neuroprosthetic control. <i>PLoS Biology</i> 7:e1000153 (2009). <a href="https://doi.org/10.1371/journal.pbio.1000153">doi:10.1371/journal.pbio.1000153</a><span class="why">固定解碼器下形成穩定的控制地圖。</span></li>
+  <li id="r22">Dyson M, Barnes J, Nazarpour K. Myoelectric control with abstract decoders. <i>Journal of Neural Engineering</i> 15(5) (2018). <a href="https://doi.org/10.1088/1741-2552/aacbfe">doi:10.1088/1741-2552/aacbfe</a><span class="why">不模仿自然動作的肌電對應也學得會。</span></li>
+  <li id="r23">Perdikis S, Tonin L, Saeedi S, Schneider C, Millán JdR. The Cybathlon BCI race: successful longitudinal mutual learning with two tetraplegic users. <i>PLoS Biology</i> 16:e2003787 (2018). <a href="https://doi.org/10.1371/journal.pbio.2003787">doi:10.1371/journal.pbio.2003787</a><span class="why">使用者與解碼器共同學習。</span></li>
+  <li id="r24">Vidaurre C, Blankertz B. Towards a cure for BCI illiteracy. <i>Brain Topography</i> 23:194–198 (2010). <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2874052/">PMC</a><span class="why">15%–30% 的人難以控制運動想像型 BCI。</span></li>
+</ol>
+
+<h4 class="rgrp">B1 運動學習理論</h4>
+<ol class="refs" start="25">
+  <li id="r25">Doya K. What are the computations of the cerebellum, the basal ganglia and the cerebral cortex? <i>Neural Networks</i> 12:961–974 (1999). <a href="https://scholar.google.com/scholar?q=%22What+are+the+computations+of+the+cerebellum%2C+the+basal+ganglia+and+the+cerebral+cortex%22">Scholar</a><span class="why">小腦監督式、基底核強化式、皮質非監督式。</span></li>
+  <li id="r26">Wolpert DM, Diedrichsen J, Flanagan JR. Principles of sensorimotor learning. <i>Nature Reviews Neuroscience</i> 12:739–751 (2011). <a href="https://scholar.google.com/scholar?q=%22Principles+of+sensorimotor+learning%22+Wolpert">Scholar</a><span class="why">運動學習的多種機制綜述。</span></li>
+  <li id="r27">Todorov E, Jordan MI. Optimal feedback control as a theory of motor coordination. <i>Nature Neuroscience</i> 5:1226–1235 (2002). <a href="https://scholar.google.com/scholar?q=%22Optimal+feedback+control+as+a+theory+of+motor+coordination%22">Scholar</a><span class="why">只修正與任務相關的偏差。</span></li>
+  <li id="r28">Ijspeert AJ. Central pattern generators for locomotion control in animals and robots: a review. <i>Neural Networks</i> 21:642–653 (2008). <a href="https://doi.org/10.1016/j.neunet.2008.03.014">doi:10.1016/j.neunet.2008.03.014</a><span class="why">CPG 用低維輸入產生高維節律。</span></li>
+  <li id="r29">Ölveczky BP, Andalman AS, Fee MS. Vocal experimentation in the juvenile songbird requires a basal ganglia circuit. <i>PLoS Biology</i> 3:e153 (2005). <a href="https://doi.org/10.1371/journal.pbio.0030153">doi:10.1371/journal.pbio.0030153</a><span class="why">基底核迴路主動製造變異。</span></li>
+  <li id="r30">Tumer EC, Brainard MS. Performance variability enables adaptive plasticity of ‘crystallized’ adult birdsong. <i>Nature</i> 450:1240–1244 (2007). <a href="https://doi.org/10.1038/nature06390">doi:10.1038/nature06390</a><span class="why">只針對特定音高的回饋，只改那個特徵。</span></li>
+  <li id="r31">Wu HG, Miyamoto YR, Gonzalez Castro LN, Ölveczky BP, Smith MA. Temporal structure of motor variability is dynamically regulated and predicts motor learning ability. <i>Nature Neuroscience</i> 17:312–321 (2014). <a href="https://doi.org/10.1038/nn.3616">doi:10.1038/nn.3616</a><span class="why">任務相關的變異越大，學得越快。</span></li>
+  <li id="r32">Selinger JC, O’Connor SM, Wong JD, Donelan JM. Humans can continuously optimize energetic cost during walking. <i>Current Biology</i> 25:2452–2456 (2015). <a href="https://doi.org/10.1016/j.cub.2015.08.016">doi:10.1016/j.cub.2015.08.016</a><span class="why">人會在幾分鐘內找到新的最省力步頻。</span></li>
+</ol>
+
+<h4 class="rgrp">B2 回饋設計與跑姿再訓練</h4>
+<ol class="refs" start="33">
+  <li id="r33">Winstein CJ, Schmidt RA. Reduced frequency of knowledge of results enhances motor skill learning. <i>Journal of Experimental Psychology: Learning, Memory, and Cognition</i> 16:677–691 (1990). <a href="https://scholar.google.com/scholar?q=%22Reduced+frequency+of+knowledge+of+results+enhances+motor+skill+learning%22">Scholar</a><span class="why">回饋減少，保留反而較好。</span></li>
+  <li id="r34">Wulf G. Attentional focus and motor learning: a review of 15 years. <i>International Review of Sport and Exercise Psychology</i> 6:77–104 (2013). <a href="https://scholar.google.com/scholar?q=%22Attentional+focus+and+motor+learning%3A+a+review+of+15+years%22">Scholar</a><span class="why">外在焦點優於內在焦點。</span></li>
+  <li id="r35">Sigrist R, Rauter G, Riener R, Wolf P. Augmented visual, auditory, haptic, and multimodal feedback in motor learning: a review. <i>Psychonomic Bulletin &amp; Review</i> 20:21–53 (2013). <a href="https://scholar.google.com/scholar?q=%22Augmented+visual%2C+auditory%2C+haptic%2C+and+multimodal+feedback+in+motor+learning%22">Scholar</a><span class="why">各種感官回饋的設計準則。</span></li>
+  <li id="r36">Van Hooren B, Goudsmit J, Restrepo J, Vos S. Real-time feedback by wearables in running: current approaches, challenges and suggestions for improvements. <i>Journal of Sports Sciences</i> 38:214–230 (2020). <a href="https://scholar.google.com/scholar?q=%22Real-time+feedback+by+wearables+in+running%22">Scholar</a><span class="why">穿戴式跑步回饋的設計建議。</span></li>
+  <li id="r37">Van Hooren B, et al. The effect of wearable-based real-time feedback on running injuries and running performance: a randomized controlled trial. <i>American Journal of Sports Medicine</i> (2024). <a href="https://doi.org/10.1177/03635465231222464">doi:10.1177/03635465231222464</a><span class="why">即時回饋沒有顯著降低受傷率。</span></li>
+  <li id="r38">Crowell HP, Davis IS. Gait retraining to reduce lower extremity loading in runners. <i>Clinical Biomechanics</i> 26:78–83 (2011). <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3014399/">PMC</a><span class="why">即時回饋讓脛骨衝擊降約一半並維持一個月。</span></li>
+  <li id="r39">Heiderscheit BC, Chumanov ES, Michalski MP, Wille CM, Ryan MB. Effects of step rate manipulation on joint mechanics during running. <i>Medicine &amp; Science in Sports &amp; Exercise</i> 43:296–302 (2011). <a href="https://pubmed.ncbi.nlm.nih.gov/20581720/">PubMed</a><span class="why">步頻提高 5%–10% 降低膝、髖負荷。</span></li>
+  <li id="r40">Lieberman DE, Venkadesan M, Werbel WA, et al. Foot strike patterns and collision forces in habitually barefoot versus shod runners. <i>Nature</i> 463:531–535 (2010). <a href="https://scholar.google.com/scholar?q=%22Foot+strike+patterns+and+collision+forces+in+habitually+barefoot+versus+shod+runners%22">Scholar</a><span class="why">著地方式與衝擊的關係。</span></li>
+  <li id="r41">Menychtas D, Petrou N, Kansizoglou I, et al. Gait analysis comparison between manual marking, 2D pose estimation algorithms, and 3D marker-based system. <i>Frontiers in Rehabilitation Sciences</i> 4:1238134 (2023). <a href="https://doi.org/10.3389/fresc.2023.1238134">doi:10.3389/fresc.2023.1238134</a><span class="why">手機影片姿態估計的準確度與限制。</span></li>
+</ol>
+</div>
+</details>
+
+<footer>文獻資訊依各期刊出版頁與摘要整理（2026 年 10 月）；數字請以原文為準。標示「推論」「提案」的內容是這頁的延伸想法與設計建議，不是文獻結論；價格為估計值。</footer>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="../../diagrams.js"></script>
+<script>
+(function(){
+  var body = document.body;
+  var secs = Array.prototype.slice.call(document.querySelectorAll('details.sec'));
+  var mq = window.matchMedia('(max-width:1000px)');
+
+  /* ---- sidebar open / close ---- */
+  function setSide(open){
+    body.classList.toggle('side-closed', !open);
+    document.getElementById('sideOpen').setAttribute('aria-expanded', open ? 'true' : 'false');
+    try{ if(!mq.matches) localStorage.setItem('ncSide', open ? '1' : '0'); }catch(e){}
+  }
+  var saved = null; try{ saved = localStorage.getItem('ncSide'); }catch(e){}
+  setSide(mq.matches ? false : saved !== '0');
+  document.getElementById('sideClose').addEventListener('click', function(){ setSide(false); });
+  document.getElementById('sideOpen').addEventListener('click', function(){ setSide(true); });
+  document.getElementById('scrim').addEventListener('click', function(){ setSide(false); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && mq.matches) setSide(false); });
+
+  /* ---- links open their section ---- */
+  function openFor(hash){
+    if(!hash || hash.length < 2) return;
+    var t = document.getElementById(decodeURIComponent(hash.slice(1)));
+    if(!t) return;
+    var d = t.tagName === 'DETAILS' ? t : t.closest('details.sec');
+    if(d && !d.open){ d.open = true; }
+    if(t.tagName !== 'DETAILS'){ setTimeout(function(){ t.scrollIntoView({block:'start'}); }, 30); }
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(){ openFor(a.getAttribute('href')); if(mq.matches && a.closest('.side')) setSide(false); });
+  });
+  openFor(location.hash);
+  window.addEventListener('hashchange', function(){ openFor(location.hash); });
+
+  document.getElementById('openAll').addEventListener('click', function(){ secs.forEach(function(d){ d.open = true; }); });
+  document.getElementById('closeAll').addEventListener('click', function(){ secs.forEach(function(d){ d.open = false; }); });
+
+  /* ---- citation tooltips: show the reference on hover ---- */
+  document.querySelectorAll('a.cite').forEach(function(a){
+    var id = a.getAttribute('href').slice(1);
+    var li = document.getElementById(id);
+    if(!li || li.tagName !== 'LI') return;
+    var c = li.cloneNode(true);
+    c.querySelectorAll('a,.why').forEach(function(n){ n.remove(); });
+    a.title = c.textContent.replace(/\s+/g, ' ').trim();
+  });
+
+  /* ---- filter the table of contents ---- */
+  var find = document.getElementById('find');
+  var none = document.getElementById('findNone');
+  find.addEventListener('input', function(){
+    var q = find.value.trim().toLowerCase(), any = false;
+    document.querySelectorAll('#toc > ul > li').forEach(function(li){
+      var top = li.querySelector(':scope > a');
+      var topHit = !q || top.textContent.toLowerCase().indexOf(q) >= 0;
+      var subHit = false;
+      li.querySelectorAll('li').forEach(function(s){
+        var hit = !q || topHit || s.textContent.toLowerCase().indexOf(q) >= 0;
+        s.hidden = !hit;
+        if(q && s.textContent.toLowerCase().indexOf(q) >= 0) subHit = true;
+      });
+      li.hidden = !(topHit || subHit);
+      if(!li.hidden) any = true;
+    });
+    none.hidden = any;
+  });
+
+  /* ---- reading progress and back to top ---- */
+  var bar = document.getElementById('progress');
+  var top = document.getElementById('toTop');
+  var ticking = false;
+  function onScroll(){
+    ticking = false;
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (h > 0 ? Math.min(100, window.scrollY / h * 100) : 0) + '%';
+    top.hidden = window.scrollY < 600;
+  }
+  window.addEventListener('scroll', function(){ if(!ticking){ ticking = true; requestAnimationFrame(onScroll); } }, {passive:true});
+  top.addEventListener('click', function(){ window.scrollTo({top:0}); });
+  onScroll();
+
+  /* ---- highlight current position ---- */
+  if('IntersectionObserver' in window){
+    var links = {};
+    document.querySelectorAll('.side nav a').forEach(function(a){ links[a.getAttribute('href').slice(1)] = a; });
+    var targets = Object.keys(links).map(function(id){ return document.getElementById(id); }).filter(Boolean);
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting && links[en.target.id]){
+          Object.keys(links).forEach(function(k){ links[k].classList.remove('active'); });
+          links[en.target.id].classList.add('active');
+        }
+      });
+    }, {rootMargin:'-15% 0px -75% 0px'});
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+</body>
+</html>
