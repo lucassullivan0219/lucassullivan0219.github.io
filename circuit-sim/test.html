@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CircuitSim tests</title>
+<style>
+:root{--bg:#fafaf7;--fg:#1c1c1a;--ok:#2e7d4f;--bad:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#161614;--fg:#ecece6;--ok:#6fcf97;--bad:#ff7b6b}}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 ui-monospace,Consolas,monospace;padding:24px 16px}
+li.ok{color:var(--ok)} li.fail{color:var(--bad);font-weight:700}
+#sum{font-size:16px;font-weight:700}
+</style>
+</head>
+<body>
+<p><a href="./">← 電路模擬器</a></p>
+<h1>CircuitSim 引擎測試</h1>
+<p>解析解（分壓、RC、RLC、二極體、kT/C 雜訊、運放）與 HW2 主動膜對照 Python sim.py。</p>
+<p id="sum">執行中…</p>
+<ul id="out"></ul>
+<script src="engine.js"></script>
+<script src="tests.js"></script>
+<script>
+var r = runTests(document.getElementById('out'));
+document.getElementById('sum').textContent = r.pass + ' / ' + r.total + ' 通過';
+</script>
+</body>
+</html>
