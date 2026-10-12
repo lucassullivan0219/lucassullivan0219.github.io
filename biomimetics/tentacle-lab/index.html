@@ -1,0 +1,1945 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>章魚觸手實驗室</title>
+<meta name="description" content="可伸縮軟體機器人擴增肢體的純軟體原型：第一人稱 3D 介面，玩家只發出章魚式的簡單指令，觸手透過可調整的規劃與控制演算法自行完成跨越障礙抓取、轉動門把等任務。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#cfd8dc; --surface:rgba(255,255,255,.93); --surface-solid:#fff; --ink:#1b2328; --muted:#5d6a71;
+  --line:rgba(20,30,35,.14); --accent:#c0533a; --accent-ink:#fff; --teal:#23716e; --ok:#2f7d4a; --warn:#b5462f;
+  --chip:#eef1ef; --panelW:360px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --surface:rgba(24,29,32,.92); --surface-solid:#181d20; --ink:#e7ecea; --muted:#9aa7a2;
+    --line:rgba(255,255,255,.14); --accent:#ec8a6c; --accent-ink:#1b1b1b; --teal:#6cc3bd; --ok:#7cc792; --warn:#f08a74; --chip:#263036;
+  }
+}
+:root[data-theme="dark"]{
+  --surface:rgba(24,29,32,.92); --surface-solid:#181d20; --ink:#e7ecea; --muted:#9aa7a2;
+  --line:rgba(255,255,255,.14); --accent:#ec8a6c; --accent-ink:#1b1b1b; --teal:#6cc3bd; --ok:#7cc792; --warn:#f08a74; --chip:#263036;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;color:var(--ink);font-size:14px;line-height:1.5}
+.mono,pre,code,textarea{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--teal)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+#stage{position:fixed;top:0;left:0;bottom:0;right:var(--stageR,0px)}
+body.panel-open{--stageR:var(--panelW)}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+body.panel-open{--right:calc(var(--panelW) + 12px)}
+body:not(.panel-open){--right:12px}
+
+/* crosshair + aim hint */
+#cross{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;pointer-events:none}
+#cross::before,#cross::after{content:"";position:absolute;background:#fff;box-shadow:0 0 2px rgba(0,0,0,.8)}
+#cross::before{left:10px;top:0;width:2px;height:22px}
+#cross::after{top:10px;left:0;height:2px;width:22px}
+#cross.grab::before,#cross.grab::after{background:#ffcf5c}
+#aimHint{position:absolute;left:50%;top:calc(50% + 20px);transform:translateX(-50%);font-size:12px;padding:2px 8px;border-radius:6px;
+  background:rgba(0,0,0,.55);color:#fff;white-space:nowrap;pointer-events:none}
+#aimHint:empty{display:none}
+#aimHint .far{color:#ffb4a2}
+
+/* top bar */
+#topbar{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:10px;right:var(--right);display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;pointer-events:none;z-index:5}
+#topbar>*{pointer-events:auto}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;text-decoration:none;color:var(--ink);font-weight:500;font-size:13px}
+#levelBox{padding:8px 12px;max-width:380px}
+#levelBox .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#levelBox select{padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--surface-solid);font-weight:700}
+.btn{padding:4px 10px;border-radius:7px;border:1px solid var(--line);background:var(--surface-solid)}
+.btn:hover{border-color:var(--teal)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:700}
+#levelDesc{margin:6px 0 2px;color:var(--muted);font-size:12.5px}
+#objectives{list-style:none;margin:4px 0 0;padding:0;font-size:13px}
+#objectives li{display:flex;gap:6px;align-items:baseline}
+#objectives li::before{content:"○";color:var(--muted);width:1em;flex:none}
+#objectives li.done{color:var(--ok)}
+#objectives li.done::before{content:"✓";color:var(--ok);font-weight:700}
+#modeLine{margin-top:4px;font-size:12px;color:var(--muted)}
+#modeLine b{color:var(--teal)}
+
+/* toast */
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);z-index:20;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+#toast div{padding:6px 14px;border-radius:8px;background:rgba(20,26,30,.88);color:#fff;font-size:13.5px;transition:opacity .4s}
+#toast div.ok{background:rgba(40,110,64,.92)}
+#toast div.warn{background:rgba(160,60,40,.92)}
+
+/* telemetry */
+#telemetry{position:fixed;left:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 70px);padding:8px 10px;font-size:11.5px;z-index:4;pointer-events:none;min-width:250px}
+#telemetry pre{margin:0;font-size:11.5px;line-height:1.55;white-space:pre}
+#telemetry canvas{display:block;margin-top:4px;width:240px;height:40px}
+#telemetry .cap{font-size:10.5px;color:var(--muted)}
+
+/* command bar */
+#cmdbar{position:fixed;left:10px;right:var(--right);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;justify-content:center;gap:6px;flex-wrap:wrap;z-index:5;pointer-events:none}
+#cmdbar button{pointer-events:auto;display:flex;flex-direction:column;align-items:center;min-width:64px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);
+  background:var(--surface);box-shadow:0 2px 10px rgba(0,0,0,.12);user-select:none;-webkit-user-select:none;touch-action:none}
+#cmdbar button b{font-size:14px}
+#cmdbar button small{font-size:10.5px;color:var(--muted)}
+#cmdbar button:hover{border-color:var(--teal)}
+#cmdbar button.on{background:var(--accent);color:var(--accent-ink)}
+#cmdbar button.on small{color:inherit}
+
+/* move pad (touch) */
+#movepad{position:fixed;left:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);display:none;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,44px);gap:4px;z-index:5}
+#movepad button{border-radius:10px;border:1px solid var(--line);background:var(--surface);touch-action:none;user-select:none;-webkit-user-select:none;font-size:16px}
+#movepad .u{grid-column:2;grid-row:1}
+#movepad .l{grid-column:1;grid-row:2}#movepad .d{grid-column:2;grid-row:2}#movepad .r{grid-column:3;grid-row:2}
+@media (pointer:coarse){
+  #movepad{display:grid;bottom:calc(env(safe-area-inset-bottom,0px) + 66px)}
+  #telemetry{display:none}
+  #cmdbar button{min-width:0;padding:8px 9px}
+  #cmdbar button small{display:none}
+}
+
+/* panel */
+#panelToggle{position:fixed;right:12px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:6;padding:7px 12px;font-weight:700}
+body.panel-open #panelToggle{right:calc(var(--panelW) + 12px)}
+#panel{position:fixed;top:0;right:0;bottom:0;width:var(--panelW);background:var(--surface-solid);border-left:1px solid var(--line);z-index:7;
+  overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 14px) 14px calc(env(safe-area-inset-bottom,0px) + 30px);transform:translateX(100%);transition:transform .2s ease}
+body.panel-open #panel{transform:none}
+#panel h2{font-size:16px;margin:0 0 4px}
+#panel .sub{color:var(--muted);font-size:12.5px;margin:0 0 10px}
+.pipe{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:0 0 12px;font-size:12px}
+.pipe button{padding:3px 8px;border-radius:999px;border:1px solid var(--line);background:var(--chip)}
+.pipe span{color:var(--muted)}
+details.grp{border:1px solid var(--line);border-radius:10px;margin:0 0 10px;background:var(--surface-solid)}
+details.grp>summary{list-style:none;cursor:pointer;padding:8px 12px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+details.grp>summary::-webkit-details-marker{display:none}
+details.grp>summary::after{content:"＋";color:var(--muted);font-weight:400}
+details.grp[open]>summary::after{content:"－"}
+.grp .body{padding:0 12px 10px}
+.grp .gdesc{font-size:12px;color:var(--muted);margin:0 0 8px}
+.prm{margin:0 0 8px}
+.prm .top{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}
+.prm .top output{font-family:"IBM Plex Mono",monospace;color:var(--teal);font-size:12px}
+.prm input[type=range]{width:100%;margin:2px 0 0;accent-color:var(--teal)}
+.prm select{width:100%;padding:4px 6px;border-radius:7px;border:1px solid var(--line);background:var(--surface-solid);margin-top:2px}
+.prm .help{font-size:11.5px;color:var(--muted);margin-top:2px}
+#algoDesc{font-size:12px;color:var(--ink);background:var(--chip);border-radius:8px;padding:6px 8px;margin:0 0 8px}
+#customWrap textarea{width:100%;height:300px;font-size:11.5px;line-height:1.45;border-radius:8px;border:1px solid var(--line);background:var(--chip);padding:8px;resize:vertical;tab-size:2;white-space:pre}
+#customWrap .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+#customMsg{font-size:12px;margin-top:6px;white-space:pre-wrap}
+#customMsg.err{color:var(--warn)} #customMsg.ok{color:var(--ok)}
+.toggles{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
+.toggles label{display:flex;gap:4px;align-items:center;font-size:12.5px;padding:3px 8px;border:1px solid var(--line);border-radius:999px}
+.panel-foot{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+
+/* modal */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,14,16,.45);z-index:30;padding:16px}
+.modal.hidden{display:none}
+.modal .card{max-width:560px;width:100%;max-height:calc(100vh - 32px);overflow:auto;padding:20px 22px;background:var(--surface-solid);border-radius:14px;border:1px solid var(--line)}
+.modal h1{font-size:21px;margin:0 0 6px}
+.modal p{margin:0 0 10px}
+.modal ul{margin:0 0 12px;padding-left:1.2em}
+.modal li{margin:2px 0}
+kbd{font-family:"IBM Plex Mono",monospace;font-size:12px;padding:0 5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:var(--chip)}
+.flow{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12.5px;margin:4px 0 12px}
+.flow b{padding:2px 8px;border-radius:999px;background:var(--chip);font-weight:500}
+
+@media (max-width:760px){
+  :root{--panelW:100vw}
+  body.panel-open{--right:12px;--stageR:0px}
+  #panel{top:auto;height:62vh;width:100%;border-left:none;border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(100%)}
+  body.panel-open #panel{transform:none}
+  body.panel-open #panelToggle{right:12px}
+  #panelToggle{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 128px)}
+  body.panel-open #panelToggle{bottom:calc(62vh + 8px)}
+  #telemetry{display:none}
+  #levelBox{max-width:calc(100vw - 20px);padding:6px 10px;font-size:12.5px}
+  #levelDesc{display:none}
+  #objectives{font-size:12.5px}
+  .chip{padding:5px 8px}
+  #cmdbar button{min-width:52px;padding:5px 7px}
+  body.panel-open #cmdbar,body.panel-open #movepad{display:none}
+}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+</head>
+<body class="panel-open">
+<div id="stage"><div id="cross"></div><div id="aimHint"></div></div>
+
+<header id="topbar">
+  <a class="box chip" href="../">← 仿生科技</a>
+  <div class="box" id="levelBox">
+    <div class="row">
+      <select id="levelSel" aria-label="選擇關卡"></select>
+      <button class="btn" id="resetBtn" title="重置關卡 (R)">重置</button>
+      <button class="btn" id="helpBtn" title="操作說明">?</button>
+    </div>
+    <div id="levelDesc"></div>
+    <ol id="objectives"></ol>
+    <div id="modeLine"></div>
+  </div>
+</header>
+
+<div id="toast"></div>
+
+<div id="telemetry" class="box">
+  <pre id="telText">…</pre>
+  <canvas id="spark" width="480" height="80"></canvas>
+  <div class="cap">末端距目標（m），最近 10 秒</div>
+</div>
+
+<nav id="cmdbar" aria-label="章魚指令">
+  <button data-cmd="reach"><b>伸向</b><small>點擊 / 1</small></button>
+  <button data-cmd="grab"><b>抓取</b><small>右鍵 / 2 / E</small></button>
+  <button data-cmd="twist"><b>扭轉</b><small>按住 3（Q 反向）</small></button>
+  <button data-cmd="pull"><b>拉回</b><small>4</small></button>
+  <button data-cmd="release"><b>放開</b><small>F</small></button>
+  <button data-cmd="retract"><b>收回</b><small>X</small></button>
+</nav>
+
+<div id="movepad" aria-label="移動">
+  <button class="u" data-mv="f">▲</button><button class="l" data-mv="l">◀</button><button class="d" data-mv="b">▼</button><button class="r" data-mv="r">▶</button>
+</div>
+
+<button class="box btn" id="panelToggle">⚙ 演算法與參數</button>
+<aside id="panel" aria-label="演算法與參數">
+  <h2>觸手的「周邊神經系統」</h2>
+  <p class="sub">大腦只說「去哪」「抓它」。以下每一層都由你設計：換演算法、調參數，看觸手能不能自己完成任務。</p>
+  <div class="pipe" id="pipe"></div>
+  <div class="toggles">
+    <label><input type="checkbox" id="dbgToggle" checked> 顯示控制層 (H)</label>
+    <label><input type="checkbox" id="telToggle" checked> 即時數據</label>
+  </div>
+  <div id="groups"></div>
+  <div class="panel-foot">
+    <button class="btn" id="defaultsBtn">恢復預設參數</button>
+    <button class="btn" id="copyBtn">複製參數 JSON</button>
+  </div>
+</aside>
+
+<div class="modal" id="intro">
+  <div class="card">
+    <h1>章魚觸手實驗室</h1>
+    <p>你戴著一條<b>可伸縮的軟體觸手</b>（擴增肢體，裝在右肩）。就像章魚的大腦，你只能下非常粗略的指令；觸手要<b>自己算出</b>每一節怎麼彎、怎麼伸長、怎麼繞過障礙、怎麼纏住東西。</p>
+    <div class="flow"><b>大腦指令</b>→<b>路徑規劃</b>→<b>手臂控制器 (IK)</b>→<b>局部反射（纏繞/吸盤）</b>→<b>軟體肌肉＋物理</b></div>
+    <p>右側面板可以換每一層的演算法、調參數，甚至寫自己的控制器。觸手是有重量、會下垂、會打滑的，參數不對就做不到。</p>
+    <ul>
+      <li>拖曳畫面轉頭，<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移動（手機用左下方向鍵）</li>
+      <li><b>伸向</b>：點擊畫面或 <kbd>1</kbd>，觸手伸到準星位置；抓著東西時則搬過去</li>
+      <li><b>抓取</b>：右鍵、<kbd>2</kbd> 或 <kbd>E</kbd>，觸手接近並纏住準星上的物體</li>
+      <li><b>扭轉</b>：按住 <kbd>3</kbd>（<kbd>Q</kbd> 反向）；<b>拉回</b> <kbd>4</kbd>；<b>放開</b> <kbd>F</kbd>；<b>收回</b> <kbd>X</kbd></li>
+      <li><kbd>R</kbd> 重置關卡，<kbd>Tab</kbd> 開關參數面板，<kbd>H</kbd> 顯示/隱藏控制層（規劃路徑、目標點）</li>
+    </ul>
+    <button class="btn primary" id="startBtn">開始</button>
+  </div>
+</div>
+
+<div class="modal hidden" id="win">
+  <div class="card">
+    <h1 id="winTitle">任務完成</h1>
+    <p id="winText"></p>
+    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" id="nextBtn">下一關</button>
+      <button class="btn" id="stayBtn">留在這關繼續調參</button>
+    </div>
+  </div>
+</div>
+
+<noscript><p style="position:fixed;inset:40% 0 auto;text-align:center">這個頁面需要 JavaScript 與 WebGL。</p></noscript>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ================================================================
+   基本工具
+   ================================================================ */
+const V3 = THREE.Vector3, UP = new V3(0, 1, 0), DEG = Math.PI / 180, TAU = Math.PI * 2;
+const $ = s => document.querySelector(s);
+const clamp = (x, a, b) => x < a ? a : x > b ? b : x;
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const wrapPi = a => Math.atan2(Math.sin(a), Math.cos(a));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+/* ================================================================
+   參數（面板由此自動產生）
+   ================================================================ */
+const PARAM_DEFS = [
+  { id: 'plan', title: '路徑規劃 Planner', desc: '大腦只給「目的地」。規劃器決定末端要走哪條路線、怎麼繞過障礙。', items: [
+    { k: 'planner', label: '規劃器', type: 'select', def: 'via', options: [['none', '無（直線）'], ['via', '繞行點 via-point'], ['rrt', 'RRT-Connect（隨機樹）']],
+      help: '直線遇到牆會卡住；via 從障礙物包圍盒挑繞行點；RRT 在空間中隨機長樹，較通用但每次路線不同。' },
+    { k: 'clearance', label: '安全距離 (m)', min: 0, max: 0.2, step: 0.005, def: 0.06, help: '規劃路徑與避障時和障礙物保持的距離。太小會刮牆，太大會鑽不過洞。' },
+    { k: 'tipSpeed', label: '末端速度 (m/s)', min: 0.1, max: 3, step: 0.05, def: 0.9 },
+    { k: 'rrtIter', label: 'RRT 迭代上限', min: 100, max: 5000, step: 100, def: 1500 },
+    { k: 'rrtStep', label: 'RRT 步長 (m)', min: 0.03, max: 0.4, step: 0.01, def: 0.12 },
+  ]},
+  { id: 'arm', title: '手臂控制器 Arm IK', desc: '把「末端參考點」換算成每一節的位置與長度（逆運動學）。', items: [
+    { k: 'algo', label: '演算法', type: 'select', def: 'fabrik', options: [['fabrik', 'FABRIK（可伸縮）'], ['ccd', 'CCD 循環座標下降'], ['dls', 'DLS 阻尼最小平方雅可比'], ['ftl', 'Follow-the-leader 生長'], ['bend', '章魚彎曲傳播'], ['custom', '自訂 JS']] },
+    { k: 'iters', label: '每幀迭代次數', min: 1, max: 40, step: 1, def: 10 },
+    { k: 'extPolicy', label: '伸長優先度', min: 0, max: 1, step: 0.05, def: 0.5, help: '0 = 先彎曲、不夠才伸長；1 = 盡量伸長成剛好的長度（較直）。' },
+    { k: 'maxBend', label: '每節最大彎角 (°)', min: 5, max: 90, step: 1, def: 35 },
+    { k: 'avoidGain', label: '避障推離強度', min: 0, max: 1, step: 0.05, def: 0.8, help: '求解時把節點推出障礙物的比例（FABRIK/CCD/DLS/生長都會用）。' },
+    { k: 'dlsLambda', label: 'DLS 阻尼 λ', min: 0.005, max: 0.5, step: 0.005, def: 0.06, help: '僅 DLS：λ 大較穩但慢，λ 小較準但接近奇異點會抖。' },
+    { k: 'bendCurl', label: '遠端捲曲曲率 (1/m)', min: 0, max: 40, step: 1, def: 12, help: '彎曲傳播與生長模式中，尚未展開的遠端捲曲程度。' },
+  ]},
+  { id: 'reflex', title: '局部反射 Grasp reflex', desc: '末端碰到物體後，由局部控制自動纏繞抓握，大腦不逐節下令（章魚腕足的神經節）。', items: [
+    { k: 'wrapNodes', label: '參與纏繞的節數', min: 2, max: 12, step: 1, def: 6 },
+    { k: 'wrapTurns', label: '纏繞圈數', min: 0.3, max: 2, step: 0.05, def: 0.85 },
+    { k: 'wrapSpeed', label: '纏繞速度 (1/s)', min: 0.2, max: 5, step: 0.1, def: 1.5 },
+    { k: 'approachTol', label: '觸發纏繞距離 (m)', min: 0.02, max: 0.25, step: 0.01, def: 0.08 },
+    { k: 'gripStrength', label: '吸盤抓力', min: 0, max: 3, step: 0.05, def: 1.2, help: '抓力 × 纏繞品質 要大於物體重量（或門把阻力）才不會打滑。' },
+    { k: 'twistSpeed', label: '扭轉速度 (°/s)', min: 10, max: 360, step: 5, def: 90 },
+  ]},
+  { id: 'muscle', title: '軟體肌肉與物理 Actuation', desc: '控制器只給「目標形狀」。真實觸手是有重量、會下垂、會碰撞的軟體，靠肌肉剛性去追。', items: [
+    { k: 'kAct', label: '肌肉剛性 (1/s²)', min: 5, max: 400, step: 5, def: 160, help: '越大越能精準追上目標；太小會軟趴趴地下垂。' },
+    { k: 'damping', label: '阻尼', min: 0, max: 0.3, step: 0.005, def: 0.05 },
+    { k: 'gravity', label: '重力 (m/s²)', min: 0, max: 9.8, step: 0.1, def: 9.8 },
+    { k: 'gravComp', label: '重力前饋補償', min: 0, max: 1.5, step: 0.05, def: 0.85, help: '肌肉預先抵銷自重與負重的比例，1 = 完全抵銷。' },
+    { k: 'bendStiff', label: '被動彎曲剛性', min: 0, max: 1, step: 0.02, def: 0.3, help: '把實際彎曲拉回指令彎曲的強度（肌肉張力）。' },
+    { k: 'noise', label: '致動雜訊 (m)', min: 0, max: 0.05, step: 0.001, def: 0 },
+  ]},
+  { id: 'body', title: '肢體結構 Body', desc: '改變後觸手會重新生成。', items: [
+    { k: 'N', label: '節數', min: 8, max: 28, step: 1, def: 16, rebuild: true },
+    { k: 'segLen', label: '靜止節長 (m)', min: 0.03, max: 0.09, step: 0.005, def: 0.055, rebuild: true },
+    { k: 'minExt', label: '最短伸縮比', min: 0.4, max: 1, step: 0.05, def: 0.7 },
+    { k: 'maxExt', label: '最長伸縮比', min: 1, max: 3.5, step: 0.1, def: 2.4 },
+    { k: 'radius', label: '基部半徑 (m)', min: 0.02, max: 0.06, step: 0.002, def: 0.034, rebuild: true },
+  ]},
+];
+const ALGO_DESC = {
+  fabrik: 'FABRIK：從末端往回、再從基座往前反覆拉直鏈條，直接在點上求解；搭配可變節長與每節彎角限制。快速、穩定。',
+  ccd: 'CCD：從末端往基座，逐一旋轉每個關節讓末端對準目標。簡單，但容易把遠端捲成一團。',
+  dls: 'DLS：以「每節兩個彎角＋節長」為變數，數值雅可比加阻尼最小平方求解，並以梯度把節點推離障礙。最像傳統機械臂控制。',
+  ftl: 'Follow-the-leader：像藤蔓機器人從末端生長，整條身體沿規劃路徑排列，身體不會掃過障礙物。完全依賴規劃器品質。',
+  bend: '彎曲傳播：章魚伸手的策略（Gutfreund 等）。彎曲點從基部往末端推進，近端沿路徑攤開、遠端保持捲曲，最後整條展開到目標。',
+  custom: '自訂：在下方撰寫 controller(ctx)，回傳 n+1 個目標點。出錯時會自動退回 FABRIK。',
+};
+const P = {};
+function setDefaults() { for (const g of PARAM_DEFS) for (const it of g.items) P[it.k] = it.def; }
+setDefaults();
+Object.assign(P, store.get('tentacleLab.params', {}));
+for (const g of PARAM_DEFS) for (const it of g.items) if (it.type !== 'select' && typeof P[it.k] !== 'number') P[it.k] = it.def;
+
+/* ================================================================
+   Three.js 場景
+   ================================================================ */
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch (e) {
+  document.body.insertAdjacentHTML('beforeend', '<p style="position:fixed;inset:45% 0 auto;text-align:center">無法建立 WebGL，請換瀏覽器或開啟硬體加速。</p>');
+  throw e;
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+$('#stage').appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xcdd6da);
+scene.fog = new THREE.Fog(0xcdd6da, 7, 16);
+const camera = new THREE.PerspectiveCamera(72, 1, 0.03, 60);
+camera.rotation.order = 'YXZ';
+scene.add(new THREE.HemisphereLight(0xeef3f6, 0x5a5048, 1.15));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+sun.position.set(2.5, 5, 2);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 0.5, far: 14 });
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0xb7b0a3, roughness: 0.95 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+floor.userData.label = '地板';
+scene.add(floor);
+const grid = new THREE.GridHelper(30, 60, 0x8f877b, 0xa39b8e);
+grid.position.y = 0.002;
+grid.material.transparent = true; grid.material.opacity = 0.45;
+scene.add(grid);
+
+function resize() {
+  const st = $('#stage'), w = Math.max(1, st.clientWidth), h = Math.max(1, st.clientHeight);
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.fov = w < h ? 95 : 72;   // 直式螢幕視角放寬，才看得到右肩的觸手
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+if (window.ResizeObserver) new ResizeObserver(resize).observe($('#stage'));
+resize();
+
+/* ================================================================
+   障礙物與距離場 (SDF)
+   ================================================================ */
+let world = null;
+const _l = new V3(), _d = new V3(), _q = new V3(), _g = new V3();
+function sdfOb(ob, p) {
+  if (ob.kind === 'box') {
+    _l.copy(p).sub(ob.c).applyQuaternion(ob.qi);
+    const qx = Math.abs(_l.x) - ob.h.x, qy = Math.abs(_l.y) - ob.h.y, qz = Math.abs(_l.z) - ob.h.z;
+    const ox = Math.max(qx, 0), oy = Math.max(qy, 0), oz = Math.max(qz, 0);
+    return Math.sqrt(ox * ox + oy * oy + oz * oz) + Math.min(Math.max(qx, qy, qz), 0);
+  }
+  if (ob.kind === 'sphere') return p.distanceTo(ob.c) - ob.r;
+  // capped cylinder
+  _d.copy(p).sub(ob.c);
+  const y = _d.dot(ob.a);
+  _d.addScaledVector(ob.a, -y);
+  const dx = _d.length() - ob.r, dy = Math.abs(y) - ob.hl;
+  return Math.min(Math.max(dx, dy), 0) + Math.hypot(Math.max(dx, 0), Math.max(dy, 0));
+}
+function sdfWorld(p, skip) {
+  let d = p.y;
+  for (const ob of world.obstacles) {
+    if (ob === skip || ob.off) continue;
+    const v = sdfOb(ob, p);
+    if (v < d) d = v;
+  }
+  return d;
+}
+function gradWorld(p, skip, out) {
+  const e = 1e-3;
+  _q.copy(p); _q.x += e; const x1 = sdfWorld(_q, skip); _q.x -= 2 * e; const x2 = sdfWorld(_q, skip); _q.x = p.x;
+  _q.y += e; const y1 = sdfWorld(_q, skip); _q.y -= 2 * e; const y2 = sdfWorld(_q, skip); _q.y = p.y;
+  _q.z += e; const z1 = sdfWorld(_q, skip); _q.z -= 2 * e; const z2 = sdfWorld(_q, skip);
+  out.set(x1 - x2, y1 - y2, z1 - z2);
+  if (out.lengthSq() < 1e-14) out.copy(UP); else out.normalize();
+  return out;
+}
+/** 把點 p 推到距離障礙物至少 rad 的位置，回傳推之前的距離 */
+function pushOut(p, rad, skip) {
+  let d0 = Infinity;
+  for (let k = 0; k < 3; k++) {
+    const d = sdfWorld(p, skip);
+    if (k === 0) d0 = d;
+    if (d >= rad) break;
+    gradWorld(p, skip, _g);
+    p.addScaledVector(_g, rad - d + 1e-4);
+  }
+  return d0;
+}
+function obAABB(ob) {
+  const b = new THREE.Box3();
+  if (ob.kind === 'box') {
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1])
+      b.expandByPoint(new V3(sx * ob.h.x, sy * ob.h.y, sz * ob.h.z).applyQuaternion(ob.q).add(ob.c));
+  } else {
+    const r = ob.kind === 'sphere' ? ob.r : ob.r + ob.hl;
+    b.min.copy(ob.c).subScalar(r); b.max.copy(ob.c).addScalar(r);
+  }
+  return b;
+}
+
+/* ================================================================
+   路徑規劃
+   ================================================================ */
+class Path {
+  constructor(pts) {
+    this.pts = pts; this.cum = [0];
+    for (let i = 1; i < pts.length; i++) this.cum.push(this.cum[i - 1] + pts[i].distanceTo(pts[i - 1]));
+    this.len = this.cum[this.cum.length - 1];
+  }
+  seg(s) { let i = 0; while (i < this.pts.length - 2 && this.cum[i + 1] < s) i++; return i; }
+  at(s, out = new V3()) {
+    if (this.pts.length < 2) return out.copy(this.pts[0]);
+    s = clamp(s, 0, this.len);
+    const i = this.seg(s), L = this.cum[i + 1] - this.cum[i];
+    return out.copy(this.pts[i]).lerp(this.pts[i + 1], L > 1e-9 ? (s - this.cum[i]) / L : 0);
+  }
+  tangent(s, out = new V3()) {
+    if (this.pts.length < 2) return out.set(0, 0, -1);
+    const i = this.seg(clamp(s, 0, this.len));
+    out.copy(this.pts[i + 1]).sub(this.pts[i]);
+    return out.lengthSq() < 1e-12 ? out.set(0, 0, -1) : out.normalize();
+  }
+  project(p) {
+    let best = Infinity, bs = 0;
+    for (let i = 0; i < this.pts.length - 1; i++) {
+      const a = this.pts[i], ab = _d.copy(this.pts[i + 1]).sub(a), L2 = ab.lengthSq();
+      const t = L2 > 1e-12 ? clamp(_l.copy(p).sub(a).dot(ab) / L2, 0, 1) : 0;
+      const d = _l.copy(a).addScaledVector(ab, t).distanceTo(p);
+      if (d < best) { best = d; bs = this.cum[i] + t * Math.sqrt(L2); }
+    }
+    return bs;
+  }
+}
+const _sp = new V3();
+function exempt(p, pc) { return p.distanceTo(pc.start) < pc.exR || p.distanceTo(pc.goal) < pc.exR; }
+function segClear(a, b, pc, ob) {
+  const L = a.distanceTo(b), steps = Math.max(2, Math.ceil(L / 0.03));
+  for (let i = 0; i <= steps; i++) {
+    _sp.copy(a).lerp(b, i / steps);
+    if (exempt(_sp, pc)) continue;
+    const d = ob ? sdfOb(ob, _sp) : sdfWorld(_sp, pc.skip);
+    if (d < pc.m) return false;
+  }
+  return true;
+}
+function planVia(a, b, pc) {
+  const blockers = [];
+  for (const ob of world.obstacles) {
+    if (ob === pc.skip || ob.off) continue;
+    if (!segClear(a, b, pc, ob)) blockers.push(ob);
+  }
+  if (!blockers.length) return [a, b];
+  blockers.sort((p, q) => obAABB(p).distanceToPoint(a) - obAABB(q).distanceToPoint(a));
+  const cands = [], e = pc.m + 0.06;
+  for (const ob of blockers.slice(0, 3)) {
+    const bb = obAABB(ob);
+    const xs = [bb.min.x - e, (bb.min.x + bb.max.x) / 2, bb.max.x + e];
+    const ys = [bb.min.y - e, (bb.min.y + bb.max.y) / 2, bb.max.y + e];
+    const zs = [bb.min.z - e, (bb.min.z + bb.max.z) / 2, bb.max.z + e];
+    for (const x of xs) for (const y of ys) for (const z of zs) {
+      if (y < 0.05) continue;
+      const p = new V3(x, y, z);
+      if (sdfWorld(p, pc.skip) >= pc.m && !cands.some(c => c.distanceToSquared(p) < 1e-4)) cands.push(p);
+    }
+  }
+  // 「先抬起、再從上方放下」的候選點
+  for (const p of [a, b]) for (const hgt of [0.25, 0.45]) {
+    const q = p.clone(); q.y += hgt;
+    if (sdfWorld(q, pc.skip) >= pc.m) cands.push(q);
+  }
+  const okA = cands.map(c => segClear(a, c, pc)), okB = cands.map(c => segClear(c, b, pc));
+  let best = null, bl = Infinity;
+  cands.forEach((c, i) => {
+    if (okA[i] && okB[i]) { const L = a.distanceTo(c) + c.distanceTo(b); if (L < bl) { bl = L; best = [a, c, b]; } }
+  });
+  if (best) return best;
+  for (let i = 0; i < cands.length; i++) {
+    if (!okA[i]) continue;
+    for (let j = 0; j < cands.length; j++) {
+      if (i === j || !okB[j]) continue;
+      const L = a.distanceTo(cands[i]) + cands[i].distanceTo(cands[j]) + cands[j].distanceTo(b);
+      if (L < bl && segClear(cands[i], cands[j], pc)) { bl = L; best = [a, cands[i], cands[j], b]; }
+    }
+  }
+  return best;
+}
+function planRRT(a, b, pc) {
+  const lo = new V3(Math.min(a.x, b.x) - 0.9, 0.05, Math.min(a.z, b.z) - 0.9);
+  const hi = new V3(Math.max(a.x, b.x) + 0.9, Math.max(a.y, b.y) + 1.0, Math.max(a.z, b.z) + 0.9);
+  const Ta = [{ p: a, par: -1 }], Tb = [{ p: b, par: -1 }];
+  const step = P.rrtStep;
+  const nearest = (T, q) => { let bi = 0, bd = Infinity; for (let i = 0; i < T.length; i++) { const d = T[i].p.distanceToSquared(q); if (d < bd) { bd = d; bi = i; } } return bi; };
+  const extend = (T, q) => {
+    const ni = nearest(T, q), np = T[ni].p, d = np.distanceTo(q);
+    if (d < 1e-6) return { idx: ni, reached: true };
+    const p = d <= step ? q.clone() : np.clone().addScaledVector(q.clone().sub(np), step / d);
+    if (!segClear(np, p, pc)) return { idx: -1 };
+    T.push({ p, par: ni });
+    return { idx: T.length - 1, reached: d <= step };
+  };
+  const trace = (T, i) => { const out = []; while (i >= 0) { out.push(T[i].p); i = T[i].par; } return out; };
+  let A = Ta, B = Tb;
+  for (let it = 0; it < P.rrtIter; it++) {
+    const q = Math.random() < 0.1 ? (B === Tb ? b : a) : new V3(lerp(lo.x, hi.x, Math.random()), lerp(lo.y, hi.y, Math.random()), lerp(lo.z, hi.z, Math.random()));
+    const ea = extend(A, q);
+    if (ea.idx >= 0) {
+      const target = A[ea.idx].p;
+      let r;
+      for (let k = 0; k < 200; k++) { r = extend(B, target); if (r.idx < 0 || r.reached) break; }
+      if (r && r.idx >= 0 && r.reached) {
+        const ia = A === Ta ? ea.idx : r.idx, ib = A === Ta ? r.idx : ea.idx;
+        const path = trace(Ta, ia).reverse().concat(trace(Tb, ib).slice(1));
+        for (let s = 0; s < 80 && path.length > 2; s++) {
+          const i = Math.floor(Math.random() * (path.length - 2)), j = i + 2 + Math.floor(Math.random() * (path.length - i - 2));
+          if (j < path.length && segClear(path[i], path[j], pc)) path.splice(i + 1, j - i - 1);
+        }
+        return path;
+      }
+    }
+    [A, B] = [B, A];
+  }
+  return null;
+}
+function chaikin(pts) {
+  if (pts.length < 3) return pts;
+  const out = [pts[0]];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    if (i > 0) out.push(a.clone().lerp(b, 0.25));
+    if (i < pts.length - 2) out.push(a.clone().lerp(b, 0.75));
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+const stats = { planMs: 0, planOk: true, algoMs: 0, deepFrames: 0, contacts: 0 };
+function plan(a, b, margin, skip) {
+  const t0 = performance.now();
+  const pc = { start: a, goal: b, exR: margin + 0.07, m: margin, skip };
+  let pts = null;
+  if (P.planner === 'none' || segClear(a, b, pc)) pts = [a, b];
+  else if (P.planner === 'via') pts = planVia(a, b, pc) || planRRT(a, b, pc);
+  else pts = planRRT(a, b, pc) || planVia(a, b, pc);
+  stats.planOk = !!pts;
+  if (!pts) pts = [a, b];
+  else if (pts.length > 2) {
+    let sm = chaikin(chaikin(pts));
+    let ok = true;
+    for (let i = 0; i < sm.length - 1 && ok; i++) ok = segClear(sm[i], sm[i + 1], { ...pc, m: margin * 0.8 });
+    if (ok) pts = sm;
+  }
+  stats.planMs = performance.now() - t0;
+  stats.planCount = (stats.planCount || 0) + 1;
+  return new Path(pts.map(p => p.clone()));
+}
+function patchPath(path, a, b, margin, skip) {
+  if (path.pts.length < 3) return null;
+  const pts = path.pts.map(p => p.clone());
+  pts[0].copy(a); pts[pts.length - 1].copy(b);
+  const pc = { start: a, goal: b, exR: margin + 0.07, m: margin, skip };
+  if (!segClear(pts[0], pts[1], pc) || !segClear(pts[pts.length - 2], pts[pts.length - 1], pc)) return null;
+  return new Path(pts);
+}
+
+/* ================================================================
+   玩家（第一人稱）與觸手基座
+   ================================================================ */
+const player = { pos: new V3(), yaw: 0, pitch: -0.2 };
+const base = new V3(), baseDir = new V3(), fwd = new V3(), right = new V3();
+function updateBase() {
+  fwd.set(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+  right.set(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
+  base.copy(player.pos).setY(1.3).addScaledVector(right, 0.22).addScaledVector(fwd, 0.18);
+  baseDir.copy(fwd).addScaledVector(right, 0.2).addScaledVector(UP, -0.7).normalize();
+}
+function toBody(p) { return p.clone().sub(player.pos).applyAxisAngle(UP, -player.yaw); }
+function fromBody(l) { return l.clone().applyAxisAngle(UP, player.yaw).add(player.pos); }
+
+/* ================================================================
+   觸手狀態
+   ================================================================ */
+const arm = { n: 0, nodes: [], prev: [], T: [], Tcmd: [], rad: [], segRest: 0, load: [] };
+const minLen = () => arm.segRest * P.minExt, maxLen = () => arm.segRest * P.maxExt;
+const tipRad = () => arm.rad[arm.n];
+function curlAxisFor(t) { const a = new V3().crossVectors(t, UP); if (a.lengthSq() < 1e-6) a.set(1, 0, 0); return a.normalize(); }
+/** 從 startP 沿 tangent 出發，捲曲 count 節（曲率朝末端增加） */
+function curl(pts, startIdx, count, startP, tangent, axis, segL, kappa, sign = -1) {
+  const t = tangent.clone(), p = startP.clone(), L = Math.max(count * segL, 1e-6);
+  for (let i = 1; i <= count; i++) {
+    t.applyAxisAngle(axis, sign * kappa * segL * (0.4 + 1.6 * (i * segL) / L));
+    p.addScaledVector(t, segL);
+    pts[startIdx + i].copy(p);
+  }
+}
+function homePose(out) {
+  out[0].copy(base);
+  curl(out, 0, arm.n, base, baseDir, right, minLen(), 10, 1);
+}
+function buildArm() {
+  arm.n = P.N; arm.segRest = P.segLen;
+  const n = arm.n;
+  arm.rad = Array.from({ length: n + 1 }, (_, i) => P.radius * lerp(1, 0.25, i / n));
+  for (const k of ['nodes', 'prev', 'T', 'Tcmd']) arm[k] = Array.from({ length: n + 1 }, () => new V3());
+  arm.load = new Array(n + 1).fill(0);
+  updateBase();
+  homePose(arm.nodes);
+  for (let i = 0; i <= n; i++) { arm.prev[i].copy(arm.nodes[i]); arm.T[i].copy(arm.nodes[i]); arm.Tcmd[i].copy(arm.nodes[i]); }
+  dls.q = null;
+  buildTentacleMesh();
+}
+
+/* ================================================================
+   手臂控制器
+   ================================================================ */
+function totalLen(c) {
+  const need = Math.max(c.s, c.base.distanceTo(c.tipRef)) * 1.02;
+  return clamp(lerp(Math.max(c.n * c.segRest, need), need, P.extPolicy), c.n * c.minLen, c.n * c.maxLen);
+}
+function limitAngle(d, pd, maxB) {
+  const cs = d.dot(pd);
+  if (cs >= Math.cos(maxB)) return d;
+  const perp = d.clone().addScaledVector(pd, -cs);
+  if (perp.lengthSq() < 1e-10) perp.copy(curlAxisFor(pd)).cross(pd);
+  perp.normalize();
+  return d.copy(pd).multiplyScalar(Math.cos(maxB)).addScaledVector(perp, Math.sin(maxB));
+}
+function avoid(pts, c, gain = P.avoidGain) {
+  if (gain <= 0) return;
+  const q = new V3();
+  for (let i = 1; i < c.n; i++) {
+    const w = gain * clamp(pts[i].distanceTo(c.goal) / 0.25, 0, 1);
+    if (w <= 0) continue;
+    q.copy(pts[i]);
+    pushOut(q, c.rad[i] + P.clearance * 0.6, c.skip);
+    pts[i].lerp(q, w);
+    // 節段中點
+    q.copy(pts[i]).add(pts[i + 1]).multiplyScalar(0.5);
+    const r = c.rad[i] + P.clearance * 0.6, dm = sdfWorld(q, c.skip);
+    if (dm < r) {
+      const g = gradWorld(q, c.skip, new V3()).multiplyScalar((r - dm) * w);
+      pts[i].add(g); if (i + 1 < c.n) pts[i + 1].add(g);
+    }
+  }
+}
+function relength(pts, c, l) {
+  for (let i = 1; i <= c.n; i++) {
+    const d = pts[i].clone().sub(pts[i - 1]);
+    const L = d.length();
+    pts[i].copy(pts[i - 1]).addScaledVector(L > 1e-9 ? d.divideScalar(L) : c.baseDir, l);
+  }
+}
+function ctrlFABRIK(c) {
+  const n = c.n, l = totalLen(c) / n, maxB = P.maxBend * DEG, pts = c.prev, tgt = c.tipRef;
+  const d = new V3();
+  for (let it = 0; it < P.iters; it++) {
+    pts[n].copy(tgt);
+    for (let i = n - 1; i >= 0; i--) {
+      d.copy(pts[i]).sub(pts[i + 1]);
+      if (d.lengthSq() < 1e-12) d.copy(c.baseDir).negate();
+      pts[i].copy(pts[i + 1]).addScaledVector(d.normalize(), l);
+    }
+    pts[0].copy(c.base);
+    const pd = c.baseDir.clone();
+    for (let i = 1; i <= n; i++) {
+      d.copy(pts[i]).sub(pts[i - 1]);
+      if (d.lengthSq() < 1e-12) d.copy(pd);
+      limitAngle(d.normalize(), pd, maxB);
+      pts[i].copy(pts[i - 1]).addScaledVector(d, l);
+      pd.copy(d);
+    }
+    avoid(pts, c);
+    if (pts[n].distanceTo(tgt) < 0.002) break;
+  }
+  relength(pts, c, l);
+  return pts;
+}
+function ctrlCCD(c) {
+  const n = c.n, l = totalLen(c) / n, maxB = P.maxBend * DEG, pts = c.prev, tgt = c.tipRef;
+  relength(pts, c, l);
+  const a = new V3(), b = new V3(), q = new THREE.Quaternion(), I = new THREE.Quaternion(), tmp = new V3();
+  for (let it = 0; it < P.iters; it++) {
+    for (let j = n - 1; j >= 0; j--) {
+      a.copy(pts[n]).sub(pts[j]); b.copy(tgt).sub(pts[j]);
+      if (a.lengthSq() < 1e-10 || b.lengthSq() < 1e-10) continue;
+      q.setFromUnitVectors(a.normalize(), b.normalize());
+      const ang = 2 * Math.acos(clamp(q.w, -1, 1));
+      if (ang > maxB) q.copy(I).slerp(q, maxB / ang);
+      for (let k = j + 1; k <= n; k++) pts[k].copy(tmp.copy(pts[k]).sub(pts[j]).applyQuaternion(q).add(pts[j]));
+    }
+    avoid(pts, c);
+    relength(pts, c, l);
+    if (pts[n].distanceTo(tgt) < 0.002) break;
+  }
+  return pts;
+}
+/* --- DLS：每節 (a,b) 彎角 + 節長 --- */
+const dls = { q: null, n: 0, stamp: -1 };
+let algoStamp = 0;
+const _fd = new V3(), _fu = new V3(), _fv = new V3(), _ax = new V3();
+function initFrame(d, u, v) { u.crossVectors(d, UP); if (u.lengthSq() < 1e-6) u.set(1, 0, 0); u.normalize(); v.crossVectors(d, u).normalize(); }
+function dlsFK(q, n, b0, bd, out) {
+  const d = _fd.copy(bd), u = _fu, v = _fv;
+  initFrame(d, u, v);
+  out[0].copy(b0);
+  for (let i = 0; i < n; i++) {
+    const a = q[2 * i], b = q[2 * i + 1], ang = Math.hypot(a, b);
+    if (ang > 1e-9) {
+      _ax.copy(u).multiplyScalar(a / ang).addScaledVector(v, b / ang);
+      d.applyAxisAngle(_ax, ang); u.applyAxisAngle(_ax, ang); v.applyAxisAngle(_ax, ang);
+    }
+    out[i + 1].copy(out[i]).addScaledVector(d, q[2 * n + i]);
+  }
+}
+function dlsFromPoints(pts, n, bd, mn, mx) {
+  const q = new Float64Array(3 * n), d = bd.clone(), u = new V3(), v = new V3(), di = new V3(), ax = new V3();
+  initFrame(d, u, v);
+  for (let i = 0; i < n; i++) {
+    di.copy(pts[i + 1]).sub(pts[i]);
+    const len = di.length();
+    if (len < 1e-6) di.copy(d); else di.divideScalar(len);
+    ax.crossVectors(d, di);
+    const s = ax.length(), ang = Math.atan2(s, d.dot(di));
+    if (s > 1e-9) {
+      ax.divideScalar(s);
+      q[2 * i] = ax.dot(u) * ang; q[2 * i + 1] = ax.dot(v) * ang;
+      d.applyAxisAngle(ax, ang); u.applyAxisAngle(ax, ang); v.applyAxisAngle(ax, ang);
+    }
+    q[2 * n + i] = clamp(len, mn, mx);
+  }
+  return q;
+}
+function ctrlDLS(c) {
+  const n = c.n, m = 3 * n;
+  if (!dls.q || dls.n !== n || dls.stamp !== algoStamp) { dls.q = dlsFromPoints(c.prev, n, c.baseDir, c.minLen, c.maxLen); dls.n = n; dls.stamp = algoStamp; }
+  const q = dls.q, lam2 = P.dlsLambda ** 2, maxB = P.maxBend * DEG, W = 0.3 + 2 * P.extPolicy, eps = 1e-4;
+  const P0 = Array.from({ length: n + 1 }, () => new V3()), P1 = Array.from({ length: n + 1 }, () => new V3());
+  const J = new Float64Array(3 * m), gp = new Float64Array(m), dq = new Float64Array(m);
+  const Ltar = totalLen(c), clr = P.clearance * 0.6, useAvoid = P.avoidGain > 0;
+  const pens = [];   // 侵入安全距離的節點：{i, k = 2·w·pen, g = 距離場梯度}
+  for (let it = 0; it < P.iters; it++) {
+    dlsFK(q, n, c.base, c.baseDir, P0);
+    const e = c.tipRef.clone().sub(P0[n]);
+    if (e.length() > 0.1) e.setLength(0.1);
+    pens.length = 0;
+    if (useAvoid) for (let i = 1; i < n; i++) {
+      const w = clamp(P0[i].distanceTo(c.goal) / 0.25, 0, 1);
+      if (w <= 0) continue;
+      const pen = c.rad[i] + clr - sdfWorld(P0[i], c.skip);
+      if (pen > 0) pens.push({ i, k: 2 * w * pen, g: gradWorld(P0[i], c.skip, new V3()) });
+    }
+    for (let j = 0; j < m; j++) {
+      const old = q[j], sc = j >= 2 * n ? W : 1;
+      q[j] = old + eps;
+      dlsFK(q, n, c.base, c.baseDir, P1);
+      J[3 * j] = sc * (P1[n].x - P0[n].x) / eps; J[3 * j + 1] = sc * (P1[n].y - P0[n].y) / eps; J[3 * j + 2] = sc * (P1[n].z - P0[n].z) / eps;
+      // 懲罰函數 Σ w·pen² 的梯度 = Σ −2·w·pen·∇sdf · ∂p/∂q
+      let gsum = 0;
+      for (const pp of pens) gsum -= pp.k * ((P1[pp.i].x - P0[pp.i].x) * pp.g.x + (P1[pp.i].y - P0[pp.i].y) * pp.g.y + (P1[pp.i].z - P0[pp.i].z) * pp.g.z) / eps;
+      gp[j] = gsum;
+      q[j] = old;
+    }
+    // A = J Jᵀ + λ² I
+    let a00 = lam2, a01 = 0, a02 = 0, a11 = lam2, a12 = 0, a22 = lam2;
+    for (let j = 0; j < m; j++) {
+      const x = J[3 * j], y = J[3 * j + 1], z = J[3 * j + 2];
+      a00 += x * x; a01 += x * y; a02 += x * z; a11 += y * y; a12 += y * z; a22 += z * z;
+    }
+    const det = a00 * (a11 * a22 - a12 * a12) - a01 * (a01 * a22 - a12 * a02) + a02 * (a01 * a12 - a11 * a02);
+    if (Math.abs(det) < 1e-14) break;
+    const i00 = (a11 * a22 - a12 * a12) / det, i01 = (a02 * a12 - a01 * a22) / det, i02 = (a01 * a12 - a02 * a11) / det;
+    const i11 = (a00 * a22 - a02 * a02) / det, i12 = (a01 * a02 - a00 * a12) / det, i22 = (a00 * a11 - a01 * a01) / det;
+    const xx = i00 * e.x + i01 * e.y + i02 * e.z, xy = i01 * e.x + i11 * e.y + i12 * e.z, xz = i02 * e.x + i12 * e.y + i22 * e.z;
+    let Lnow = 0;
+    for (let i = 0; i < n; i++) Lnow += q[2 * n + i];
+    for (let j = 0; j < m; j++) {
+      const sc = j >= 2 * n ? W : 1;
+      let v = sc * (J[3 * j] * xx + J[3 * j + 1] * xy + J[3 * j + 2] * xz);
+      v -= P.avoidGain * 3 * gp[j];
+      if (j >= 2 * n) v += 0.05 * (Ltar - Lnow) / n;
+      dq[j] = clamp(v, -0.15, 0.15);
+    }
+    for (let j = 0; j < m; j++) q[j] += dq[j];
+    for (let i = 0; i < n; i++) {
+      const ang = Math.hypot(q[2 * i], q[2 * i + 1]);
+      if (ang > maxB) { q[2 * i] *= maxB / ang; q[2 * i + 1] *= maxB / ang; }
+      q[2 * n + i] = clamp(q[2 * n + i], c.minLen, c.maxLen);
+    }
+  }
+  const out = Array.from({ length: n + 1 }, () => new V3());
+  dlsFK(q, n, c.base, c.baseDir, out);
+  return out;
+}
+function ctrlFTL(c) {
+  const n = c.n, pts = Array.from({ length: n + 1 }, () => new V3());
+  const s = Math.min(c.s, n * c.maxLen);
+  pts[0].copy(c.base);
+  if (s >= n * c.minLen) {
+    const l = s / n;
+    for (let i = 1; i <= n; i++) c.route.at(i * l, pts[i]);
+  } else {
+    const l = c.minLen, k = Math.min(n, Math.floor(s / l));
+    for (let i = 1; i <= k; i++) c.route.at(i * l, pts[i]);
+    const t = c.route.tangent(k * l);
+    curl(pts, k, n - k, pts[k], t, curlAxisFor(t), l, P.bendCurl);
+  }
+  avoid(pts, c, P.avoidGain * 0.5);
+  return pts;
+}
+function ctrlBend(c) {
+  const n = c.n, pts = Array.from({ length: n + 1 }, () => new V3());
+  const Ltot = clamp(c.pathLen, n * c.minLen, n * c.maxLen), l = Ltot / n;
+  const s = Math.min(c.s, Ltot), k = Math.min(n, Math.floor(s / l + 1e-6));
+  pts[0].copy(c.base);
+  for (let i = 1; i <= k; i++) c.route.at(i * l, pts[i]);
+  if (k < n) {
+    const t = c.route.tangent(k * l);
+    curl(pts, k, n - k, pts[k], t, curlAxisFor(t), l, P.bendCurl);
+  }
+  avoid(pts, c, P.avoidGain * 0.5);
+  return pts;
+}
+const CUSTOM_TEMPLATE = `// 自訂控制器：每幀呼叫一次，回傳 n+1 個目標點（index 0 = 基座）。
+// ctx.n            這次要解的節數（纏繞時會少於總節數）
+// ctx.base         基座位置；ctx.baseDir 基座朝向（單位向量）
+// ctx.tipRef       規劃路徑上「現在」末端該在的參考點
+// ctx.goal         最終目標；ctx.path 規劃路徑點（Vector3 陣列）；ctx.s 路徑進度 (m)
+// ctx.prev         上一幀的目標點（可直接修改後回傳）；ctx.nodes 實際節點位置
+// ctx.minLen / ctx.maxLen 每節長度上下限；ctx.rad[i] 每節半徑；ctx.P 所有參數
+// ctx.util: V(x,y,z), pushOut(p, r) 把點推離障礙物, sdf(p) 到障礙物距離,
+//           pointAt(s) 路徑上的點, tangentAt(s), clamp, lerp
+//
+// 範例：簡化版 FABRIK＋避障。試著改成你自己的策略！
+function controller(ctx) {
+  const { n, base, tipRef, util } = ctx;
+  const need = ctx.s * 1.05;                       // 沿路徑需要的長度
+  const l = util.clamp(need / n, ctx.minLen, ctx.maxLen);
+  const pts = ctx.prev;
+  for (let it = 0; it < ctx.P.iters; it++) {
+    pts[n].copy(tipRef);                           // 後向：末端對準目標
+    for (let i = n - 1; i >= 0; i--) {
+      const d = pts[i].clone().sub(pts[i + 1]).normalize();
+      pts[i].copy(pts[i + 1]).addScaledVector(d, l);
+    }
+    pts[0].copy(base);                             // 前向：基座固定
+    for (let i = 1; i <= n; i++) {
+      const d = pts[i].clone().sub(pts[i - 1]).normalize();
+      pts[i].copy(pts[i - 1]).addScaledVector(d, l);
+      if (i < n) util.pushOut(pts[i], ctx.rad[i] + 0.03);
+    }
+  }
+  return pts;
+}`;
+let customFn = null, customErr = '';
+function compileCustom(src) {
+  try {
+    const f = new Function('"use strict";\n' + src + '\n;return typeof controller === "function" ? controller : null;')();
+    if (!f) throw new Error('找不到 function controller(ctx)');
+    customFn = f; customErr = '';
+    return true;
+  } catch (e) { customFn = null; customErr = '編譯錯誤：' + e.message; return false; }
+}
+function ctrlCustom(c) {
+  if (!customFn) return null;
+  try {
+    const r = customFn(c);
+    if (!Array.isArray(r) || r.length < c.n + 1) throw new Error(`需要回傳 ${c.n + 1} 個點，實際 ${Array.isArray(r) ? r.length : typeof r}`);
+    const out = [];
+    for (let i = 0; i <= c.n; i++) {
+      const p = r[i];
+      if (!p || !isFinite(p.x) || !isFinite(p.y) || !isFinite(p.z)) throw new Error(`第 ${i} 個點不是有效座標`);
+      out.push(new V3(p.x, p.y, p.z));
+    }
+    customErr = '';
+    return out;
+  } catch (e) { customErr = '執行錯誤：' + e.message; return null; }
+}
+const CTRL = { fabrik: ctrlFABRIK, ccd: ctrlCCD, dls: ctrlDLS, ftl: ctrlFTL, bend: ctrlBend, custom: ctrlCustom };
+
+/* ================================================================
+   大腦指令 + 局部抓握反射
+   ================================================================ */
+const brain = { mode: 'home', goal: new V3(), label: '待命', twistDir: 0 };
+let grasp = null;
+const nav = { path: null, s: 0, goal: new V3(), base: new V3(), force: true, tipRef: new V3(), nAct: 0 };
+const wrapK = () => Math.min(P.wrapNodes, arm.n - 3);
+function graspBasis() {
+  const o = grasp.obj, q = o.quat();
+  return { a: o.axis(), u: grasp.uL.clone().applyQuaternion(q), w: grasp.wL.clone().applyQuaternion(q) };
+}
+function wrapR(j, k) { return grasp.obj.r + arm.rad[arm.n - k + j] + 0.004; }
+/** 纏繞目標：前 prog 比例沿螺旋貼著物體，其餘沿該點切線伸出（漸進捲曲，節長不變） */
+function helix(C, k, B, prog = 1) {
+  const pts = [], span = P.wrapTurns * TAU, pitch = Math.min(0.03, grasp.obj.hl ? grasp.obj.hl * 1.2 : 0.03);
+  const onHelix = f => {
+    const th = grasp.twist + f * span, R = wrapR(Math.round(f * k), k);
+    return { p: C.clone().addScaledVector(B.u, Math.cos(th) * R).addScaledVector(B.w, Math.sin(th) * R).addScaledVector(B.a, (f - 0.5) * pitch),
+             t: B.u.clone().multiplyScalar(-Math.sin(th)).addScaledVector(B.w, Math.cos(th)), R };
+  };
+  const end = onHelix(prog);
+  for (let j = 0; j <= k; j++) {
+    const f = j / k;
+    if (f <= prog) pts.push(onHelix(f).p);
+    else pts.push(end.p.clone().addScaledVector(end.t, (f - prog) * span * end.R));
+  }
+  return pts;
+}
+function wrapQuality(k) {
+  const o = grasp.obj, c = o.center(); let cnt = 0;
+  for (let j = 1; j <= k; j++) {
+    const i = arm.n - k + j, p = arm.nodes[i];
+    let d;
+    if (o.type === 'knob') d = sdfOb(o.ob, p); else d = p.distanceTo(c) - o.r;
+    if (d < arm.rad[i] + 0.03) cnt++;
+  }
+  return cnt / k;
+}
+function wrapCentroid(k) {
+  const c = new V3();
+  for (let j = 1; j <= k; j++) c.add(arm.nodes[arm.n - k + j]);
+  return c.divideScalar(k);
+}
+function newCommand() { nav.force = true; }
+let lastToast = {};
+function toast(msg, kind = '', key = null) {
+  const now = performance.now();
+  if (key && lastToast[key] && now - lastToast[key] < 2500) return;
+  if (key) lastToast[key] = now;
+  const el = document.createElement('div');
+  el.textContent = msg; if (kind) el.className = kind;
+  $('#toast').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 450); }, 2400);
+  while ($('#toast').children.length > 3) $('#toast').firstChild.remove();
+}
+
+function cmdReach() {
+  const h = aim();
+  if (!h) return toast('準星沒有對到任何表面');
+  if (grasp && grasp.phase === 'held') {
+    if (grasp.obj.type === 'knob') return toast('門把固定在門上：用「扭轉」或「拉回」');
+    const o = grasp.obj, dest = h.point.clone().addScaledVector(h.normal, o.r + 0.03);
+    grasp.objPath = plan(o.c.clone(), dest, o.r + P.clearance * 0.5, o.ob);
+    grasp.objS = 0; grasp.motion = 'carry';
+    brain.label = '搬運';
+    return;
+  }
+  if (grasp) releaseGrasp();
+  brain.mode = 'reach';
+  brain.goal.copy(h.point).addScaledVector(h.normal, tipRad() + 0.012);
+  brain.label = '伸向';
+  newCommand();
+}
+function cmdGrab() {
+  const h = aim();
+  let obj = h && h.grasp;
+  if (!obj) obj = assistTarget();
+  if (!obj && h) {
+    let bd = 0.25;
+    for (const g of world.graspables) { const d = g.center().distanceTo(h.point); if (d < bd) { bd = d; obj = g; } }
+  }
+  if (!obj) return toast('準星附近沒有可以抓的東西');
+  if (grasp && grasp.phase === 'held') return toast('已經抓著東西了，先「放開」(F)');
+  const a = obj.axis(), c = obj.center();
+  const u = base.clone().sub(c); u.addScaledVector(a, -u.dot(a));
+  if (u.lengthSq() < 1e-8) u.copy(curlAxisFor(a)).cross(a);
+  u.normalize();
+  const w = new V3().crossVectors(a, u);
+  const qi = obj.quat().clone().invert();
+  grasp = { obj, phase: 'approach', w: 0, uL: u.applyQuaternion(qi), wL: w.applyQuaternion(qi), twist: 0,
+            Cd: c.clone(), offset: new V3(), quality: 0, failT: 0, slipT: 0, motion: 'hold', bodyLocal: null, objPath: null, objS: 0 };
+  brain.mode = 'grab'; brain.label = '抓取：接近';
+  newCommand();
+}
+function cmdPull() {
+  if (grasp && grasp.phase === 'held') { grasp.motion = 'pull'; brain.label = '拉回'; return; }
+  cmdRetract();
+}
+function cmdRelease(silent) {
+  if (!grasp) { if (!silent) toast('目前沒有抓著東西'); return; }
+  releaseGrasp();
+  if (!silent) toast('放開');
+}
+function releaseGrasp() {
+  if (!grasp) return;
+  const k = wrapK(), anchor = arm.nodes[arm.n - k].clone();
+  grasp.obj.held = false;
+  grasp = null;
+  brain.mode = 'reach';
+  brain.goal.copy(anchor.addScaledVector(base.clone().sub(anchor).normalize(), 0.12));
+  brain.label = '鬆開後待命';
+  newCommand();
+}
+function cmdRetract() {
+  if (grasp) releaseGrasp();
+  brain.mode = 'home'; brain.label = '收回';
+}
+
+/** 回傳本幀「主動求解鏈」的長度、目標，與纏繞節點的目標 */
+function brainUpdate(dt) {
+  const n = arm.n;
+  if (brain.mode === 'home') return { home: true };
+  if (!grasp) return { nAct: n, goal: brain.goal };
+  const k = wrapK(), o = grasp.obj, B = graspBasis();
+  if (grasp.phase === 'approach') {
+    const A = o.center().clone().addScaledVector(B.u, wrapR(0, k) + 0.07);
+    if (arm.nodes[n].distanceTo(A) < P.approachTol) { grasp.phase = 'wrap'; grasp.w = 0; brain.label = '抓取：纏繞'; }
+    return { nAct: n, goal: A };
+  }
+  let C;
+  if (grasp.phase === 'wrap') {
+    C = o.center().clone();
+    grasp.w = Math.min(1, grasp.w + P.wrapSpeed * dt);
+    grasp.quality = wrapQuality(k);
+    if (grasp.w >= 1) {
+      if (grasp.quality >= 0.5) {
+        grasp.phase = 'held'; o.held = true;
+        grasp.offset.copy(o.center()).sub(wrapCentroid(k));
+        grasp.Cd.copy(o.center()); grasp.bodyLocal = toBody(grasp.Cd); grasp.motion = 'hold';
+        if (o.v) o.v.set(0, 0, 0);
+        brain.label = '抓住';
+        toast(`抓住了！纏繞品質 ${Math.round(grasp.quality * 100)}%`, 'ok');
+      } else if ((grasp.failT += dt) > 1.2) {
+        const gap = arm.nodes[n - k].distanceTo(nav.goal);
+        toast(gap > 0.08
+          ? `纏繞失敗：扣掉纏繞用的 ${k} 節後觸手不夠長（差 ${(gap * 100).toFixed(0)} cm）。走近一點，或提高最長伸縮比`
+          : `纏繞失敗（品質 ${Math.round(grasp.quality * 100)}%）：試著調整纏繞節數、圈數或肌肉剛性`, 'warn');
+        releaseGrasp();
+        return { nAct: n, goal: brain.goal };
+      }
+    }
+  } else {
+    // held
+    if (brain.twistDir) {
+      grasp.twist += brain.twistDir * P.twistSpeed * DEG * dt;
+      if (o.type === 'knob') grasp.twist = clamp(grasp.twist, -100 * DEG, 100 * DEG);
+    }
+    const speed = Math.max(0.15, P.tipSpeed * 0.6);
+    if (o.type === 'knob') {
+      grasp.Cd.copy(o.center());
+      if (grasp.motion === 'pull') {
+        const chest = base.clone().addScaledVector(fwd, 0.3).addScaledVector(UP, -0.2);
+        const d = chest.sub(o.center());
+        grasp.Cd.addScaledVector(d.normalize(), Math.min(0.1, d.length()));
+      }
+    } else if (grasp.motion === 'carry' && grasp.objPath) {
+      if (o.c.distanceTo(grasp.Cd) < 0.18) grasp.objS = Math.min(grasp.objPath.len, grasp.objS + speed * dt);
+      grasp.objPath.at(grasp.objS, grasp.Cd);
+      if (grasp.objS >= grasp.objPath.len - 1e-4) { grasp.motion = 'hold'; grasp.bodyLocal = toBody(grasp.Cd); brain.label = '抓住'; }
+    } else if (grasp.motion === 'pull') {
+      const chest = base.clone().addScaledVector(fwd, 0.32).addScaledVector(UP, -0.15).addScaledVector(right, -0.05);
+      const d = chest.sub(grasp.Cd), L = d.length();
+      if (o.c.distanceTo(grasp.Cd) < 0.18) grasp.Cd.addScaledVector(d, L > 1e-6 ? Math.min(1, speed * dt / L) : 0);
+      if (L < 0.01) { grasp.motion = 'hold'; grasp.bodyLocal = toBody(grasp.Cd); brain.label = '抓住'; }
+    } else {
+      grasp.Cd.copy(fromBody(grasp.bodyLocal));
+    }
+    C = grasp.Cd;
+  }
+  const hel = helix(C, k, B, grasp.phase === 'wrap' ? smooth(grasp.w) : 1);
+  return { nAct: n - k, goal: hel[0], distal: hel };
+}
+
+/** 物理之後：被抓物體跟隨、門把、門、打滑 */
+function postPhysics(dt) {
+  if (!grasp || grasp.phase !== 'held') return;
+  const k = wrapK(), o = grasp.obj;
+  grasp.quality = wrapQuality(k);
+  if (arm.nodes[arm.n - k].distanceTo(nav.goal) > 0.1) {
+    if ((grasp.shortT = (grasp.shortT || 0) + dt) > 1.5) toast('觸手不夠長，纏繞被往外拉：走近一點，或提高最長伸縮比', 'warn', 'short');
+  } else grasp.shortT = 0;
+  const cap = P.gripStrength * grasp.quality;
+  if (o.type === 'ball') {
+    const nc = wrapCentroid(k).add(grasp.offset);
+    o.v.copy(nc).sub(o.c).divideScalar(Math.max(dt, 1e-3));
+    o.c.copy(nc);
+    const weight = o.mass * P.gravity, capN = cap * 2.2;
+    grasp.margin = weight > 1e-6 ? capN / weight : Infinity;
+    if (capN < weight) {
+      grasp.slipT += dt;
+      if (grasp.slipT > 0.35) { toast('抓力不足，球滑落了（提高吸盤抓力、纏繞圈數，或增加肌肉剛性）', 'warn'); releaseGrasp(); }
+    } else grasp.slipT = Math.max(0, grasp.slipT - dt);
+    return;
+  }
+  // 門把
+  const door = o.door, C = o.center(), B = graspBasis();
+  let sum = 0;
+  for (let j = 1; j <= k; j++) {
+    const rel = arm.nodes[arm.n - k + j].clone().sub(C);
+    const phi = Math.atan2(rel.dot(B.w), rel.dot(B.u));
+    sum += wrapPi(phi - (grasp.twist + (j / k) * P.wrapTurns * TAU));
+  }
+  const measured = grasp.twist + sum / k;
+  grasp.margin = cap / door.knobTorque;
+  if (cap >= door.knobTorque) {
+    door.knobAngle = clamp(Math.abs(measured), 0, 80 * DEG);
+  }
+  if (Math.abs(grasp.twist) > door.knobAngle + 15 * DEG) {
+    grasp.twist = Math.sign(grasp.twist) * (door.knobAngle + 15 * DEG);
+    if (cap < door.knobTorque) toast(`門把打滑：抓力×品質 = ${cap.toFixed(2)}，需要 ≥ ${door.knobTorque}`, 'warn', 'knobslip');
+  }
+  if (door.knobAngle >= 55 * DEG) door.unlatched = true;
+  if (grasp.motion === 'pull') {
+    const pc = wrapCentroid(k).add(grasp.offset);
+    if (door.unlatched) {
+      const rel = pc.clone().sub(door.hinge);
+      const target = clamp(Math.atan2(rel.z, rel.x) - Math.atan2(door.knobLocal.z, door.knobLocal.x), 0, 1.3);
+      door.angle += clamp(target - door.angle, -0.8 * dt, 0.8 * dt);
+    } else {
+      toast('門還鎖著：先按住「扭轉」把門把轉到 60° 以上', 'warn', 'locked');
+    }
+  }
+}
+
+/* ================================================================
+   每幀：規劃 → 控制 → 目標
+   ================================================================ */
+function skipObstacle() { return grasp ? grasp.obj.ob : null; }
+function updateNav(goal, nAct, dt) {
+  const margin = P.clearance + arm.rad[Math.floor(arm.n / 2)];
+  const skip = skipObstacle();
+  const replan = nav.force || !nav.path || nav.nAct !== nAct || goal.distanceTo(nav.goal) > 0.08 || base.distanceTo(nav.base) > 0.06;
+  if (replan) {
+    let np = null;
+    if (!nav.force && nav.path && P.planner !== 'none') np = patchPath(nav.path, base, goal, margin, skip);
+    if (!np) np = plan(base.clone(), goal.clone(), margin, skip);
+    if (nav.force) nav.s = (P.algo === 'bend' || P.algo === 'ftl') ? 0 : np.project(arm.nodes[nAct]);
+    else nav.s = np.project(nav.tipRef);
+    nav.path = np; nav.goal.copy(goal); nav.base.copy(base); nav.force = false; nav.nAct = nAct;
+  }
+  nav.s = Math.min(nav.s + P.tipSpeed * dt, nav.path.len);
+  nav.path.at(nav.s, nav.tipRef);
+}
+function computeTargets(dt) {
+  const out = brainUpdate(dt), n = arm.n;
+  if (out.home) { homePose(arm.Tcmd); nav.path = null; nav.force = true; stats.algoMs = 0; return; }
+  const nAct = out.nAct;
+  updateNav(out.goal, nAct, dt);
+  const skip = skipObstacle();
+  const c = {
+    n: nAct, base: base.clone(), baseDir: baseDir.clone(), tipRef: nav.tipRef.clone(), goal: nav.goal.clone(),
+    route: nav.path, path: nav.path.pts.map(p => p.clone()), s: nav.s, pathLen: nav.path.len,
+    segRest: arm.segRest, minLen: minLen(), maxLen: maxLen(), rad: arm.rad.slice(), skip,
+    prev: arm.T.slice(0, nAct + 1).map(v => v.clone()), nodes: arm.nodes.slice(0, nAct + 1).map(v => v.clone()),
+    P: { ...P }, dt,
+    util: { V: (x, y, z) => new V3(x, y, z), clamp, lerp, sdf: p => sdfWorld(p, skip), pushOut: (p, r) => { pushOut(p, r, skip); return p; },
+            pointAt: s => nav.path.at(s), tangentAt: s => nav.path.tangent(s) },
+  };
+  const t0 = performance.now();
+  let pts = CTRL[P.algo](c);
+  if (!pts) { c.prev = arm.T.slice(0, nAct + 1).map(v => v.clone()); pts = ctrlFABRIK(c); }
+  stats.algoMs = performance.now() - t0;
+  for (let i = 0; i <= nAct; i++) arm.Tcmd[i].copy(pts[i]);
+  if (out.distal) for (let j = 1; j <= n - nAct; j++) arm.Tcmd[nAct + j].copy(out.distal[j]);
+  arm.Tcmd[0].copy(base);
+}
+function slewTargets(dt) {
+  const vmax = Math.max(1.0, P.tipSpeed * 2.5) * dt, d = new V3();
+  for (let i = 0; i <= arm.n; i++) {
+    d.copy(arm.Tcmd[i]).sub(arm.T[i]);
+    const L = d.length();
+    if (L > vmax) d.multiplyScalar(vmax / L);
+    arm.T[i].add(d);
+  }
+  arm.T[0].copy(base);
+}
+
+/* ================================================================
+   軟體物理（Verlet + 長度約束 + 碰撞）
+   ================================================================ */
+const H = 1 / 120;
+let deepThisFrame = false;
+function physicsStep(h) {
+  const n = arm.n, k = P.kAct, damp = P.damping, g = P.gravity, h2 = h * h;
+  const mn = minLen(), mx = maxLen(), skip = skipObstacle();
+  const k_w = wrapK();
+  const held = grasp && grasp.phase === 'held' && grasp.obj.type === 'ball';
+  const load = held ? g * grasp.obj.mass / (k_w * 0.03) : 0;
+  for (let i = 1; i <= n; i++) {
+    const p = arm.nodes[i], pr = arm.prev[i], T = arm.T[i];
+    const li = held && i > n - k_w ? load : 0;
+    const ff = P.gravComp * (g + li);
+    const nz = P.noise * k;
+    const vx = (p.x - pr.x) * (1 - damp), vy = (p.y - pr.y) * (1 - damp), vz = (p.z - pr.z) * (1 - damp);
+    const ax = k * (T.x - p.x) + (nz ? (Math.random() - 0.5) * 2 * nz : 0);
+    const ay = k * (T.y - p.y) - g - li + ff + (nz ? (Math.random() - 0.5) * 2 * nz : 0);
+    const az = k * (T.z - p.z) + (nz ? (Math.random() - 0.5) * 2 * nz : 0);
+    pr.copy(p);
+    p.x += vx + ax * h2; p.y += vy + ay * h2; p.z += vz + az * h2;
+  }
+  const d = new V3(), mid = new V3();
+  let contacts = 0;
+  for (let it = 0; it < 4; it++) {
+    arm.nodes[0].copy(base);
+    for (let i = 1; i <= n; i++) {
+      const L = clamp(arm.T[i].distanceTo(arm.T[i - 1]), mn, mx);
+      d.copy(arm.nodes[i]).sub(arm.nodes[i - 1]);
+      const len = d.length();
+      if (len < 1e-9) continue;
+      const diff = (len - L) / len;
+      if (i === 1) arm.nodes[1].addScaledVector(d, -diff);
+      else { arm.nodes[i - 1].addScaledVector(d, diff * 0.5); arm.nodes[i].addScaledVector(d, -diff * 0.5); }
+    }
+    // 被動彎曲剛性：抵抗「實際曲率」偏離「指令曲率」（肌肉張力維持形狀，而不是把觸手拉直）
+    if (P.bendStiff > 0) for (let i = 1; i < n; i++) {
+      mid.copy(arm.nodes[i - 1]).add(arm.nodes[i + 1]).multiplyScalar(0.5).sub(arm.nodes[i]);
+      d.copy(arm.T[i - 1]).add(arm.T[i + 1]).multiplyScalar(0.5).sub(arm.T[i]);
+      arm.nodes[i].addScaledVector(mid.sub(d), P.bendStiff * 0.25);
+    }
+    for (let i = 1; i <= n; i++) {
+      const d0 = pushOut(arm.nodes[i], arm.rad[i], skip);
+      if (it === 3 && d0 < arm.rad[i] + 0.003) contacts++;
+      if (it === 0 && d0 < arm.rad[i] * 0.4) deepThisFrame = true;
+      // 節段中點也做碰撞，避免長節段穿過薄牆
+      mid.copy(arm.nodes[i - 1]).add(arm.nodes[i]).multiplyScalar(0.5);
+      const rm = (arm.rad[i - 1] + arm.rad[i]) / 2, dm = sdfWorld(mid, skip);
+      if (dm < rm) {
+        gradWorld(mid, skip, _g);
+        if (i > 1) arm.nodes[i - 1].addScaledVector(_g, rm - dm);
+        arm.nodes[i].addScaledVector(_g, rm - dm);
+      }
+    }
+    // 球與觸手互相推擠
+    for (const b of world.balls) {
+      if (b.held) continue;
+      const share = grasp && grasp.obj === b ? 0.08 : 0.25;   // 正在被抓的球：吸盤吸附、較不易被推走
+      for (let i = 1; i <= n; i++) {
+        d.copy(b.c).sub(arm.nodes[i]);
+        const dist = d.length(), pen = b.r + arm.rad[i] - dist;
+        if (pen > 0 && dist > 1e-9) {
+          d.divideScalar(dist);
+          arm.nodes[i].addScaledVector(d, -pen * (1 - share));
+          b.c.addScaledVector(d, pen * share);
+          b.v.addScaledVector(d, pen * share / h * 0.4);
+        }
+      }
+    }
+  }
+  stats.contacts = contacts;
+}
+function stepBalls(h) {
+  for (const b of world.balls) {
+    if (b.held) continue;
+    b.v.y -= P.gravity * h;
+    b.v.multiplyScalar(0.999);
+    b.c.addScaledVector(b.v, h);
+    for (let it = 0; it < 2; it++) {
+      const dd = sdfWorld(b.c, b.ob);
+      if (dd < b.r) {
+        const nrm = gradWorld(b.c, b.ob, new V3());
+        b.c.addScaledVector(nrm, b.r - dd);
+        const vn = b.v.dot(nrm);
+        if (vn < 0) b.v.addScaledVector(nrm, -vn * 1.3);
+        const vt = b.v.clone().addScaledVector(nrm, -b.v.dot(nrm));
+        b.v.addScaledVector(vt, -0.03);
+      }
+    }
+    if (b.c.y < -2) { b.c.copy(b.home); b.v.set(0, 0, 0); }
+  }
+}
+
+/* ================================================================
+   關卡
+   ================================================================ */
+const MATS = {};
+function mat(color, extra = {}) { const key = color + JSON.stringify(extra); return MATS[key] || (MATS[key] = new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra })); }
+function newWorld() { return { group: new THREE.Group(), obstacles: [], pick: [], graspables: [], balls: [], targets: [], door: null, objectives: [], won: false, time: 0 }; }
+function addBox(w, c, size, color, opts = {}) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), mat(color));
+  m.position.copy(c);
+  m.castShadow = m.receiveShadow = true;
+  m.userData.label = opts.label || '牆';
+  w.group.add(m); w.pick.push(m);
+  if (opts.obstacle !== false) {
+    const q = new THREE.Quaternion();
+    w.obstacles.push({ kind: 'box', c: c.clone(), h: size.clone().multiplyScalar(0.5), q, qi: q.clone().invert(), mesh: m });
+  }
+  return m;
+}
+function addTarget(w, c, label) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.055, 24, 16), new THREE.MeshStandardMaterial({ color: 0xffb020, emissive: 0xff8a00, emissiveIntensity: 0.6, roughness: 0.4 }));
+  m.position.copy(c); m.castShadow = true; m.userData.label = label;
+  w.group.add(m); w.pick.push(m);
+  const t = { c: c.clone(), r: 0.055, mesh: m, hit: false };
+  w.targets.push(t);
+  return t;
+}
+function addBall(w, c, r, mass) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 28, 18), new THREE.MeshStandardMaterial({ color: 0x2f8fd8, roughness: 0.35 }));
+  m.castShadow = true;
+  const stripe = new THREE.Mesh(new THREE.TorusGeometry(r * 1.001, r * 0.08, 6, 32), mat(0xffffff));
+  m.add(stripe);
+  const b = { type: 'ball', label: '球', c: c.clone(), home: c.clone(), v: new V3(), r, mass, held: false, mesh: m,
+              center() { return this.c; }, axis() { return UP.clone(); }, quat() { return new THREE.Quaternion(); } };
+  b.ob = { kind: 'sphere', c: b.c, r };
+  m.userData.label = '球'; m.userData.grasp = b;
+  w.group.add(m); w.pick.push(m); w.graspables.push(b); w.balls.push(b); w.obstacles.push(b.ob);
+  return b;
+}
+function addBasket(w, c) {
+  const inner = 0.17, hgt = 0.22, t = 0.02, col = 0x5b7f5a;
+  addBox(w, c.clone().setY(0.01), new V3(inner * 2 + 2 * t, 0.02, inner * 2 + 2 * t), col, { label: '籃子' });
+  addBox(w, c.clone().add(new V3(0, hgt / 2, -inner - t / 2)), new V3(inner * 2 + 2 * t, hgt, t), col, { label: '籃子' });
+  addBox(w, c.clone().add(new V3(0, hgt / 2, inner + t / 2)), new V3(inner * 2 + 2 * t, hgt, t), col, { label: '籃子' });
+  addBox(w, c.clone().add(new V3(-inner - t / 2, hgt / 2, 0)), new V3(t, hgt, inner * 2), col, { label: '籃子' });
+  addBox(w, c.clone().add(new V3(inner + t / 2, hgt / 2, 0)), new V3(t, hgt, inner * 2), col, { label: '籃子' });
+  return { c: c.clone(), inner, hgt };
+}
+function addDoor(w) {
+  const hinge = new V3(-0.45, 0, -1.3), group = new THREE.Group();
+  group.position.copy(hinge);
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.0, 0.04), mat(0x8c5a3c));
+  panel.position.set(0.45, 1.0, 0); panel.castShadow = panel.receiveShadow = true; panel.userData.label = '門';
+  group.add(panel);
+  const knobLocal = new V3(0.78, 1.0, 0.075);
+  const knobPivot = new THREE.Group(); knobPivot.position.copy(knobLocal); group.add(knobPivot);
+  const knobMat = new THREE.MeshStandardMaterial({ color: 0xc9a227, metalness: 0.6, roughness: 0.3 });
+  const knobMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 28), knobMat);
+  knobMesh.rotation.x = Math.PI / 2; knobMesh.castShadow = true; knobMesh.userData.label = '門把';
+  knobPivot.add(knobMesh);
+  const mark = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.05, 0.004), mat(0x222222));
+  mark.position.set(0, 0.012, 0.027); knobPivot.add(mark);
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.035, 12), knobMat);
+  shaft.rotation.x = Math.PI / 2; shaft.position.set(knobLocal.x, knobLocal.y, 0.035); group.add(shaft);
+  w.group.add(group);
+  const panelOb = { kind: 'box', c: new V3(), h: new V3(0.45, 1.0, 0.02), q: new THREE.Quaternion(), qi: new THREE.Quaternion() };
+  const knobOb = { kind: 'cyl', c: new V3(), a: new V3(0, 0, 1), r: 0.035, hl: 0.025 };
+  w.obstacles.push(panelOb, knobOb);
+  const door = { hinge, group, angle: 0, unlatched: false, knobAngle: 0, knobTorque: 0.9, knobLocal, knobPivot, panelOb, knobOb,
+    update() {
+      group.rotation.y = -this.angle;
+      group.updateMatrixWorld(true);
+      panelOb.c.set(0.45, 1.0, 0).applyMatrix4(group.matrixWorld);
+      panelOb.q.copy(group.quaternion); panelOb.qi.copy(group.quaternion).invert();
+      knobOb.c.copy(knobLocal).applyMatrix4(group.matrixWorld);
+      knobOb.a.set(0, 0, 1).applyQuaternion(group.quaternion);
+      knobPivot.rotation.z = this.knobAngle;
+    } };
+  const knob = { type: 'knob', label: '門把', r: 0.035, hl: 0.025, door, ob: knobOb, held: false,
+    center() { return knobOb.c; }, axis() { return knobOb.a.clone(); }, quat() { return group.quaternion.clone(); } };
+  knobMesh.userData.grasp = knob;
+  w.pick.push(panel, knobMesh); w.graspables.push(knob);
+  door.update();
+  w.door = door;
+  return door;
+}
+const tipNode = () => arm.nodes[arm.n];
+const LEVELS = [
+  {
+    name: '1 · 觸碰練習', start: [0, 0.3, 0], bounds: [-1.5, 1.5, -0.4, 1.5],
+    desc: '準星對準發光球，按「伸向」。換幾個控制器看看它們走法的差別。',
+    build(w) {
+      [[0.55, 1.15, -0.6], [-0.4, 0.6, -0.55], [0.15, 1.9, -0.95]].forEach((p, i) => {
+        addTarget(w, new V3(...p), '目標 ' + 'ABC'[i]);
+        w.objectives.push({ text: '碰到目標 ' + 'ABC'[i], done: false });
+      });
+    },
+    update(w) {
+      w.targets.forEach((t, i) => {
+        if (!t.hit && tipNode().distanceTo(t.c) < t.r + tipRad() + 0.035) {
+          t.hit = true; t.mesh.material = new THREE.MeshStandardMaterial({ color: 0x4caf50, emissive: 0x1b5e20, emissiveIntensity: 0.5 });
+          w.objectives[i].done = true; toast('碰到目標 ' + 'ABC'[i], 'ok');
+        }
+      });
+    },
+  },
+  {
+    name: '2 · 越牆取物', start: [0, -0.3, 0], bounds: [-1.0, 1.0, -0.78, 1.5],
+    desc: '球在矮牆後的桌上。抓起它、越過牆，放進你身邊的綠色籃子。',
+    build(w) {
+      addBox(w, new V3(0, 0.55, -1.0), new V3(2.4, 1.1, 0.1), 0xd9d4c7, { label: '矮牆' });
+      addBox(w, new V3(0.1, 0.35, -1.7), new V3(0.8, 0.7, 0.6), 0x8a6a4a, { label: '桌子' });
+      w.ball = addBall(w, new V3(0.1, 0.7 + 0.07, -1.62), 0.07, 0.1);
+      w.basket = addBasket(w, new V3(0.75, 0, -0.42));
+      w.objectives.push({ text: '抓起球', done: false }, { text: '讓球越過矮牆', done: false }, { text: '把球放進籃子', done: false });
+    },
+    update(w) {
+      const b = w.ball, o = w.objectives;
+      if (b.held) o[0].done = true;
+      if (o[0].done && b.c.z > -0.85) o[1].done = true;
+      const k = w.basket, d = b.c.clone().sub(k.c);
+      if (!b.held && Math.abs(d.x) < k.inner && Math.abs(d.z) < k.inner && b.c.y < k.hgt + 0.05 && b.v.length() < 0.4) {
+        if (!o[2].done) toast('球進籃了！', 'ok');
+        o[2].done = true; o[1].done = true; o[0].done = true;
+      }
+    },
+  },
+  {
+    name: '3 · 轉動門把', start: [0.05, -0.1, 0], bounds: [-1.2, 1.2, -0.2, 1.5],
+    desc: '纏住圓形門把，按住「扭轉」轉到 60° 開鎖，再「拉回」把門拉開。',
+    build(w) {
+      addBox(w, new V3(-1.735, 1.2, -1.3), new V3(2.53, 2.4, 0.1), 0xd9d4c7, { label: '牆' });
+      addBox(w, new V3(1.735, 1.2, -1.3), new V3(2.53, 2.4, 0.1), 0xd9d4c7, { label: '牆' });
+      addBox(w, new V3(0, 2.2, -1.3), new V3(0.94, 0.4, 0.1), 0xd9d4c7, { label: '牆' });
+      const exit = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 2.4), new THREE.MeshBasicMaterial({ color: 0x9be7a4 }));
+      exit.position.set(0, 1.2, -3.2); w.group.add(exit);
+      addDoor(w);
+      w.objectives.push({ text: '纏住門把', done: false }, { text: '把門把轉到 60°', done: false }, { text: '把門拉開 30°', done: false });
+    },
+    update(w) {
+      const d = w.door, o = w.objectives;
+      if (grasp && grasp.phase === 'held' && grasp.obj.type === 'knob') o[0].done = true;
+      if (d.knobAngle >= 55 * DEG) { if (!o[1].done) toast('喀！門鎖打開了', 'ok'); o[1].done = true; }
+      if (d.angle >= 30 * DEG) o[2].done = true;
+      if (!(grasp && grasp.obj === w.graspables[0] && grasp.phase === 'held')) {
+        if (d.angle < 0.03) { d.knobAngle = Math.max(0, d.knobAngle - 2 * (1 / 60)); if (d.knobAngle < 55 * DEG) d.unlatched = false; }
+      }
+    },
+  },
+  {
+    name: '4 · 穿過洞口', start: [0, 0.2, 0], bounds: [-1.4, 1.4, -0.78, 1.5],
+    desc: '高牆上只有一個小洞。走近洞口、從洞裡瞄準牆後的紅色按鈕，讓觸手穿過去按下它。',
+    build(w) {
+      const z = -1.0, t = 0.12, col = 0xd9d4c7;
+      addBox(w, new V3(-1.59, 1.3, z), new V3(2.82, 2.6, t), col, { label: '高牆' });
+      addBox(w, new V3(1.59, 1.3, z), new V3(2.82, 2.6, t), col, { label: '高牆' });
+      addBox(w, new V3(0, 0.525, z), new V3(0.36, 1.05, t), col, { label: '高牆' });
+      addBox(w, new V3(0, 2.005, z), new V3(0.36, 1.19, t), col, { label: '高牆' });
+      addBox(w, new V3(0.55, 0.375, -1.6), new V3(0.3, 0.75, 0.3), 0x9aa4ab, { label: '底座' });
+      const btn = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.04, 24), new THREE.MeshStandardMaterial({ color: 0xd33a2c, emissive: 0x5a0000, roughness: 0.4 }));
+      btn.position.set(0.55, 0.77, -1.6); btn.castShadow = true; btn.userData.label = '按鈕';
+      w.group.add(btn); w.pick.push(btn);
+      w.button = { mesh: btn, c: new V3(0.55, 0.79, -1.6) };
+      w.objectives.push({ text: '末端穿過洞口', done: false }, { text: '按下牆後的按鈕', done: false });
+    },
+    update(w) {
+      const o = w.objectives, tip = tipNode();
+      if (tip.z < -1.12) o[0].done = true;
+      if (!o[1].done && tip.distanceTo(w.button.c) < 0.075) {
+        o[1].done = true; o[0].done = true;
+        w.button.mesh.material = new THREE.MeshStandardMaterial({ color: 0x4caf50, emissive: 0x1b5e20 });
+        w.button.mesh.position.y -= 0.015;
+        toast('按下按鈕！', 'ok');
+      }
+    },
+  },
+];
+let levelIdx = clamp(store.get('tentacleLab.level', 0), 0, LEVELS.length - 1);
+function loadLevel(i) {
+  levelIdx = i; store.set('tentacleLab.level', i);
+  if (world) scene.remove(world.group);
+  world = newWorld();
+  const L = LEVELS[i];
+  L.build(world);
+  scene.add(world.group);
+  player.pos.set(L.start[0], 0, L.start[1]); player.yaw = L.start[2]; player.pitch = -0.22;
+  grasp = null; brain.mode = 'home'; brain.label = '待命'; brain.twistDir = 0;
+  nav.path = null; nav.force = true;
+  stats.deepFrames = 0;
+  errHist.length = 0;
+  buildArm();
+  $('#levelSel').value = i;
+  $('#levelDesc').textContent = L.desc;
+  renderObjectives(true);
+  $('#win').classList.add('hidden');
+}
+
+/* ================================================================
+   視覺：觸手網格、吸盤、控制層
+   ================================================================ */
+const RS = 14;
+const tent = { mesh: null, geo: null, rings: 0, suckers: null, mount: null };
+const dorsal = new THREE.Color('#b4553e'), ventral = new THREE.Color('#f1c6b2');
+function buildTentacleMesh() {
+  if (tent.mesh) { scene.remove(tent.mesh, tent.suckers); tent.geo.dispose(); tent.suckers.geometry.dispose(); }
+  const rings = arm.n * 5 + 1; tent.rings = rings;
+  const vc = rings * RS + 1;
+  const geo = new THREE.BufferGeometry();
+  for (const [name, size] of [['position', 3], ['normal', 3], ['color', 3]]) {
+    const at = new THREE.BufferAttribute(new Float32Array(vc * size), size); at.setUsage(THREE.DynamicDrawUsage); geo.setAttribute(name, at);
+  }
+  const idx = [];
+  for (let r = 0; r < rings - 1; r++) for (let j = 0; j < RS; j++) {
+    const a = r * RS + j, b = r * RS + (j + 1) % RS, c = (r + 1) * RS + j, d = (r + 1) * RS + (j + 1) % RS;
+    idx.push(a, b, c, b, d, c);
+  }
+  for (let j = 0; j < RS; j++) idx.push((rings - 1) * RS + j, (rings - 1) * RS + (j + 1) % RS, rings * RS);
+  geo.setIndex(idx);
+  tent.geo = geo;
+  tent.mesh = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.35 }));
+  tent.mesh.castShadow = true; tent.mesh.frustumCulled = false;
+  const sc = Math.floor((rings - 8) / 2) * 2;
+  tent.suckers = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 6), new THREE.MeshStandardMaterial({ color: 0xf6d8ca, roughness: 0.6 }), sc);
+  tent.suckers.frustumCulled = false;
+  scene.add(tent.mesh, tent.suckers);
+  if (!tent.mount) {
+    tent.mount = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.044, 0.07, 24), new THREE.MeshStandardMaterial({ color: 0x3b4248, roughness: 0.5, metalness: 0.3 }));
+    scene.add(tent.mount);
+  }
+}
+const _T = new V3(), _N = new V3(), _B = new V3(), _dir = new V3(), _m4 = new THREE.Matrix4(), _qq = new THREE.Quaternion(), _sc = new V3();
+function updateTentacleMesh() {
+  const rings = tent.rings;
+  const pts = new THREE.CatmullRomCurve3(arm.nodes, false, 'centripetal').getSpacedPoints(rings - 1);
+  const pos = tent.geo.attributes.position.array, nor = tent.geo.attributes.normal.array, col = tent.geo.attributes.color.array;
+  const R0 = P.radius;
+  let si = 0;
+  for (let r = 0; r < rings; r++) {
+    const a = pts[Math.max(0, r - 1)], b = pts[Math.min(rings - 1, r + 1)];
+    _T.copy(b).sub(a); if (_T.lengthSq() < 1e-12) _T.copy(baseDir); _T.normalize();
+    if (r === 0) { _N.set(0, -1, 0); }
+    _N.addScaledVector(_T, -_N.dot(_T));
+    if (_N.lengthSq() < 1e-8) _N.copy(curlAxisFor(_T)).cross(_T);
+    _N.normalize();
+    _B.crossVectors(_T, _N);
+    const t = r / (rings - 1);
+    const rr = Math.max(0.003, R0 * lerp(1, 0.22, Math.pow(t, 0.9)) * (r === rings - 1 ? 0.6 : 1));
+    const p = pts[r];
+    for (let j = 0; j < RS; j++) {
+      const ph = j / RS * TAU, cs = Math.cos(ph), sn = Math.sin(ph);
+      _dir.copy(_N).multiplyScalar(cs).addScaledVector(_B, sn);
+      const o = (r * RS + j) * 3;
+      pos[o] = p.x + _dir.x * rr; pos[o + 1] = p.y + _dir.y * rr; pos[o + 2] = p.z + _dir.z * rr;
+      nor[o] = _dir.x; nor[o + 1] = _dir.y; nor[o + 2] = _dir.z;
+      const v = smooth((cs + 0.15) / 0.9);
+      col[o] = lerp(dorsal.r, ventral.r, v); col[o + 1] = lerp(dorsal.g, ventral.g, v); col[o + 2] = lerp(dorsal.b, ventral.b, v);
+    }
+    if (r >= 4 && r < rings - 4 && r % 2 === 0 && si < tent.suckers.count) {
+      for (const ph of [-0.5, 0.5]) {
+        _dir.copy(_N).multiplyScalar(Math.cos(ph)).addScaledVector(_B, Math.sin(ph));
+        _qq.setFromUnitVectors(UP, _dir);
+        _sc.set(rr * 0.3, rr * 0.13, rr * 0.3);
+        _m4.compose(p.clone().addScaledVector(_dir, rr * 0.93), _qq, _sc);
+        tent.suckers.setMatrixAt(si++, _m4);
+      }
+    }
+    if (r === rings - 1) {
+      const o = rings * RS * 3, tp = p.clone().addScaledVector(_T, rr * 0.8);
+      pos[o] = tp.x; pos[o + 1] = tp.y; pos[o + 2] = tp.z; nor[o] = _T.x; nor[o + 1] = _T.y; nor[o + 2] = _T.z;
+      col[o] = dorsal.r; col[o + 1] = dorsal.g; col[o + 2] = dorsal.b;
+    }
+  }
+  tent.geo.attributes.position.needsUpdate = tent.geo.attributes.normal.needsUpdate = tent.geo.attributes.color.needsUpdate = true;
+  tent.geo.computeBoundingSphere();
+  tent.suckers.instanceMatrix.needsUpdate = true;
+  tent.mount.position.copy(base).addScaledVector(baseDir, -0.03);
+  tent.mount.quaternion.setFromUnitVectors(UP, baseDir);
+}
+// 控制層
+const dbg = { on: store.get('tentacleLab.dbg', true) };
+function makeLine(color, max) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(max * 3), 3));
+  const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color, depthTest: false, transparent: true, opacity: 0.85 }));
+  l.renderOrder = 10; l.frustumCulled = false; l.userData.max = max;
+  scene.add(l); return l;
+}
+function setLine(line, pts) {
+  const a = line.geometry.attributes.position.array, n = Math.min(pts.length, line.userData.max);
+  for (let i = 0; i < n; i++) { a[3 * i] = pts[i].x; a[3 * i + 1] = pts[i].y; a[3 * i + 2] = pts[i].z; }
+  line.geometry.setDrawRange(0, n); line.geometry.attributes.position.needsUpdate = true;
+}
+const pathLine = makeLine(0x00c2ff, 512), objLine = makeLine(0xffa000, 512), targetLine = makeLine(0x00e5a0, 40);
+const ghosts = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 6), new THREE.MeshBasicMaterial({ color: 0x00e5a0, depthTest: false, transparent: true, opacity: 0.8 }), 40);
+ghosts.renderOrder = 11; ghosts.frustumCulled = false; scene.add(ghosts);
+const tipMark = new THREE.Mesh(new THREE.SphereGeometry(0.018, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffe14d, depthTest: false }));
+tipMark.renderOrder = 12; scene.add(tipMark);
+const goalMark = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.005, 6, 24), new THREE.MeshBasicMaterial({ color: 0xff4d6d, depthTest: false }));
+goalMark.renderOrder = 12; scene.add(goalMark);
+function updateDebug() {
+  const on = dbg.on;
+  for (const o of [pathLine, objLine, targetLine, ghosts, tipMark, goalMark]) o.visible = on;
+  if (!on) return;
+  if (nav.path && brain.mode !== 'home') { setLine(pathLine, nav.path.pts); tipMark.position.copy(nav.tipRef); goalMark.position.copy(nav.goal); goalMark.lookAt(camera.position); }
+  else { pathLine.visible = tipMark.visible = goalMark.visible = false; }
+  if (grasp && grasp.objPath && grasp.motion === 'carry') setLine(objLine, grasp.objPath.pts); else objLine.visible = false;
+  setLine(targetLine, arm.T);
+  ghosts.count = arm.n + 1;
+  for (let i = 0; i <= arm.n; i++) { _sc.setScalar(0.006); _m4.compose(arm.T[i], _qq.identity(), _sc); ghosts.setMatrixAt(i, _m4); }
+  ghosts.instanceMatrix.needsUpdate = true;
+}
+
+/* ================================================================
+   瞄準
+   ================================================================ */
+const ray = new THREE.Raycaster(); ray.far = 9;
+function aim() {
+  scene.updateMatrixWorld();
+  ray.setFromCamera({ x: 0, y: 0 }, camera);
+  const hits = ray.intersectObjects([...world.pick, floor], false);
+  if (!hits.length) return null;
+  const h = hits[0];
+  const normal = h.face ? h.face.normal.clone().transformDirection(h.object.matrixWorld) : UP.clone();
+  if (normal.dot(ray.ray.direction) > 0) normal.negate();
+  return { point: h.point.clone(), normal, label: h.object.userData.label || '表面', grasp: h.object.userData.grasp || null, dist: h.distance };
+}
+/** 瞄準輔助：準星 5° 內的可抓物體（即使被矮牆擋住，章魚也記得它在哪） */
+function assistTarget() {
+  const dir = new V3(); camera.getWorldDirection(dir);
+  let best = null, ba = 5 * DEG;
+  for (const g of world.graspables) {
+    const a = dir.angleTo(g.center().clone().sub(camera.position));
+    if (a < ba) { ba = a; best = g; }
+  }
+  return best;
+}
+
+/* ================================================================
+   輸入
+   ================================================================ */
+const keys = {}, mvBtn = {};
+const isTyping = e => /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) && e.target.type !== 'range' && e.target.type !== 'checkbox';
+addEventListener('keydown', e => {
+  if (isTyping(e)) return;
+  const k = e.key.toLowerCase();
+  if (k === 'tab') { e.preventDefault(); togglePanel(); return; }
+  if (!$('#intro').classList.contains('hidden')) { if (k === 'enter' || k === ' ') startGame(); return; }
+  keys[k] = true;
+  if (e.repeat) return;
+  if (k === '1') cmdReach();
+  else if (k === '2' || k === 'e') cmdGrab();
+  else if (k === '3') setTwist(1);
+  else if (k === 'q') setTwist(-1);
+  else if (k === '4') cmdPull();
+  else if (k === 'f') cmdRelease();
+  else if (k === 'x') cmdRetract();
+  else if (k === 'r') loadLevel(levelIdx);
+  else if (k === 'h') { $('#dbgToggle').checked = !$('#dbgToggle').checked; $('#dbgToggle').dispatchEvent(new Event('change')); }
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
+});
+addEventListener('keyup', e => {
+  const k = e.key.toLowerCase();
+  keys[k] = false;
+  if (k === '3' || k === 'q') setTwist(0);
+});
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; setTwist(0); });
+function setTwist(d) {
+  if (d && !(grasp && grasp.phase === 'held')) { toast('先抓住東西才能扭轉', '', 'twist'); return; }
+  brain.twistDir = d;
+  document.querySelector('[data-cmd="twist"]').classList.toggle('on', !!d);
+}
+const cv = renderer.domElement;
+let drag = null;
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('pointerdown', e => {
+  cv.setPointerCapture(e.pointerId);
+  drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now(), btn: e.button, moved: 0 };
+});
+cv.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  drag.x = e.clientX; drag.y = e.clientY;
+  drag.moved = Math.max(drag.moved, Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy));
+  const s = e.pointerType === 'touch' ? 0.006 : 0.0045;
+  player.yaw -= dx * s;
+  player.pitch = clamp(player.pitch - dy * s, -1.35, 1.2);
+});
+cv.addEventListener('pointerup', e => {
+  if (drag && drag.moved < 6 && performance.now() - drag.t < 400) {
+    if (drag.btn === 2) cmdGrab(); else if (drag.btn === 0) cmdReach();
+  }
+  drag = null;
+});
+cv.addEventListener('pointercancel', () => { drag = null; });
+for (const b of document.querySelectorAll('#cmdbar button')) {
+  const cmd = b.dataset.cmd;
+  if (cmd === 'twist') {
+    b.addEventListener('pointerdown', e => { e.preventDefault(); setTwist(e.shiftKey ? -1 : 1); });
+    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => { if (brain.twistDir) setTwist(0); });
+  } else b.addEventListener('click', () => ({ reach: cmdReach, grab: cmdGrab, pull: cmdPull, release: () => cmdRelease(), retract: cmdRetract })[cmd]());
+}
+for (const b of document.querySelectorAll('#movepad button')) {
+  const m = b.dataset.mv;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); mvBtn[m] = true; });
+  for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => { mvBtn[m] = false; });
+}
+function updatePlayer(dt) {
+  let f = 0, s = 0;
+  if (keys.w || keys.arrowup || mvBtn.f) f += 1;
+  if (keys.s || keys.arrowdown || mvBtn.b) f -= 1;
+  if (keys.d || keys.arrowright || mvBtn.r) s += 1;
+  if (keys.a || keys.arrowleft || mvBtn.l) s -= 1;
+  if (f || s) {
+    const sp = 1.2 * dt / Math.hypot(f, s);
+    player.pos.addScaledVector(fwd, f * sp).addScaledVector(right, s * sp);
+    const b = LEVELS[levelIdx].bounds;
+    player.pos.x = clamp(player.pos.x, b[0], b[1]); player.pos.z = clamp(player.pos.z, b[2], b[3]);
+  }
+  camera.position.set(player.pos.x, 1.6, player.pos.z);
+  camera.rotation.set(player.pitch, player.yaw, 0);
+}
+
+/* ================================================================
+   面板 UI
+   ================================================================ */
+function fmt(it, v) { if (it.type === 'select') return ''; const d = it.step < 0.01 ? 3 : it.step < 0.1 ? 2 : it.step < 1 ? 1 : 0; return Number(v).toFixed(d); }
+function saveParams() { store.set('tentacleLab.params', P); }
+function buildPanel() {
+  const pipe = $('#pipe');
+  pipe.innerHTML = '<button data-g="brain" disabled>大腦指令</button>';
+  PARAM_DEFS.forEach(g => { pipe.insertAdjacentHTML('beforeend', `<span>→</span><button data-g="${g.id}">${g.title.split(' ')[0]}</button>`); });
+  pipe.querySelectorAll('button[data-g]').forEach(b => b.addEventListener('click', () => {
+    const d = document.getElementById('grp-' + b.dataset.g); if (!d) return; d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
+  const root = $('#groups'); root.innerHTML = '';
+  for (const g of PARAM_DEFS) {
+    const d = document.createElement('details');
+    d.className = 'grp'; d.id = 'grp-' + g.id; d.open = g.id !== 'body';
+    d.innerHTML = `<summary>${g.title}</summary><div class="body"><p class="gdesc">${g.desc}</p></div>`;
+    const body = d.querySelector('.body');
+    for (const it of g.items) {
+      const row = document.createElement('div'); row.className = 'prm';
+      const id = 'p-' + it.k;
+      if (it.type === 'select') {
+        row.innerHTML = `<div class="top"><label for="${id}">${it.label}</label></div><select id="${id}">${it.options.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>`;
+        const sel = row.querySelector('select'); sel.value = P[it.k];
+        sel.addEventListener('change', () => { P[it.k] = sel.value; onParam(it); saveParams(); });
+      } else {
+        row.innerHTML = `<div class="top"><label for="${id}">${it.label}</label><output>${fmt(it, P[it.k])}</output></div><input type="range" id="${id}" min="${it.min}" max="${it.max}" step="${it.step}" value="${P[it.k]}">`;
+        const inp = row.querySelector('input'), out = row.querySelector('output');
+        inp.addEventListener('input', () => { P[it.k] = parseFloat(inp.value); out.textContent = fmt(it, P[it.k]); if (!it.rebuild) onParam(it); });
+        inp.addEventListener('change', () => { if (it.rebuild) onParam(it); saveParams(); });
+      }
+      if (it.help) row.insertAdjacentHTML('beforeend', `<div class="help">${it.help}</div>`);
+      body.appendChild(row);
+      if (it.k === 'algo') {
+        body.insertAdjacentHTML('beforeend', `<div id="algoDesc"></div><div id="customWrap" hidden><textarea id="customSrc" spellcheck="false" aria-label="自訂控制器程式碼"></textarea>
+          <div class="row"><button class="btn primary" id="applyCustom">套用程式碼</button><button class="btn" id="resetCustom">還原範例</button></div><div id="customMsg"></div></div>`);
+      }
+    }
+    root.appendChild(d);
+  }
+  $('#customSrc').value = store.get('tentacleLab.custom', CUSTOM_TEMPLATE);
+  $('#applyCustom').addEventListener('click', applyCustom);
+  $('#resetCustom').addEventListener('click', () => { $('#customSrc').value = CUSTOM_TEMPLATE; applyCustom(); });
+  $('#customSrc').addEventListener('keydown', e => {
+    if (e.key === 'Tab') { e.preventDefault(); const t = e.target, s = t.selectionStart; t.setRangeText('  ', s, t.selectionEnd, 'end'); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); applyCustom(); }
+  });
+  refreshAlgoUI();
+}
+function applyCustom() {
+  const src = $('#customSrc').value;
+  store.set('tentacleLab.custom', src);
+  const ok = compileCustom(src);
+  algoStamp++;
+  showCustomMsg(ok ? '已套用。觸手下一幀起使用你的 controller。' : customErr, ok);
+}
+function showCustomMsg(msg, ok) { const el = $('#customMsg'); el.textContent = msg; el.className = ok ? 'ok' : 'err'; }
+function refreshAlgoUI() {
+  $('#algoDesc').textContent = ALGO_DESC[P.algo];
+  $('#customWrap').hidden = P.algo !== 'custom';
+}
+function onParam(it) {
+  if (it.rebuild) { const g = grasp; if (g) releaseGrasp(); buildArm(); brain.mode = 'home'; return; }
+  if (it.k === 'algo') { algoStamp++; refreshAlgoUI(); if (P.algo === 'custom' && !customFn) applyCustom(); newCommand(); }
+  if (it.k === 'planner' || it.k === 'clearance') newCommand();
+}
+function syncPanel() {
+  for (const g of PARAM_DEFS) for (const it of g.items) {
+    const el = document.getElementById('p-' + it.k); if (!el) continue;
+    el.value = P[it.k];
+    const out = el.parentElement.querySelector('output') || el.closest('.prm').querySelector('output');
+    if (out) out.textContent = fmt(it, P[it.k]);
+  }
+  refreshAlgoUI();
+}
+function togglePanel(force, persist = true) {
+  const open = force ?? !document.body.classList.contains('panel-open');
+  document.body.classList.toggle('panel-open', open);
+  if (persist) store.set('tentacleLab.panel', open);
+}
+$('#panelToggle').addEventListener('click', () => togglePanel());
+$('#defaultsBtn').addEventListener('click', () => {
+  const rebuild = P.N !== undefined;
+  setDefaults(); saveParams(); syncPanel(); algoStamp++;
+  if (rebuild) { if (grasp) releaseGrasp(); buildArm(); brain.mode = 'home'; }
+  toast('已恢復預設參數');
+});
+$('#copyBtn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(JSON.stringify(P, null, 2)); toast('參數已複製到剪貼簿'); } catch (e) { toast('無法存取剪貼簿', 'warn'); }
+});
+$('#dbgToggle').checked = dbg.on;
+$('#dbgToggle').addEventListener('change', e => { dbg.on = e.target.checked; store.set('tentacleLab.dbg', dbg.on); });
+$('#telToggle').addEventListener('change', e => { $('#telemetry').style.visibility = e.target.checked ? '' : 'hidden'; });
+LEVELS.forEach((L, i) => $('#levelSel').insertAdjacentHTML('beforeend', `<option value="${i}">${L.name}</option>`));
+$('#levelSel').addEventListener('change', e => { loadLevel(+e.target.value); e.target.blur(); });
+$('#resetBtn').addEventListener('click', () => loadLevel(levelIdx));
+$('#helpBtn').addEventListener('click', () => $('#intro').classList.remove('hidden'));
+function startGame() { $('#intro').classList.add('hidden'); store.set('tentacleLab.seenIntro', true); }
+$('#startBtn').addEventListener('click', startGame);
+$('#nextBtn').addEventListener('click', () => loadLevel((levelIdx + 1) % LEVELS.length));
+$('#stayBtn').addEventListener('click', () => $('#win').classList.add('hidden'));
+
+let objKey = '';
+function renderObjectives(force) {
+  const key = world.objectives.map(o => o.done ? 1 : 0).join('');
+  if (!force && key === objKey) return;
+  objKey = key;
+  $('#objectives').innerHTML = world.objectives.map(o => `<li class="${o.done ? 'done' : ''}">${o.text}</li>`).join('');
+}
+
+/* ================================================================
+   HUD / 數據
+   ================================================================ */
+const errHist = [];
+let telT = 0, histT = 0;
+const ALGO_NAME = { fabrik: 'FABRIK', ccd: 'CCD', dls: 'DLS', ftl: 'Follow-the-leader', bend: '彎曲傳播', custom: '自訂 JS' };
+const PLAN_NAME = { none: '直線', via: 'via-point', rrt: 'RRT' };
+function armLength() { let L = 0; for (let i = 1; i <= arm.n; i++) L += arm.nodes[i].distanceTo(arm.nodes[i - 1]); return L; }
+function updateHUD(dt) {
+  // 準星提示
+  const h = aim();
+  const hint = $('#aimHint');
+  if (h) {
+    const as = h.grasp ? null : assistTarget(), tgt = h.grasp || as;
+    const reach = (tgt ? arm.n - wrapK() : arm.n) * maxLen(), d = base.distanceTo(tgt ? tgt.center() : h.point);
+    let s = `${h.label}${h.grasp ? ' · 可抓取 [2]' : ''} · ${d.toFixed(2)} m`;
+    if (d > reach) s += ` <span class="far">超出${tgt ? '纏繞時' : ''}可及距離 ${reach.toFixed(2)} m</span>`;
+    if (as) s += ` · 鎖定${as.label}（可抓取 [2]）`;
+    hint.innerHTML = s;
+    $('#cross').classList.toggle('grab', !!(h.grasp || as));
+  } else hint.textContent = '';
+  // 模式
+  let mode = brain.mode === 'home' ? '收回' : brain.label;
+  if (grasp && grasp.phase === 'held') mode += ` · 品質 ${Math.round(grasp.quality * 100)}%`;
+  if (world.door) mode += ` · 門把 ${Math.round(world.door.knobAngle / DEG)}° · 門 ${Math.round(world.door.angle / DEG)}°`;
+  $('#modeLine').innerHTML = `觸手：<b>${mode}</b>`;
+  renderObjectives(false);
+  // 曲線
+  const tip = tipNode();
+  const goalErr = brain.mode === 'home' || !nav.path ? 0 : (grasp && grasp.phase !== 'approach' ? arm.nodes[nav.nAct].distanceTo(nav.goal) : tip.distanceTo(nav.goal));
+  histT += dt;
+  if (histT > 0.05) { histT = 0; errHist.push(goalErr); if (errHist.length > 200) errHist.shift(); }
+  telT += dt;
+  if (telT > 0.12) {
+    telT = 0;
+    const n = arm.n, refErr = nav.path && brain.mode !== 'home' ? arm.nodes[nav.nAct].distanceTo(nav.tipRef) : 0;
+    let effort = 0; for (let i = 1; i <= n; i++) effort += arm.T[i].distanceTo(arm.nodes[i]); effort /= n;
+    const ext = armLength() / (n * arm.segRest) * 100;
+    const lines = [
+      `控制器  ${ALGO_NAME[P.algo]}${P.algo === 'custom' && customErr ? '（錯誤→FABRIK）' : ''} · ${stats.algoMs.toFixed(1)} ms`,
+      `規劃器  ${PLAN_NAME[P.planner]}${nav.path ? ` · ${nav.path.pts.length} 點 · ${nav.path.len.toFixed(2)} m` : ''}${stats.planOk ? '' : ' · 失敗'} · ${stats.planMs.toFixed(1)} ms`,
+      `追蹤誤差 ${refErr.toFixed(3)} m   距目標 ${goalErr.toFixed(3)} m`,
+      `伸長    ${ext.toFixed(0)}%（可 ${(P.minExt * 100).toFixed(0)}–${(P.maxExt * 100).toFixed(0)}%）`,
+      `肌肉誤差 ${(effort * 100).toFixed(1)} cm   接觸 ${stats.contacts} 節   刮擦 ${(stats.deepFrames / 60).toFixed(1)} s`,
+    ];
+    if (grasp) lines.push(`抓握    ${grasp.phase === 'approach' ? '接近中' : grasp.phase === 'wrap' ? '纏繞中' : '抓住'} · 品質 ${Math.round(grasp.quality * 100)}%${grasp.margin != null && grasp.phase === 'held' ? ` · 抓力餘裕 ${isFinite(grasp.margin) ? grasp.margin.toFixed(2) + '×' : '∞'}` : ''}`);
+    $('#telText').textContent = lines.join('\n');
+    if (P.algo === 'custom' && customErr) showCustomMsg(customErr, false);
+    drawSpark();
+  }
+}
+function drawSpark() {
+  const c = $('#spark'), g = c.getContext('2d'), w = c.width, h = c.height;
+  g.clearRect(0, 0, w, h);
+  const cs = getComputedStyle(document.documentElement);
+  g.strokeStyle = cs.getPropertyValue('--line'); g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, h - 0.5); g.lineTo(w, h - 0.5); g.stroke();
+  if (errHist.length < 2) return;
+  const mx = Math.max(0.1, ...errHist);
+  g.strokeStyle = cs.getPropertyValue('--teal'); g.lineWidth = 2.5;
+  g.beginPath();
+  errHist.forEach((v, i) => { const x = i / 199 * w, y = h - 4 - v / mx * (h - 10); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+  g.stroke();
+  g.fillStyle = cs.getPropertyValue('--muted'); g.font = '20px "IBM Plex Mono", monospace';
+  g.fillText(mx.toFixed(2) + ' m', 4, 20);
+}
+
+/* ================================================================
+   主迴圈
+   ================================================================ */
+let last = performance.now(), acc = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  tick(dt);
+  renderer.render(scene, camera);
+}
+function tick(dt) {
+  updatePlayer(dt);
+  updateBase();
+  computeTargets(dt);
+  slewTargets(dt);
+  acc += dt; let steps = 0; deepThisFrame = false;
+  while (acc >= H && steps < 8) { physicsStep(H); stepBalls(H); acc -= H; steps++; }
+  if (steps >= 8) acc = 0;
+  if (deepThisFrame) stats.deepFrames++;
+  postPhysics(dt);
+  if (world.door) world.door.update();
+  const L = LEVELS[levelIdx];
+  L.update(world, dt);
+  world.time += dt;
+  if (!world.won && world.objectives.length && world.objectives.every(o => o.done)) {
+    world.won = true;
+    setTimeout(() => {
+      $('#winTitle').textContent = `完成：${L.name}`;
+      $('#winText').innerHTML = `用時 ${world.time.toFixed(1)} 秒 · 控制器 <b>${ALGO_NAME[P.algo]}</b> · 規劃器 <b>${PLAN_NAME[P.planner]}</b> · 刮擦 ${(stats.deepFrames / 60).toFixed(1)} 秒。<br>試試換一個演算法或更嚴苛的參數（例如降低肌肉剛性、加入雜訊）再挑戰一次。`;
+      $('#win').classList.remove('hidden');
+    }, 700);
+  }
+  for (const b of world.balls) { b.mesh.position.copy(b.c); if (!b.held) { b.mesh.rotation.x += b.v.z * dt / b.r; b.mesh.rotation.z -= b.v.x * dt / b.r; } }
+  updateTentacleMesh();
+  updateDebug();
+  updateHUD(dt);
+}
+
+buildPanel();
+if (P.algo === 'custom') compileCustom($('#customSrc').value);
+togglePanel(innerWidth > 760 ? store.get('tentacleLab.panel', true) : false, false);
+loadLevel(levelIdx);
+if (store.get('tentacleLab.seenIntro', false)) $('#intro').classList.add('hidden');
+requestAnimationFrame(frame);
+window.__lab = { P, arm, nav, brain, get grasp() { return grasp; }, get world() { return world; }, cmdReach, cmdGrab, cmdPull, cmdRelease, cmdRetract, setTwist, player, loadLevel, stats, plan, planVia, segClear, sdfWorld, V3, aim, camera,
+  run(sec, dt = 1 / 60) { for (let t = 0; t < sec; t += dt) tick(dt); renderer.render(scene, camera); } };
+</script>
+</body>
+</html>
