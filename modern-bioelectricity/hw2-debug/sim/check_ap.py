@@ -19,6 +19,7 @@ Criteria, typical parameters, pot 700 ohm (~90 uA) unless noted:
     python check_ap.py              (all cases, about 3 minutes)
     python check_ap.py 3 5          (cases 3..4 only)
     python check_ap.py mc 6 8 1     (case 6 with 8 random parameter sets, seed 1)
+    python check_ap.py train 7      (case 7: SW held 2 s at three pot settings, every AP)
 """
 import os, sys, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -163,8 +164,29 @@ def monte_carlo(kw, runs, seed):
         print(s, flush=True)
 
 
+def train(kw, T=2.0):
+    """SW held T s at pot 0.7k / 5k / 10k: number of APs, their peaks, intervals and troughs."""
+    for rp in (RPOT, 5e3, 10e3):
+        V = free(Circuit(rpot=rp, r_so_r2=1e6, **kw))[0]
+        t, v = press(kw, V, T, after=0.3, rpot=rp)
+        rest = v[0]
+        pk = [(t[i], v[i]) for i in range(1, len(v) - 1)
+              if t[i] < T - 0.02 and v[i] > rest + 1.0 and v[i] > v[i - 1] and v[i] >= v[i + 1]]
+        tr = [v[i] for i in range(1, len(v) - 1) if 0.2 < t[i] < T and v[i] < v[i - 1] and v[i] <= v[i + 1]]
+        isi = [b[0] - a[0] for a, b in zip(pk, pk[1:])]
+        later = sorted(p for _, p in pk[1:])
+        print(f'   pot {rp/1e3:4.1f}k: {len(pk)} APs in {T:.0f} s; first peak {pk[0][1]:.2f} V, later peaks '
+              f'{later[0]:.2f}-{later[-1]:.2f} V; interval {isi[0]*1e3:.0f} ms first, {isi[-1]*1e3:.0f} ms last '
+              f'({1/isi[-1]:.1f} Hz); troughs {min(tr):.2f}-{max(tr):.2f} V (rest {rest:.2f} V); '
+              f'0.3 s after release {v[-1]:.2f} V', flush=True)
+
+
 if __name__ == '__main__':
-    if sys.argv[1:2] == ['mc']:
+    if sys.argv[1:2] == ['train']:
+        i = int(sys.argv[2])
+        print(CASES[i][0])
+        train(CASES[i][1])
+    elif sys.argv[1:2] == ['mc']:
         i = int(sys.argv[2])
         print(CASES[i][0])
         monte_carlo(CASES[i][1], int(sys.argv[3]) if len(sys.argv) > 3 else 8,

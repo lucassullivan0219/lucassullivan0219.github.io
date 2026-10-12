@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Passive to Active 模擬</title>
+<meta name="description" content="HW2 #2-3 passive to active membrane 的即時電路模擬：Stimulator 經 0–4 個 Passive unit 接到 active membrane，用雙通道模擬示波器看 intracellular 與 extracellular。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F1; --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72;
+  --link:#1F5FA8; --req:#2F5D3A; --opt:#8A6100; --infer:#7A3E8F; --warn:#A33A2B; --rule:#CCD3CE;
+  --grid:rgba(47,93,58,.07); --vmbus:#2a78d6; --ch2:#d95926;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+    --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+    --grid:rgba(127,176,137,.08); --vmbus:#3987e5; --ch2:#e0703f;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+  --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+  --grid:rgba(127,176,137,.08); --vmbus:#3987e5; --ch2:#e0703f;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  font-size:16px;line-height:1.7}
+a{color:var(--link);text-underline-offset:3px}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--link);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 22px 70px}
+@media (max-width:560px){.wrap{padding:24px 16px 60px}}
+.crumbs{font-size:14px;display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:14px}
+.crumbs a{color:var(--muted)}
+h1{font-weight:900;font-size:clamp(26px,4.4vw,36px);line-height:1.25;margin:0 0 8px}
+.lede{color:var(--muted);max-width:52em;margin:0 0 18px}
+h2{font-size:15px;font-weight:700;margin:0 0 8px;color:var(--muted);letter-spacing:.04em}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px}
+.top{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.top{grid-template-columns:1fr}}
+canvas#scope{display:block;width:100%;aspect-ratio:10/8;border-radius:6px;background:#0d1114;touch-action:pan-y}
+.scope-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:10px;font-size:14px}
+.scope-bar label{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+select,input[type=number]{font:inherit;font-size:14px;padding:3px 6px;border:1px solid var(--rule);border-radius:5px;background:var(--surface);color:var(--ink)}
+.btn{font:inherit;font-size:14px;padding:5px 13px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:999px;cursor:pointer;line-height:1.4}
+.btn:hover{background:var(--grid)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+#swBtn{width:100%;font-size:17px;font-weight:700;padding:14px;border-radius:10px;margin:12px 0 4px;user-select:none;-webkit-user-select:none;touch-action:none}
+#swBtn.on{background:var(--ink);color:var(--paper)}
+.hint{font-size:13px;color:var(--muted)}
+.cursor-read{font-size:13px;color:var(--muted);min-height:1.6em;margin-top:4px}
+.reads{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+@media (max-width:480px){.reads{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.read{border:1px solid var(--rule);border-radius:6px;padding:6px 9px}
+.read .k{font-size:12px;color:var(--muted);display:block}
+.read .v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:15px;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:13px;border:1.5px solid var(--rule);border-radius:999px;padding:1px 10px;color:var(--muted)}
+.chip.on{border-color:var(--ink);color:var(--ink);font-weight:700}
+.ctl{display:grid;gap:12px}
+.ctl .row{display:grid;grid-template-columns:7.2em 1fr auto;gap:8px;align-items:center;font-size:14.5px}
+.ctl .row > span:first-child{color:var(--muted)}
+.ctl input[type=range]{width:100%}
+.ctl .val{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13.5px;min-width:6.5em;text-align:right}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets .btn{font-size:13px;padding:4px 10px}
+.checks{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:14px}
+.checks label{display:flex;gap:6px;align-items:center}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:999px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;border:0;background:var(--surface);color:var(--ink);padding:3px 11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.sch-card{margin-top:16px}
+.sch-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+svg#sch{display:block;width:100%;min-width:760px;height:auto}
+#sch .w{stroke:var(--ink);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#sch .vm{stroke:var(--vmbus);stroke-width:3}
+#sch .box{fill:none;stroke:var(--rule);stroke-width:1.4;stroke-dasharray:5 4}
+#sch .bt{fill:var(--muted);font-size:13px;font-weight:700}
+#sch .lab{fill:var(--muted);font-size:11.5px}
+#sch .nv{fill:var(--ink);font-size:11.5px;font-family:"IBM Plex Mono",ui-monospace,monospace}
+#sch .nv .code{fill:var(--link);font-weight:700}
+#sch .cur{fill:var(--opt);font-size:11.5px;font-family:"IBM Plex Mono",ui-monospace,monospace}
+#sch .dotn{fill:var(--ink)}
+#sch .ghost{opacity:.28}
+.notes{margin-top:16px;font-size:15px}
+.notes ul{margin:6px 0;padding-left:1.3em;max-width:62em}
+.notes li{margin:4px 0}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0;border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px;background:var(--surface)}
+th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:700;font-size:12.5px;color:var(--muted);background:var(--paper)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.grp td{background:var(--grid);font-weight:700;font-size:13.5px}
+footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid var(--rule);padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="crumbs">
+  <a href="../">← Modern Bioelectricity</a>
+  <a href="../hw2/#s4">HW2 #2-3 講解</a>
+  <a href="../active-membrane-sim/">#2-2 Active membrane 模擬</a>
+  <a href="../hw2-debug/">HW2 #2-2 除錯分析</a>
+</div>
+<h1>#2-3 Passive to active 互動模擬</h1>
+<p class="lede">照講義 #2-3 的電路圖：Stimulator 接到第 1 個 Passive unit（1 µF ∥ 100 kΩ），每個 unit 之間、以及最後一個 unit 到 active membrane 之間各 10 kΩ，細胞外每段 100 Ω。Active membrane 用 PCB 實際值（R13 = 100 kΩ、Slow out 的 R2 = 1 MΩ），也可以套用除錯頁的外加修正。CH1 是 active 端的 Vm（上方紅箭頭），CH2 預設是 active 端的細胞外線（下方紅箭頭）。模型和<a href="../hw2-debug/sim/check_23.py">check_23.py</a>相同。</p>
+
+<div class="top">
+  <section class="card" aria-label="示波器">
+    <h2>示波器</h2>
+    <canvas id="scope" aria-label="模擬示波器畫面，CH1 是 active 端的 Vm"></canvas>
+    <div class="cursor-read" id="cursorRead">把滑鼠移到畫面上可讀數值。</div>
+    <div class="scope-bar">
+      <label>CH1 Vm <select id="vdiv1"><option value="0.2">0.2 V</option><option value="0.5">0.5 V</option><option value="1" selected>1 V</option><option value="2">2 V</option></select></label>
+      <label>CH2 <select id="ch2"></select></label>
+      <label><select id="vdiv2"><option value="0.005">5 mV</option><option value="0.01">10 mV</option><option value="0.02" selected>20 mV</option><option value="0.05">50 mV</option><option value="0.1">0.1 V</option><option value="0.2">0.2 V</option><option value="0.5">0.5 V</option><option value="1">1 V</option><option value="2">2 V</option></select>/div</label>
+      <label>時間/div <select id="tdiv"><option value="0.005">5 ms</option><option value="0.01">10 ms</option><option value="0.02">20 ms</option><option value="0.05" selected>50 ms</option><option value="0.1">100 ms</option><option value="0.2">200 ms</option><option value="0.5">500 ms</option></select></label>
+    </div>
+    <div class="scope-bar">
+      <span class="seg" role="group" aria-label="掃描模式"><button type="button" id="mRoll" aria-pressed="true">Roll</button><button type="button" id="mSingle" aria-pressed="false">Single</button></span>
+      <label>觸發 <select id="tsrc"><option value="ch1">CH1 上升</option><option value="sw">按下 SW</option></select></label>
+      <label><input type="number" id="trig" value="1.0" step="0.1" min="0" max="12" style="width:4.6em"> V</label>
+      <button type="button" class="btn" id="arm">重新 Single</button>
+      <span class="hint" id="trigState"></span>
+    </div>
+    <button type="button" id="swBtn" aria-pressed="false">按住 SW（或空白鍵）</button>
+    <label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="swLatch"> SW 保持按下</label>
+    <div class="reads">
+      <div class="read"><span class="k">CH1 Vm（active 端）</span><span class="v" id="rVm">—</span></div>
+      <div class="read"><span class="k">CH2</span><span class="v" id="rCh2">—</span></div>
+      <div class="read"><span class="k">注入電流</span><span class="v" id="rIs">—</span></div>
+      <div class="read"><span class="k">按下 → 第一個 AP 波峰</span><span class="v" id="rDelay">—</span></div>
+      <div class="read"><span class="k">I_FI 內向</span><span class="v" id="rIf">—</span></div>
+      <div class="read"><span class="k">I_SO 外向</span><span class="v" id="rIo">—</span></div>
+    </div>
+    <div class="chips" aria-live="polite">
+      <span class="chip" id="cSW">SW 放開</span>
+      <span class="chip" id="cFI">Fast inward 關</span>
+      <span class="chip" id="cSO">Slow out 關</span>
+    </div>
+  </section>
+
+  <section class="card ctl" aria-label="設定">
+    <div>
+      <h2>Passive unit 數</h2>
+      <span class="seg" role="group" aria-label="Passive unit 數" id="nSeg"><button type="button" data-n="0">0</button><button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4" aria-pressed="true">4</button></span>
+      <p class="hint" style="margin:6px 0 0">n = 0 是 Stimulator 直接接 active membrane（就是 #2-2）。改 n 會斷電重置。</p>
+    </div>
+    <div>
+      <h2>Active membrane</h2>
+      <div class="presets" id="presets">
+        <button type="button" class="btn" data-p="now">目前（R2 = 1 MΩ）</button>
+        <button type="button" class="btn" data-p="fix2">只並 11 kΩ 在 R13</button>
+        <button type="button" class="btn" data-p="fix12">修正 1 + 2</button>
+        <button type="button" class="btn" data-p="plan3">方案 3：過極化</button>
+      </div>
+      <p class="hint" id="presetNote" style="margin:6px 0 0"></p>
+      <div class="checks" style="margin-top:6px">
+        <label><input type="checkbox" id="ttx"> 拔掉 Fast inward（TTX）</label>
+        <label><input type="checkbox" id="tea"> 拔掉 Slow out（TEA）</label>
+      </div>
+      <div style="margin-top:8px"><span class="hint">FI 的電源：</span>
+        <span class="seg" role="group" aria-label="FI 的電源"><button type="button" id="supStim" aria-pressed="true">Stimulator 拉線（實際）</button><button type="button" id="supLocal" aria-pressed="false">自帶電池（講義）</button></span></div>
+      <p class="hint" style="margin:4px 0 0">Passive PCB 底板只把 GND 那支腳（經 100 Ω）和 Intracellular（經 10 kΩ）串到下一槽，V+ 沒有串，所以 FI 的 V+ 要從 Stimulator 拉線，FI 的電流會經細胞外的 100 Ω 回到電池，CH2 被它主導。講義的模擬器畫成 FI 自帶一顆電池，電流只在 active 端繞圈。</p>
+    </div>
+    <div>
+      <h2>刺激</h2>
+      <span class="seg" role="group" aria-label="刺激來源"><button type="button" id="srcStim" aria-pressed="true">Stimulator</button><button type="button" id="srcIdeal" aria-pressed="false">理想電流源</button></span>
+      <div class="row" id="rowPot" style="margin-top:8px"><span>可變電阻</span><input type="range" id="pot" min="0" max="10" step="0.1" value="0.7"><span class="val" id="potV"></span></div>
+      <div class="row" id="rowIs" style="margin-top:8px;display:none"><span>電流</span><input type="range" id="isrc" min="0" max="200" step="0.5" value="50"><span class="val" id="isrcV"></span></div>
+      <p class="hint" style="margin:4px 0 0">Stimulator 的可變電阻只能調到約 44–99 µA（加了 22 kΩ 約 19–73 µA）。找 I<sub>min</sub> 時改用理想電流源可以調到任何值；Stimulator 仍接在電路上、SW 不按，所以它的漏電還在。</p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <button type="button" class="btn" id="reset">斷電重置</button>
+      <span class="seg" role="group" aria-label="速度"><button type="button" id="sp1" aria-pressed="true">1×</button><button type="button" id="sp4" aria-pressed="false">¼×</button></span>
+      <button type="button" class="btn" id="pause" aria-pressed="false">暫停</button>
+    </div>
+  </section>
+</div>
+
+<section class="card sch-card" aria-label="電路圖">
+  <h2>電路（照講義 #2-3 電路圖；數值即時更新）</h2>
+  <div class="sch-scroll"><svg id="sch" viewBox="0 0 1080 384" role="img" aria-label="Stimulator、Passive unit 與 active membrane 的電路圖，標示即時節點電壓"></svg></div>
+  <p class="hint">上排是細胞內（intracellular），下排是細胞外（extracellular），電壓都對 Stimulator 的 GND。細胞外節點的電壓很小，以 mV 顯示。</p>
+</section>
+
+<section class="notes" id="notes">
+  <h2>可以試試看</h2>
+  <ul>
+    <li><b>Q2：記錄一個 AP</b>：n = 4，可變電阻轉到電流最大（0.7 kΩ 左右），觸發選 CH1、Single，按住 SW。</li>
+    <li><b>Q3：最小刺激電流</b>：刺激改成「理想電流源」，SW 勾「保持按下」或按住 1 秒以上，從小電流往上加，找剛好出現 AP 的電流；n = 4、3、2、1、0 各做一次。</li>
+    <li><b>Q4：delay</b>：電流固定在 n = 4 的 I<sub>min</sub>，觸發選「按下 SW」，讀「按下 → 第一個 AP 波峰」；換 n 重做。</li>
+    <li><b>Q5：intracellular vs extracellular</b>：n = 2，CH2 選「AX：active 端細胞外」，CH2 用 5–20 mV/div。</li>
+    <li>模型沒有 60 Hz 雜訊，CH2 在實際示波器上會比這裡髒很多。</li>
+  </ul>
+  <div id="results">
+    <h2 style="margin-top:18px">模擬結果（<a href="../hw2-debug/sim/check_23.py">check_23.py</a>，典型參數）</h2>
+    <p class="hint" style="margin:0">「目前」= 現在的電路（R2 = 1 MΩ、沒加東西）；「只並 11k」= R13 兩端並 11 kΩ；「修正 1 + 2」= 再加 22 kΩ 在 Q<sub>pass</sub> E–B。FI 的 V+ 從 Stimulator 拉線，除非註明。</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Passive unit 數 n</th><th class="num">0</th><th class="num">1</th><th class="num">2</th><th class="num">3</th><th class="num">4</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="6">active 端靜止電位（V），SW 放開</td></tr>
+        <tr><td>目前／只並 11k</td><td class="num">自己發放</td><td class="num">0.29</td><td class="num">0.18</td><td class="num">0.12</td><td class="num">0.09</td></tr>
+        <tr><td>修正 1 + 2</td><td class="num">0.01</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">0.00</td></tr>
+        <tr class="grp"><td colspan="6">Q3：最小刺激電流 I<sub>min</sub>（µA，1 秒長脈衝）</td></tr>
+        <tr><td>目前／只並 11k</td><td class="num">—</td><td class="num">4.7</td><td class="num">11.7</td><td class="num">20.5</td><td class="num">32.0</td></tr>
+        <tr><td>修正 1 + 2</td><td class="num">5.4</td><td class="num">11.1</td><td class="num">18.0</td><td class="num">27.0</td><td class="num">38.2</td></tr>
+        <tr><td class="hint">線性手算（相對 n = 0）</td><td class="num hint">1</td><td class="num hint">2.1</td><td class="num hint">3.4</td><td class="num hint">5.1</td><td class="num hint">7.2</td></tr>
+        <tr class="grp"><td colspan="6">Q4：按下到第一個 AP 波峰（ms），電流 = 1.05 × I<sub>min</sub>(4)</td></tr>
+        <tr><td>目前（33.6 µA）</td><td class="num">—</td><td class="num">68</td><td class="num">120</td><td class="num">207</td><td class="num">591</td></tr>
+        <tr><td>修正 1 + 2（40.2 µA）</td><td class="num">37</td><td class="num">69</td><td class="num">115</td><td class="num">203</td><td class="num">569</td></tr>
+        <tr class="grp"><td colspan="6">Q2：Stimulator 可變電阻 0.7k、按住 SW，第一個 AP 的峰值（V）／按下到波峰（ms）</td></tr>
+        <tr><td>目前</td><td class="num">—</td><td class="num">2.26／48</td><td class="num">1.97／76</td><td class="num">1.78／108</td><td class="num">1.64／150</td></tr>
+        <tr><td>只並 11k</td><td class="num">—</td><td class="num">4.51／30</td><td class="num">4.39／52</td><td class="num">4.33／81</td><td class="num">4.27／121</td></tr>
+        <tr><td>修正 1 + 2（64 µA）</td><td class="num">5.87／29</td><td class="num">4.79／51</td><td class="num">4.45／78</td><td class="num">4.31／118</td><td class="num">4.16／185</td></tr>
+        <tr><td>方案 3</td><td class="num">5.65／24</td><td class="num">4.79／63</td><td class="num">4.34／147</td><td class="num">不觸發</td><td class="num">不觸發</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="hint" style="margin:4px 0 10px">n = 4、修正 1 + 2 的 AP：振幅 4.16 V、半高寬 17 ms、rise τ（按下到 63 %）174 ms、decay τ（波峰到 37 %）4.8 ms。</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Q5：n = 2，可變電阻 0.7k</th><th class="num">CH1 Vm 峰值</th><th class="num">CH1 半高寬</th><th>CH2（active 端細胞外）</th></tr></thead>
+      <tbody>
+        <tr><td>只並 11k，FI 從 Stimulator 拉線</td><td class="num">4.39 V</td><td class="num">17.4 ms</td><td>單相、正的 +143 mV，CH1 波峰後 4.8 ms，半高寬 3.6 ms</td></tr>
+        <tr><td>修正 1 + 2，FI 從 Stimulator 拉線</td><td class="num">4.45 V</td><td class="num">20.0 ms</td><td>單相、正的 +142 mV，CH1 波峰後 5.0 ms，半高寬 3.4 ms</td></tr>
+        <tr><td>只並 11k，FI 自帶電池</td><td class="num">4.35 V</td><td class="num">17.2 ms</td><td>雙相：CH1 波峰前 3.6 ms −19 mV，波峰後 7.4 ms +23 mV</td></tr>
+        <tr><td>修正 1 + 2，FI 自帶電池</td><td class="num">4.41 V</td><td class="num">19.4 ms</td><td>雙相：CH1 波峰前 5.2 ms −21 mV，波峰後 7.2 ms +21 mV</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <ul>
+      <li><b>n ≥ 1 時不會自己冒小峰</b>，就算不修 Stimulator 的漏電：6 µA 從第 1 個 unit 注入，傳到 active 端只剩 0.09–0.29 V，離門檻很遠。所以 #2-3 不需要 22 kΩ；需要的是 R13 並 11 kΩ，AP 才明顯（4.3 V 對 1.6 V）。</li>
+      <li><b>I<sub>min</sub> 隨 n 上升</b>，比例（修正 1 + 2：1 : 2.06 : 3.33 : 5.0 : 7.07）和只看被動部分的線性手算（1 : 2.1 : 3.4 : 5.1 : 7.2）幾乎一樣：慢慢充電時 Slow out 沒有明顯把門檻往上推。「目前」那列少了約 6 µA，是因為漏電一直在幫忙。</li>
+      <li><b>Q3 實際操作會碰到的問題</b>：I<sub>min</sub> 只有 5–38 µA，可變電阻最小卻是 44 µA（加 22 kΩ 後 19 µA），所以 n 小的時候每按一次都會觸發，量不到門檻。可以把 Q<sub>pass</sub> E–B 的 22 kΩ 換成 10 kΩ（一樣是夾上去的）：可變電阻 0–10 kΩ 對應約 41–0.3 µA，涵蓋 n = 0–4 的 I<sub>min</sub>。電流一律用 S + 1 個 Passive unit 的平台電壓換算（hw2 頁的方法 B）。</li>
+      <li><b>Q4 的 delay 在 n = 4 特別長</b>（約 0.6 秒）：電流只比門檻大 5 %，Vm 要很久才爬到門檻。按住 SW 要超過 1 秒。</li>
+      <li><b>CH2 長什麼樣取決於 FI 的電源怎麼接</b>。Passive PCB 底板的 V+ 沒有串到下一槽（只有 GND 經 100 Ω、Intracellular 經 10 kΩ），所以 FI 的 V+ 要從 Stimulator 拉一條線，FI 的電流（約 0.6–0.7 mA）就經細胞外那串 100 Ω 回到電池，CH2 變成約 +0.09–0.26 V 的單相正波，等於在量 FI 的電流。講義的模擬器讓 FI 自帶電池，電流只在 active 端繞圈，CH2 才是約 ±20 mV 的雙相波（上升時負、之後正），比 CH1 小約 200 倍。報告裡寫清楚 FI 的 V+ 怎麼接的。</li>
+      <li><b>FI 沒有拉 V+ 就完全不會觸發</b>：FI 不和 Stimulator 疊在同一槽時，底板不會幫它接 V+。和 #2-2 的「FI:V+ 沒接上」一樣，量 FI.V+（R13 下端）應該是 7.8 V。</li>
+      <li><b>方案 3（過極化）不適合 #2-3</b>：被動鏈把 active 端的靜止點拉回 0.5–0.8 V（n ≥ 2 時已經和 Slow out 能拉到的約 0.6 V 差不多或更低），過極化就沒了；n = 3、4 時 I<sub>min</sub> 要 102、147 µA，Stimulator 給不出來。</li>
+    </ul>
+  </div>
+</section>
+
+<footer>Ebers–Moll 模型、修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton，和 <a href="../active-membrane-sim/">#2-2 互動模擬</a>共用同一個引擎（<a href="../active-membrane-sim/engine.js">engine.js</a>）。元件參數為典型值，細節見<a href="../hw2-debug/#s8">除錯分析 §8</a>。</footer>
+</div>
+
+<script src="../active-membrane-sim/engine.js"></script>
+<script>
+(function(){
+  var st = AM.st, DT = 2e-4;
+  var $ = function(id){ return document.getElementById(id); };
+  var running = true, speed = 1, latch = false, swDown = false;
+  st.chain = 4; st.so_r2 = 1e6; st.rpot = 700;
+
+  /* ---- active-membrane states (add-ons from hw2-debug/sim/check_ap.py) ---- */
+  var STATES = {
+    now:{note:'目前的電路：R2 = 1 MΩ，沒有任何外加元件。Stimulator 放開時的約 6 µA 漏電從第 1 個 unit 注入，傳到 active 端已經很小。'},
+    fix2:{r13p:11e3, note:'只在 R13 兩端並 11 kΩ（9.9 kΩ），不修 Stimulator 的漏電。'},
+    fix12:{qs:'rx', r13p:11e3, note:'修正 1 + 2：Q_pass 的 E–B 並 22 kΩ、R13 並 11 kΩ。刺激電流少約 25 µA。'},
+    plan3:{rb:470e3, rf:470e3, rs:47e3, r13p:11e3, note:'方案 3：V+ → Vm 470 kΩ（接在 active 端）、R13 下端 → FI.E3 470 kΩ、SO 的 C1 並 47 kΩ、R13 並 11 kΩ。'}
+  };
+  var state = 'now';
+  function applyState(k){
+    var p = STATES[k]; state = k;
+    st.qs = p.qs || 'pcb'; st.r13p = p.r13p || 0; st.rf = p.rf || 0; st.rb = p.rb || 0; st.rs = p.rs || 0;
+    $('presetNote').textContent = p.note;
+    document.querySelectorAll('#presets .btn').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.p === k ? 'true' : 'false'); });
+    powerOn();
+  }
+  document.querySelectorAll('#presets .btn').forEach(function(b){ b.addEventListener('click', function(){ applyState(b.dataset.p); }); });
+  function contacts(){
+    var fi = !$('ttx').checked, so = !$('tea').checked;
+    st.fi_vm = st.fi_vplus = st.fi_gnd = fi; st.so_vm = st.so_gnd = so;
+  }
+  $('ttx').addEventListener('change', function(){ contacts(); AM.build(); });
+  $('tea').addEventListener('change', function(){ contacts(); AM.build(); });
+  function setSupply(s){
+    st.fi_supply = s;
+    $('supStim').setAttribute('aria-pressed', s === 'stim' ? 'true' : 'false');
+    $('supLocal').setAttribute('aria-pressed', s === 'local' ? 'true' : 'false');
+    powerOn();
+  }
+  $('supStim').addEventListener('click', function(){ setSupply('stim'); });
+  $('supLocal').addEventListener('click', function(){ setSupply('local'); });
+
+  /* ---- scope ring buffer ---- */
+  var CAP = 30000, tB = new Float64Array(CAP), aB = new Float64Array(CAP), bB = new Float64Array(CAP), head = 0, count = 0;
+  function push(t, a, b){ tB[head] = t; aB[head] = a; bB[head] = b; head = (head + 1) % CAP; if(count < CAP) count++; }
+  function sample(){ push(AM.time(), AM.v('Vm'), st.ch2 ? AM.v(st.ch2) : NaN); }
+  var mode = 'roll', trig = {state:'idle', t0:0, prev:0}, frozen = null;
+
+  /* ---- CH2 choices depend on n ---- */
+  function ch2Options(){
+    var sel = $('ch2'), keep = sel.value || (st.chain ? 'AX' : '');
+    var opts = [['', '關']];
+    if(st.chain){
+      opts.push(['AX', 'AX：active 端細胞外']);
+      for(var k = 1; k <= st.chain; k++) opts.push(['PC' + k, 'PC' + k + '：unit ' + k + (k === 1 ? '（刺激點）' : '')]);
+    }
+    opts.push(['SO.S', 'SO.S'], ['FI.E4', 'FI.E4']);
+    sel.innerHTML = opts.map(function(o){ return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('');
+    sel.value = opts.some(function(o){ return o[0] === keep; }) ? keep : (st.chain ? 'AX' : '');
+    st.ch2 = sel.value;
+  }
+  $('ch2').addEventListener('change', function(){ st.ch2 = this.value; AM.build(); count = 0; head = 0; });
+
+  function powerOn(){
+    contacts(); ch2Options(); AM.build(); AM.powerOn(); count = 0; head = 0; frozen = null; dly.state = 'idle';
+    drawSchematic();
+    if(mode === 'single') arm();
+    sample();
+  }
+  function setN(n){
+    st.chain = n;
+    document.querySelectorAll('#nSeg button').forEach(function(b){ b.setAttribute('aria-pressed', +b.dataset.n === n ? 'true' : 'false'); });
+    powerOn();
+  }
+  document.querySelectorAll('#nSeg button').forEach(function(b){ b.addEventListener('click', function(){ setN(+b.dataset.n); }); });
+
+  /* ---- stimulus ---- */
+  function syncStim(){
+    st.rpot = +$('pot').value * 1e3; st.isrc = +$('isrc').value * 1e-6;
+    $('potV').textContent = (+$('pot').value).toFixed(1) + ' kΩ';
+    $('isrcV').textContent = (+$('isrc').value).toFixed(1) + ' µA';
+    AM.build();
+  }
+  $('pot').addEventListener('input', syncStim); $('isrc').addEventListener('input', syncStim);
+  function setSrc(s){
+    st.src = s;
+    $('srcStim').setAttribute('aria-pressed', s === 'stim' ? 'true' : 'false');
+    $('srcIdeal').setAttribute('aria-pressed', s === 'ideal' ? 'true' : 'false');
+    $('rowPot').style.display = s === 'stim' ? '' : 'none';
+    $('rowIs').style.display = s === 'ideal' ? '' : 'none';
+    AM.build();
+  }
+  $('srcStim').addEventListener('click', function(){ setSrc('stim'); });
+  $('srcIdeal').addEventListener('click', function(){ setSrc('ideal'); });
+
+  /* ---- SW ---- */
+  var dly = {state:'idle'};
+  function setSW(on){
+    if(on && !st.sw){ dly = {state:'wait', t0:AM.time(), base:AM.v('Vm'), max:-1e9, tmax:0}; if(mode === 'single' && $('tsrc').value === 'sw' && trig.state === 'armed') startCapture(AM.time()); }
+    st.sw = on; AM.build();
+    var b = $('swBtn'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.textContent = on ? 'SW 按下中' : '按住 SW（或空白鍵）';
+  }
+  var sb = $('swBtn');
+  sb.addEventListener('pointerdown', function(e){ e.preventDefault(); sb.setPointerCapture(e.pointerId); swDown = true; setSW(true); });
+  function up(){ if(!swDown) return; swDown = false; if(!latch) setSW(false); }
+  sb.addEventListener('pointerup', up); sb.addEventListener('pointercancel', up);
+  function skipKey(e){ var tg = e.target.tagName; return tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA'; }
+  document.addEventListener('keydown', function(e){ if(e.code !== 'Space' || e.repeat || skipKey(e)) return; e.preventDefault(); setSW(true); });
+  document.addEventListener('keyup', function(e){ if(e.code !== 'Space' || skipKey(e)) return; e.preventDefault(); if(!latch) setSW(false); });
+  $('swLatch').addEventListener('change', function(){ latch = this.checked; setSW(latch); });
+
+  /* first AP peak after the press: first local maximum more than 0.5 V above the Vm at the press */
+  function trackDelay(){
+    if(dly.state !== 'wait') return;
+    var v = AM.v('Vm'), t = AM.time();
+    if(v > dly.max){ dly.max = v; dly.tmax = t; }
+    else if(dly.max - dly.base > 0.5 && v < dly.max - 0.05){ dly.state = 'done'; dly.delay = dly.tmax - dly.t0; dly.peak = dly.max; }
+  }
+
+  $('reset').addEventListener('click', powerOn);
+  function seg(a, b, on){ $(a).setAttribute('aria-pressed', on ? 'true' : 'false'); $(b).setAttribute('aria-pressed', on ? 'false' : 'true'); }
+  $('sp1').addEventListener('click', function(){ speed = 1; seg('sp1', 'sp4', true); });
+  $('sp4').addEventListener('click', function(){ speed = 0.25; seg('sp1', 'sp4', false); });
+  $('pause').addEventListener('click', function(){ running = !running; this.setAttribute('aria-pressed', running ? 'false' : 'true'); this.textContent = running ? '暫停' : '繼續'; });
+
+  /* ---- scope ---- */
+  var cv = $('scope'), ctx = cv.getContext('2d'), cursorX = null;
+  function td(){ return +$('tdiv').value; }
+  function arm(){ trig.state = 'armed'; frozen = null; trig.prev = AM.v('Vm'); updTrig(); }
+  function startCapture(t){ trig.state = 'capturing'; trig.t0 = t; updTrig(); }
+  function updTrig(){
+    $('trigState').textContent = mode === 'roll' ? '' : ({armed:'等待觸發…', capturing:'擷取中…', done:'已擷取（按「重新 Single」再抓一次）'})[trig.state] || '';
+  }
+  $('mRoll').addEventListener('click', function(){ mode = 'roll'; frozen = null; seg('mRoll', 'mSingle', true); updTrig(); });
+  $('mSingle').addEventListener('click', function(){ mode = 'single'; seg('mRoll', 'mSingle', false); arm(); });
+  $('arm').addEventListener('click', function(){ if(mode !== 'single'){ mode = 'single'; seg('mRoll', 'mSingle', false); } arm(); });
+  $('tdiv').addEventListener('change', function(){ if(mode === 'single') arm(); });
+  function windowSamples(t0, t1){
+    var ts = [], as = [], bs = [], n = count, start = (head - n + CAP) % CAP;
+    for(var k = 0; k < n; k++){
+      var i = (start + k) % CAP, tt = tB[i];
+      if(tt >= t0 && tt <= t1){ ts.push(tt); as.push(aB[i]); bs.push(bB[i]); }
+    }
+    return {t0:t0, t1:t1, t:ts, a:as, b:bs};
+  }
+  function onSample(){
+    if(mode !== 'single') return;
+    var now = AM.time(), vm = AM.v('Vm'), lvl = +$('trig').value;
+    if($('tsrc').value === 'ch1' && trig.state === 'armed' && trig.prev < lvl && vm >= lvl) startCapture(now);
+    if(trig.state === 'capturing' && now >= trig.t0 + 9 * td()){ frozen = windowSamples(trig.t0 - td(), trig.t0 + 9 * td()); trig.state = 'done'; updTrig(); }
+    trig.prev = vm;
+  }
+  function sizeCanvas(){
+    var r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.width * 0.8 * dpr);
+  }
+  window.addEventListener('resize', sizeCanvas);
+  function fmtV(v){ return Math.abs(v) < 0.1 ? (v * 1e3).toFixed(2) + ' mV' : v.toFixed(2) + ' V'; }
+  function draw(){
+    var Wd = cv.width, Hd = cv.height, dpr = window.devicePixelRatio || 1;
+    var gx = Wd / 10, gy = Hd / 8, v1 = +$('vdiv1').value, v2 = +$('vdiv2').value, t = td();
+    ctx.fillStyle = '#0d1114'; ctx.fillRect(0, 0, Wd, Hd);
+    ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1; ctx.beginPath();
+    for(var i = 1; i < 10; i++){ ctx.moveTo(Math.round(i * gx) + .5, 0); ctx.lineTo(Math.round(i * gx) + .5, Hd); }
+    for(i = 1; i < 8; i++){ ctx.moveTo(0, Math.round(i * gy) + .5); ctx.lineTo(Wd, Math.round(i * gy) + .5); }
+    ctx.stroke();
+    var y1 = 7 * gy, y2 = 4 * gy;      /* CH1 zero one division above the bottom, CH2 zero mid-screen */
+    var Y1 = function(v){ return y1 - v / v1 * gy; }, Y2 = function(v){ return y2 - v / v2 * gy; };
+    var w;
+    if(mode === 'single' && frozen) w = frozen;
+    else if(mode === 'single' && trig.state === 'capturing') w = windowSamples(trig.t0 - t, trig.t0 + 9 * t);
+    else { var now = AM.time(); w = windowSamples(now - 10 * t, now); }
+    var Xt = function(tt){ return (tt - w.t0) / (w.t1 - w.t0) * Wd; };
+    function marker(y, color){ ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(0, y - 6 * dpr); ctx.lineTo(9 * dpr, y); ctx.lineTo(0, y + 6 * dpr); ctx.fill(); }
+    marker(y1, '#3987e5'); if(st.ch2) marker(y2, '#e0703f');
+    if(mode === 'single' && trig.state !== 'armed'){ var tx = Xt(trig.t0); ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.setLineDash([4 * dpr, 4 * dpr]); ctx.beginPath(); ctx.moveTo(tx, 0); ctx.lineTo(tx, Hd); ctx.stroke(); ctx.setLineDash([]); }
+    function trace(arr, Y, color){
+      var n = w.t.length; if(n < 2) return;
+      var stride = Math.max(1, Math.floor(n / (Wd * 1.5)));
+      ctx.strokeStyle = color; ctx.lineWidth = 2 * dpr; ctx.lineJoin = 'round'; ctx.beginPath();
+      var started = false;
+      for(var k = 0; k < n; k += stride){
+        var v = arr[k]; if(isNaN(v)) continue;
+        var x = Xt(w.t[k]), y = Math.max(-4, Math.min(Hd + 4, Y(v)));
+        if(!started){ ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    if(st.ch2) trace(w.b, Y2, '#e0703f');
+    trace(w.a, Y1, '#3987e5');
+    ctx.font = (12 * dpr) + 'px "IBM Plex Mono", monospace';
+    ctx.fillStyle = '#3987e5'; ctx.fillText('CH1 Vm ' + v1 + ' V/div', 8 * dpr, Hd - 8 * dpr);
+    if(st.ch2){ ctx.fillStyle = '#e0703f'; ctx.fillText('CH2 ' + st.ch2 + ' ' + (v2 < 0.1 ? (v2 * 1e3) + ' mV' : v2 + ' V') + '/div', 8 * dpr, 18 * dpr); }
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    var tl = 'M ' + (t * 1000) + ' ms/div';
+    ctx.fillText(tl, Wd - ctx.measureText(tl).width - 8 * dpr, Hd - 8 * dpr);
+    if(cursorX !== null && w.t.length){
+      var cx = cursorX * dpr, tc = w.t0 + cx / Wd * (w.t1 - w.t0), lo = 0, hi = w.t.length - 1;
+      while(hi - lo > 1){ var mid = (lo + hi) >> 1; if(w.t[mid] < tc) lo = mid; else hi = mid; }
+      var j = (tc - w.t[lo] < w.t[hi] - tc) ? lo : hi;
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, Hd); ctx.stroke();
+      var trg = mode === 'single' && trig.state !== 'armed', ref = trg ? trig.t0 : w.t1;
+      $('cursorRead').textContent = '游標：' + (trg ? '觸發後 ' : '距現在 ') + ((w.t[j] - ref) * 1000).toFixed(1) +
+        ' ms，CH1 Vm = ' + w.a[j].toFixed(3) + ' V' + (st.ch2 ? '，CH2 ' + st.ch2 + ' = ' + fmtV(w.b[j]) : '');
+    }
+  }
+  cv.addEventListener('pointermove', function(e){ var r = cv.getBoundingClientRect(); cursorX = e.clientX - r.left; });
+  cv.addEventListener('pointerdown', function(e){ var r = cv.getBoundingClientRect(); cursorX = e.clientX - r.left; });
+  cv.addEventListener('pointerleave', function(){ cursorX = null; $('cursorRead').textContent = '把滑鼠移到畫面上可讀數值。'; });
+  ['vdiv1', 'vdiv2'].forEach(function(id){ $(id).addEventListener('change', draw); });
+
+  /* ---- schematic: Stimulator, n passive units, active membrane ---- */
+  var svg = $('sch');
+  function drawSchematic(){
+    var n = st.chain, out = [], yT = 70, yB = 320;
+    function L(pts, cls){ out.push('<polyline class="' + (cls || 'w') + '" points="' + pts.map(function(p){ return p.join(','); }).join(' ') + '"/>'); }
+    function txt(x, y, s, cls, anchor, id){ out.push('<text' + (id ? ' id="' + id + '"' : '') + ' class="' + cls + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + s + '</text>'); }
+    function resH(y, x1, x2){ var a = (x1 + x2) / 2 - 18, b = a + 36, pts = [[a, y]], s = 36 / 8; L([[x1, y], [a, y]]); for(var i = 1; i < 8; i++) pts.push([a + s * i, y + (i % 2 ? -6 : 6)]); pts.push([b, y]); L(pts); L([[b, y], [x2, y]]); }
+    function unit(x){ /* 1 uF || 100 kohm between the rows */
+      L([[x, yT], [x, 130]]); L([[x - 24, 130], [x + 24, 130]]);
+      L([[x - 24, 130], [x - 24, 185]]); L([[x - 36, 185], [x - 12, 185]]); L([[x - 36, 193], [x - 12, 193]]); L([[x - 24, 193], [x - 24, 250]]);
+      var pts = [[x + 24, 160]]; for(var i = 1; i < 8; i++) pts.push([x + 24 + (i % 2 ? 6 : -6), 160 + 7 * i]); pts.push([x + 24, 216]);
+      L([[x + 24, 130], [x + 24, 160]]); L(pts); L([[x + 24, 216], [x + 24, 250]]);
+      L([[x - 24, 250], [x + 24, 250]]); L([[x, 250], [x, yB]]);
+    }
+    /* Stimulator */
+    out.push('<rect class="box" x="14" y="30" width="150" height="320" rx="6"/>');
+    txt(28, 342, 'ST Stimulator', 'bt');
+    txt(40, 120, st.src === 'ideal' ? '理想電流源' : '定電流（Q_pass）', 'lab');
+    out.push('<circle cx="90" cy="180" r="22" class="w"/>'); L([[90, 196], [90, 164]]); L([[84, 170], [90, 164], [96, 170]]);
+    L([[90, 158], [90, yT], [150, yT]]); L([[90, 202], [90, yB], [150, yB]]);
+    txt(100, 62, '', 'cur', null, 'tIs');
+    /* passive units */
+    var x0 = 230, dx = n ? Math.min(150, 560 / n) : 0, xs = [];
+    for(var k = 1; k <= n; k++) xs.push(x0 + (k - 1) * dx);
+    var xa = n ? xs[n - 1] + Math.max(dx, 140) : 300;
+    var vmCls = n ? 'w' : 'w vm';
+    L([[150, yT], [n ? xs[0] : xa, yT]], vmCls); L([[150, yB], [n ? xs[0] : xa, yB]]);
+    xs.forEach(function(x, i){
+      unit(x);
+      out.push('<circle class="dotn" cx="' + x + '" cy="' + yT + '" r="3"/><circle class="dotn" cx="' + x + '" cy="' + yB + '" r="3"/>');
+      txt(x, 290 - 8, '#' + (i + 1), 'lab', 'middle');
+      out.push('<text class="nv" data-node="PC' + (i + 1) + '" x="' + (x + 6) + '" y="' + (yT - 10) + '"></text>');
+      if(i > 0) out.push('<text class="nv" data-node="PX' + (i + 1) + '" data-mv="1" x="' + (x + 6) + '" y="' + (yB + 38) + '"></text>');
+      var nx = i < n - 1 ? xs[i + 1] : xa;
+      resH(yT, x, nx); txt((x + nx) / 2, yT + 22, '10 kΩ', 'lab', 'middle');
+      resH(yB, x, nx); txt((x + nx) / 2, yB + 22, '100 Ω', 'lab', 'middle');
+    });
+    if(n){
+      out.push('<rect class="box" x="' + (xs[0] - 50) + '" y="40" width="' + (xs[n - 1] - xs[0] + 100) + '" height="270" rx="6"/>');
+      txt(xs[0] - 42, 302, 'Passive membrane PCB：' + n + ' 個 unit（1 µF ∥ 100 kΩ）', 'lab');
+    }
+    /* active membrane */
+    var bx = xa, bw = 1060 - bx;
+    L([[bx, yT], [1050, yT]], 'w vm'); L([[bx, yB], [1050, yB]]);
+    out.push('<rect class="box" x="' + (bx + 10) + '" y="40" width="' + (bw - 16) + '" height="270" rx="6"/>');
+    var cx = bx + bw / 2;
+    txt(cx, 112, 'Active membrane', 'bt', 'middle');
+    txt(cx, 134, 'Leak（1 µF ∥ 100 kΩ）∥ Fast inward ∥ Slow out', 'lab', 'middle');
+    [cx - 90, cx, cx + 90].forEach(function(x){ L([[x, yT], [x, 150]]); L([[x, 260], [x, yB]]); out.push('<rect x="' + (x - 34) + '" y="150" width="68" height="110" rx="5" class="w"/>'); });
+    txt(cx - 90, 210, 'Leak', 'lab', 'middle'); txt(cx, 200, 'FI', 'lab', 'middle'); txt(cx + 90, 200, 'SO', 'lab', 'middle');
+    txt(cx, 222, '', 'cur', 'middle', 'tIf'); txt(cx + 90, 222, '', 'cur', 'middle', 'tIo');
+    out.push('<text class="nv" data-node="Vm" x="' + (bx + 18) + '" y="' + (yT - 10) + '"></text>');
+    out.push('<text class="nv" data-node="' + (n ? 'AX' : 'GND') + '" data-mv="1" x="' + (bx + 18) + '" y="' + (yB + 38) + '"></text>');
+    txt(1052, yT + 4, 'CH1', 'lab'); if(n) txt(1052, yB + 4, 'CH2', 'lab');
+    txt(170, 376, 'GND（Stimulator 的 −；示波器地線夾在這裡）', 'lab');
+    svg.innerHTML = out.join('');
+  }
+  var NAMES = {PC1:'PC1', Vm:'Vm', AX:'AX', GND:'GND'};
+  function updSchematic(Is, If, Io){
+    svg.querySelectorAll('[data-node]').forEach(function(t){
+      var nd = t.dataset.node, v = nd === 'GND' ? 0 : AM.v(nd);
+      t.innerHTML = '<tspan class="code">' + nd + '</tspan> ' + (t.dataset.mv ? (v * 1e3).toFixed(2) + ' mV' : v.toFixed(2) + ' V');
+    });
+    var u = function(a){ return (a * 1e6).toFixed(1) + ' µA'; };
+    var e;
+    if((e = svg.querySelector('#tIs'))) e.textContent = 'I ' + u(Is);
+    if((e = svg.querySelector('#tIf'))) e.textContent = u(If);
+    if((e = svg.querySelector('#tIo'))) e.textContent = u(Io);
+  }
+
+  /* ---- readouts ---- */
+  function uA(x){ return (x * 1e6).toFixed(1) + ' µA'; }
+  var lastUI = 0;
+  function updateUI(){
+    var vm = AM.v('Vm'), qp = AM.q('pass'), q4 = AM.q('fi4403'), q6 = AM.q('so4403');
+    var Is = -qp[0] + (st.src === 'ideal' && st.sw ? st.isrc : 0), If = -q4[0], Io = q6[2];
+    $('rVm').textContent = vm.toFixed(3) + ' V';
+    $('rCh2').textContent = st.ch2 ? fmtV(AM.v(st.ch2)) : '—';
+    $('rIs').textContent = uA(Is); $('rIf').textContent = uA(If); $('rIo').textContent = uA(Io);
+    $('rDelay').textContent = dly.state === 'done' ? (dly.delay * 1e3).toFixed(0) + ' ms，' + dly.peak.toFixed(2) + ' V' : (dly.state === 'wait' ? '等待中…' : '—');
+    var fiOn = If > 2e-6, soOn = Io > 2e-6;
+    $('cSW').textContent = st.sw ? 'SW 按下' : 'SW 放開'; $('cSW').classList.toggle('on', st.sw);
+    $('cFI').textContent = fiOn ? 'Fast inward 導通' : 'Fast inward 關'; $('cFI').classList.toggle('on', fiOn);
+    $('cSO').textContent = soOn ? 'Slow out 導通' : 'Slow out 關'; $('cSO').classList.toggle('on', soOn);
+    updSchematic(Is, If, Io);
+  }
+
+  /* ---- main loop ---- */
+  var last = performance.now(), carry = 0;
+  function frame(now){
+    var real = Math.min(now - last, 50) / 1000; last = now;
+    if(running){
+      carry += real * speed;
+      var steps = Math.floor(carry / DT);
+      carry -= steps * DT;
+      for(var k = 0; k < steps; k++){ AM.step(DT); sample(); onSample(); trackDelay(); }
+    }
+    draw();
+    if(now - lastUI > 90){ updateUI(); lastUI = now; }
+    requestAnimationFrame(frame);
+  }
+  sizeCanvas(); syncStim(); applyState('now');
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

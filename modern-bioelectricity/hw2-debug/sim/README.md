@@ -10,7 +10,8 @@
 | `node_table.py` | 節點命名頁上每個節點在 A–E 五種狀態的預期電壓。 |
 | `check_breadboard.py` | 第二輪麵包板：各板組合的穩態 Vm，和設計值、Slow out 故障假設比較。 |
 | `check_r2.py` | 第三輪：Slow out 的 R2 = 100 Ω／1 MΩ／3 MΩ，以及各個外加修正（22 kΩ 消除漏電、R13 並聯電阻、1 MΩ 抬高 FI 門檻）的效果。 |
-| `check_ap.py` | 修正後算不算 AP：門檻、all-or-none、再極化、過極化；「方案 3」做出過極化；`mc` 模式用隨機參數檢查餘裕。 |
+| `check_ap.py` | 修正後算不算 AP：門檻、all-or-none、再極化、過極化；「方案 3」做出過極化；`mc` 模式用隨機參數檢查餘裕；`train` 模式看按住 SW 時的連續發放。 |
+| `check_23.py` | #2-3 passive to active：n = 0–4 個 Passive unit 時的 I_min、delay、AP，以及 active 端的細胞外訊號（FI 的 V+ 從 Stimulator 拉線，或自帶電池）。用 multiprocessing 平行算。 |
 | `power_on.py` | 開機後電路自己會做什麼：安靜停住、自發冒小峰，或（沒有 Slow out 時）自己鎖住。 |
 | `variants.py` | 全部接好時，換不同設計值（R13、電源、Qsense 接法）AP 會長怎樣。 |
 | `sweep_q4.py` | #2-2 Q4：把電阻換成 50k–3M 的結果，兩顆候選電阻都掃。 |
@@ -28,6 +29,8 @@ python check_r2.py
 python check_ap.py
 python check_ap.py mc 3 8 1
 python check_ap.py mc 7 8 1
+python check_ap.py train 7
+python check_23.py
 python variants.py
 python sweep_q4.py
 python monte_carlo.py 1 12 healthy
@@ -47,6 +50,7 @@ python make_figures.py
 | 接觸點 | 接上 = 0.05 Ω，斷開 = 10¹³ Ω |
 | Slow out 的 R2 | 預設 3 MΩ（PCB 標示）；助教指定 1 MΩ，用 `Circuit(r_so_r2=1e6)` |
 | 外加元件 | `Circuit(extra=[('ST.Q', 'ST.R', 22e3), ...])`：夾在既有元件腳上的電阻（不割線、不改線）。常用的幾顆定義在 `check_ap.py` 開頭 |
+| #2-3 被動鏈 | `Circuit(chain=n)`：Stimulator → n 個 1 µF ∥ 100 kΩ（各隔 10 kΩ，細胞外各隔 100 Ω）→ active membrane。`fi_supply='local'` 讓 FI 自帶電池（講義模擬器） |
 | 示波器探棒 | 10 MΩ（×10） |
 | 電源 | V+ = 7.8 V（實測） |
 

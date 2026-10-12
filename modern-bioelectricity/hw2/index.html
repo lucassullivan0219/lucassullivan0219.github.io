@@ -978,6 +978,10 @@ flowchart LR
   <p><span class="tag warn">注意</span>「改變 passive unit 數量」時，要讓<b>刺激點到 active membrane 之間的單元數</b>真的變少：把 Stimulator 往 active 那端移，或依助教指定的接法。<span class="tag inf">推論</span>如果只是把中間的 Passive unit 拔掉，底板上的 10 kΩ 還在，電流仍要經過同樣多的軸向電阻，結果會和題目想問的不同。不論用哪種接法，報告裡都要寫清楚。</p>
 </div>
 
+<div class="note-warn">
+  <p><span class="tag warn">注意</span>Passive membrane PCB 底板只把 Intracellular（經 10 kΩ）和 Extracellular 的 GND 那支腳（經 100 Ω）串到下一槽，<b>V+ 那支腳沒有串</b>（講義 PCB 圖）。Fast inward 不和 Stimulator 疊在同一槽時，要另外從 Stimulator 的 V+ 拉一條線到 FI.V+，否則 FI 沒有電、永遠不會觸發。這樣接時 FI 的電流會經細胞外那串 100 Ω 回到電池，CH2（Q5）會被它主導，和講義模擬器（FI 自帶電池）看到的不一樣，見下方預期趨勢與<a href="../passive-active-sim/">#2-3 互動模擬</a>。</p>
+</div>
+
 <h3 id="s4-flow">實驗流程</h3>
 <div class="flow">
 <pre class="mermaid">
@@ -1019,7 +1023,7 @@ flowchart TD
       <li>n = 4 開始：電流從最小慢慢加大，每加一點按一次，直到剛好出現 AP。用方法 A 量出這個電流，就是 I<sub>min</sub>(4)。</li>
       <li>減少一個單元，重複，一路做到 n = 0（Stimulator 直接接 active membrane）。</li>
       <li>作圖：橫軸 number of passive units，縱軸 minimum stimulation current。</li>
-      <li><span class="tag warn">注意</span>n = 4 時 I<sub>min</sub> 可能已經接近旋鈕的最大電流。如果轉到最大都觸發不了，就記錄「&gt; 最大電流」並在報告中說明。</li>
+      <li><span class="tag warn">注意</span><span class="tag inf">推論</span>模擬的 I<sub>min</sub> 只有約 5–38 µA，旋鈕最小卻是約 44 µA，所以 n 小時每按一次都會觸發，量不到門檻。可以在 Q<sub>pass</sub> 的 E–B（7K-R1 下端 ↔ 7K-R2 上端）夾一顆 10 kΩ，旋鈕 0–10 kΩ 就變成約 41–0.3 µA；拆掉就復原。電流用方法 B 量。</li>
     </ul></li>
   <li><b class="t">固定電流下的 delay（Q4）</b>
     <ul>
@@ -1038,26 +1042,26 @@ flowchart TD
 </ol>
 
 <h3 id="s4-expect">預期趨勢</h3>
-<p><span class="tag inf">推論</span>只用被動部分做的線性模擬（每個單元 1 µF ∥ 100 kΩ，以 10 kΩ 串接，active 端 Vm 碰到門檻就算觸發），可以預期單元數的影響：</p>
+<p><span class="tag inf">推論</span>以下是整個電路（被動鏈 ＋ PCB 實際值的 active membrane）的模擬，沒有實測數值，請以你們量到的為準。「目前」是 Slow out 的 R2 = 1 MΩ、沒加東西；「修正 1 ＋ 2」是 Q<sub>pass</sub> E–B 並 22 kΩ、R13 並 11 kΩ（見<a href="../hw2-debug/#s11">除錯頁 §11</a>）。可以在 <a href="../passive-active-sim/">#2-3 互動模擬</a>自己試，程式是 <a href="../hw2-debug/sim/check_23.py">check_23.py</a>。</p>
 <div class="scroll">
-<table class="narrow">
-  <thead><tr><th class="num">Passive unit 數 n</th><th class="num">刺激點到 Vm 的轉移電阻</th><th class="num">I<sub>min</sub>（相對於 n = 0）</th><th class="num">用 1.05 × I<sub>min</sub>(4) 刺激時，到門檻的時間</th></tr></thead>
+<table>
+  <thead><tr><th class="num">n</th><th class="num">刺激點到 Vm 的轉移電阻</th><th class="num">I<sub>min</sub> 線性手算（相對）</th><th class="num">I<sub>min</sub> 模擬：目前</th><th class="num">I<sub>min</sub> 模擬：修正 1 ＋ 2</th><th class="num">Q4 delay：修正 1 ＋ 2（40 µA）</th><th class="num">AP 峰值：R13 並 11 kΩ、旋鈕 0.7k</th></tr></thead>
   <tbody>
-    <tr><td class="num">0</td><td class="num">100 kΩ</td><td class="num">1.0 ×</td><td class="num">14 ms</td></tr>
-    <tr><td class="num">1</td><td class="num">47.6 kΩ</td><td class="num">2.1 ×</td><td class="num">37 ms</td></tr>
-    <tr><td class="num">2</td><td class="num">29.3 kΩ</td><td class="num">3.4 ×</td><td class="num">73 ms</td></tr>
-    <tr><td class="num">3</td><td class="num">19.8 kΩ</td><td class="num">5.1 ×</td><td class="num">134 ms</td></tr>
-    <tr><td class="num">4</td><td class="num">13.9 kΩ</td><td class="num">7.2 ×</td><td class="num">341 ms</td></tr>
+    <tr><td class="num">0</td><td class="num">100 kΩ</td><td class="num">1.0 ×</td><td class="num">自己發放</td><td class="num">5.4 µA</td><td class="num">37 ms</td><td class="num">—</td></tr>
+    <tr><td class="num">1</td><td class="num">47.6 kΩ</td><td class="num">2.1 ×</td><td class="num">4.7 µA</td><td class="num">11.1 µA</td><td class="num">69 ms</td><td class="num">4.5 V</td></tr>
+    <tr><td class="num">2</td><td class="num">29.3 kΩ</td><td class="num">3.4 ×</td><td class="num">11.7 µA</td><td class="num">18.0 µA</td><td class="num">115 ms</td><td class="num">4.4 V</td></tr>
+    <tr><td class="num">3</td><td class="num">19.8 kΩ</td><td class="num">5.1 ×</td><td class="num">20.5 µA</td><td class="num">27.0 µA</td><td class="num">203 ms</td><td class="num">4.3 V</td></tr>
+    <tr><td class="num">4</td><td class="num">13.9 kΩ</td><td class="num">7.2 ×</td><td class="num">32.0 µA</td><td class="num">38.2 µA</td><td class="num">569 ms</td><td class="num">4.3 V</td></tr>
   </tbody>
 </table>
 </div>
+<p class="small muted">I<sub>min</sub>：1 秒長脈衝、能觸發的最小電流。Delay：電流 1.05 × I<sub>min</sub>(4)，按下到第一個 AP 波峰。AP 峰值：沒修漏電、只並 11 kΩ，FI 的 V+ 從 Stimulator 拉線。</p>
 <ul class="specs">
-  <li><b>Q3</b>：單元越多，注入的電流在路上漏掉越多，要更大的電流才能把遠端的 Vm 推到門檻，I<sub>min</sub> 隨 n 上升。</li>
-  <li><b>Q4</b>：電流固定時，單元越多，Vm 爬得越慢，第一個 AP 越晚出現；n = 4 時因為電流只比門檻大一點點，delay 特別長。表中的時間是「到門檻」，實際波峰還要再加上 AP 上升的時間。</li>
-  <li><span class="tag inf">推論</span>單元很多時 Vm 爬得很慢，Slow outward 的 1 µF 可能跟著充電，在 fast inward 觸發前就先打開，讓 AP 變得更難觸發（類似 accommodation）。如果 n = 4 時結果不穩定，這可能是原因之一。</li>
-  <li><b>Q5</b>：Extracellular 訊號應該比 intracellular 小很多（mV 等級），形狀比較像膜電流（和 Vm 的變化率有關），可能是雙相（biphasic），極性也可能相反。這是教科書上 extracellular recording 的典型特徵，實際形狀以你的示波器為準。</li>
+  <li><b>Q3</b>：單元越多，注入的電流在路上漏掉越多，要更大的電流才能把遠端的 Vm 推到門檻，I<sub>min</sub> 隨 n 上升。模擬的比例（1 : 2.06 : 3.33 : 5.0 : 7.07）和只看被動部分的手算幾乎一樣，表示慢慢充電時 Slow out 沒有明顯把門檻推高。「目前」那列少了約 6 µA，是 Stimulator 的漏電一直在幫忙。</li>
+  <li><b>Q4</b>：電流固定時，單元越多，Vm 爬得越慢，第一個 AP 越晚出現；n = 4 時電流只比門檻大 5 %，delay 約 0.6 秒，按住 SW 要超過 1 秒。</li>
+  <li><b>有被動鏈時不會自己冒小峰</b>：Stimulator 的 6 µA 漏電傳到 active 端只剩 0.09–0.29 V。所以 #2-3 不需要 22 kΩ，但 R13 沒並 11 kΩ 時 AP 只有約 1.6–2.3 V（n = 4 到 1）。</li>
+  <li><b>Q5</b>：CH2 取決於 FI 的 V+ 怎麼接。從 Stimulator 拉線（實際 PCB 只能這樣）時，FI 約 0.6–0.7 mA 的電流經細胞外的 100 Ω 回到電池，CH2 是單相正波，n = 2 時約 +0.14 V（n = 1–4：0.09–0.26 V），比 CH1 的波峰晚約 5 ms、半高寬只有 3–4 ms，等於在量 FI 的電流。講義模擬器讓 FI 自帶電池，CH2 才是教科書上的樣子：約 ±20 mV 的雙相波，AP 上升時負、之後正，比 CH1 小約 200 倍。</li>
 </ul>
-
 <h3 id="s4-q">題目對應</h3>
 <div class="qa">
   <h4>Q1–Q2 照片與 AP 性質</h4>

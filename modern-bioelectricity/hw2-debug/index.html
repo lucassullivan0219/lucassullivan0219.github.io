@@ -715,6 +715,7 @@ S + LK + SO，按住：  90 µA = Vm/100k ＋ (Vm − 0.4)/100k
 </div>
 <ul class="specs">
   <li><b>參數變動下站得住</b>：16 組隨機參數（<code>check_ap.py mc 7 8 1</code>、<code>mc 7 8 2</code>）每一組都安靜不自發，靜止 1.05–1.32 V，按 20 ms 都觸發，峰值 5.3–5.9 V，AP 後最低 0.56–0.67 V（按 20 ms 時過極化 0.47–0.71 V），放開後回到靜止，按住時都是連續發放、沒有鎖住。V+ 換成 7.0／8.5 V 時靜止 1.06／1.29 V，仍成立。</li>
+  <li><b>按住 SW 時會一直發放</b>（<code>check_ap.py train 7</code>）：可變電阻 0.7k／5k／10k（約 90／60／44 µA）時每秒 27／20／15.5 個 AP，按住 2 秒頻率都不變。第一個 AP 5.3–5.7 V，之後每個約 4.9–5.0 V，每個 AP 後都掉到 0.62–0.64 V，低於靜止的 1.18 V。過程是：刺激電流一直在充電；每個 AP 後 Slow out 把 Vm 拉到約 0.6 V；SO.S 放電（τ ≈ 32 ms）後 Slow out 關掉；刺激再把 Vm 推到約 2 V 的門檻，就是下一個 AP。電流越大充得越快，頻率越高。這是合理的：神經受到持續的閾上電流本來就會重複發放（Hodgkin–Huxley 模型也一樣），強度用頻率表示。這個電路沒有的是 adaptation（頻率隨時間變慢）和 Na⁺ 通道失活，所以頻率完全不變。</li>
   <li><b>代價</b>：
     <ul>
       <li>膜變了：多了 V+ 的 470 kΩ 和 C1 那條 147 kΩ，被動時間常數從 100 ms 變成約 49 ms；靜止電位是 1.2 V，而且跟著電池電壓走。報告裡要寫清楚。</li>
@@ -881,7 +882,8 @@ S + LK + SO，按住：  90 µA = Vm/100k ＋ (Vm − 0.4)/100k
     <tr><td><a href="sim/check_dc.py">check_dc.py</a></td><td>§3、§4 的 DC 數值；§9 對照表</td></tr>
     <tr><td><a href="sim/check_transient.py">check_transient.py</a></td><td>各種接觸不良組合的波形；測試 7</td></tr>
     <tr><td><a href="sim/check_r2.py">check_r2.py</a></td><td>§9 第三輪：R2 = 100 Ω／1 MΩ／3 MΩ 與各個外加修正</td></tr>
-    <tr><td><a href="sim/check_ap.py">check_ap.py</a></td><td>§9 算不算 AP、過極化、隨機參數下的餘裕；§11 對照表</td></tr>
+    <tr><td><a href="sim/check_ap.py">check_ap.py</a></td><td>§9 算不算 AP、過極化、隨機參數下的餘裕、按住 SW 的連續發放；§11 對照表</td></tr>
+    <tr><td><a href="sim/check_23.py">check_23.py</a></td><td>#2-3 passive to active：n = 0–4 的 I<sub>min</sub>、delay、AP 與細胞外訊號（<a href="../passive-active-sim/">互動模擬</a>）</td></tr>
     <tr><td><a href="sim/check_breadboard.py">check_breadboard.py</a></td><td>§9 第二輪麵包板對照與 Slow out 故障假設；§11 的節點預期值</td></tr>
     <tr><td><a href="sim/variants.py">variants.py</a></td><td>§9 換設計值的表</td></tr>
     <tr><td><a href="sim/sweep_q4.py">sweep_q4.py</a></td><td>§9 Q4 掃描</td></tr>

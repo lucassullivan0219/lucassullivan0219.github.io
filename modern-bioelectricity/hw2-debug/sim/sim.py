@@ -30,6 +30,19 @@ B3/E3 = 2N3904 base/emitter node, B4/E4/C4 = 2N4403 base/emitter/collector node.
                                                     TA spec 1 Mohm, kit shipped 100 ohm)
                2N3904: B=SO.B3, E=SO.GND, C=SO.B4
                2N4403: E=SO.Vm, B=SO.B4, C=SO.C4;  1K-R3: SO.C4 -> SO.GND
+  Passive chain (#2-3, chain=n >= 1; handout figure for #2-3):
+               Qpass collector -> PC1 (unit #1); unit k: 1 uF || 100 kohm from PCk to PXk;
+               10 kohm PCk -> PC(k+1), and PCn -> Vm (the active membrane);
+               extracellular row: PX1 = GND (Stimulator side), 100 ohm PX(k-1) -> PXk,
+               100 ohm PXn -> AX.  The Leak, FI and SO return to AX (CH2, extracellular
+               at the active end) instead of GND.  chain=0 is the #2-2 circuit.
+               The passive base PCB links only the GND pins (100 ohm) and Intracellular
+               pins (10 kohm) between slots, not V+.  fi_supply='stim': FI.V+ is wired to
+               the Stimulator's battery, so the FI current returns to the battery through
+               the extracellular 100 ohm row.  fi_supply='local': FI has its own battery
+               between FI.V+ and its extracellular node, as in the handout's simulator
+               (modelled as a Norton source: 1 ohm in parallel with vplus/1 ohm amps,
+               made from two fixed nodes at +-vplus*1e9 V through 1 Gohm).
   Scope probe  10 Mohm from the probed node to GND (x10 probe)
   Add-ons      extra=[(node_a, node_b, ohm), ...]: resistors clipped onto existing
                component legs (nothing on the PCBs is cut or removed), e.g.
@@ -107,7 +120,7 @@ class Circuit:
                  stim=True, leak=True, fi=True, so=True, lk_vm=True,
                  fi_vm=True, fi_vplus=True, fi_gnd=True, so_vm=True, so_gnd=True,
                  qsense_on_switched=False, rleak=100e3, probe='Vm', rprobe=10e6,
-                 r_so_r2=3e6, r_so_r3=1e3, extra=(), models=None):
+                 r_so_r2=3e6, r_so_r3=1e3, extra=(), chain=0, fi_supply='stim', models=None):
         m = {k: dict(v) for k, v in DEFAULT_MODELS.items()}
         for k, v in (models or {}).items():
             m[k].update(v)
@@ -116,21 +129,30 @@ class Circuit:
         self.R, self.C, self.D, self.Q = [], [], [], []
         R, C, D, Q = self.R, self.C, self.D, self.Q
         link = lambda ok: SHORT if ok else OPEN
+        out = 'PC1' if chain else 'Vm'       # where the Stimulator injects
+        ax = 'AX' if chain else 'GND'        # ground return of the active boards
         if stim:
             R.append(['V+', 'ST.P', link(sw), 'sw'])
             R.append(['ST.P', 'ST.K', max(rpot, 1.0), 'pot'])   # a real pot never reaches 0 ohm
             R.append(['ST.K', 'ST.Q', 7e3, None])
-            Q.append(('pnp', 'Vm', 'ST.R', 'ST.Q', '4403'))                                     # Qpass
+            Q.append(('pnp', out, 'ST.R', 'ST.Q', '4403'))                                      # Qpass
             Q.append(('pnp', 'ST.R', 'ST.Q', 'ST.P' if qsense_on_switched else 'V+', '4403'))   # Qsense
             R.append(['ST.R', 'GND', 7e3, None])
         if leak:
             R.append(['LK.Vm', 'Vm', link(lk_vm), 'lk_vm'])
-            C.append(('LK.Vm', 'GND', 1e-6))
-            R.append(['LK.Vm', 'GND', rleak, None])
+            C.append(('LK.Vm', ax, 1e-6))
+            R.append(['LK.Vm', ax, rleak, None])
         if fi:
             R.append(['FI.Vm', 'Vm', link(fi_vm), 'fi_vm'])
-            R.append(['FI.V+', 'V+', link(fi_vplus), 'fi_vplus'])
-            R.append(['FI.GND', 'GND', link(fi_gnd), 'fi_gnd'])
+            if fi_supply == 'local':          # FI's own battery, floating on its extracellular node
+                self.fixed['BAT+'], self.fixed['BAT-'] = vplus * 1e9, -vplus * 1e9
+                R.append(['FI.V+', 'FI.BAT', link(fi_vplus), 'fi_vplus'])
+                R.append(['FI.BAT', ax, 1.0, None])
+                R.append(['BAT+', 'FI.BAT', 1e9, None])
+                R.append(['BAT-', ax, 1e9, None])
+            else:
+                R.append(['FI.V+', 'V+', link(fi_vplus), 'fi_vplus'])
+            R.append(['FI.GND', ax, link(fi_gnd), 'fi_gnd'])
             D.append(('FI.Vm', 'FI.B3'))
             R.append(['FI.B3', 'FI.GND', 3e6, None])
             Q.append(('npn', 'FI.B4', 'FI.B3', 'FI.E3', '3904'))
@@ -139,7 +161,7 @@ class Circuit:
             R.append(['FI.E4', 'FI.V+', r13, None])
         if so:
             R.append(['SO.Vm', 'Vm', link(so_vm), 'so_vm'])
-            R.append(['SO.GND', 'GND', link(so_gnd), 'so_gnd'])
+            R.append(['SO.GND', ax, link(so_gnd), 'so_gnd'])
             R.append(['SO.Vm', 'SO.S', 100e3, None])
             C.append(('SO.S', 'SO.GND', 1e-6))
             D.append(('SO.S', 'SO.B3'))
@@ -147,6 +169,12 @@ class Circuit:
             Q.append(('npn', 'SO.B4', 'SO.B3', 'SO.GND', '3904'))
             Q.append(('pnp', 'SO.C4', 'SO.B4', 'SO.Vm', '4403'))
             R.append(['SO.C4', 'SO.GND', r_so_r3, None])     # 1K-R3
+        for k in range(1, chain + 1):
+            pc, px = f'PC{k}', ('GND' if k == 1 else f'PX{k}')
+            C.append((pc, px, 1e-6))
+            R.append([pc, px, 100e3, None])
+            R.append([pc, f'PC{k + 1}' if k < chain else 'Vm', 10e3, None])
+            R.append([px, f'PX{k + 1}' if k < chain else 'AX', 100.0, None])
         if probe:
             R.append([probe, 'GND', rprobe, None])
         present = {n for el in R + C + D for n in el[:2]} | {n for q in Q for n in q[1:4]} | set(self.fixed)
