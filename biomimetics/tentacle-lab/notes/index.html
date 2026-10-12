@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>章魚觸手實驗室：原理與文獻</title>
+<meta name="description" content="章魚觸手實驗室各層演算法與物理模型的原理、公式、遊戲中的實作方式與參考文獻；含藤蔓機器人（尖端外翻生長）的運作原理。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#F3F4F1; --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72; --link:#1F5FA8;
+  --octo:#B4553E; --vine:#3F7C8C; --rule:#CCD3CE; --chip:#E9EDEA; --note:#FFF6E0; --note-ink:#6B4E00;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0;
+    --octo:#EC8A6C; --vine:#7CC3D2; --rule:#2C3533; --chip:#263036; --note:#2E2814; --note-ink:#E8CF8A;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0;
+  --octo:#EC8A6C; --vine:#7CC3D2; --rule:#2C3533; --chip:#263036; --note:#2E2814; --note-ink:#E8CF8A;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;font-size:16.5px;line-height:1.85}
+a{color:var(--link);text-underline-offset:3px}
+:focus-visible{outline:3px solid var(--link);outline-offset:2px;border-radius:3px}
+code,.eq{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:14px}
+code{background:var(--chip);padding:1px 5px;border-radius:5px}
+.eq{display:block;background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--link);border-radius:8px;padding:10px 14px;margin:10px 0 16px;white-space:pre-wrap;line-height:1.7;overflow-x:auto}
+.top{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--rule)}
+.top .in{max-width:880px;margin:0 auto;padding:8px 16px;display:flex;gap:6px;align-items:center;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.top .in::-webkit-scrollbar{display:none}
+.top a{font-size:13.5px;text-decoration:none;padding:4px 10px;border-radius:999px;background:var(--chip);color:var(--ink)}
+.top a.home{background:none;color:var(--link);padding-left:0}
+main{max-width:880px;margin:0 auto;padding:28px 16px 80px}
+h1{font-size:30px;line-height:1.35;margin:4px 0 8px;font-weight:900}
+h2{font-size:23px;margin:56px 0 10px;padding-top:6px;border-top:2px solid var(--ink)}
+h3{font-size:18.5px;margin:30px 0 6px}
+h4{font-size:16.5px;margin:20px 0 4px}
+p{margin:0 0 14px}
+.lead{color:var(--muted);font-size:17.5px}
+.tag{display:inline-block;font-size:12.5px;font-weight:700;padding:1px 8px;border-radius:999px;color:#fff;vertical-align:2px;margin-right:6px}
+.tag.octo{background:var(--octo)} .tag.vine{background:var(--vine)} .tag.both{background:var(--muted)}
+.note{background:var(--note);color:var(--note-ink);border-radius:10px;padding:10px 14px;margin:12px 0 16px;font-size:15px}
+.note b{color:inherit}
+.game{border-left:3px solid var(--octo);padding:2px 0 2px 14px;margin:10px 0 16px}
+.game.v{border-color:var(--vine)}
+.game h4{margin-top:0}
+table{border-collapse:collapse;width:100%;margin:10px 0 18px;font-size:15px}
+th,td{border:1px solid var(--rule);padding:7px 10px;vertical-align:top;text-align:left}
+th{background:var(--chip)}
+.tbl{overflow-x:auto}
+figure{margin:16px 0 22px}
+figure svg{width:100%;height:auto;display:block;background:var(--surface);border:1px solid var(--rule);border-radius:12px}
+figcaption{font-size:13.5px;color:var(--muted);margin-top:6px}
+sup a{text-decoration:none;font-size:12px}
+ol.refs{padding-left:2.2em;font-size:14.5px;line-height:1.7}
+ol.refs li{margin:0 0 8px}
+ol.refs li:target{background:var(--note);border-radius:6px}
+ul{padding-left:1.3em} li{margin:3px 0}
+.svg-ink{fill:none;stroke:var(--ink)} .svg-text{fill:var(--ink);font-family:"Noto Sans TC",sans-serif}
+.svg-muted{fill:var(--muted)} .svg-octo{fill:var(--octo)} .svg-vine{fill:var(--vine)}
+footer{margin-top:60px;padding-top:14px;border-top:1px solid var(--rule);color:var(--muted);font-size:14px}
+@media (max-width:600px){body{font-size:16px} h1{font-size:25px} h2{font-size:20.5px}}
+</style>
+</head>
+<body>
+<nav class="top" aria-label="章節">
+  <div class="in">
+    <a class="home" href="../">← 回到遊戲</a>
+    <a href="#overview">原型目的</a><a href="#pipeline">控制架構</a><a href="#compare">兩種肢體</a><a href="#octopus">章魚觸手</a>
+    <a href="#planner">路徑規劃</a><a href="#ik">手臂控制器</a><a href="#grasp">抓握反射</a><a href="#physics">軟體物理</a>
+    <a href="#vine">藤蔓機器人</a><a href="#limits">簡化與限制</a><a href="#refs">參考文獻</a>
+  </div>
+</nav>
+<main>
+<p class="lead" style="margin-bottom:2px">仿生科技 · 章魚觸手實驗室</p>
+<h1>原理與文獻</h1>
+<p class="lead">遊戲裡每一層演算法、每一條物理規則，各自根據什麼、在遊戲中怎麼簡化、參數代表什麼。文中的 <sup>[n]</sup> 對應最後的參考文獻。</p>
+<p><span class="tag octo">章魚</span>只用在章魚觸手模式　<span class="tag vine">藤蔓</span>只用在藤蔓機器人模式　<span class="tag both">共用</span>兩種都用</p>
+
+<!-- ============================================================ -->
+<h2 id="overview">1. 這個原型想回答什麼</h2>
+<p><b>擴增肢體</b>（supernumerary robotic limb）是在人原本的四肢之外多裝一條機器肢體。它最大的難題不是硬體，而是<b>控制</b>：人沒有多餘的神經通道去逐關節控制第三條手臂。Eden 等人整理了人類動作擴增的原理與困難，指出擴增肢體需要從身體「借用」控制訊號，而且會和原有肢體競爭注意力與神經資源<sup><a href="#ref-1">[1]</a></sup><sup><a href="#ref-2">[2]</a></sup>；穿戴式擴增肢體的硬體與控制方式回顧見<sup><a href="#ref-3">[3]</a></sup>。</p>
+<p>章魚提供了另一種思路。牠的八條手臂有大量神經元分布在手臂自己的神經索裡；中樞腦只發出很粗略的命令，細節由手臂本身完成<sup><a href="#ref-7">[7]</a></sup>。Sumbre 等人發現，切斷與腦連結的章魚手臂受刺激後，仍能做出完整的伸手動作，代表「伸手」這個運動程式就存在手臂的周邊神經裡<sup><a href="#ref-9">[9]</a></sup>。</p>
+<p>所以這個原型的問題是：<b>如果使用者只能發出章魚等級的粗略指令（「伸到那裡」「抓住它」），觸手要具備哪些自主運算，才能自己完成跨越障礙抓物、轉門把這類任務？</b>遊戲把這些自主運算拆成可以替換、可以調參數的層，讓你直接比較不同設計。</p>
+<p>選擇<b>軟體</b>而非剛性機械臂，是因為軟體肢體貼著人身體穿戴時本質上比較安全、能順應環境，也能用纏繞取代精確夾取<sup><a href="#ref-4">[4]</a></sup>。章魚手臂啟發的軟體機械臂見 Laschi 等人<sup><a href="#ref-5">[5]</a></sup>。</p>
+
+<!-- ============================================================ -->
+<h2 id="pipeline">2. 控制架構：大腦只給目標</h2>
+<figure>
+<svg viewBox="0 0 760 250" role="img" aria-label="控制架構流程圖：上排為章魚觸手的五層，下排為藤蔓機器人的五層">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="svg-muted"/></marker></defs>
+  <text x="14" y="30" class="svg-text" font-size="14" font-weight="700" style="fill:var(--octo)">章魚觸手</text>
+  <text x="14" y="160" class="svg-text" font-size="14" font-weight="700" style="fill:var(--vine)">藤蔓機器人</text>
+  <g font-size="13.5" text-anchor="middle">
+    <!-- row 1 -->
+    <rect x="14" y="42" width="128" height="56" rx="10" class="svg-ink" stroke-width="1.5"/><text x="78" y="66" class="svg-text" font-weight="700">大腦指令</text><text x="78" y="86" class="svg-muted" font-size="12">伸向／抓取／扭轉…</text>
+    <rect x="166" y="42" width="128" height="56" rx="10" class="svg-ink" stroke-width="1.5"/><text x="230" y="66" class="svg-text" font-weight="700">路徑規劃</text><text x="230" y="86" class="svg-muted" font-size="12">末端走哪條路</text>
+    <rect x="318" y="42" width="128" height="56" rx="10" class="svg-ink" stroke-width="1.5"/><text x="382" y="66" class="svg-text" font-weight="700">手臂控制器</text><text x="382" y="86" class="svg-muted" font-size="12">IK：每節去哪</text>
+    <rect x="470" y="42" width="128" height="56" rx="10" class="svg-ink" stroke-width="1.5"/><text x="534" y="66" class="svg-text" font-weight="700">局部反射</text><text x="534" y="86" class="svg-muted" font-size="12">纏繞、吸附、扭轉</text>
+    <rect x="622" y="42" width="124" height="56" rx="10" class="svg-ink" stroke-width="1.5"/><text x="684" y="66" class="svg-text" font-weight="700">肌肉＋物理</text><text x="684" y="86" class="svg-muted" font-size="12">追目標、下垂、碰撞</text>
+    <line x1="142" y1="70" x2="164" y2="70" class="svg-ink" stroke-width="1.5" marker-end="url(#ar)"/>
+    <line x1="294" y1="70" x2="316" y2="70" class="svg-ink" stroke-width="1.5" marker-end="url(#ar)"/>
+    <line x1="446" y1="70" x2="468" y2="70" class="svg-ink" stroke-width="1.5" marker-end="url(#ar)"/>
+    <line x1="598" y1="70" x2="620" y2="70" class="svg-ink" stroke-width="1.5" marker-end="url(#ar)"/>
+    <text x="78" y="118" class="svg-muted" font-size="12">中樞腦</text>
+    <text x="458" y="118" class="svg-muted" font-size="12">手臂神經索（周邊神經系統）</text>
+    <line x1="318" y1="106" x2="598" y2="106" class="svg-ink" stroke-width="1" stroke-dasharray="4 4" opacity=".6"/>
+    <!-- row 2 -->
+    <rect x="14" y="172" width="128" height="56" rx="10" class="svg-ink" stroke-width="1.5"/><text x="78" y="196" class="svg-text" font-weight="700">大腦指令</text><text x="78" y="216" class="svg-muted" font-size="12">伸向／夾取／收回</text>
+    <rect x="166" y="172" width="128" height="56" rx="10" class="svg-ink" stroke-width="1.5"/><text x="230" y="196" class="svg-text" font-weight="700">路徑規劃</text><text x="230" y="216" class="svg-muted" font-size="12">同一套規劃器</text>
+    <rect x="318" y="172" width="128" height="56" rx="10" class="svg-ink" stroke-width="1.5"/><text x="382" y="196" class="svg-text" font-weight="700">尖端轉向</text><text x="382" y="216" class="svg-muted" font-size="12">曲率有上限</text>
+    <rect x="470" y="172" width="128" height="56" rx="10" class="svg-ink" stroke-width="1.5"/><text x="534" y="196" class="svg-text" font-weight="700">氣壓生長</text><text x="534" y="216" class="svg-muted" font-size="12">v = K(P − Y)</text>
+    <rect x="622" y="172" width="124" height="56" rx="10" class="svg-ink" stroke-width="1.5"/><text x="684" y="196" class="svg-text" font-weight="700">充氣管物理</text><text x="684" y="216" class="svg-muted" font-size="12">接觸滑動、下垂</text>
+    <line x1="142" y1="200" x2="164" y2="200" class="svg-ink" stroke-width="1.5" marker-end="url(#ar)"/>
+    <line x1="294" y1="200" x2="316" y2="200" class="svg-ink" stroke-width="1.5" marker-end="url(#ar)"/>
+    <line x1="446" y1="200" x2="468" y2="200" class="svg-ink" stroke-width="1.5" marker-end="url(#ar)"/>
+    <line x1="598" y1="200" x2="620" y2="200" class="svg-ink" stroke-width="1.5" marker-end="url(#ar)"/>
+  </g>
+</svg>
+<figcaption>遊戲面板上的每個參數群組對應一個方塊。大腦（玩家）只負責最左邊那一格。</figcaption>
+</figure>
+<p>這是一種<b>階層式控制</b>：上層只給「目標」，下層各自負責把目標變成動作。章魚的神經系統大致也是這樣分工<sup><a href="#ref-7">[7]</a></sup>。每一層都可以只靠局部資訊運作，這對擴增肢體有兩個好處：使用者的認知負擔小；下層可以處理使用者看不到、也來不及反應的細節（例如纏繞時每一節的接觸）。</p>
+<p>遊戲每一幀（約 60 Hz）依序執行：大腦指令 → 必要時重新規劃路徑 → 控制器算出每一節的「目標位置」 → 局部反射覆寫末端幾節 → 物理模擬以 120 Hz 讓實際觸手去追目標。左下角的「即時數據」顯示每一層的狀態：規劃耗時、追蹤誤差、伸長比例、抓握品質、懸臂彎矩等。</p>
+
+<!-- ============================================================ -->
+<h2 id="compare">3. 兩種「可伸縮」肢體</h2>
+<p>「可伸縮」有兩種完全不同的物理做法，遊戲面板最上方可以切換：</p>
+<div class="tbl"><table>
+<tr><th></th><th><span class="tag octo">章魚</span>肌肉性靜水骨骼</th><th><span class="tag vine">藤蔓</span>尖端外翻生長</th></tr>
+<tr><td>伸長方式</td><td>整條手臂的肌肉收縮，體積不變、變細就變長<sup><a href="#ref-6">[6]</a></sup></td><td>內翻收納的薄膜管被氣壓推到尖端外翻，長出新的身體<sup><a href="#ref-34">[34]</a></sup></td></tr>
+<tr><td>身體會不會動</td><td>整條都能動，可以掃過空間</td><td>長出來的身體相對環境<b>靜止</b>，只有尖端前進</td></tr>
+<tr><td>與環境的摩擦</td><td>手臂移動時會刮到障礙</td><td>身體不滑動，幾乎沒有摩擦；能穿過黏、尖、窄的地方<sup><a href="#ref-34">[34]</a></sup></td></tr>
+<tr><td>改變路線</td><td>隨時可以整條重新擺位</td><td>已長出的部分改不了，只能從尖端改方向；走錯路要收回</td></tr>
+<tr><td>操作物體</td><td>纏繞、吸附、扭轉都可以</td><td>靠生長推動東西、當千斤頂<sup><a href="#ref-34">[34]</a></sup>，或用尖端工具夾取<sup><a href="#ref-44">[44]</a></sup>；薄膜管傳不了扭矩</td></tr>
+<tr><td>剛性來源</td><td>肌肉張力（主動）</td><td>內部氣壓（P 越高、管越粗越硬）<sup><a href="#ref-42">[42]</a></sup></td></tr>
+<tr><td>能伸多長</td><td>受肌肉與結構限制</td><td>只受捲軸裡的材料長度限制，可以很長</td></tr>
+<tr><td>遊戲裡最擅長</td><td>第 3 關（轉門把）</td><td>第 4 關（穿洞）</td></tr>
+</table></div>
+
+<!-- ============================================================ -->
+<h2 id="octopus">4. 章魚觸手模型 <span class="tag octo">章魚</span></h2>
+<p>章魚手臂是<b>肌肉性靜水骨骼</b>（muscular hydrostat）：沒有骨頭，靠縱向、橫向、斜向肌肉互相拮抗，加上組織體積幾乎不變的特性來支撐與變形。橫向肌收縮讓手臂變細，因為體積不變，手臂就會變長；單側縱向肌收縮則讓手臂彎曲<sup><a href="#ref-6">[6]</a></sup>。</p>
+<div class="game"><h4>遊戲中的做法</h4>
+<p>觸手用 <code>N</code> 個節點串成一條鏈（預設 16 節），每節長度可以在 <code>靜止節長 × 最短伸縮比</code> 到 <code>靜止節長 × 最長伸縮比</code> 之間變化，也就是同時能「彎」又能「伸縮」。半徑從基部往末端線性收細到 25%。</p>
+<p>注意：預設最長伸縮比 2.4 倍<b>比真的章魚誇張</b>。這裡模擬的是「受章魚啟發的軟體機器人」，伸縮比是一個機器人規格，你可以調低看看接近生物時會怎樣。</p></div>
+<p>連續體機器人（continuum robot）的運動學通常用「分段常曲率」描述<sup><a href="#ref-24">[24]</a></sup>；遊戲用離散的可變長節點鏈，數學比較簡單，也方便你寫自己的控制器。</p>
+
+<!-- ============================================================ -->
+<h2 id="planner">5. 路徑規劃 <span class="tag both">共用</span></h2>
+<p>大腦只給一個目標點。規劃器負責在三維空間中找一條讓<b>末端</b>可以走的無碰撞路線。這裡只規劃末端（工作空間），不規劃整條手臂的形狀；身體怎麼避開障礙交給下一層（控制器的避障項，或藤蔓本身的「身體跟著尖端」特性）。</p>
+<h3>障礙物與距離場</h3>
+<p>所有障礙物（牆、桌子、門、門把、球、地板）都表示成<b>有號距離場</b>（signed distance field, SDF）：任何一點到最近障礙物表面的距離，在障礙物內為負。盒子、球、圓柱都有解析式，取最小值就是整個場景的距離<sup><a href="#ref-31">[31]</a></sup>。距離場的梯度就是「離開障礙物最快的方向」，碰撞推離與避障都靠它。</p>
+<p>一條線段是否安全：沿線段每 3 cm 取樣，檢查距離是否都大於 <code>安全距離 + 觸手半徑</code>。起點與目標附近的一小段不檢查，因為目標常常就貼在物體表面上。</p>
+<h3>無（直線）</h3>
+<p>直接從基座連到目標。遇到牆就會撞上去，用來對照其他規劃器的價值。</p>
+<h3>繞行點（via-point）</h3>
+<p>這是為遊戲寫的簡單啟發式方法：</p>
+<ol>
+<li>找出擋住直線的障礙物，取它們的軸對齊包圍盒，往外擴張 <code>安全距離 + 6 cm</code>。</li>
+<li>以包圍盒的角落、邊中點、面中心（3×3×3 個點）當候選繞行點，再加上「起點正上方」與「目標正上方」（先抬起再放下）。</li>
+<li>先試只經過 1 個繞行點的路徑，都不行再試 2 個；取總長最短的。</li>
+<li>以 Chaikin 切角法平滑兩次<sup><a href="#ref-15">[15]</a></sup>；平滑後若碰撞就用原本的折線。</li>
+</ol>
+<p>它在「翻過一面牆」「鑽過一個洞」這類結構簡單的場景很快（< 1 ms），但不保證找得到解。</p>
+<h3>RRT-Connect</h3>
+<p>RRT（rapidly-exploring random tree）在空間中隨機取點，從樹上最近的節點往該點延伸一小步（<code>RRT 步長</code>），沒碰撞就加入樹<sup><a href="#ref-12">[12]</a></sup>。RRT-Connect 同時從起點和目標各長一棵樹，每次一棵樹延伸後，另一棵就貪婪地往新節點連過去，兩棵樹接上就找到路徑<sup><a href="#ref-13">[13]</a></sup>。它是機率完備的：只要有解，迭代夠多次就幾乎一定找得到。缺點是路徑曲折、每次不同，所以找到後做 80 次隨機捷徑化（把可以直接連的兩點間的節點刪掉）<sup><a href="#ref-14">[14]</a></sup>再平滑。</p>
+<div class="game"><h4>相關參數</h4>
+<ul><li><b>安全距離</b>：太小會刮牆；太大，第 4 關的洞口在規劃器眼中會「關起來」。</li>
+<li><b>末端速度</b>：末端參考點沿路徑前進的速度。太快時肌肉追不上，追蹤誤差變大。</li>
+<li><b>RRT 迭代上限／步長</b>：步長大搜尋快但鑽不過窄處；迭代少可能失敗（失敗時改用 via-point）。</li></ul>
+<p>目標移動（例如搬運中）時不必整條重規劃：遊戲先嘗試只把舊路徑的起點、終點換掉，兩端線段仍安全就沿用，避免 RRT 每次給出不同路線而讓觸手抖動。</p></div>
+
+<!-- ============================================================ -->
+<h2 id="ik">6. 手臂控制器（逆運動學）<span class="tag octo">章魚</span></h2>
+<p>控制器的輸入是規劃路徑上「現在末端應該在的參考點」<code>tipRef</code>，輸出是每一節的目標位置。這是<b>逆運動學</b>（inverse kinematics, IK）：知道末端要去哪，反推每個關節。可伸縮觸手多了「每節長度」這個自由度，所以還要決定該彎還是該伸。</p>
+<h3>伸長策略（所有控制器共用）</h3>
+<div class="eq">L_need = max(s, |tipRef − base|) × 1.02      s：沿路徑走到參考點的弧長
+L_tot  = clamp( lerp( max(n·l₀, L_need), L_need, e ),  n·l_min,  n·l_max )
+每節長 l = L_tot / n</div>
+<p><code>e</code> 就是面板上的<b>伸長優先度</b>。<code>e = 0</code>：只要靜止長度夠就不伸長，多出來的長度用彎曲吸收；<code>e = 1</code>：總長剛好等於需要的長度，觸手比較直。</p>
+
+<h3 id="fabrik">FABRIK</h3>
+<p>Forward And Backward Reaching Inverse Kinematics<sup><a href="#ref-16">[16]</a></sup>。不算角度，直接在點上反覆做兩趟：</p>
+<ol><li><b>後向</b>：把末端放到目標，往基座方向逐節拉回，每節保持長度 l。</li>
+<li><b>前向</b>：把基座放回原位，往末端方向逐節拉直。</li></ol>
+<p>反覆幾次就收斂。它快、穩定、沒有奇異點問題，是遊戲預設。遊戲加了三件事：前向時限制每節相對上一節的彎角不超過<b>每節最大彎角</b>；每次迭代後用距離場把節點（和節段中點）推出障礙物，推的比例是<b>避障推離強度</b>，越接近目標推得越少，免得推離它要碰的東西。</p>
+
+<h3 id="ccd">CCD（循環座標下降）</h3>
+<p>從最靠近末端的關節開始，往基座逐一旋轉：每個關節 j 轉一個角度，讓「關節→末端」對準「關節→目標」<sup><a href="#ref-17">[17]</a></sup>。每次旋轉限制在最大彎角內。CCD 很簡單，但遠端關節總是先轉，容易把末端捲成一團。第 4 關裡 CCD 常卡在洞口前，就是這個偏好的後果。</p>
+
+<h3 id="dls">DLS（阻尼最小平方）</h3>
+<p>最接近傳統機械臂的方法。把觸手參數化為 <code>q</code>：每節兩個彎角 <code>(a_i, b_i)</code>（在上一節的座標系裡繞兩個垂直軸彎）與每節長度 <code>l_i</code>，共 3n 個變數。正向運動學 <code>p(q)</code> 算得出末端位置後：</p>
+<div class="eq">e  = tipRef − p_tip(q)                  （限制最大 10 cm）
+J  = ∂p_tip/∂q                          （數值差分，每個變數擾動 1e-4）
+Δq = Jᵀ (J Jᵀ + λ² I)⁻¹ e  −  β ∇Φ(q)</div>
+<p>第一項是阻尼最小平方解<sup><a href="#ref-18">[18]</a></sup><sup><a href="#ref-19">[19]</a></sup>：λ 越大，在奇異姿勢附近越穩但越慢；λ 越小越準但會抖。完整推導與比較見 Buss 的講義<sup><a href="#ref-20">[20]</a></sup>。第二項是避障的人工位能場<sup><a href="#ref-21">[21]</a></sup>：</p>
+<div class="eq">Φ(q) = Σ_i w_i · max(0, r_i + c − d(p_i))²     d：距離場，c：0.6 × 安全距離
+∇Φ  = Σ_i −2 w_i · pen_i · ∇d(p_i) · ∂p_i/∂q</div>
+<p>長度變數的雅可比欄位乘上 <code>W = 0.3 + 2e</code>，等於在最小範數解裡讓伸長變便宜或變貴，這就是伸長優先度在 DLS 中的作用。DLS 是局部最佳化，最容易卡在<b>局部極小值</b>：第 4 關末端要先往上鑽洞再往下，梯度只看眼前，常常頂在牆面上。</p>
+
+<h3 id="ftl">Follow-the-leader</h3>
+<p>讓整條身體沿著末端走過的路徑排列：第 i 個節點放在路徑弧長 <code>s · i / n</code> 處。這是蛇形與連續體機器人的經典策略<sup><a href="#ref-22">[22]</a></sup>，同心管機器人也用它在組織中前進而不掃到周圍<sup><a href="#ref-23">[23]</a></sup>。身體只要路徑安全就安全，所以<b>完全依賴規劃器</b>。</p>
+<div class="note"><b>和藤蔓機器人的差別</b>：這個控制器是用「會動的肌肉手臂」去<b>模仿</b>沿路徑排列，新指令時整條手臂會重新排列到新路徑。真正的尖端生長是身體一長出來就不能動，見<a href="#vine">第 9 節</a>。</div>
+
+<h3 id="bend">章魚彎曲傳播</h3>
+<p>章魚伸手時，手臂上會先出現一個彎曲點，這個彎曲點沿手臂從基部往末端推進；彎曲點之前的近端已經伸直指向目標，之後的遠端還捲著<sup><a href="#ref-8">[8]</a></sup>。這個運動程式存在手臂的周邊神經裡<sup><a href="#ref-9">[9]</a></sup>，生物力學模型顯示它是一種省能量的伸手方式<sup><a href="#ref-10">[10]</a></sup>。章魚把食物送回嘴邊時則會把手臂折成類似人類手臂的三段，形成「準關節」<sup><a href="#ref-11">[11]</a></sup>。</p>
+<div class="game"><h4>遊戲中的做法（純運動學）</h4>
+<p>總長取為路徑長（受伸縮上下限限制）。彎曲點的弧長位置 <code>s</code> 以末端速度推進；<code>s</code> 之前的節點放在規劃路徑上，<code>s</code> 之後的節點從彎曲點開始捲曲，曲率沿遠端增加：</p>
+<div class="eq">θ'(σ) = κ · (0.4 + 1.6 σ / L_rest)     κ：遠端捲曲曲率</div>
+<p>新指令時 <code>s</code> 歸零，所以每次伸手都能看到「從基部往外展開」。這是運動學近似，沒有模擬真實章魚的肌肉活化波。</p></div>
+
+<h3 id="custom">自訂 JS</h3>
+<p>選「自訂 JS」可以直接寫 <code>controller(ctx)</code>，每幀被呼叫一次，回傳 n+1 個目標點。<code>ctx</code> 提供基座、目標、規劃路徑、上一幀目標、實際節點、每節長度上下限、所有參數，以及 <code>pushOut</code>（推離障礙物）、<code>sdf</code>（距離場）、<code>pointAt</code>（路徑上的點）等工具。回傳不合法或程式出錯時，那一幀會改用 FABRIK，錯誤訊息顯示在程式碼下方。</p>
+
+<!-- ============================================================ -->
+<h2 id="grasp">7. 局部抓握反射 <span class="tag octo">章魚</span></h2>
+<p>章魚抓東西時，手臂與吸盤之間有細緻的協調：手臂先繞住物體，吸盤再一個接一個貼上<sup><a href="#ref-25">[25]</a></sup>。吸盤靠肌肉改變腔室體積產生負壓，形成吸附<sup><a href="#ref-26">[26]</a></sup>。仿章魚的錐形軟體致動器加上吸盤，也能明顯改善抓取能力<sup><a href="#ref-27">[27]</a></sup>。遊戲把這一層做成「局部反射」：大腦只說「抓」，之後的纏繞與吸附由末端自己完成。</p>
+<div class="game"><h4>遊戲中的做法</h4>
+<ol>
+<li><b>接近</b>：末端走到物體靠近使用者那一側、距表面約 7 cm 的接近點。距離小於<b>觸發纏繞距離</b>就進入纏繞。</li>
+<li><b>纏繞</b>：末端 k 節（<b>參與纏繞的節數</b>）的目標改成繞著物體軸的螺旋：
+<div class="eq">θ_j = twist + (j/k) · turns · 2π           j = 0…k
+p_j = C + R_j (u cos θ_j + w sin θ_j) + a·h_j      R_j = 物體半徑 + 該節半徑 + 4 mm</div>
+纏繞進度 <code>w</code> 以<b>纏繞速度</b>從 0 增加到 1；進度 w 之前的節點貼著螺旋，之後的節點沿該點切線伸出，所以末端是「捲過去」而不是瞬間跳上去。其餘 n−k 節交給控制器，把第 n−k 節送到螺旋起點。</li>
+<li><b>抓握品質</b>：實際節點中，離物體表面小於「節半徑 + 3 cm」的比例。纏完時品質 ≥ 50% 才算抓住。</li>
+<li><b>抓力</b>：<code>抓力 × 品質 × 2.2 N</code> 要大於物體重量 <code>m·g</code>，不足超過 0.35 秒就滑落；門把則要 <code>抓力 × 品質 ≥ 0.9</code> 才轉得動。這些係數是<b>遊戲設定</b>，不是吸盤物理。</li>
+<li><b>扭轉</b>：扭轉指令讓螺旋整體旋轉；門把角度不是直接等於指令，而是從實際節點繞門把轉了多少量出來，所以抓不牢時會打滑。</li>
+</ol></div>
+
+<!-- ============================================================ -->
+<h2 id="physics">8. 軟體物理 <span class="tag octo">章魚</span></h2>
+<p>控制器只給出「目標形狀」。真正的觸手有重量、會晃、會碰撞，要靠「肌肉」去追。這一層讓參數不對時真的做不到，而不是一切照指令完美執行。</p>
+<h3>Verlet 積分與約束投影</h3>
+<p>每個節點用 Verlet 積分推進（位置隱含速度），再反覆把節點投影回約束（長度、碰撞），這是遊戲物理常用、很穩定的做法<sup><a href="#ref-28">[28]</a></sup>，也是 Position Based Dynamics 的核心<sup><a href="#ref-29">[29]</a></sup>。時間步長 1/120 秒，每步 4 次約束迭代：</p>
+<div class="eq">v ← (p − p_prev)(1 − 阻尼)
+a = k (T − p)  −  g  +  g·補償 · (1 + 負重)  +  雜訊
+p ← p + v + a·Δt²
+約束：節長 = clamp(|T_i − T_{i−1}|, l_min, l_max)；被動彎曲；碰撞（節點與節段中點）</div>
+<ul>
+<li><b>肌肉剛性 k</b>：把節點拉向目標的「彈簧」。肌肉像可調設定點的彈簧，與運動控制的平衡點假說同一個概念<sup><a href="#ref-30">[30]</a></sup>。靜態下垂量約為 <code>g(1 − 補償)/k</code>。</li>
+<li><b>重力前饋補償</b>：肌肉預先出力抵銷自重和負重，1 = 完全抵銷。</li>
+<li><b>被動彎曲剛性</b>：把「實際曲率」拉回「指令曲率」，而不是把觸手拉直，否則纏繞會被彈開。</li>
+<li><b>碰撞</b>：節點與節段中點都用距離場推出障礙物，避免長節段穿過薄牆。</li>
+</ul>
+<div class="note">更嚴謹的軟體肢體模型會用 Cosserat 桿理論，同時處理彎曲、扭轉、剪切與伸長<sup><a href="#ref-32">[32]</a></sup><sup><a href="#ref-33">[33]</a></sup>。遊戲的節點鏈沒有扭轉與剪切，只適合用來比較控制策略，不能拿來估計真實的力。</div>
+
+<!-- ============================================================ -->
+<h2 id="vine">9. 藤蔓機器人：實際是怎麼做的 <span class="tag vine">藤蔓</span></h2>
+<p>藤蔓機器人（vine robot，又稱 soft growing robot）由 Hawkes、Okamura 等人在 2017 年發表<sup><a href="#ref-34">[34]</a></sup>。它模仿的是植物與真菌菌絲的<b>尖端生長</b>：只在尖端增加新的身體，已長出的部分不動。設計、建模、控制與應用的完整回顧見<sup><a href="#ref-37">[37]</a></sup>，實際操作與部署經驗見<sup><a href="#ref-38">[38]</a></sup>。植物根系啟發、以尖端積層製造生長的機器人是另一條路線<sup><a href="#ref-46">[46]</a></sup>。</p>
+
+<h3 id="vine-how">9.1 外翻（eversion）</h3>
+<figure>
+<svg viewBox="0 0 760 240" role="img" aria-label="藤蔓機器人剖面示意圖：基座捲軸釋放內翻的尾巴，尾巴在管內往尖端移動，在尖端外翻成新的外壁">
+  <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="svg-vine"/></marker>
+  <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="svg-octo"/></marker></defs>
+  <!-- canister -->
+  <rect x="20" y="62" width="96" height="116" rx="10" class="svg-ink" stroke-width="2"/>
+  <circle cx="62" cy="120" r="30" class="svg-ink" stroke-width="2"/><circle cx="62" cy="120" r="5" class="svg-muted"/>
+  <text x="68" y="200" text-anchor="middle" class="svg-text" font-size="13">壓力腔＋捲軸</text>
+  <!-- outer wall -->
+  <path d="M116 80 H560 A40 40 0 0 1 560 160 H116" class="svg-ink" stroke-width="3" style="stroke:var(--vine)"/>
+  <!-- tail -->
+  <path d="M90 104 H548 A16 16 0 0 1 548 136 H90" class="svg-ink" stroke-width="2" stroke-dasharray="7 4"/>
+  <!-- arrows -->
+  <line x1="230" y1="129" x2="330" y2="129" stroke-width="2" style="stroke:var(--vine)" marker-end="url(#ar2)"/>
+  <text x="280" y="122" text-anchor="middle" class="svg-text" font-size="12">尾巴往前送（2v）</text>
+  <line x1="610" y1="120" x2="680" y2="120" stroke-width="2.5" style="stroke:var(--octo)" marker-end="url(#ar3)"/>
+  <text x="690" y="125" class="svg-text" font-size="13" font-weight="700">v</text>
+  <text x="330" y="66" text-anchor="middle" class="svg-text" font-size="13">外壁＝身體：已長出，相對環境靜止</text>
+  <text x="600" y="190" text-anchor="middle" class="svg-text" font-size="13">尖端：材料在此翻出，長出新身體</text>
+  <text x="430" y="96" class="svg-muted" font-size="13" font-weight="700">P</text>
+  <text x="430" y="152" class="svg-muted" font-size="13" font-weight="700">P</text>
+  <text x="200" y="225" text-anchor="middle" class="svg-muted" font-size="12">虛線＝還沒外翻的材料（尾巴）</text>
+</svg>
+<figcaption>剖面示意。薄膜管預先「內翻」收在捲軸上；通氣後，內部壓力把管壁從尖端往外翻出。尖端以速度 v 前進時，管內的尾巴相對基座以 2v 移動<sup><a href="#ref-37">[37]</a></sup>。</figcaption>
+</figure>
+<p>身體是一條<b>薄壁、幾乎不可伸長</b>的管子，一開始整條內翻、捲在基座的壓力腔裡。常見材料有三類<sup><a href="#ref-37">[37]</a></sup>：低密度聚乙烯（LDPE）薄膜便宜、幾乎不延展，但反覆外翻數十次就會疲勞；TPU 可延展到約 50%，常需要外包限制應變的布；尼龍防裂布（ripstop）沿纖維方向幾乎不伸長，浸矽膠的版本自身摩擦低、外翻所需壓力也比較低。打氣後，內部壓力把管壁從尖端翻出來，管子就從尖端「長」出去。捲軸的馬達控制放料速度，也就控制了生長速度。這帶來幾個獨特的性質<sup><a href="#ref-34">[34]</a></sup><sup><a href="#ref-37">[37]</a></sup>：</p>
+<ul>
+<li><b>身體不滑動</b>：外壁一長出來就不再相對環境移動，沒有滑動摩擦，可以穿過黏的、尖的、很窄的地方，或被夾住也照樣往前長。</li>
+<li><b>身體＝尖端的軌跡</b>：天然就是 follow-the-leader，不需要控制器去排列身體。</li>
+<li><b>長度只受材料限制</b>：捲軸裡有多少材料就能長多長。</li>
+<li><b>代價</b>：已長出的部分改不了路線；基座不能移動；收回很麻煩（<a href="#vine-retract">9.5</a>）；傳不了扭矩。</li>
+</ul>
+<div class="game v"><h4>遊戲中的做法</h4>
+<p>身體以每 2 cm 一個點的折線儲存在世界座標中，<b>長出後就不再改變</b>（管身上每 10 cm 一道環紋，收回、伸長時環紋都不動，可以直接看到「身體不滑動」）。只有最後一個點（尖端）會移動。藤蔓展開後玩家無法走動，因為基座固定在環境裡。</p></div>
+
+<h3 id="vine-growth">9.2 生長速度：壓力要先超過門檻</h3>
+<p>植物細胞的生長有一個經典模型：細胞壁只有在膨壓超過屈服門檻後才會不可逆地延伸，生長速率正比於超出的部分（Lockhart 方程）<sup><a href="#ref-36">[36]</a></sup>。Blumenschein 等人為藤蔓機器人建立了結構類似的<b>準靜態力平衡</b>模型（慣性可忽略）<sup><a href="#ref-35">[35]</a></sup><sup><a href="#ref-37">[37]</a></sup>：</p>
+<ul>
+<li>驅動力是內部壓力乘上尖端截面積。</li>
+<li>尖端的損失：讓材料外翻的<b>屈服</b>門檻，加上與生長速度有關的<b>黏滯</b>阻力。</li>
+<li>身體的損失：尾巴在身體裡被拖行的摩擦（與尾巴長度成正比），以及尾巴繞過彎道時的<b>絞盤（capstan）摩擦</b>，隨轉彎角度呈<b>指數</b>增加。</li>
+</ul>
+<div class="game v"><h4>遊戲中的簡化公式</h4>
+<p>把黏滯項取為線性（v ∝ 超出門檻的壓力），力換算成等效壓力：</p>
+<div class="eq">Y = Y₀ + c_L · L · e^(μΘ)                  （kPa）
+v = min( K · (P − Y),  v_reel )             P ≤ Y 時 v = 0</div>
+<ul>
+<li><code>P</code> 內部氣壓、<code>Y₀</code> 屈服壓力、<code>c_L</code> 尾巴摩擦、<code>μ</code> 轉彎摩擦係數、<code>K</code> 生長增益（黏滯係數的倒數）、<code>v_reel</code> 捲軸放料上限（面板的「末端速度」）。</li>
+<li><code>L</code> 已長出的長度；<code>Θ</code> 身體上所有轉彎角度的總和（即時數據的「累積轉角」）。</li>
+<li>預設值下，直直長 2 m 只需要約 3.6 kPa；同樣 2 m 但累積轉了 360°，阻力變成 2 + 1.6 × e^(0.2·2π) ≈ 7.6 kPa，幾乎吃掉全部 8 kPa。這就是為什麼藤蔓<b>不喜歡蛇行</b>：轉轉彎彎的路線會讓它長不動。</li>
+</ul>
+<p>真實的係數要用實驗量出來，和材料、管徑、壓力都有關<sup><a href="#ref-35">[35]</a></sup>；遊戲只保留「門檻＋隨長度增加、隨轉彎指數放大的損失」這個結構。</p></div>
+
+<h3 id="vine-steer">9.3 轉向：只有尖端能決定方向</h3>
+<p>藤蔓機器人有三類轉向方式<sup><a href="#ref-37">[37]</a></sup>：</p>
+<ol>
+<li><b>被動：讓環境導引</b>。尖端撞到斜面會順著表面滑過去。Greer 等人證明，善用這種接觸，配合簡單的規劃，就能在充滿障礙的環境中可靠地抵達目標<sup><a href="#ref-40">[40]</a></sup>。</li>
+<li><b>預先設定形狀</b>：製作時就決定在哪裡轉彎，例如把身體材料捏起來用膠帶固定，長到那裡就是一個固定的彎<sup><a href="#ref-34">[34]</a></sup>，或把材料在模具上熱定型<sup><a href="#ref-37">[37]</a></sup>。</li>
+<li><b>主動轉向</b>：
+  <ul>
+  <li><b>尖端局部釋放</b>：Hawkes 等人在身體兩側預存應變，用機械閂扣鎖住，再對沿身體排列的小氣袋加壓，只在尖端釋放閂扣，讓那一側在尖端變長而轉彎；控制上是「左、右、直」三種指令的開關式控制<sup><a href="#ref-34">[34]</a></sup><sup><a href="#ref-37">[37]</a></sup>。</li>
+  <li><b>串聯氣囊人工肌肉</b>：沿身體兩側貼上一串會收縮的氣囊（series pouch motor／sPAM，最大收縮約 20–40%），充氣時那一側縮短，身體就彎過去<sup><a href="#ref-39">[39]</a></sup><sup><a href="#ref-37">[37]</a></sup>。</li>
+  <li><b>腱繩</b>：在管身表面佈線，用馬達拉線<sup><a href="#ref-37">[37]</a></sup>。</li>
+  </ul>
+  各種方式的轉彎半徑都有下限，就是遊戲裡的最大轉向曲率 κ。</li>
+</ol>
+<div class="game v"><h4>遊戲中的做法</h4>
+<p>尖端每前進一小段 ds（≤ 1 cm）：</p>
+<ol>
+<li><b>期望方向</b>：「追蹤規劃路徑」用 pure pursuit<sup><a href="#ref-41">[41]</a></sup>，把尖端投影到路徑上，瞄準前方<b>前視距離</b>處的點；「直接朝目標」就瞄準目標；「不主動轉向」則完全不轉。</li>
+<li><b>曲率限制</b>：往期望方向轉，但每段最多轉 <code>κ · ds</code>。κ 太小會轉不過去而錯過目標；藤蔓不能倒退，錯過了只能收回一段再長。</li>
+<li><b>接觸滑動</b>：前進後若碰到障礙，把前進方向減去朝向牆內的分量，順著表面滑。剩下的切向分量太小（幾乎正面撞上）就停止並提示。</li>
+</ol>
+<p>試試把轉向策略設成「不主動轉向」：第 4 關裡從洞口正前方往裡長，藤蔓會沿著牆和地面滑，這就是真實 vine robot 常用的導航方式。</p></div>
+
+<h3 id="vine-stiffness">9.4 剛性與下垂：充氣樑的塌陷彎矩</h3>
+<p>藤蔓的身體是一根充氣樑。彎曲時受壓側的膜張力會先降到零而起皺；彎矩繼續增加，起皺區擴大到半圈，樑就失去抗彎能力而塌下來。Comer 與 Levy 分析充氣圓管懸臂樑，得到塌陷彎矩<sup><a href="#ref-42">[42]</a></sup>：</p>
+<div class="eq">M_c = π · P · r³          （= π P D³ / 8；起皺開始於 M_c 的一半）</div>
+<p>剛性和<b>管徑的三次方</b>成正比，所以管子粗一點差很多；提高壓力則是線性增加。懸空太長時，身體自重和尖端負重產生的彎矩超過 M_c，藤蔓就會塌下來。McFarland 與 Coad 用這個塌陷彎矩加上自重彎矩，預測直線藤蔓在自重下的塌陷長度：塌陷長度隨管徑線性增加、隨壓力的平方根增加，並且和發射角度有關<sup><a href="#ref-47">[47]</a></sup>。這也是真實藤蔓機器人很少懸空長很遠、常常沿著地面或牆面長的原因<sup><a href="#ref-37">[37]</a></sup>。</p>
+<div class="game v"><h4>遊戲中的做法</h4>
+<div class="eq">w = 2 · (2πr) · σ · g                       兩層膜（外壁＋身體裡的尾巴），N/m
+M = w · L_u · h / 2  +  F · h                L_u：從最後一個支撐點到尖端的弧長
+                                             h：水平距離；F：夾著物體的重量
+M > M_c  →  尖端不能再往上抬，而且往下折</div>
+<p>水平、空載時，臨界長度 <code>L = √(2 M_c / w) ∝ √(P r³ / r) = r √P</code>，和 [47] 的實驗趨勢一致（線性於管徑、平方根於壓力）。</p>
+<p>「支撐點」是基座，或身體長出時靠在東西上的位置。預設值（P = 8 kPa、r = 2.5 cm、σ = 60 g/m²）下 M_c ≈ 0.39 N·m，空載時水平懸臂可以撐約 2.1 m；但夾一顆 100 g 的球時只剩約 39 cm（P = 16 kPa 時約 75 cm）。所以第 2 關用藤蔓搬球，要嘛提高壓力，要嘛讓藤蔓往下長、靠在東西上。</p>
+<p>這是很粗的近似：真實的塌陷是整條身體在某處折彎，這裡只改變尖端的生長方向。</p></div>
+
+<h3 id="vine-retract">9.5 收回：從基部拉會挫屈</h3>
+<p>最直覺的收回方法是在基座把尾巴捲回去，讓身體從尖端「內翻」回來。問題在於：讓尖端內翻需要的拉力與身體長度無關，但身體能承受的彎曲與挫屈臨界載重會隨長度下降（彎曲的身體更低）。所以超過某個長度後，拉尾巴的力會先讓身體在中途彎折、挫屈，而不是從尖端收回。Coad 等人分析了這個現象，並設計了裝在尖端內部的收回裝置，直接在尖端施力把材料拉回，讓收回時幾乎不可能挫屈<sup><a href="#ref-43">[43]</a></sup><sup><a href="#ref-37">[37]</a></sup>。</p>
+<div class="game v"><h4>遊戲中的做法</h4>
+<p>收回時尖端沿原路退回，夾著的物體也沿原路回來（第 2 關可以利用這點把球從牆後拉回來）。選「直接從基部拉尾巴」時，若 <code>L · (1 + Θ/2) > 0.8 m</code>（太長或太彎）就視為挫屈：收回速度降為 20%，並累計挫屈時間。這個門檻是遊戲設定；真實的挫屈會讓身體變形，這裡只用速度表示。</p></div>
+
+<h3 id="vine-tip">9.6 尖端工具與應用</h3>
+<p>因為尖端的材料一直在更換，工具不能直接黏在管壁上，必須能相對身體材料移動。已有的做法包括用管內的纜線拉住、靠與管壁的摩擦、磁鐵，以及滾動互鎖結構；Jeong 等人分析這些設計並提出設計原則，他們的 tip mount 能攜帶相機與夾爪，可承受約 7 kg 拉力、抬起約 2.5 kg<sup><a href="#ref-44">[44]</a></sup><sup><a href="#ref-37">[37]</a></sup>。遊戲中藤蔓的「夾取」就是假設尖端有這樣的夾爪。</p>
+<p>藤蔓能施力，但施力的方式是「生長」：Hawkes 等人展示了靠生長推動閥門把手，以及長進小縫後當氣壓千斤頂抬起超過 75 kg 的物體<sup><a href="#ref-34">[34]</a></sup><sup><a href="#ref-37">[37]</a></sup>。圓形門把則需要繞軸<b>扭轉</b>，充氣薄膜身體傳不了扭矩，尖端也沒有旋轉機構，所以遊戲中藤蔓<b>轉不了門把</b>。這是設計上的取捨，不是遊戲偷懶。</p>
+<p>實地應用上，Coad 等人把遙控藤蔓機器人帶到考古遺址，越過石塊並通過水平與垂直的轉彎<sup><a href="#ref-38">[38]</a></sup>；在尖端吹氣讓顆粒流體化，則能在沙中快速鑽行並轉向<sup><a href="#ref-45">[45]</a></sup>。</p>
+
+<h3>9.7 對擴增肢體的意義</h3>
+<p>對「穿戴在人身上的可伸縮肢體」來說，兩種做法剛好互補：章魚式肌肉肢體擅長<b>操作</b>（纏繞、扭轉、隨時調整）；尖端生長擅長<b>抵達</b>（伸很長、穿過狹窄或混亂的空間、不刮傷周圍）。一個可能的組合是用尖端生長把「小章魚手」送到遠處，再由末端的肌肉段負責操作。遊戲裡兩種模式跑同樣的關卡，就是為了讓這個取捨看得見。</p>
+
+<!-- ============================================================ -->
+<h2 id="limits">10. 簡化與限制</h2>
+<ul>
+<li><b>力學</b>：章魚觸手是節點鏈加彈簧，沒有扭轉與剪切；藤蔓的下垂只影響尖端方向。兩者都只適合比較控制策略，不能拿來估計真實的力或速度。</li>
+<li><b>抓握</b>：吸盤吸附、門把阻力、夾爪都是用門檻值表示的遊戲規則，不是接觸力學。</li>
+<li><b>感測</b>：所有層都知道障礙物的精確形狀（距離場）。真實的擴增肢體得靠相機、觸覺或接觸本身去「發現」環境；藤蔓利用接觸導航<sup><a href="#ref-40">[40]</a></sup>就是一種不需要完整地圖的策略。</li>
+<li><b>指令介面</b>：遊戲用滑鼠與按鍵發出指令。真實擴增肢體的指令來源（肌電、眼動、腳部動作等）與它造成的神經資源競爭，是另一個大問題<sup><a href="#ref-1">[1]</a></sup><sup><a href="#ref-2">[2]</a></sup>，可參考<a href="../../project-ideas/">專題構想</a>中的肌電「第六指」。</li>
+<li><b>規劃</b>：只規劃末端，而且假設環境靜止、完全已知。</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="refs">參考文獻</h2>
+<h4>擴增肢體與軟體機器人</h4>
+<ol class="refs">
+<li id="ref-1">Eden, J., Bräcklein, M., Ibáñez, J., et al. (2022). Principles of human movement augmentation and the challenges in making it a reality. <i>Nature Communications</i>, 13, 1345. <a href="https://doi.org/10.1038/s41467-022-28725-7">doi:10.1038/s41467-022-28725-7</a></li>
+<li id="ref-2">Dominijanni, G., Shokur, S., Salvietti, G., et al. (2021). The neural resource allocation problem when enhancing human bodies with extra robotic limbs. <i>Nature Machine Intelligence</i>, 3, 850–860. <a href="https://doi.org/10.1038/s42256-021-00398-9">doi:10.1038/s42256-021-00398-9</a></li>
+<li id="ref-3">Prattichizzo, D., Pozzi, M., Lisini Baldi, T., Malvezzi, M., Hussain, I., Rossi, S., &amp; Salvietti, G. (2021). Human augmentation by wearable supernumerary robotic limbs: review and perspectives. <i>Progress in Biomedical Engineering</i>, 3(4), 042005. <a href="https://doi.org/10.1088/2516-1091/ac2294">doi:10.1088/2516-1091/ac2294</a></li>
+<li id="ref-4">Rus, D., &amp; Tolley, M. T. (2015). Design, fabrication and control of soft robots. <i>Nature</i>, 521, 467–475. <a href="https://doi.org/10.1038/nature14543">doi:10.1038/nature14543</a></li>
+<li id="ref-5">Laschi, C., Cianchetti, M., Mazzolai, B., Margheri, L., Follador, M., &amp; Dario, P. (2012). Soft robot arm inspired by the octopus. <i>Advanced Robotics</i>, 26(7), 709–727. <a href="https://doi.org/10.1163/156855312X626343">doi:10.1163/156855312X626343</a></li>
+</ol>
+<h4>章魚手臂</h4>
+<ol class="refs" start="6">
+<li id="ref-6">Kier, W. M., &amp; Smith, K. K. (1985). Tongues, tentacles and trunks: the biomechanics of movement in muscular-hydrostats. <i>Zoological Journal of the Linnean Society</i>, 83(4), 307–324. <a href="https://doi.org/10.1111/j.1096-3642.1985.tb01178.x">doi:10.1111/j.1096-3642.1985.tb01178.x</a></li>
+<li id="ref-7">Hochner, B. (2012). An embodied view of octopus neurobiology. <i>Current Biology</i>, 22(20), R887–R892. <a href="https://doi.org/10.1016/j.cub.2012.09.001">doi:10.1016/j.cub.2012.09.001</a></li>
+<li id="ref-8">Gutfreund, Y., Flash, T., Yarom, Y., Fiorito, G., Segev, I., &amp; Hochner, B. (1996). Organization of octopus arm movements: a model system for studying the control of flexible arms. <i>Journal of Neuroscience</i>, 16(22), 7297–7307. <a href="https://doi.org/10.1523/JNEUROSCI.16-22-07297.1996">doi:10.1523/JNEUROSCI.16-22-07297.1996</a></li>
+<li id="ref-9">Sumbre, G., Gutfreund, Y., Fiorito, G., Flash, T., &amp; Hochner, B. (2001). Control of octopus arm extension by a peripheral motor program. <i>Science</i>, 293(5536), 1845–1848. <a href="https://doi.org/10.1126/science.1060976">doi:10.1126/science.1060976</a></li>
+<li id="ref-10">Yekutieli, Y., Sagiv-Zohar, R., Aharonov, R., Engel, Y., Hochner, B., &amp; Flash, T. (2005). Dynamic model of the octopus arm. I. Biomechanics of the octopus reaching movement. <i>Journal of Neurophysiology</i>, 94(2), 1443–1458. <a href="https://doi.org/10.1152/jn.00684.2004">doi:10.1152/jn.00684.2004</a></li>
+<li id="ref-11">Sumbre, G., Fiorito, G., Flash, T., &amp; Hochner, B. (2006). Octopuses use a human-like strategy to control precise point-to-point arm movements. <i>Current Biology</i>, 16(8), 767–772. <a href="https://doi.org/10.1016/j.cub.2006.02.069">doi:10.1016/j.cub.2006.02.069</a></li>
+</ol>
+<h4>路徑規劃</h4>
+<ol class="refs" start="12">
+<li id="ref-12">LaValle, S. M. (1998). <i>Rapidly-exploring random trees: A new tool for path planning</i> (Tech. Rep. TR 98-11). Computer Science Department, Iowa State University.</li>
+<li id="ref-13">Kuffner, J. J., &amp; LaValle, S. M. (2000). RRT-Connect: An efficient approach to single-query path planning. <i>Proc. IEEE International Conference on Robotics and Automation (ICRA)</i>, 995–1001. <a href="https://doi.org/10.1109/ROBOT.2000.844730">doi:10.1109/ROBOT.2000.844730</a></li>
+<li id="ref-14">Geraerts, R., &amp; Overmars, M. H. (2007). Creating high-quality paths for motion planning. <i>International Journal of Robotics Research</i>, 26(8), 845–863. <a href="https://doi.org/10.1177/0278364907079280">doi:10.1177/0278364907079280</a></li>
+<li id="ref-15">Chaikin, G. M. (1974). An algorithm for high-speed curve generation. <i>Computer Graphics and Image Processing</i>, 3(4), 346–349. <a href="https://doi.org/10.1016/0146-664X(74)90028-8">doi:10.1016/0146-664X(74)90028-8</a></li>
+</ol>
+<h4>逆運動學與連續體機器人</h4>
+<ol class="refs" start="16">
+<li id="ref-16">Aristidou, A., &amp; Lasenby, J. (2011). FABRIK: A fast, iterative solver for the Inverse Kinematics problem. <i>Graphical Models</i>, 73(5), 243–260. <a href="https://doi.org/10.1016/j.gmod.2011.05.003">doi:10.1016/j.gmod.2011.05.003</a></li>
+<li id="ref-17">Wang, L.-C. T., &amp; Chen, C. C. (1991). A combined optimization method for solving the inverse kinematics problems of mechanical manipulators. <i>IEEE Transactions on Robotics and Automation</i>, 7(4), 489–499. <a href="https://doi.org/10.1109/70.86079">doi:10.1109/70.86079</a></li>
+<li id="ref-18">Wampler, C. W. (1986). Manipulator inverse kinematic solutions based on vector formulations and damped least-squares methods. <i>IEEE Transactions on Systems, Man, and Cybernetics</i>, 16(1), 93–101. <a href="https://doi.org/10.1109/TSMC.1986.289285">doi:10.1109/TSMC.1986.289285</a></li>
+<li id="ref-19">Nakamura, Y., &amp; Hanafusa, H. (1986). Inverse kinematic solutions with singularity robustness for robot manipulator control. <i>Journal of Dynamic Systems, Measurement, and Control</i>, 108(3), 163–171. <a href="https://doi.org/10.1115/1.3143764">doi:10.1115/1.3143764</a></li>
+<li id="ref-20">Buss, S. R. (2004). <i>Introduction to inverse kinematics with Jacobian transpose, pseudoinverse and damped least squares methods</i>. Unpublished survey, University of California, San Diego.</li>
+<li id="ref-21">Khatib, O. (1986). Real-time obstacle avoidance for manipulators and mobile robots. <i>International Journal of Robotics Research</i>, 5(1), 90–98. <a href="https://doi.org/10.1177/027836498600500106">doi:10.1177/027836498600500106</a></li>
+<li id="ref-22">Choset, H., &amp; Henning, W. (1999). A follow-the-leader approach to serpentine robot motion planning. <i>Journal of Aerospace Engineering</i>, 12(2), 65–73. <a href="https://doi.org/10.1061/(ASCE)0893-1321(1999)12:2(65)">doi:10.1061/(ASCE)0893-1321(1999)12:2(65)</a></li>
+<li id="ref-23">Gilbert, H. B., Neimat, J., &amp; Webster, R. J. (2015). Concentric tube robots as steerable needles: Achieving follow-the-leader deployment. <i>IEEE Transactions on Robotics</i>, 31(2), 246–258. <a href="https://doi.org/10.1109/TRO.2015.2394331">doi:10.1109/TRO.2015.2394331</a></li>
+<li id="ref-24">Webster, R. J., &amp; Jones, B. A. (2010). Design and kinematic modeling of constant curvature continuum robots: A review. <i>International Journal of Robotics Research</i>, 29(13), 1661–1683. <a href="https://doi.org/10.1177/0278364910368147">doi:10.1177/0278364910368147</a></li>
+</ol>
+<h4>抓握</h4>
+<ol class="refs" start="25">
+<li id="ref-25">Grasso, F. W. (2008). Octopus sucker-arm coordination in grasping and manipulation. <i>American Malacological Bulletin</i>, 24(1), 13–23. <a href="https://doi.org/10.4003/0740-2783-24.1.13">doi:10.4003/0740-2783-24.1.13</a></li>
+<li id="ref-26">Tramacere, F., Beccai, L., Kuba, M., Gozzi, A., Bifone, A., &amp; Mazzolai, B. (2013). The morphology and adhesion mechanism of <i>Octopus vulgaris</i> suckers. <i>PLoS ONE</i>, 8(6), e65074. <a href="https://doi.org/10.1371/journal.pone.0065074">doi:10.1371/journal.pone.0065074</a></li>
+<li id="ref-27">Xie, Z., Domel, A. G., An, N., Green, C., Gong, Z., Wang, T., Knubben, E. M., Weaver, J. C., Bertoldi, K., &amp; Wen, L. (2020). Octopus arm-inspired tapered soft actuators with suckers for improved grasping. <i>Soft Robotics</i>, 7(5), 639–648. <a href="https://doi.org/10.1089/soro.2019.0082">doi:10.1089/soro.2019.0082</a></li>
+</ol>
+<h4>物理模擬與運動控制</h4>
+<ol class="refs" start="28">
+<li id="ref-28">Jakobsen, T. (2001). Advanced character physics. <i>Game Developers Conference 2001</i>.</li>
+<li id="ref-29">Müller, M., Heidelberger, B., Hennix, M., &amp; Ratcliff, J. (2007). Position based dynamics. <i>Journal of Visual Communication and Image Representation</i>, 18(2), 109–118. <a href="https://doi.org/10.1016/j.jvcir.2007.01.005">doi:10.1016/j.jvcir.2007.01.005</a></li>
+<li id="ref-30">Feldman, A. G. (1986). Once more on the equilibrium-point hypothesis (λ model) for motor control. <i>Journal of Motor Behavior</i>, 18(1), 17–54. <a href="https://doi.org/10.1080/00222895.1986.10735369">doi:10.1080/00222895.1986.10735369</a></li>
+<li id="ref-31">Hart, J. C. (1996). Sphere tracing: a geometric method for the antialiased ray tracing of implicit surfaces. <i>The Visual Computer</i>, 12(10), 527–545. <a href="https://doi.org/10.1007/s003710050084">doi:10.1007/s003710050084</a></li>
+<li id="ref-32">Till, J., Aloi, V., &amp; Rucker, C. (2019). Real-time dynamics of soft and continuum robots based on Cosserat rod models. <i>International Journal of Robotics Research</i>, 38(6), 723–746. <a href="https://doi.org/10.1177/0278364919842269">doi:10.1177/0278364919842269</a></li>
+<li id="ref-33">Gazzola, M., Dudte, L. H., McCormick, A. G., &amp; Mahadevan, L. (2018). Forward and inverse problems in the mechanics of soft filaments. <i>Royal Society Open Science</i>, 5, 171628. <a href="https://doi.org/10.1098/rsos.171628">doi:10.1098/rsos.171628</a></li>
+</ol>
+<h4>藤蔓機器人與尖端生長</h4>
+<ol class="refs" start="34">
+<li id="ref-34">Hawkes, E. W., Blumenschein, L. H., Greer, J. D., &amp; Okamura, A. M. (2017). A soft robot that navigates its environment through growth. <i>Science Robotics</i>, 2(8), eaan3028. <a href="https://doi.org/10.1126/scirobotics.aan3028">doi:10.1126/scirobotics.aan3028</a></li>
+<li id="ref-35">Blumenschein, L. H., Okamura, A. M., &amp; Hawkes, E. W. (2017). Modeling of bioinspired apical extension in a soft robot. In <i>Biomimetic and Biohybrid Systems (Living Machines 2017)</i>, LNCS 10384, 522–531. Springer. <a href="https://doi.org/10.1007/978-3-319-63537-8_45">doi:10.1007/978-3-319-63537-8_45</a></li>
+<li id="ref-36">Lockhart, J. A. (1965). An analysis of irreversible plant cell elongation. <i>Journal of Theoretical Biology</i>, 8(2), 264–275. <a href="https://doi.org/10.1016/0022-5193(65)90077-9">doi:10.1016/0022-5193(65)90077-9</a></li>
+<li id="ref-37">Blumenschein, L. H., Coad, M. M., Haggerty, D. A., Okamura, A. M., &amp; Hawkes, E. W. (2020). Design, modeling, control, and application of everting vine robots. <i>Frontiers in Robotics and AI</i>, 7, 548266. <a href="https://doi.org/10.3389/frobt.2020.548266">doi:10.3389/frobt.2020.548266</a></li>
+<li id="ref-38">Coad, M. M., Blumenschein, L. H., Cutler, S., Reyna Zepeda, J. A., Naclerio, N. D., El-Hussieny, H., Mehmood, U., Ryu, J.-H., Hawkes, E. W., &amp; Okamura, A. M. (2020). Vine robots: Design, teleoperation, and deployment for navigation and exploration. <i>IEEE Robotics &amp; Automation Magazine</i>, 27(3), 120–132. <a href="https://doi.org/10.1109/MRA.2019.2947538">doi:10.1109/MRA.2019.2947538</a></li>
+<li id="ref-39">Greer, J. D., Morimoto, T. K., Okamura, A. M., &amp; Hawkes, E. W. (2019). A soft, steerable continuum robot that grows via tip extension. <i>Soft Robotics</i>, 6(1), 95–108. <a href="https://doi.org/10.1089/soro.2018.0034">doi:10.1089/soro.2018.0034</a></li>
+<li id="ref-40">Greer, J. D., Blumenschein, L. H., Alterovitz, R., Hawkes, E. W., &amp; Okamura, A. M. (2020). Robust navigation of a soft growing robot by exploiting contact with the environment. <i>International Journal of Robotics Research</i>, 39(14), 1724–1738. <a href="https://doi.org/10.1177/0278364920903774">doi:10.1177/0278364920903774</a></li>
+<li id="ref-41">Coulter, R. C. (1992). <i>Implementation of the pure pursuit path tracking algorithm</i> (Tech. Rep. CMU-RI-TR-92-01). Robotics Institute, Carnegie Mellon University.</li>
+<li id="ref-42">Comer, R. L., &amp; Levy, S. (1963). Deflections of an inflated circular-cylindrical cantilever beam. <i>AIAA Journal</i>, 1(7), 1652–1655. <a href="https://doi.org/10.2514/3.1873">doi:10.2514/3.1873</a></li>
+<li id="ref-43">Coad, M. M., Thomasson, R. P., Blumenschein, L. H., Usevitch, N. S., Hawkes, E. W., &amp; Okamura, A. M. (2020). Retraction of soft growing robots without buckling. <i>IEEE Robotics and Automation Letters</i>, 5(2), 2115–2122. <a href="https://doi.org/10.1109/LRA.2020.2970629">doi:10.1109/LRA.2020.2970629</a></li>
+<li id="ref-44">Jeong, S.-G., Coad, M. M., Blumenschein, L. H., Luo, M., Mehmood, U., Kim, J. H., Okamura, A. M., &amp; Ryu, J.-H. (2020). A tip mount for transporting sensors and tools using soft growing robots. <i>Proc. IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</i>, 8781–8788. <a href="https://doi.org/10.1109/IROS45743.2020.9340950">doi:10.1109/IROS45743.2020.9340950</a></li>
+<li id="ref-45">Naclerio, N. D., Karsai, A., Murray-Cooper, M., Ozkan-Aydin, Y., Aydin, E., Goldman, D. I., &amp; Hawkes, E. W. (2021). Controlling subterranean forces enables a fast, steerable, burrowing soft robot. <i>Science Robotics</i>, 6(55), eabe2922. <a href="https://doi.org/10.1126/scirobotics.abe2922">doi:10.1126/scirobotics.abe2922</a></li>
+<li id="ref-46">Sadeghi, A., Mondini, A., &amp; Mazzolai, B. (2017). Toward self-growing soft robots inspired by plant roots and based on additive manufacturing technologies. <i>Soft Robotics</i>, 4(3), 211–223. <a href="https://doi.org/10.1089/soro.2016.0080">doi:10.1089/soro.2016.0080</a></li>
+<li id="ref-47">McFarland, C., &amp; Coad, M. M. (2023). Collapse of straight soft growing inflated beam robots under their own weight. <i>Proc. IEEE International Conference on Soft Robotics (RoboSoft)</i>, 1–8. <a href="https://doi.org/10.1109/RoboSoft55895.2023.10122006">doi:10.1109/RoboSoft55895.2023.10122006</a></li>
+</ol>
+<p class="note">所有附 DOI 的文獻，作者、年份、期刊、卷期與頁碼都已用 Crossref 核對（2026 年 10 月）；藤蔓機器人的機制描述對照過回顧論文 [37] 與 [38] 的摘要。沒有 DOI 的四篇是技術報告與講義。</p>
+
+<footer>© 2026 Lucas Sullivan · <a href="../">回到章魚觸手實驗室</a> · <a href="../../">仿生科技</a></footer>
+</main>
+</body>
+</html>

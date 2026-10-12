@@ -208,7 +208,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:12px;padding:0 5px;border:1p
 <button class="box btn" id="panelToggle">⚙ 演算法與參數</button>
 <aside id="panel" aria-label="演算法與參數">
   <h2>觸手的「周邊神經系統」</h2>
-  <p class="sub">大腦只說「去哪」「抓它」。以下每一層都由你設計：換演算法、調參數，看觸手能不能自己完成任務。</p>
+  <p class="sub">大腦只說「去哪」「抓它」。以下每一層都由你設計：換演算法、調參數，看觸手能不能自己完成任務。每個演算法與模型的原理、公式和出處都在 <a href="notes/" target="_blank" rel="noopener">原理與文獻</a>。</p>
   <div class="pipe" id="pipe"></div>
   <div class="toggles">
     <label><input type="checkbox" id="dbgToggle" checked> 顯示控制層 (H)</label>
@@ -226,7 +226,8 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:12px;padding:0 5px;border:1p
     <h1>章魚觸手實驗室</h1>
     <p>你戴著一條<b>可伸縮的軟體觸手</b>（擴增肢體，裝在右肩）。就像章魚的大腦，你只能下非常粗略的指令；觸手要<b>自己算出</b>每一節怎麼彎、怎麼伸長、怎麼繞過障礙、怎麼纏住東西。</p>
     <div class="flow"><b>大腦指令</b>→<b>路徑規劃</b>→<b>手臂控制器 (IK)</b>→<b>局部反射（纏繞/吸盤）</b>→<b>軟體肌肉＋物理</b></div>
-    <p>右側面板可以換每一層的演算法、調參數，甚至寫自己的控制器。觸手是有重量、會下垂、會打滑的，參數不對就做不到。</p>
+    <p>右側面板可以換每一層的演算法、調參數，甚至寫自己的控制器。觸手是有重量、會下垂、會打滑的，參數不對就做不到。面板最上方還能把肢體換成<b>藤蔓機器人</b>：一條從尖端外翻、靠氣壓「長」出去的充氣軟管，跟章魚完全是兩種伸長方式。</p>
+    <p>每個演算法、物理模型與它們的出處：<a href="notes/" target="_blank" rel="noopener">原理與文獻 →</a></p>
     <ul>
       <li>拖曳畫面轉頭，<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移動（手機用左下方向鍵）</li>
       <li><b>伸向</b>：點擊畫面或 <kbd>1</kbd>，觸手伸到準星位置；抓著東西時則搬過去</li>
@@ -272,15 +273,18 @@ const store = {
    參數（面板由此自動產生）
    ================================================================ */
 const PARAM_DEFS = [
-  { id: 'plan', title: '路徑規劃 Planner', desc: '大腦只給「目的地」。規劃器決定末端要走哪條路線、怎麼繞過障礙。', items: [
+  { id: 'bodytype', title: '肢體類型 Body type', ref: 'notes/#compare', desc: '兩種「可伸縮」的軟體肢體，伸長的物理完全不同：章魚靠肌肉讓整條手臂變形；藤蔓機器人只在尖端外翻長出新的身體。', items: [
+    { k: 'bodyType', label: '肢體', type: 'select', def: 'octopus', options: [['octopus', '章魚觸手（肌肉性靜水骨骼）'], ['vine', '藤蔓機器人（尖端外翻生長）']] },
+  ]},
+  { id: 'plan', title: '路徑規劃 Planner', ref: 'notes/#planner', desc: '大腦只給「目的地」。規劃器決定末端要走哪條路線、怎麼繞過障礙。', items: [
     { k: 'planner', label: '規劃器', type: 'select', def: 'via', options: [['none', '無（直線）'], ['via', '繞行點 via-point'], ['rrt', 'RRT-Connect（隨機樹）']],
       help: '直線遇到牆會卡住；via 從障礙物包圍盒挑繞行點；RRT 在空間中隨機長樹，較通用但每次路線不同。' },
     { k: 'clearance', label: '安全距離 (m)', min: 0, max: 0.2, step: 0.005, def: 0.06, help: '規劃路徑與避障時和障礙物保持的距離。太小會刮牆，太大會鑽不過洞。' },
-    { k: 'tipSpeed', label: '末端速度 (m/s)', min: 0.1, max: 3, step: 0.05, def: 0.9 },
+    { k: 'tipSpeed', label: '末端速度 (m/s)', min: 0.1, max: 3, step: 0.05, def: 0.9, help: '章魚：末端沿路徑前進的速度。藤蔓：捲軸放料速度的上限。' },
     { k: 'rrtIter', label: 'RRT 迭代上限', min: 100, max: 5000, step: 100, def: 1500 },
     { k: 'rrtStep', label: 'RRT 步長 (m)', min: 0.03, max: 0.4, step: 0.01, def: 0.12 },
   ]},
-  { id: 'arm', title: '手臂控制器 Arm IK', desc: '把「末端參考點」換算成每一節的位置與長度（逆運動學）。', items: [
+  { id: 'arm', only: 'octopus', title: '手臂控制器 Arm IK', ref: 'notes/#ik', desc: '把「末端參考點」換算成每一節的位置與長度（逆運動學）。', items: [
     { k: 'algo', label: '演算法', type: 'select', def: 'fabrik', options: [['fabrik', 'FABRIK（可伸縮）'], ['ccd', 'CCD 循環座標下降'], ['dls', 'DLS 阻尼最小平方雅可比'], ['ftl', 'Follow-the-leader 生長'], ['bend', '章魚彎曲傳播'], ['custom', '自訂 JS']] },
     { k: 'iters', label: '每幀迭代次數', min: 1, max: 40, step: 1, def: 10 },
     { k: 'extPolicy', label: '伸長優先度', min: 0, max: 1, step: 0.05, def: 0.5, help: '0 = 先彎曲、不夠才伸長；1 = 盡量伸長成剛好的長度（較直）。' },
@@ -289,7 +293,7 @@ const PARAM_DEFS = [
     { k: 'dlsLambda', label: 'DLS 阻尼 λ', min: 0.005, max: 0.5, step: 0.005, def: 0.06, help: '僅 DLS：λ 大較穩但慢，λ 小較準但接近奇異點會抖。' },
     { k: 'bendCurl', label: '遠端捲曲曲率 (1/m)', min: 0, max: 40, step: 1, def: 12, help: '彎曲傳播與生長模式中，尚未展開的遠端捲曲程度。' },
   ]},
-  { id: 'reflex', title: '局部反射 Grasp reflex', desc: '末端碰到物體後，由局部控制自動纏繞抓握，大腦不逐節下令（章魚腕足的神經節）。', items: [
+  { id: 'reflex', only: 'octopus', title: '局部反射 Grasp reflex', ref: 'notes/#grasp', desc: '末端碰到物體後，由局部控制自動纏繞抓握，大腦不逐節下令（章魚腕足的神經節）。', items: [
     { k: 'wrapNodes', label: '參與纏繞的節數', min: 2, max: 12, step: 1, def: 6 },
     { k: 'wrapTurns', label: '纏繞圈數', min: 0.3, max: 2, step: 0.05, def: 0.85 },
     { k: 'wrapSpeed', label: '纏繞速度 (1/s)', min: 0.2, max: 5, step: 0.1, def: 1.5 },
@@ -297,7 +301,7 @@ const PARAM_DEFS = [
     { k: 'gripStrength', label: '吸盤抓力', min: 0, max: 3, step: 0.05, def: 1.2, help: '抓力 × 纏繞品質 要大於物體重量（或門把阻力）才不會打滑。' },
     { k: 'twistSpeed', label: '扭轉速度 (°/s)', min: 10, max: 360, step: 5, def: 90 },
   ]},
-  { id: 'muscle', title: '軟體肌肉與物理 Actuation', desc: '控制器只給「目標形狀」。真實觸手是有重量、會下垂、會碰撞的軟體，靠肌肉剛性去追。', items: [
+  { id: 'muscle', only: 'octopus', title: '軟體肌肉與物理 Actuation', ref: 'notes/#physics', desc: '控制器只給「目標形狀」。真實觸手是有重量、會下垂、會碰撞的軟體，靠肌肉剛性去追。', items: [
     { k: 'kAct', label: '肌肉剛性 (1/s²)', min: 5, max: 400, step: 5, def: 160, help: '越大越能精準追上目標；太小會軟趴趴地下垂。' },
     { k: 'damping', label: '阻尼', min: 0, max: 0.3, step: 0.005, def: 0.05 },
     { k: 'gravity', label: '重力 (m/s²)', min: 0, max: 9.8, step: 0.1, def: 9.8 },
@@ -305,20 +309,41 @@ const PARAM_DEFS = [
     { k: 'bendStiff', label: '被動彎曲剛性', min: 0, max: 1, step: 0.02, def: 0.3, help: '把實際彎曲拉回指令彎曲的強度（肌肉張力）。' },
     { k: 'noise', label: '致動雜訊 (m)', min: 0, max: 0.05, step: 0.001, def: 0 },
   ]},
-  { id: 'body', title: '肢體結構 Body', desc: '改變後觸手會重新生成。', items: [
+  { id: 'body', only: 'octopus', title: '肢體結構 Body', ref: 'notes/#octopus', desc: '改變後觸手會重新生成。', items: [
     { k: 'N', label: '節數', min: 8, max: 28, step: 1, def: 16, rebuild: true },
     { k: 'segLen', label: '靜止節長 (m)', min: 0.03, max: 0.09, step: 0.005, def: 0.055, rebuild: true },
     { k: 'minExt', label: '最短伸縮比', min: 0.4, max: 1, step: 0.05, def: 0.7 },
     { k: 'maxExt', label: '最長伸縮比', min: 1, max: 3.5, step: 0.1, def: 2.4 },
     { k: 'radius', label: '基部半徑 (m)', min: 0.02, max: 0.06, step: 0.002, def: 0.034, rebuild: true },
   ]},
+  { id: 'vsteer', only: 'vine', title: '尖端轉向 Tip steering', ref: 'notes/#vine-steer', desc: '身體一旦長出來就固定在原地，只有尖端能決定往哪長。轉向靠尖端附近一側的人工肌肉縮短，曲率有上限。', items: [
+    { k: 'vSteer', label: '轉向策略', type: 'select', def: 'path', options: [['path', '追蹤規劃路徑（pure pursuit）'], ['goal', '直接朝目標'], ['passive', '不主動轉向（只靠碰撞導引）']],
+      help: '「不主動轉向」時，藤蔓只沿出發方向直長，遇到障礙順著表面滑，這是真實 vine robot 常用的被動導航。' },
+    { k: 'vKappa', label: '最大轉向曲率 κ (1/m)', min: 0, max: 15, step: 0.5, def: 5, help: '1/κ 是最小轉彎半徑。0 = 完全沒有主動轉向。' },
+    { k: 'vLook', label: '前視距離 (m)', min: 0.05, max: 0.6, step: 0.01, def: 0.2, help: '追蹤路徑時，瞄準路徑上前方多遠的點。短：貼得緊但容易蛇行；長：平滑但會切彎。' },
+  ]},
+  { id: 'vgrow', only: 'vine', title: '生長與壓力 Growth', ref: 'notes/#vine-growth', desc: '內部氣壓把內翻的管壁推到尖端外翻。氣壓要先超過「屈服壓力＋內部尾巴的摩擦」才會長，超出越多長越快。', items: [
+    { k: 'vP', label: '內部氣壓 P (kPa)', min: 1, max: 30, step: 0.5, def: 8, help: '壓力同時決定生長速度與身體剛性（抗下垂）。' },
+    { k: 'vK', label: '生長增益 K ((m/s)/kPa)', min: 0.01, max: 0.2, step: 0.005, def: 0.08, help: '尖端黏滯阻尼的倒數：超出門檻的壓力越多，長得越快。' },
+    { k: 'vY0', label: '屈服壓力 Y₀ (kPa)', min: 0, max: 10, step: 0.25, def: 2, help: '讓材料在尖端外翻所需的最低壓力。' },
+    { k: 'vFricL', label: '尾巴摩擦 c_L (kPa/m)', min: 0, max: 4, step: 0.1, def: 0.8, help: '尾巴在身體裡被拖越長，摩擦越大。' },
+    { k: 'vMu', label: '轉彎摩擦係數 μ', min: 0, max: 0.8, step: 0.02, def: 0.2, help: '尾巴繞過彎道時的絞盤效應：摩擦隨累積轉角 Θ 以 e^(μΘ) 放大。' },
+  ]},
+  { id: 'vbody', only: 'vine', title: '結構與收回 Body', ref: 'notes/#vine-stiffness', desc: '充氣薄膜管靠壓力撐住。懸空太長時，自重彎矩超過塌陷彎矩，管子就會折下來。', items: [
+    { k: 'vR', label: '管半徑 r (m)', min: 0.01, max: 0.05, step: 0.0025, def: 0.025, help: '塌陷彎矩 ∝ P·r³：管子粗一點，懸臂能撐得長很多。' },
+    { k: 'vSigma', label: '管壁面密度 (g/m²)', min: 20, max: 300, step: 5, def: 60, help: '約等於 50–60 µm 的 LDPE 薄膜；換成塗 TPU 的尼龍布會重好幾倍。' },
+    { k: 'vReel', label: '捲軸材料長度 (m)', min: 0.5, max: 5, step: 0.1, def: 3 },
+    { k: 'vRetract', label: '收回方式', type: 'select', def: 'tip', options: [['tip', '尖端收回裝置'], ['base', '直接從基部拉尾巴']],
+      help: '直接拉尾巴時，彎曲的身體會在基部挫屈而不是從尖端收回。' },
+    { k: 'vRetSpeed', label: '收回速度 (m/s)', min: 0.1, max: 1, step: 0.05, def: 0.4 },
+  ]},
 ];
 const ALGO_DESC = {
-  fabrik: 'FABRIK：從末端往回、再從基座往前反覆拉直鏈條，直接在點上求解；搭配可變節長與每節彎角限制。快速、穩定。',
-  ccd: 'CCD：從末端往基座，逐一旋轉每個關節讓末端對準目標。簡單，但容易把遠端捲成一團。',
-  dls: 'DLS：以「每節兩個彎角＋節長」為變數，數值雅可比加阻尼最小平方求解，並以梯度把節點推離障礙。最像傳統機械臂控制。',
-  ftl: 'Follow-the-leader：像藤蔓機器人從末端生長，整條身體沿規劃路徑排列，身體不會掃過障礙物。完全依賴規劃器品質。',
-  bend: '彎曲傳播：章魚伸手的策略（Gutfreund 等）。彎曲點從基部往末端推進，近端沿路徑攤開、遠端保持捲曲，最後整條展開到目標。',
+  fabrik: 'FABRIK：從末端往回、再從基座往前反覆拉直鏈條，直接在點上求解；搭配可變節長與每節彎角限制。快速、穩定。（Aristidou & Lasenby, 2011）',
+  ccd: 'CCD：從末端往基座，逐一旋轉每個關節讓末端對準目標。簡單，但容易把遠端捲成一團。（Wang & Chen, 1991）',
+  dls: 'DLS：以「每節兩個彎角＋節長」為變數，數值雅可比加阻尼最小平方求解，並以位能梯度把節點推離障礙。最像傳統機械臂控制，也最容易卡在局部極小值。（Wampler, 1986；Nakamura & Hanafusa, 1986；Khatib, 1986）',
+  ftl: 'Follow-the-leader：整條身體沿末端走過的路徑排列，身體不會掃過障礙物。完全依賴規劃器品質。注意：這是「肌肉手臂模仿」生長，真正的尖端生長請切換肢體類型為藤蔓機器人。（Choset & Henning, 1999）',
+  bend: '彎曲傳播：章魚伸手的策略。彎曲點從基部往末端推進，近端沿路徑攤開、遠端保持捲曲，最後整條展開到目標。（Gutfreund et al., 1996；Sumbre et al., 2001）',
   custom: '自訂：在下方撰寫 controller(ctx)，回傳 n+1 個目標點。出錯時會自動退回 FABRIK。',
 };
 const P = {};
@@ -609,6 +634,7 @@ const base = new V3(), baseDir = new V3(), fwd = new V3(), right = new V3();
 function updateBase() {
   fwd.set(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
   right.set(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
+  if (vineDeployed()) return;   // 藤蔓已長出：基座固定在展開時的位置
   base.copy(player.pos).setY(1.3).addScaledVector(right, 0.22).addScaledVector(fwd, 0.18);
   baseDir.copy(fwd).addScaledVector(right, 0.2).addScaledVector(UP, -0.7).normalize();
 }
@@ -620,7 +646,7 @@ function fromBody(l) { return l.clone().applyAxisAngle(UP, player.yaw).add(playe
    ================================================================ */
 const arm = { n: 0, nodes: [], prev: [], T: [], Tcmd: [], rad: [], segRest: 0, load: [] };
 const minLen = () => arm.segRest * P.minExt, maxLen = () => arm.segRest * P.maxExt;
-const tipRad = () => arm.rad[arm.n];
+const tipRad = () => isVine() ? P.vR : arm.rad[arm.n];
 function curlAxisFor(t) { const a = new V3().crossVectors(t, UP); if (a.lengthSq() < 1e-6) a.set(1, 0, 0); return a.normalize(); }
 /** 從 startP 沿 tangent 出發，捲曲 count 節（曲率朝末端增加） */
 function curl(pts, startIdx, count, startP, tangent, axis, segL, kappa, sign = -1) {
@@ -974,6 +1000,7 @@ function toast(msg, kind = '', key = null) {
 function cmdReach() {
   const h = aim();
   if (!h) return toast('準星沒有對到任何表面');
+  if (isVine()) return vineReach(h);
   if (grasp && grasp.phase === 'held') {
     if (grasp.obj.type === 'knob') return toast('門把固定在門上：用「扭轉」或「拉回」');
     const o = grasp.obj, dest = h.point.clone().addScaledVector(h.normal, o.r + 0.03);
@@ -997,6 +1024,7 @@ function cmdGrab() {
     for (const g of world.graspables) { const d = g.center().distanceTo(h.point); if (d < bd) { bd = d; obj = g; } }
   }
   if (!obj) return toast('準星附近沒有可以抓的東西');
+  if (isVine()) return vineGrab(obj);
   if (grasp && grasp.phase === 'held') return toast('已經抓著東西了，先「放開」(F)');
   const a = obj.axis(), c = obj.center();
   const u = base.clone().sub(c); u.addScaledVector(a, -u.dot(a));
@@ -1010,10 +1038,12 @@ function cmdGrab() {
   newCommand();
 }
 function cmdPull() {
+  if (isVine()) return vinePull();
   if (grasp && grasp.phase === 'held') { grasp.motion = 'pull'; brain.label = '拉回'; return; }
   cmdRetract();
 }
 function cmdRelease(silent) {
+  if (isVine()) return vineRelease(silent);
   if (!grasp) { if (!silent) toast('目前沒有抓著東西'); return; }
   releaseGrasp();
   if (!silent) toast('放開');
@@ -1029,6 +1059,7 @@ function releaseGrasp() {
   newCommand();
 }
 function cmdRetract() {
+  if (isVine()) { vineRelease(true); return vinePull(); }
   if (grasp) releaseGrasp();
   brain.mode = 'home'; brain.label = '收回';
 }
@@ -1196,7 +1227,7 @@ function slewTargets(dt) {
   for (let i = 0; i <= arm.n; i++) {
     d.copy(arm.Tcmd[i]).sub(arm.T[i]);
     const L = d.length();
-    if (L > vmax) d.multiplyScalar(vmax / L);
+    if (L > vmax && L > 1e-12) d.multiplyScalar(vmax / L);
     arm.T[i].add(d);
   }
   arm.T[0].copy(base);
@@ -1292,8 +1323,250 @@ function stepBalls(h) {
         b.v.addScaledVector(vt, -0.03);
       }
     }
+    // 藤蔓身體也會擋球
+    if (isVine() && vine.L > 0.02) {
+      const rr = b.r + P.vR;
+      for (let i = 1; i < vine.pts.length; i += 2) {
+        _d.copy(b.c).sub(vine.pts[i]);
+        const dist = _d.length();
+        if (dist < rr && dist > 1e-9) {
+          _d.divideScalar(dist);
+          b.c.addScaledVector(_d, rr - dist);
+          const vn = b.v.dot(_d);
+          if (vn < 0) b.v.addScaledVector(_d, -vn * 1.2);
+        }
+      }
+    }
     if (b.c.y < -2) { b.c.copy(b.home); b.v.set(0, 0, 0); }
   }
+}
+
+/* ================================================================
+   藤蔓機器人：尖端外翻生長
+   Hawkes et al. 2017；Blumenschein et al. 2017, 2020；Greer et al. 2019, 2020；Coad et al. 2020
+   身體＝尖端走過的軌跡，一旦長出就固定在環境中，不會滑動。
+   ================================================================ */
+const isVine = () => P.bodyType === 'vine';
+const VINE_DS = 0.02;   // 身體取樣間距 (m)
+const vine = { pts: [], sup: [], L: 0, Theta: 0, heading: new V3(), dir0: new V3(), mode: 'idle', goalPt: new V3(), path: null,
+  target: null, grip: null, gripOff: new V3(), v: 0, Y: 0, M: 0, Mw: 0, Lcrit: 0, droop: false, buckleT: 0, minD: Infinity, missT: 0,
+  stallT: 0, stall: '', look: new V3(), label: '收在基座' };
+const vineTip = () => vine.pts[vine.pts.length - 1];
+const vineDeployed = () => isVine() && vine.L > 0.03;
+function vineReset() {
+  if (vine.grip) vine.grip.held = false;
+  Object.assign(vine, { L: 0, Theta: 0, mode: 'idle', path: null, target: null, grip: null, v: 0, droop: false, buckleT: 0, stall: '', label: '收在基座' });
+  vine.pts = [base.clone(), base.clone()];
+  vine.sup = [true, false];
+  vine.heading.copy(baseDir); vine.dir0.copy(baseDir);
+}
+/** 累積轉角 Θ：身體每一處轉彎角度的總和（含出口方向） */
+function vineTheta() {
+  const pts = vine.pts, a = new V3(), b = new V3();
+  let th = 0, prev = vine.dir0;
+  for (let i = 1; i < pts.length; i++) {
+    a.copy(pts[i]).sub(pts[i - 1]);
+    if (a.lengthSq() < 1e-10) continue;
+    a.normalize(); th += prev.angleTo(a); prev = b.copy(a);
+  }
+  return th;
+}
+/** 充氣管的力學：塌陷彎矩 Mc = π·P·r³（Comer & Levy, 1963；皺褶起始於一半）與單位長重量。McFarland & Coad (2023) 用同一模型預測藤蔓在自重下塌陷 */
+function vineMechanics() {
+  const r = P.vR, Pa = P.vP * 1000;
+  const Mw = Math.PI * Pa * r ** 3;
+  const w = 2 * (TAU * r) * (P.vSigma / 1000) * P.gravity;   // 兩層膜：外壁＋身體裡的尾巴 (N/m)
+  const F = vine.grip ? vine.grip.mass * P.gravity : 0;
+  // 水平懸臂 w·L²/2 + F·L = Mw 的臨界長度
+  const Lcrit = w > 1e-9 ? (-F + Math.sqrt(F * F + 2 * w * Mw)) / w : (F > 0 ? Mw / F : Infinity);
+  return { Mw, w, F, Lcrit };
+}
+/** 從最後一個支撐點（基座或接觸點）到尖端的懸臂彎矩 */
+function vineCantilever(mech) {
+  const pts = vine.pts, n = pts.length;
+  let s = n - 2;
+  while (s > 0 && !vine.sup[s]) s--;
+  let Lu = 0;
+  for (let i = s + 1; i < n; i++) Lu += pts[i].distanceTo(pts[i - 1]);
+  const hx = pts[n - 1].x - pts[s].x, hz = pts[n - 1].z - pts[s].z, hd = Math.hypot(hx, hz);
+  return mech.w * Lu * hd / 2 + mech.F * hd;
+}
+function vineSkip() { return vine.mode === 'grab' && vine.target ? vine.target.ob : (vine.grip ? vine.grip.ob : null); }
+/** 讓方向 h 沿著碰撞面滑動；正面頂住則回傳 false */
+function slideOn(h, g) {
+  const hn = h.dot(g);
+  if (hn >= 0) return true;
+  const t = h.clone().addScaledVector(g, -hn);
+  if (t.length() < 0.25) return false;
+  h.copy(t.normalize());
+  return true;
+}
+/** 尖端前進 ds：主動轉向 → 重力下垂 → 碰撞滑動 → 留下新身體 */
+function vineStep(ds) {
+  const tip = vineTip(), h = vine.heading, r = P.vR, skip = vineSkip();
+  const yBefore = h.y;
+  // 1) 主動轉向：朝期望方向轉，但每單位長度最多轉 κmax（Greer et al., 2019 的 sPAM 轉向）
+  let des = null;
+  if (P.vSteer === 'path' && vine.path) {
+    vine.path.at(vine.path.project(tip) + P.vLook, vine.look);
+    des = vine.look.clone().sub(tip);
+  } else if (P.vSteer === 'goal') { vine.look.copy(vine.goalPt); des = vine.goalPt.clone().sub(tip); }
+  if (des && des.lengthSq() > 1e-8) {
+    des.normalize();
+    const ang = h.angleTo(des);
+    if (ang > 1e-6) {
+      const ax = new V3().crossVectors(h, des);
+      if (ax.lengthSq() < 1e-12) ax.copy(curlAxisFor(h));
+      h.applyAxisAngle(ax.normalize(), Math.min(ang, P.vKappa * ds));
+    }
+  }
+  // 2) 懸臂彎矩超過塌陷彎矩 → 撐不住：尖端不能再往上抬，並且往下折（簡化的挫屈下垂）
+  const mech = vineMechanics();
+  const M = vineCantilever(mech);
+  vine.M = M; vine.Mw = mech.Mw; vine.Lcrit = mech.Lcrit; vine.droop = M > mech.Mw;
+  if (vine.droop) {
+    toast(`懸臂撐不住：彎矩 ${M.toFixed(2)} > 塌陷彎矩 ${mech.Mw.toFixed(2)} N·m，尖端往下垂。提高氣壓或管徑（∝ P·r³），或讓身體靠在東西上`, 'warn', 'droop');
+    const sink =Math.min(4 * ds * (M / mech.Mw - 1) + 0.5 * ds, 0.2);
+    h.y = Math.max(-1, Math.min(h.y, yBefore) - sink);
+    const hz = Math.hypot(h.x, h.z), want = Math.sqrt(Math.max(0, 1 - h.y * h.y));
+    if (hz > 1e-6) { h.x *= want / hz; h.z *= want / hz; } else if (h.y > -1) h.y = -1;
+    h.normalize();
+  }
+  // 3) 前進；碰到障礙時順著表面滑（Greer et al., 2020：利用接觸導航）
+  const np = tip.clone().addScaledVector(h, ds);
+  let d = sdfWorld(np, skip);
+  if (d < r && !slideOn(h, gradWorld(np, skip, new V3()))) { vine.stall = '尖端正面頂住障礙'; return false; }
+  if (vine.grip) {   // 夾著的物體也不能穿牆
+    const o = vine.grip, oc = np.clone().add(vine.gripOff), od = sdfWorld(oc, o.ob);
+    if (od < o.r && !slideOn(h, gradWorld(oc, o.ob, new V3()))) { vine.stall = '夾著的物體卡住了'; return false; }
+  }
+  np.copy(tip).addScaledVector(h, ds);
+  d = sdfWorld(np, skip);
+  if (d < r) np.addScaledVector(gradWorld(np, skip, new V3()), r - d);
+  const moved = np.distanceTo(tip);
+  tip.copy(np);
+  vine.L += moved;
+  vine.stall = '';
+  if (tip.distanceTo(vine.pts[vine.pts.length - 2]) >= VINE_DS) {
+    vine.sup[vine.sup.length - 1] = sdfWorld(tip, skip) < r + 0.012;   // 這一段身體有沒有靠在東西上
+    vine.pts.push(tip.clone()); vine.sup.push(false);
+  }
+  return true;
+}
+/** 生長：準靜態力平衡（Blumenschein et al., 2017, 2020）
+ *  P = Y₀ + 黏滯(v) + 尾巴摩擦；尾巴摩擦 ∝ 長度，繞過彎道時以絞盤形式 e^(μΘ) 放大
+ *  → v = K·(P − Y)，Y = Y₀ + c_L·L·e^(μΘ) */
+function vineGrow(dt) {
+  const Y = P.vY0 + P.vFricL * vine.L * Math.exp(P.vMu * vine.Theta);
+  vine.Y = Y;
+  const vp = P.vK * (P.vP - Y);
+  if (vp <= 0) {
+    vine.v = 0; vine.stall = `壓力不足：P ${P.vP} ≤ Y ${Y.toFixed(1)} kPa`;
+    toast(`長不動：氣壓 ${P.vP} kPa 不足以克服屈服＋尾巴摩擦 ${Y.toFixed(1)} kPa。提高壓力，或減少轉彎`, 'warn', 'vstall');
+    return;
+  }
+  if (vine.L >= P.vReel - 1e-4) { vine.v = 0; vine.mode = 'idle'; vine.label = '材料用完'; toast('捲軸裡的材料用完了：提高捲軸長度，或走近一點', 'warn'); return; }
+  const dist = Math.min(Math.min(P.tipSpeed, vp) * dt, P.vReel - vine.L);
+  const n = Math.max(1, Math.ceil(dist / 0.01));
+  let ok = true;
+  for (let k = 0; k < n && ok; k++) ok = vineStep(dist / n);
+  vine.v = ok ? Math.min(P.tipSpeed, vp) : 0;
+}
+/** 從尖端收回：身體反向內翻，尖端沿著原路退回 */
+function vineRetract(dt) {
+  let rate = P.vRetSpeed;
+  // 從基部拉尾巴：讓尖端內翻所需的力與長度無關，但身體的挫屈臨界載重隨長度（與彎曲）下降，
+  // 超過某個長度就會先挫屈而不是從尖端收回（Coad et al., 2020）。遊戲規則：L·(1 + Θ/2) > 0.8 m 時挫屈
+  if (P.vRetract === 'base' && vine.L * (1 + vine.Theta / 2) > 0.8) {
+    rate *= 0.2; vine.buckleT += dt;
+    toast('從基部拉尾巴：身體太長或太彎，先在中途挫屈而不是從尖端收回（Coad et al., 2020）。改用尖端收回裝置', 'warn', 'buckle');
+  }
+  let dist = rate * dt;
+  const pts = vine.pts;
+  while (dist > 1e-9) {
+    const n = pts.length, tip = pts[n - 1], prev = pts[n - 2], L = tip.distanceTo(prev);
+    if (L <= dist) {
+      dist -= L; vine.L -= L;
+      if (n > 2) { pts.pop(); vine.sup.pop(); vine.sup[vine.sup.length - 1] = false; }
+      else { tip.copy(prev); vine.L = 0; break; }
+    } else { tip.lerp(prev, dist / L); vine.L -= dist; dist = 0; }
+  }
+  const n = pts.length;
+  const seg = pts[n - 1].clone().sub(pts[n - 2]);
+  if (seg.lengthSq() > 1e-10) vine.heading.copy(seg.normalize());
+  if (vine.L <= 1e-4) { vine.L = 0; vine.mode = 'idle'; vine.label = '收在基座'; vine.heading.copy(vine.dir0); }
+}
+function vineUpdate(dt) {
+  if (vine.L <= 1e-4 && vine.mode !== 'grow' && vine.mode !== 'grab') {   // 收在基座時跟著身體走
+    vine.pts[0].copy(base); vine.pts[1].copy(base); vine.heading.copy(baseDir); vine.dir0.copy(baseDir);
+  }
+  vine.Theta = vineTheta();
+  if (vine.mode === 'grow' || vine.mode === 'grab') {
+    vineGrow(dt);
+    const tip = vineTip();
+    if (vine.mode === 'grab') {
+      const o = vine.target;
+      if (tip.distanceTo(vine.goalPt) < P.approachTol || tip.distanceTo(o.center()) < o.r + P.vR + 0.02) {
+        vine.grip = o; o.held = true; if (o.v) o.v.set(0, 0, 0);
+        vine.gripOff.copy(o.center()).sub(tip);
+        vine.mode = 'idle'; vine.target = null; vine.label = '夾住';
+        toast('尖端夾爪夾住了（tip mount）。用「拉回」沿原路收回，或「伸向」從尖端繼續長', 'ok');
+        return;
+      }
+    }
+    const dg = tip.distanceTo(vine.goalPt);
+    if (vine.mode === 'grow' && dg < 0.025) { vine.mode = 'idle'; vine.label = '到達'; }
+    else if (dg < vine.minD - 0.002) { vine.minD = dg; vine.missT = 0; }
+    else if (vine.path && vine.path.project(tip) > vine.path.len - 0.08 && (vine.missT += dt) > 0.5) {
+      vine.mode = 'idle'; vine.label = '錯過目標';
+      toast(`錯過目標 ${(vine.minD * 100).toFixed(0)} cm：藤蔓不能倒退修正，只能收回 (4) 一段再長。可提高轉向曲率或縮短前視距離`, 'warn');
+    }
+    if (vine.stall) {
+      if ((vine.stallT += dt) > 1) { vine.mode = 'idle'; vine.label = '停住'; toast(`停止生長：${vine.stall}`, 'warn'); }
+    } else vine.stallT = 0;
+  } else if (vine.mode === 'retract') vineRetract(dt);
+  if (vine.grip) {
+    const o = vine.grip, nc = vineTip().clone().add(vine.gripOff);
+    o.v.copy(nc).sub(o.c).divideScalar(Math.max(dt, 1e-3));
+    o.c.copy(nc);
+  }
+  if (vine.mode !== 'grow' && vine.mode !== 'grab') {
+    const mech = vineMechanics();
+    vine.Mw = mech.Mw; vine.Lcrit = mech.Lcrit; vine.M = vine.L > 0.01 ? vineCantilever(mech) : 0;
+  }
+}
+function vineStartGrow(goal, target) {
+  if (vine.L < 0.03 && !vine.grip) vineReset();
+  vine.goalPt.copy(goal); vine.target = target;
+  vine.mode = target ? 'grab' : 'grow';
+  vine.minD = Infinity; vine.missT = 0; vine.stallT = 0; vine.stall = '';
+  const margin = P.vR + P.clearance + (vine.grip ? vine.grip.r * 2 : 0);
+  vine.path = plan(vineTip().clone(), goal.clone(), margin, target ? target.ob : (vine.grip ? vine.grip.ob : null));
+  vine.label = target ? '生長：去夾' : '生長';
+}
+function vineReach(h) {
+  // 夾著東西時，目標是讓「物體」到達準星位置
+  if (vine.grip) vineStartGrow(h.point.clone().addScaledVector(h.normal, vine.grip.r + 0.03).sub(vine.gripOff), null);
+  else vineStartGrow(h.point.clone().addScaledVector(h.normal, P.vR * 0.6), null);
+}
+function vineGrab(obj) {
+  if (obj.type === 'knob') return toast('藤蔓能靠生長「推」東西（例如推動閥門把手），但圓形門把要繞軸扭轉，充氣薄膜身體傳不了扭矩。切回章魚觸手試試', 'warn');
+  if (vine.grip) return toast('尖端夾爪已經夾著東西了，先「放開」(F)');
+  const c = obj.center(), from = vine.L > 0.05 ? vineTip() : base;
+  const dir = from.clone().sub(c);
+  dir.y = Math.max(dir.y, 0.3 * dir.length());   // 從斜上方接近，避免鑽到桌面下
+  dir.normalize();
+  vineStartGrow(c.clone().addScaledVector(dir, obj.r + P.vR + 0.01), obj);
+}
+function vinePull() {
+  if (vine.L <= 1e-4) return toast('藤蔓已經收在基座了');
+  vine.mode = 'retract'; vine.target = null;
+  vine.label = P.vRetract === 'tip' ? '收回（尖端裝置）' : '收回（拉尾巴）';
+}
+function vineRelease(silent) {
+  if (!vine.grip) { if (!silent) toast('尖端沒有夾著東西'); return; }
+  vine.grip.held = false; vine.grip.v.set(0, 0, 0); vine.grip = null; vine.label = '放開';
+  if (!silent) toast('放開');
 }
 
 /* ================================================================
@@ -1381,7 +1654,7 @@ function addDoor(w) {
   w.door = door;
   return door;
 }
-const tipNode = () => arm.nodes[arm.n];
+const tipNode = () => isVine() ? vineTip() : arm.nodes[arm.n];
 const LEVELS = [
   {
     name: '1 · 觸碰練習', start: [0, 0.3, 0], bounds: [-1.5, 1.5, -0.4, 1.5],
@@ -1404,6 +1677,7 @@ const LEVELS = [
   {
     name: '2 · 越牆取物', start: [0, -0.3, 0], bounds: [-1.0, 1.0, -0.78, 1.5],
     desc: '球在矮牆後的桌上。抓起它、越過牆，放進你身邊的綠色籃子。',
+    vineNote: '藤蔓提示：夾住球後先「拉回」，球會沿原路越過矮牆回來；再對籃子「伸向」，從尖端繼續長過去。',
     build(w) {
       addBox(w, new V3(0, 0.55, -1.0), new V3(2.4, 1.1, 0.1), 0xd9d4c7, { label: '矮牆' });
       addBox(w, new V3(0.1, 0.35, -1.7), new V3(0.8, 0.7, 0.6), 0x8a6a4a, { label: '桌子' });
@@ -1425,6 +1699,7 @@ const LEVELS = [
   {
     name: '3 · 轉動門把', start: [0.05, -0.1, 0], bounds: [-1.2, 1.2, -0.2, 1.5],
     desc: '纏住圓形門把，按住「扭轉」轉到 60° 開鎖，再「拉回」把門拉開。',
+    vineNote: '這關要轉門把，藤蔓機器人的尖端沒有扭矩，做不到——正好拿來比較兩種肢體。',
     build(w) {
       addBox(w, new V3(-1.735, 1.2, -1.3), new V3(2.53, 2.4, 0.1), 0xd9d4c7, { label: '牆' });
       addBox(w, new V3(1.735, 1.2, -1.3), new V3(2.53, 2.4, 0.1), 0xd9d4c7, { label: '牆' });
@@ -1447,6 +1722,7 @@ const LEVELS = [
   {
     name: '4 · 穿過洞口', start: [0, 0.2, 0], bounds: [-1.4, 1.4, -0.78, 1.5],
     desc: '高牆上只有一個小洞。走近洞口、從洞裡瞄準牆後的紅色按鈕，讓觸手穿過去按下它。',
+    vineNote: '藤蔓最擅長這關：身體一長出來就不動，穿過洞口時不會刮牆。',
     build(w) {
       const z = -1.0, t = 0.12, col = 0xd9d4c7;
       addBox(w, new V3(-1.59, 1.3, z), new V3(2.82, 2.6, t), col, { label: '高牆' });
@@ -1485,7 +1761,11 @@ function loadLevel(i) {
   nav.path = null; nav.force = true;
   stats.deepFrames = 0;
   errHist.length = 0;
+  vine.L = 0;   // 先讓基座跟著玩家重新定位
   buildArm();
+  vineReset();
+  applyBodyVisibility();
+  if (isVine() && L.vineNote) setTimeout(() => toast(L.vineNote, 'warn'), 300);
   $('#levelSel').value = i;
   $('#levelDesc').textContent = L.desc;
   renderObjectives(true);
@@ -1573,8 +1853,77 @@ function updateTentacleMesh() {
   tent.mount.position.copy(base).addScaledVector(baseDir, -0.03);
   tent.mount.quaternion.setFromUnitVectors(UP, baseDir);
 }
+// 藤蔓：固定在世界中的管身（每 10 cm 一道環紋，用來看出身體不滑動）＋尖端＋基座的壓力腔與捲軸
+const VMAX = 300, VRS = 16;
+const vmesh = { geo: null, mesh: null, tipCap: null, canister: null };
+const vineBody = new THREE.Color('#e6ecef'), vineBand = new THREE.Color('#7f939c');
+function buildVineMesh() {
+  const geo = new THREE.BufferGeometry(), vc = VMAX * VRS;
+  for (const [name, size] of [['position', 3], ['normal', 3], ['color', 3]]) {
+    const at = new THREE.BufferAttribute(new Float32Array(vc * size), size); at.setUsage(THREE.DynamicDrawUsage); geo.setAttribute(name, at);
+  }
+  const idx = [];
+  for (let r = 0; r < VMAX - 1; r++) for (let j = 0; j < VRS; j++) {
+    const a = r * VRS + j, b = r * VRS + (j + 1) % VRS, c = (r + 1) * VRS + j, d = (r + 1) * VRS + (j + 1) % VRS;
+    idx.push(a, b, c, b, d, c);
+  }
+  geo.setIndex(idx);
+  vmesh.geo = geo;
+  vmesh.mesh = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.15, transparent: true, opacity: 0.93 }));
+  vmesh.mesh.castShadow = true; vmesh.mesh.frustumCulled = false;
+  vmesh.tipCap = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), new THREE.MeshPhysicalMaterial({ color: 0xf4f7f8, roughness: 0.25, clearcoat: 1 }));
+  vmesh.tipCap.castShadow = true;
+  vmesh.canister = new THREE.Group();
+  const can = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.15, 24), new THREE.MeshStandardMaterial({ color: 0x3b4248, roughness: 0.45, metalness: 0.4 }));
+  can.rotation.x = Math.PI / 2; can.position.z = 0.05;
+  const reel = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 8, 24), new THREE.MeshStandardMaterial({ color: 0xc0533a, roughness: 0.5 }));
+  reel.position.z = 0.09;
+  vmesh.canister.add(can, reel);
+  scene.add(vmesh.mesh, vmesh.tipCap, vmesh.canister);
+}
+buildVineMesh();
+const _vT = new V3(), _vN = new V3(), _vB = new V3(), _vd = new V3();
+function updateVineMesh() {
+  const src = vine.pts, n = src.length, r = P.vR;
+  const pos = vmesh.geo.attributes.position.array, nor = vmesh.geo.attributes.normal.array, col = vmesh.geo.attributes.color.array;
+  const stride = Math.max(1, Math.ceil(n / (VMAX - 1)));
+  const pts = []; for (let i = 0; i < n; i += stride) pts.push(src[i]); if (pts[pts.length - 1] !== src[n - 1]) pts.push(src[n - 1]);
+  _vN.set(0, -1, 0);
+  let s = 0;
+  for (let k = 0; k < VMAX; k++) {
+    const i = Math.min(k, pts.length - 1), p = pts[i];
+    if (k < pts.length) {
+      if (i > 0) s += p.distanceTo(pts[i - 1]);
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+      _vT.copy(b).sub(a); if (_vT.lengthSq() < 1e-12) _vT.copy(vine.heading); _vT.normalize();
+      _vN.addScaledVector(_vT, -_vN.dot(_vT)); if (_vN.lengthSq() < 1e-8) _vN.copy(curlAxisFor(_vT)).cross(_vT); _vN.normalize();
+      _vB.crossVectors(_vT, _vN);
+    }
+    const band = (s % 0.1) < 0.008 && k < pts.length;
+    const c = band ? vineBand : vineBody;
+    for (let j = 0; j < VRS; j++) {
+      const ph = j / VRS * TAU;
+      _vd.copy(_vN).multiplyScalar(Math.cos(ph)).addScaledVector(_vB, Math.sin(ph));
+      const o = (k * VRS + j) * 3;
+      pos[o] = p.x + _vd.x * r; pos[o + 1] = p.y + _vd.y * r; pos[o + 2] = p.z + _vd.z * r;
+      nor[o] = _vd.x; nor[o + 1] = _vd.y; nor[o + 2] = _vd.z;
+      col[o] = c.r; col[o + 1] = c.g; col[o + 2] = c.b;
+    }
+  }
+  vmesh.geo.attributes.position.needsUpdate = vmesh.geo.attributes.normal.needsUpdate = vmesh.geo.attributes.color.needsUpdate = true;
+  vmesh.geo.computeBoundingSphere();
+  vmesh.tipCap.position.copy(vineTip());
+  vmesh.tipCap.scale.setScalar(r * 1.02);
+  vmesh.canister.position.copy(vine.pts[0]).addScaledVector(vine.dir0, -0.1);
+  vmesh.canister.lookAt(vmesh.canister.position.clone().add(vine.dir0));
+}
+function applyBodyVisibility() {
+  const v = isVine();
+  for (const o of [tent.mesh, tent.suckers, tent.mount]) if (o) o.visible = !v;
+  for (const o of [vmesh.mesh, vmesh.tipCap, vmesh.canister]) o.visible = v;
+}
 // 控制層
-const dbg = { on: store.get('tentacleLab.dbg', true) };
+const dbg ={ on: store.get('tentacleLab.dbg', true) };
 function makeLine(color, max) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(max * 3), 3));
@@ -1598,6 +1947,16 @@ function updateDebug() {
   const on = dbg.on;
   for (const o of [pathLine, objLine, targetLine, ghosts, tipMark, goalMark]) o.visible = on;
   if (!on) return;
+  if (isVine()) {
+    ghosts.visible = targetLine.visible = objLine.visible = false;
+    const growing = vine.mode === 'grow' || vine.mode === 'grab';
+    if (vine.path && growing) {
+      setLine(pathLine, vine.path.pts);
+      tipMark.position.copy(vine.look); tipMark.visible = P.vSteer !== 'passive';
+      goalMark.position.copy(vine.goalPt); goalMark.lookAt(camera.position);
+    } else pathLine.visible = tipMark.visible = goalMark.visible = false;
+    return;
+  }
   if (nav.path && brain.mode !== 'home') { setLine(pathLine, nav.path.pts); tipMark.position.copy(nav.tipRef); goalMark.position.copy(nav.goal); goalMark.lookAt(camera.position); }
   else { pathLine.visible = tipMark.visible = goalMark.visible = false; }
   if (grasp && grasp.objPath && grasp.motion === 'carry') setLine(objLine, grasp.objPath.pts); else objLine.visible = false;
@@ -1662,6 +2021,7 @@ addEventListener('keyup', e => {
 });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; setTwist(0); });
 function setTwist(d) {
+  if (d && isVine()) { toast('藤蔓機器人的尖端沒有扭轉自由度：身體是充氣薄膜，無法傳遞扭矩', 'warn', 'twist'); return; }
   if (d && !(grasp && grasp.phase === 'held')) { toast('先抓住東西才能扭轉', '', 'twist'); return; }
   brain.twistDir = d;
   document.querySelector('[data-cmd="twist"]').classList.toggle('on', !!d);
@@ -1707,7 +2067,9 @@ function updatePlayer(dt) {
   if (keys.s || keys.arrowdown || mvBtn.b) f -= 1;
   if (keys.d || keys.arrowright || mvBtn.r) s += 1;
   if (keys.a || keys.arrowleft || mvBtn.l) s -= 1;
-  if (f || s) {
+  if ((f || s) && vineDeployed()) {
+    toast('藤蔓的身體固定在環境裡（不滑動），要移動得先收回 (X)', '', 'vlock');
+  } else if (f || s) {
     const sp = 1.2 * dt / Math.hypot(f, s);
     player.pos.addScaledVector(fwd, f * sp).addScaledVector(right, s * sp);
     const b = LEVELS[levelIdx].bounds;
@@ -1722,18 +2084,26 @@ function updatePlayer(dt) {
    ================================================================ */
 function fmt(it, v) { if (it.type === 'select') return ''; const d = it.step < 0.01 ? 3 : it.step < 0.1 ? 2 : it.step < 1 ? 1 : 0; return Number(v).toFixed(d); }
 function saveParams() { store.set('tentacleLab.params', P); }
-function buildPanel() {
+/** 依肢體類型顯示對應的參數群組，並重建上方的流程圖 */
+function refreshGroups() {
+  for (const g of PARAM_DEFS) {
+    const el = document.getElementById('grp-' + g.id);
+    if (el) el.hidden = !!g.only && g.only !== P.bodyType;
+  }
   const pipe = $('#pipe');
   pipe.innerHTML = '<button data-g="brain" disabled>大腦指令</button>';
-  PARAM_DEFS.forEach(g => { pipe.insertAdjacentHTML('beforeend', `<span>→</span><button data-g="${g.id}">${g.title.split(' ')[0]}</button>`); });
+  PARAM_DEFS.filter(g => g.id !== 'bodytype' && (!g.only || g.only === P.bodyType))
+    .forEach(g => { pipe.insertAdjacentHTML('beforeend', `<span>→</span><button data-g="${g.id}">${g.title.split(' ')[0]}</button>`); });
   pipe.querySelectorAll('button[data-g]').forEach(b => b.addEventListener('click', () => {
     const d = document.getElementById('grp-' + b.dataset.g); if (!d) return; d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }));
+}
+function buildPanel() {
   const root = $('#groups'); root.innerHTML = '';
   for (const g of PARAM_DEFS) {
     const d = document.createElement('details');
-    d.className = 'grp'; d.id = 'grp-' + g.id; d.open = g.id !== 'body';
-    d.innerHTML = `<summary>${g.title}</summary><div class="body"><p class="gdesc">${g.desc}</p></div>`;
+    d.className = 'grp'; d.id = 'grp-' + g.id; d.open = g.id !== 'body' && g.id !== 'vbody';
+    d.innerHTML = `<summary>${g.title}</summary><div class="body"><p class="gdesc">${g.desc} <a href="${g.ref}" target="_blank" rel="noopener">原理與文獻 →</a></p></div>`;
     const body = d.querySelector('.body');
     for (const it of g.items) {
       const row = document.createElement('div'); row.className = 'prm';
@@ -1765,6 +2135,7 @@ function buildPanel() {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); applyCustom(); }
   });
   refreshAlgoUI();
+  refreshGroups();
 }
 function applyCustom() {
   const src = $('#customSrc').value;
@@ -1779,6 +2150,14 @@ function refreshAlgoUI() {
   $('#customWrap').hidden = P.algo !== 'custom';
 }
 function onParam(it) {
+  if (it.k === 'bodyType') {
+    if (grasp) releaseGrasp();
+    brain.mode = 'home';
+    refreshGroups();
+    loadLevel(levelIdx);
+    toast(isVine() ? '切換為藤蔓機器人：身體從尖端外翻長出來，長出後就固定不動' : '切換為章魚觸手');
+    return;
+  }
   if (it.rebuild) { const g = grasp; if (g) releaseGrasp(); buildArm(); brain.mode = 'home'; return; }
   if (it.k === 'algo') { algoStamp++; refreshAlgoUI(); if (P.algo === 'custom' && !customFn) applyCustom(); newCommand(); }
   if (it.k === 'planner' || it.k === 'clearance') newCommand();
@@ -1791,6 +2170,7 @@ function syncPanel() {
     if (out) out.textContent = fmt(it, P[it.k]);
   }
   refreshAlgoUI();
+  refreshGroups();
 }
 function togglePanel(force, persist = true) {
   const open = force ?? !document.body.classList.contains('panel-open');
@@ -1800,8 +2180,9 @@ function togglePanel(force, persist = true) {
 $('#panelToggle').addEventListener('click', () => togglePanel());
 $('#defaultsBtn').addEventListener('click', () => {
   const rebuild = P.N !== undefined;
-  setDefaults(); saveParams(); syncPanel(); algoStamp++;
-  if (rebuild) { if (grasp) releaseGrasp(); buildArm(); brain.mode = 'home'; }
+  const bt = P.bodyType;
+  setDefaults(); P.bodyType = bt; saveParams(); syncPanel(); algoStamp++;
+  if (rebuild) { if (grasp) releaseGrasp(); loadLevel(levelIdx); }
   toast('已恢復預設參數');
 });
 $('#copyBtn').addEventListener('click', async () => {
@@ -1839,7 +2220,13 @@ function updateHUD(dt) {
   // 準星提示
   const h = aim();
   const hint = $('#aimHint');
-  if (h) {
+  if (h && isVine()) {
+    const as = h.grasp ? null : assistTarget(), tgt = h.grasp || as, d = vineTip().distanceTo(tgt ? tgt.center() : h.point);
+    let s = `${h.label}${tgt ? ' · 可夾取 [2]' : ''} · 距尖端 ${d.toFixed(2)} m`;
+    if (d > P.vReel - vine.L) s += ` <span class="far">剩餘材料 ${(P.vReel - vine.L).toFixed(2)} m</span>`;
+    hint.innerHTML = s;
+    $('#cross').classList.toggle('grab', !!tgt);
+  } else if (h) {
     const as = h.grasp ? null : assistTarget(), tgt = h.grasp || as;
     const reach = (tgt ? arm.n - wrapK() : arm.n) * maxLen(), d = base.distanceTo(tgt ? tgt.center() : h.point);
     let s = `${h.label}${h.grasp ? ' · 可抓取 [2]' : ''} · ${d.toFixed(2)} m`;
@@ -1849,18 +2236,34 @@ function updateHUD(dt) {
     $('#cross').classList.toggle('grab', !!(h.grasp || as));
   } else hint.textContent = '';
   // 模式
-  let mode = brain.mode === 'home' ? '收回' : brain.label;
-  if (grasp && grasp.phase === 'held') mode += ` · 品質 ${Math.round(grasp.quality * 100)}%`;
+  let mode = isVine() ? vine.label : brain.mode === 'home' ? '收回' : brain.label;
+  if (isVine() && vine.grip) mode += ` · 夾著${vine.grip.label}`;
+  if (!isVine() && grasp && grasp.phase === 'held') mode += ` · 品質 ${Math.round(grasp.quality * 100)}%`;
   if (world.door) mode += ` · 門把 ${Math.round(world.door.knobAngle / DEG)}° · 門 ${Math.round(world.door.angle / DEG)}°`;
-  $('#modeLine').innerHTML = `觸手：<b>${mode}</b>`;
+  $('#modeLine').innerHTML = `${isVine() ? '藤蔓' : '觸手'}：<b>${mode}</b>`;
   renderObjectives(false);
   // 曲線
   const tip = tipNode();
-  const goalErr = brain.mode === 'home' || !nav.path ? 0 : (grasp && grasp.phase !== 'approach' ? arm.nodes[nav.nAct].distanceTo(nav.goal) : tip.distanceTo(nav.goal));
+  const goalErr = isVine() ? ((vine.mode === 'grow' || vine.mode === 'grab') ? tip.distanceTo(vine.goalPt) : 0)
+    : brain.mode === 'home' || !nav.path ? 0 : (grasp && grasp.phase !== 'approach' ? arm.nodes[nav.nAct].distanceTo(nav.goal) : tip.distanceTo(nav.goal));
   histT += dt;
   if (histT > 0.05) { histT = 0; errHist.push(goalErr); if (errHist.length > 200) errHist.shift(); }
   telT += dt;
-  if (telT > 0.12) {
+  if (telT > 0.12 && isVine()) {
+    telT = 0;
+    const MODE = { idle: '待命', grow: '生長', grab: '生長去夾', retract: '收回' };
+    const ratio = vine.Mw > 0 ? vine.M / vine.Mw : 0;
+    $('#telText').textContent = [
+      `肢體    藤蔓機器人 · ${MODE[vine.mode]} · ${vine.v.toFixed(2)} m/s`,
+      `規劃器  ${PLAN_NAME[P.planner]}${vine.path ? ` · ${vine.path.pts.length} 點 · ${vine.path.len.toFixed(2)} m` : ''}${stats.planOk ? '' : ' · 失敗'}`,
+      `長度    ${vine.L.toFixed(2)} / ${P.vReel.toFixed(1)} m   累積轉角 Θ ${(vine.Theta / DEG).toFixed(0)}°`,
+      `壓力    P ${P.vP.toFixed(1)} kPa  阻力 Y ${vine.Y.toFixed(1)} kPa  餘裕 ${(P.vP - vine.Y).toFixed(1)}`,
+      `懸臂    彎矩 ${vine.M.toFixed(3)} / 塌陷 ${vine.Mw.toFixed(3)} N·m${ratio > 1 ? ' → 下垂' : ''}`,
+      `        水平懸臂臨界長度 ≈ ${isFinite(vine.Lcrit) ? vine.Lcrit.toFixed(2) + ' m' : '∞'}`,
+      `收回    ${P.vRetract === 'tip' ? '尖端裝置' : '基部拉尾巴'}   挫屈 ${vine.buckleT.toFixed(1)} s${vine.grip ? '   夾著 ' + vine.grip.label : ''}`,
+    ].join('\n');
+    drawSpark();
+  } else if (telT > 0.12) {
     telT = 0;
     const n = arm.n, refErr = nav.path && brain.mode !== 'home' ? arm.nodes[nav.nAct].distanceTo(nav.tipRef) : 0;
     let effort = 0; for (let i = 1; i <= n; i++) effort += arm.T[i].distanceTo(arm.nodes[i]); effort /= n;
@@ -1900,20 +2303,25 @@ function drawSpark() {
 let last = performance.now(), acc = 0;
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const dt = clamp((now - last) / 1000, 0, 0.05); last = now;   // 第一幀的 rAF 時間戳可能早於載入時間
   tick(dt);
   renderer.render(scene, camera);
 }
 function tick(dt) {
   updatePlayer(dt);
   updateBase();
-  computeTargets(dt);
-  slewTargets(dt);
   acc += dt; let steps = 0; deepThisFrame = false;
-  while (acc >= H && steps < 8) { physicsStep(H); stepBalls(H); acc -= H; steps++; }
+  if (isVine()) {
+    vineUpdate(dt);
+    while (acc >= H && steps < 8) { stepBalls(H); acc -= H; steps++; }
+  } else {
+    computeTargets(dt);
+    slewTargets(dt);
+    while (acc >= H && steps < 8) { physicsStep(H); stepBalls(H); acc -= H; steps++; }
+    if (deepThisFrame) stats.deepFrames++;
+    postPhysics(dt);
+  }
   if (steps >= 8) acc = 0;
-  if (deepThisFrame) stats.deepFrames++;
-  postPhysics(dt);
   if (world.door) world.door.update();
   const L = LEVELS[levelIdx];
   L.update(world, dt);
@@ -1922,12 +2330,12 @@ function tick(dt) {
     world.won = true;
     setTimeout(() => {
       $('#winTitle').textContent = `完成：${L.name}`;
-      $('#winText').innerHTML = `用時 ${world.time.toFixed(1)} 秒 · 控制器 <b>${ALGO_NAME[P.algo]}</b> · 規劃器 <b>${PLAN_NAME[P.planner]}</b> · 刮擦 ${(stats.deepFrames / 60).toFixed(1)} 秒。<br>試試換一個演算法或更嚴苛的參數（例如降低肌肉剛性、加入雜訊）再挑戰一次。`;
+      $('#winText').innerHTML = `用時 ${world.time.toFixed(1)} 秒 · ${isVine() ? '肢體 <b>藤蔓機器人</b>' : `控制器 <b>${ALGO_NAME[P.algo]}</b>`} · 規劃器 <b>${PLAN_NAME[P.planner]}</b> · 刮擦 ${(stats.deepFrames / 60).toFixed(1)} 秒。<br>試試換一個演算法或更嚴苛的參數（例如降低肌肉剛性、加入雜訊）再挑戰一次。`;
       $('#win').classList.remove('hidden');
     }, 700);
   }
   for (const b of world.balls) { b.mesh.position.copy(b.c); if (!b.held) { b.mesh.rotation.x += b.v.z * dt / b.r; b.mesh.rotation.z -= b.v.x * dt / b.r; } }
-  updateTentacleMesh();
+  if (isVine()) updateVineMesh(); else updateTentacleMesh();
   updateDebug();
   updateHUD(dt);
 }
@@ -1938,7 +2346,7 @@ togglePanel(innerWidth > 760 ? store.get('tentacleLab.panel', true) : false, fal
 loadLevel(levelIdx);
 if (store.get('tentacleLab.seenIntro', false)) $('#intro').classList.add('hidden');
 requestAnimationFrame(frame);
-window.__lab = { P, arm, nav, brain, get grasp() { return grasp; }, get world() { return world; }, cmdReach, cmdGrab, cmdPull, cmdRelease, cmdRetract, setTwist, player, loadLevel, stats, plan, planVia, segClear, sdfWorld, V3, aim, camera,
+window.__lab = { P, arm, nav, brain, vine, get grasp() { return grasp; }, onParam, PARAM_DEFS, get world() { return world; }, cmdReach, cmdGrab, cmdPull, cmdRelease, cmdRetract, setTwist, player, loadLevel, stats, plan, planVia, segClear, sdfWorld, V3, aim, camera,
   run(sec, dt = 1 / 60) { for (let t = 0; t < sec; t += dt) tick(dt); renderer.render(scene, camera); } };
 </script>
 </body>
