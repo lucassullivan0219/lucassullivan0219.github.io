@@ -726,6 +726,31 @@ S + LK + SO，按住：  90 µA = Vm/100k ＋ (Vm − 0.4)/100k
   <li><b>這個方案的作用是示範過極化的條件</b>（E<sub>K</sub> 低於靜止電位、外向電流比內向慢），不是電路本來的設計。電路圖的設計（9 V、R13 = 1 kΩ、Q<sub>sense</sub> 在 SW 後）靜止也是 0 V，同樣沒有過極化。</li>
 </ul>
 
+<h3 id="s9-leak">再加 leak：過極化會變淺，最後不低於基線</h3>
+<p>在方案 3 上，再從 Vm 到 GND 加一顆電阻（等於多一條 leak），或像 #2-3 一樣在前面接 Passive unit（每個 unit 也是 100 kΩ 接 GND 的 leak）。來源：<code>check_ap.py leak</code>。</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>方案 3 再加</th><th class="num">靜止</th><th class="num">AP 後最低</th><th class="num">過極化</th><th class="num">持續</th><th class="num">門檻（按壓）</th><th class="num">pot 10k 按 50 ms</th></tr></thead>
+  <tbody>
+    <tr><td>不加</td><td class="num">1.18</td><td class="num">0.58</td><td class="num">0.60</td><td class="num">125 ms</td><td class="num">11.8 ms</td><td class="num">5.26（觸發）</td></tr>
+    <tr><td>Vm → GND 1 MΩ</td><td class="num">1.12</td><td class="num">0.58</td><td class="num">0.54</td><td class="num">110 ms</td><td class="num">12.8 ms</td><td class="num">5.24</td></tr>
+    <tr><td>470 kΩ</td><td class="num">1.06</td><td class="num">0.58</td><td class="num">0.48</td><td class="num">95 ms</td><td class="num">14.0 ms</td><td class="num">5.17</td></tr>
+    <tr><td>220 kΩ</td><td class="num">0.96</td><td class="num">0.58</td><td class="num">0.38</td><td class="num">69 ms</td><td class="num">16.2 ms</td><td class="num">2.06（不觸發）</td></tr>
+    <tr><td>100 kΩ</td><td class="num">0.78</td><td class="num">0.57</td><td class="num">0.21</td><td class="num">34 ms</td><td class="num">21.3 ms</td><td class="num">1.74（不觸發）</td></tr>
+    <tr><td>47 kΩ</td><td class="num">0.56</td><td class="num">0.56</td><td class="num bad">0</td><td class="num">—</td><td class="num">33.5 ms</td><td class="num">1.35（不觸發）</td></tr>
+    <tr><td>前面 1 個 Passive unit（#2-3，n = 1）</td><td class="num">0.79</td><td class="num">0.73</td><td class="num">0.05</td><td class="num">—</td><td class="num">47.3 ms</td><td class="num">1.37（不觸發）</td></tr>
+    <tr><td>前面 2 個 Passive unit（n = 2）</td><td class="num">0.61</td><td colspan="4" class="muted">按 80 ms 內不觸發（1 秒長脈衝的 I<sub>min</sub> 是 67.5 µA）</td><td class="num">0.95</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small muted">單位 V；可變電阻 0.7k（約 90 µA）。「持續」是低於靜止 0.05 V 以上的時間。</p>
+<ul class="specs">
+  <li><b>AP 後的最低點幾乎不動（0.56–0.58 V）</b>：那是 Slow out 能拉到的極限（這個電路的 E<sub>K</sub>，見上面的計算）。加 leak 改變的是靜止點：leak 接 GND，它的反轉電位是 0 V，leak 越多，靜止點越被拉向 0 V。靜止點一降到 0.56 V（47 kΩ 時），AP 後就不會再低於基線。</li>
+  <li><b>所以「加 leak 讓過極化不低於基線」在這個電路是對的</b>，原因是 leak 的反轉電位（0 V）比 Slow out 的極限（約 0.57 V）還低。修正 1 之後靜止 0 V 沒有過極化，也是同一件事。</li>
+  <li><b>神經不是這樣</b>：E<sub>leak</sub>（約 −60 到 −70 mV）在 E<sub>K</sub>（約 −90 mV）之上，多一點 leak 會讓過極化變淺、回得比較快（被分流），但 AP 後還是會低於靜止電位。這個電路的 E<sub>leak</sub> 比 E<sub>K</sub> 低，順序反了，才會整個消失。</li>
+  <li><b>代價</b>：leak 越多，門檻越難到（按壓要從 12 ms 變成 34 ms），可變電阻轉到 10 kΩ（約 44 µA）時從 220 kΩ 起就觸發不了，等於 rheobase 變大。</li>
+</ul>
+
 <h3 id="s9-robust">修正 1 ＋ 2 的餘裕</h3>
 <p>同一套 8 組隨機參數（<code>check_ap.py mc 3 8 1</code>）：7 組都正常（靜止 0 V、按 20 ms 觸發、峰值 5.5–6.0 V、AP 後最低約 0.1 V、之後回到 0 V）。<b>有 1 組</b>（2N3904 β 106、二極體 I<sub>S</sub> 偏大，FI 門檻偏低）在第一個 AP 之後不回 0 V，停在約 0.64 V、每 0.25 秒冒一個小峰：FI 和 Slow out 在 0.64 V 互相抵住，又變回自己會振盪的狀態。照講義電路圖接 Q<sub>sense</sub>（不漏電）也一樣，所以是 FI 門檻和 Slow out 的鉗位太接近，不是 22 kΩ 的問題。</p>
 <ul class="specs">
@@ -882,7 +907,7 @@ S + LK + SO，按住：  90 µA = Vm/100k ＋ (Vm − 0.4)/100k
     <tr><td><a href="sim/check_dc.py">check_dc.py</a></td><td>§3、§4 的 DC 數值；§9 對照表</td></tr>
     <tr><td><a href="sim/check_transient.py">check_transient.py</a></td><td>各種接觸不良組合的波形；測試 7</td></tr>
     <tr><td><a href="sim/check_r2.py">check_r2.py</a></td><td>§9 第三輪：R2 = 100 Ω／1 MΩ／3 MΩ 與各個外加修正</td></tr>
-    <tr><td><a href="sim/check_ap.py">check_ap.py</a></td><td>§9 算不算 AP、過極化、隨機參數下的餘裕、按住 SW 的連續發放；§11 對照表</td></tr>
+    <tr><td><a href="sim/check_ap.py">check_ap.py</a></td><td>§9 算不算 AP、過極化、加 leak 的影響、隨機參數下的餘裕、按住 SW 的連續發放；§11 對照表</td></tr>
     <tr><td><a href="sim/check_23.py">check_23.py</a></td><td>#2-3 passive to active：n = 0–4 的 I<sub>min</sub>、delay、AP 與細胞外訊號（<a href="../passive-active-sim/">互動模擬</a>）</td></tr>
     <tr><td><a href="sim/check_breadboard.py">check_breadboard.py</a></td><td>§9 第二輪麵包板對照與 Slow out 故障假設；§11 的節點預期值</td></tr>
     <tr><td><a href="sim/variants.py">variants.py</a></td><td>§9 換設計值的表</td></tr>

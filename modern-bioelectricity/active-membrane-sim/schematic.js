@@ -8,6 +8,10 @@
    s.setContacts(state)   state.sw / leak / fi_vm / fi_vplus / fi_gnd / so_vm / so_gnd
    s.setQsense('pcb'|'sw'|'rx'); s.setResistors(r13, rfe, soR2)
    s.setAddons(state)     state.r13p / rf / rb / rs: add-on resistors clipped on (0 = none)
+   opts.chain = n         #2-3: n passive units between the Stimulator and the Leak, 10 kohm
+                          apart on top, 100 ohm apart on the extracellular row (PC1.., PX2.., AX)
+   s.setSupply('stim'|'local')  FI.V+ wired from the Stimulator (dashed wire) or FI's own battery
+   s.setSource('stim'|'ideal')  label the ideal current source that replaces SW
    Node codes follow hw2-debug/nodes.html: board + node, e.g. FI.B3.
 */
 (function(){
@@ -40,6 +44,8 @@
 
   window.MembraneSchematic = function(svg, opts){
     var live = !!(opts && opts.live), out = [];
+    var n = (opts && opts.chain) || 0, DX = 130, OX = n * DX;
+    function ux(k){ return 370 + (k - 1) * DX; }       /* wire x of passive unit k (like the Leak) */
     function L(pts, cls){ out.push('<polyline class="' + (cls || 'w') + '" points="' + pts.map(function(p){ return p.join(','); }).join(' ') + '"/>'); }
     function dot(x, y){ out.push('<circle class="dotn" cx="' + x + '" cy="' + y + '" r="3"/>'); }
     function txt(x, y, s, cls, anchor){ out.push('<text class="' + cls + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + s + '</text>'); }
@@ -102,14 +108,27 @@
     }
 
     box(14, 18, 308, 430, 'ST', 'Stimulator', 40, 439);
-    box(332, 86, 86, 362, 'LK', 'Leak', 370, 210, true);
-    box(428, 86, 262, 362, 'FI', 'Fast inward', 600, 439);
-    box(700, 86, 352, 362, 'SO', 'Slow out', 962, 439);
-    L([[276, 70], [1040, 70]], 'w vm');
-    L([[20, 455], [1040, 455]]);
-    txt(1046, 74, 'CH1', 'lab');
-    out.push('<text class="nvb" data-node="Vm" data-short="Vm =" data-bus="1" x="690" y="58" text-anchor="middle">Vm</text>');
-    txt(24, 472, 'GND（Extracellular，接在 Stimulator 的 −）', 'lab');
+    L([[276, 70], [n ? ux(1) : 370, 70]], n ? 'w' : 'w vm');
+    L([[20, 455], [n ? ux(1) : 344, 455]]);
+    txt(24, 472, n ? 'GND（Stimulator 的 −，示波器地線夾這裡）' : 'GND（Extracellular，接在 Stimulator 的 −）', 'lab');
+
+    /* ---- #2-3 passive units: 1 uF || 100 kohm, 10 kohm / 100 ohm to the next ---- */
+    for(var k = 1; k <= n; k++){
+      var x = ux(k), gap = 418 + (k - 1) * DX, nx = k < n ? ux(k + 1) : 370 + OX, nb = k < n ? ux(k + 1) - 26 : 344 + OX;
+      box(332 + (k - 1) * DX, 86, 86, 362, '#' + k, 'Passive', x, 210, true);
+      L([[x, 70], [x, 130]]); dot(x, 70); L([[x - 26, 130], [x + 26, 130]]); dot(x, 130);
+      capV(x - 26, 130, 455, 290); txt(x, 302, '1µF', 'lab', 'middle');
+      resV(x + 26, 130, 455, 250, 330); txt(x, 345, '100k', 'lab', 'middle');
+      L([[x - 26, 455], [x + 26, 455]]); dot(x - 26, 455); dot(x + 26, 455);
+      out.push('<text class="nv" data-node="PC' + k + '" data-short="PC' + k + '" x="' + (x + 6) + '" y="62"><tspan class="code">PC' + k + '</tspan></text>');
+      if(k > 1) out.push('<text class="nv" data-node="PX' + k + '" data-short="PX' + k + '" data-mv="1" x="' + (x - 20) + '" y="472"><tspan class="code">PX' + k + '</tspan></text>');
+      resH(70, x, nx, gap + 4, gap + 40); txt(gap + 22, 86, '10k', 'lab', 'middle');
+      resH(455, x + 26, nb, gap + 4, gap + 40); txt(gap + 22, 446, '100Ω', 'lab', 'middle');
+    }
+    if(n) out.push('<polyline id="wVplus" class="w" style="stroke-dasharray:6 5;display:none" points="24,36 24,10 ' +
+      (695 + OX) + ',10 ' + (695 + OX) + ',362 ' + (634 + OX) + ',362"/>' +
+      '<text id="lVplus" class="cur" x="336" y="26" style="display:none">V+ 從 Stimulator 拉線到 FI（Passive PCB 底板沒有串 V+）</text>');
+    out.push('<text id="lIsrc" class="cur" x="282" y="100" style="display:none">理想電流源</text>');
 
     /* ---- Stimulator ---- */
     L([[24, 36], [74, 36]]); L([[24, 36], [24, 330]]);
@@ -134,7 +153,7 @@
     out.push('<text id="lRx" class="cur" x="242" y="176" style="display:none">E–B 並 22k</text>');
     L([[260, 110], [276, 110], [276, 70]]);
     cur('iStim', 272, 62, 'end');
-    out.push('<text id="lRb" class="cur" x="300" y="62" style="display:none"></text>');
+    out.push('<text id="lRb" class="cur" x="' + (n ? 380 + OX : 300) + '" y="62" style="display:none"></text>');
     L([[230, 144], [230, 200]]);
     L([[196, 110], [196, 166]]);
     bjt(196, 186, 'p', 90, false, 'qSense'); txt(196, 232, 'Q_sense', 'lab', 'middle');
@@ -143,6 +162,25 @@
     out.push('<polyline id="wQsSw" class="w" points="166,200 74,200 74,110" style="display:none"/>');
     out.push('<circle id="dQsPcb" class="dotn" cx="24" cy="200" r="3"/>');
     resV(230, 200, 455, 300, 380); txt(240, 345, '7k', 'lab'); dot(230, 455);
+
+    /* ---- the active membrane: Leak, Fast inward, Slow out (shifted right by the passive units) ---- */
+    out.push('<g transform="translate(' + OX + ',0)">');
+    box(332, 86, 86, 362, 'LK', 'Leak', 370, 210, true);
+    box(428, 86, 262, 362, 'FI', 'Fast inward', 600, 439);
+    box(700, 86, 352, 362, 'SO', 'Slow out', 962, 439);
+    L([[370, 70], [1040, 70]], 'w vm');
+    L([[344, 455], [1040, 455]]);
+    txt(1046, 74, 'CH1', 'lab');
+    out.push('<text class="nvb" data-node="Vm" data-short="Vm =" data-bus="1" x="690" y="58" text-anchor="middle">Vm</text>');
+    if(n){
+      txt(1046, 459, 'CH2', 'lab');
+      out.push('<text class="nv" data-node="AX" data-short="AX" data-mv="1" x="420" y="472"><tspan class="code">AX</tspan></text>');
+      txt(505, 472, '（active 端細胞外）', 'lab');
+    }
+    out.push('<g id="gBat" style="display:none"><polyline class="w" points="634,362 662,362 662,390"/>' +
+      '<polyline class="sym" points="650,390 674,390"/><polyline class="sym" points="656,398 668,398" style="stroke-width:3"/>' +
+      '<polyline class="w" points="662,398 662,455"/><circle class="dotn" cx="662" cy="455" r="3"/>' +
+      '<text class="lab" x="670" y="386">FI 自帶</text><text class="lab" x="670" y="412">電池</text></g>');
 
     /* ---- Leak ---- */
     L([[370, 70], [370, 76]]); dot(370, 70);
@@ -162,7 +200,7 @@
     dot(460, 220); tag('FI.B3', 'B3', 466, 262);
     resV(460, 220, 405, 280, 350); txt(470, 322, '3M', 'lab');
     L([[460, 220], [500, 220]]);
-    bjt(520, 220, 'n', 0, false, 'qFi3904'); txt(550, 226, '3904', 'lab');
+    bjt(520, 220, 'n', 0, false, 'qFi3904'); txt(548, 246, '3904', 'lab');
     L([[534, 190], [534, 170], [600, 170]]); dot(534, 170); tag('FI.B4', 'B4', 538, 160);
     resV(534, 250, 405, 300, 370); tag('FI.E3', 'E3', 540, 284);
     out.push('<text id="lRfe" class="lab" x="544" y="340">100 kΩ</text>');
@@ -171,7 +209,7 @@
     L([[634, 140], [634, 120]]);
     resV(634, 200, 310, 228, 290); tag('FI.E4', 'E4', 628, 214, 'end');
     out.push('<text id="lR13" class="lab" x="626" y="262" text-anchor="end">R13 100 kΩ</text>');
-    out.push('<text id="lR13p" class="cur" x="626" y="278" text-anchor="end" style="display:none"></text>');
+    out.push('<text id="lR13p" class="cur" x="645" y="262" style="display:none"></text>');
     contactV('fi_vplus', 'FI:V+', 634, 310, 346);
     L([[634, 346], [634, 362]]); tag('FI.V+', 'V+', 634, 380, 'middle');
     L([[460, 405], [534, 405]]); dot(500, 405);
@@ -192,7 +230,7 @@
     resV(840, 230, 405, 290, 360);
     out.push('<text id="lSoR2" class="lab" x="850" y="330">3M</text>');   /* TA: 1 Mohm; kit shipped 100 ohm */
     L([[840, 230], [860, 230]]);
-    bjt(880, 230, 'n', 0, false, 'qSo3904'); txt(910, 236, '3904', 'lab');
+    bjt(880, 230, 'n', 0, false, 'qSo3904'); txt(908, 256, '3904', 'lab');
     L([[894, 200], [894, 170], [960, 170]]); dot(894, 170); tag('SO.B4', 'B4', 900, 160);
     L([[894, 260], [894, 405]]);
     bjt(980, 170, 'p', 0, true, 'qSo4403'); txt(1006, 176, '4403', 'lab');
@@ -202,8 +240,9 @@
     L([[740, 405], [994, 405]]); dot(840, 405); dot(894, 405); dot(870, 405);
     contactV('so_gnd', 'SO:GND', 870, 412, 448); L([[870, 405], [870, 412]]); L([[870, 448], [870, 455]]);
     tag('SO.GND', 'GND', 880, 432);
+    out.push('</g>');
 
-    svg.setAttribute('viewBox', '0 0 1080 480');
+    svg.setAttribute('viewBox', '0 0 ' + (1080 + OX) + ' 480');
     svg.classList.add('msch'); if(live) svg.classList.add('live');
     svg.innerHTML = out.join('');
 
@@ -213,7 +252,7 @@
       setValues: function(fn){
         tags.forEach(function(t){
           var v = fn(t.dataset.node); if(v === null || v === undefined) return;
-          var s = v.toFixed(2) + ' V', short = t.dataset.short;
+          var s = t.dataset.mv ? (v * 1e3).toFixed(1) + ' mV' : v.toFixed(2) + ' V', short = t.dataset.short;
           if(t.dataset.bus){ t.textContent = short + ' ' + s; return; }
           if(t.dataset.two){
             var x = t.getAttribute('x');
@@ -256,6 +295,12 @@
           if(a[1]) e.textContent = a[2](a[1]);
         });
       },
+      setSupply: function(mode){
+        var w = svg.querySelector('#wVplus'), l = svg.querySelector('#lVplus');
+        if(w){ w.style.display = mode === 'local' ? 'none' : ''; l.style.display = w.style.display; }
+        svg.querySelector('#gBat').style.display = mode === 'local' ? '' : 'none';
+      },
+      setSource: function(src){ svg.querySelector('#lIsrc').style.display = src === 'ideal' ? '' : 'none'; },
       setResistors: function(r13, rfe, soR2){
         svg.querySelector('#lR13').textContent = 'R13 ' + fmtR(r13);
         svg.querySelector('#lRfe').textContent = fmtR(rfe);

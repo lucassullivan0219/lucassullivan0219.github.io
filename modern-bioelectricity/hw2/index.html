@@ -1021,7 +1021,7 @@ flowchart TD
     <ul>
       <li>題目要 <b>long pulse</b>：每次按住 SW 約 1 秒以上（超過 5 倍時間常數），讓 Vm 有時間到穩態。</li>
       <li>n = 4 開始：電流從最小慢慢加大，每加一點按一次，直到剛好出現 AP。用方法 A 量出這個電流，就是 I<sub>min</sub>(4)。</li>
-      <li>減少一個單元，重複，一路做到 n = 0（Stimulator 直接接 active membrane）。</li>
+      <li>減少一個單元，重複，一路做到 n = 0（Stimulator 直接接到 active 端的 Vm；Vm 上仍有 Leak、FI、SO，就是 #2-2 的接法）。</li>
       <li>作圖：橫軸 number of passive units，縱軸 minimum stimulation current。</li>
       <li><span class="tag warn">注意</span><span class="tag inf">推論</span>模擬的 I<sub>min</sub> 只有約 5–38 µA，旋鈕最小卻是約 44 µA，所以 n 小時每按一次都會觸發，量不到門檻。可以在 Q<sub>pass</sub> 的 E–B（7K-R1 下端 ↔ 7K-R2 上端）夾一顆 10 kΩ，旋鈕 0–10 kΩ 就變成約 41–0.3 µA；拆掉就復原。電流用方法 B 量。</li>
     </ul></li>

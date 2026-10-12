@@ -20,6 +20,8 @@ Criteria, typical parameters, pot 700 ohm (~90 uA) unless noted:
     python check_ap.py 3 5          (cases 3..4 only)
     python check_ap.py mc 6 8 1     (case 6 with 8 random parameter sets, seed 1)
     python check_ap.py train 7      (case 7: SW held 2 s at three pot settings, every AP)
+    python check_ap.py leak         (plan 3 with extra leak: a resistor Vm -> GND, or 1-2
+                                     passive units in front as in #2-3)
 """
 import os, sys, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -181,8 +183,18 @@ def train(kw, T=2.0):
               f'0.3 s after release {v[-1]:.2f} V', flush=True)
 
 
+LEAK_CASES = [('plan 3 + %s from Vm to GND' % lab, dict(extra=CASES[7][1]['extra'] + [('Vm', 'GND', r)]))
+              for lab, r in (('1M', 1e6), ('470k', 470e3), ('220k', 220e3), ('100k', 100e3), ('47k', 47e3))]
+LEAK_CASES += [('plan 3, %d passive unit(s) in front (#2-3)' % n, dict(CASES[7][1], chain=n)) for n in (1, 2)]
+
+
 if __name__ == '__main__':
-    if sys.argv[1:2] == ['train']:
+    if sys.argv[1:2] == ['leak']:
+        a = int(sys.argv[2]) if len(sys.argv) > 2 else 0
+        b = int(sys.argv[3]) if len(sys.argv) > 3 else len(LEAK_CASES)
+        for title, kw in LEAK_CASES[a:b]:
+            run(title, kw)
+    elif sys.argv[1:2] == ['train']:
         i = int(sys.argv[2])
         print(CASES[i][0])
         train(CASES[i][1])

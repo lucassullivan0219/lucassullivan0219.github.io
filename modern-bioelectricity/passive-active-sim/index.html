@@ -12,19 +12,19 @@
 :root{
   --paper:#F2F4F1; --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72;
   --link:#1F5FA8; --req:#2F5D3A; --opt:#8A6100; --infer:#7A3E8F; --warn:#A33A2B; --rule:#CCD3CE;
-  --grid:rgba(47,93,58,.07); --vmbus:#2a78d6; --ch2:#d95926;
+  --grid:rgba(47,93,58,.07); --vmbus:#2a78d6; --ch2:#d95926; --qon:rgba(42,120,214,.16);
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
     --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
-    --grid:rgba(127,176,137,.08); --vmbus:#3987e5; --ch2:#e0703f;
+    --grid:rgba(127,176,137,.08); --vmbus:#3987e5; --ch2:#e0703f; --qon:rgba(57,135,229,.22);
   }
 }
 :root[data-theme="dark"]{
   --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
   --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
-  --grid:rgba(127,176,137,.08); --vmbus:#3987e5; --ch2:#e0703f;
+  --grid:rgba(127,176,137,.08); --vmbus:#3987e5; --ch2:#e0703f; --qon:rgba(57,135,229,.22);
 }
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);
@@ -76,16 +76,7 @@ select,input[type=number]{font:inherit;font-size:14px;padding:3px 6px;border:1px
 .sch-card{margin-top:16px}
 .sch-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 svg#sch{display:block;width:100%;min-width:760px;height:auto}
-#sch .w{stroke:var(--ink);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
-#sch .vm{stroke:var(--vmbus);stroke-width:3}
-#sch .box{fill:none;stroke:var(--rule);stroke-width:1.4;stroke-dasharray:5 4}
-#sch .bt{fill:var(--muted);font-size:13px;font-weight:700}
-#sch .lab{fill:var(--muted);font-size:11.5px}
-#sch .nv{fill:var(--ink);font-size:11.5px;font-family:"IBM Plex Mono",ui-monospace,monospace}
-#sch .nv .code{fill:var(--link);font-weight:700}
-#sch .cur{fill:var(--opt);font-size:11.5px;font-family:"IBM Plex Mono",ui-monospace,monospace}
-#sch .dotn{fill:var(--ink)}
-#sch .ghost{opacity:.28}
+.legend-sch{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--muted);margin-top:8px}
 .notes{margin-top:16px;font-size:15px}
 .notes ul{margin:6px 0;padding-left:1.3em;max-width:62em}
 .notes li{margin:4px 0}
@@ -148,7 +139,7 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
     <div>
       <h2>Passive unit 數</h2>
       <span class="seg" role="group" aria-label="Passive unit 數" id="nSeg"><button type="button" data-n="0">0</button><button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4" aria-pressed="true">4</button></span>
-      <p class="hint" style="margin:6px 0 0">n = 0 是 Stimulator 直接接 active membrane（就是 #2-2）。改 n 會斷電重置。</p>
+      <p class="hint" style="margin:6px 0 0">n 只算 Stimulator 和 active membrane 之間的 Passive unit。不論 n 多少，active 端的 Vm 上都有 Leak（1 µF ∥ 100 kΩ）、FI、SO（講義把 Leak 叫第 5 個 unit）。n = 0 就是 #2-2：Stimulator、Leak、FI、SO 接在同一個 Vm。改 n 會斷電重置。</p>
     </div>
     <div>
       <h2>Active membrane</h2>
@@ -183,9 +174,9 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
 </div>
 
 <section class="card sch-card" aria-label="電路圖">
-  <h2>電路（照講義 #2-3 電路圖；數值即時更新）</h2>
-  <div class="sch-scroll"><svg id="sch" viewBox="0 0 1080 384" role="img" aria-label="Stimulator、Passive unit 與 active membrane 的電路圖，標示即時節點電壓"></svg></div>
-  <p class="hint">上排是細胞內（intracellular），下排是細胞外（extracellular），電壓都對 Stimulator 的 GND。細胞外節點的電壓很小，以 mV 顯示。</p>
+  <h2>電路（照講義 #2-3 電路圖、PCB 實際值；數值即時更新，節點名稱見<a href="../hw2-debug/nodes.html">節點命名</a>）</h2>
+  <div class="sch-scroll"><svg id="sch" viewBox="0 0 1600 480" role="img" aria-label="Stimulator、Passive unit、Leak、Fast inward、Slow out 的完整電路圖，標示即時節點電壓"></svg></div>
+  <div class="legend-sch"><span>上排是細胞內（Intracellular）：Passive unit 之間各 10 kΩ</span><span>下排是細胞外（Extracellular）：各 100 Ω，Stimulator 那端接示波器地線</span><span>藍色粗線 = active 端的 Vm（CH1）</span><span>PC = Passive unit 的細胞內節點，PX／AX = 細胞外節點（mV）</span><span>淡藍底的電晶體 = 正在導通</span><span>紅色斜線接點 = 斷開，點一下切換</span></div>
 </section>
 
 <section class="notes" id="notes">
@@ -241,6 +232,7 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
       <li><b>Q4 的 delay 在 n = 4 特別長</b>（約 0.6 秒）：電流只比門檻大 5 %，Vm 要很久才爬到門檻。按住 SW 要超過 1 秒。</li>
       <li><b>CH2 長什麼樣取決於 FI 的電源怎麼接</b>。Passive PCB 底板的 V+ 沒有串到下一槽（只有 GND 經 100 Ω、Intracellular 經 10 kΩ），所以 FI 的 V+ 要從 Stimulator 拉一條線，FI 的電流（約 0.6–0.7 mA）就經細胞外那串 100 Ω 回到電池，CH2 變成約 +0.09–0.26 V 的單相正波，等於在量 FI 的電流。講義的模擬器讓 FI 自帶電池，電流只在 active 端繞圈，CH2 才是約 ±20 mV 的雙相波（上升時負、之後正），比 CH1 小約 200 倍。報告裡寫清楚 FI 的 V+ 怎麼接的。</li>
       <li><b>FI 沒有拉 V+ 就完全不會觸發</b>：FI 不和 Stimulator 疊在同一槽時，底板不會幫它接 V+。和 #2-2 的「FI:V+ 沒接上」一樣，量 FI.V+（R13 下端）應該是 7.8 V。</li>
+      <li><b>多一點 leak，過極化就變淺</b>：Passive unit 本身就是接到 GND 的 leak，會把 active 端的靜止點往 0 V 拉；Slow out 能拉到的最低點（約 0.57 V）不變，所以靜止點一掉到那附近，AP 後就不會再低於基線（見<a href="../hw2-debug/#s9-leak">除錯分析 §9</a>）。</li>
       <li><b>方案 3（過極化）不適合 #2-3</b>：被動鏈把 active 端的靜止點拉回 0.5–0.8 V（n ≥ 2 時已經和 Slow out 能拉到的約 0.6 V 差不多或更低），過極化就沒了；n = 3、4 時 I<sub>min</sub> 要 102、147 µA，Stimulator 給不出來。</li>
     </ul>
   </div>
@@ -249,6 +241,7 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
 <footer>Ebers–Moll 模型、修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton，和 <a href="../active-membrane-sim/">#2-2 互動模擬</a>共用同一個引擎（<a href="../active-membrane-sim/engine.js">engine.js</a>）。元件參數為典型值，細節見<a href="../hw2-debug/#s8">除錯分析 §8</a>。</footer>
 </div>
 
+<script src="../active-membrane-sim/schematic.js"></script>
 <script src="../active-membrane-sim/engine.js"></script>
 <script>
 (function(){
@@ -277,8 +270,8 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
     var fi = !$('ttx').checked, so = !$('tea').checked;
     st.fi_vm = st.fi_vplus = st.fi_gnd = fi; st.so_vm = st.so_gnd = so;
   }
-  $('ttx').addEventListener('change', function(){ contacts(); AM.build(); });
-  $('tea').addEventListener('change', function(){ contacts(); AM.build(); });
+  $('ttx').addEventListener('change', function(){ contacts(); AM.build(); syncSchematic(); });
+  $('tea').addEventListener('change', function(){ contacts(); AM.build(); syncSchematic(); });
   function setSupply(s){
     st.fi_supply = s;
     $('supStim').setAttribute('aria-pressed', s === 'stim' ? 'true' : 'false');
@@ -336,7 +329,7 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
     $('srcIdeal').setAttribute('aria-pressed', s === 'ideal' ? 'true' : 'false');
     $('rowPot').style.display = s === 'stim' ? '' : 'none';
     $('rowIs').style.display = s === 'ideal' ? '' : 'none';
-    AM.build();
+    AM.build(); syncSchematic();
   }
   $('srcStim').addEventListener('click', function(){ setSrc('stim'); });
   $('srcIdeal').addEventListener('click', function(){ setSrc('ideal'); });
@@ -345,7 +338,7 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
   var dly = {state:'idle'};
   function setSW(on){
     if(on && !st.sw){ dly = {state:'wait', t0:AM.time(), base:AM.v('Vm'), max:-1e9, tmax:0}; if(mode === 'single' && $('tsrc').value === 'sw' && trig.state === 'armed') startCapture(AM.time()); }
-    st.sw = on; AM.build();
+    st.sw = on; AM.build(); syncSchematic();
     var b = $('swBtn'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
     b.textContent = on ? 'SW 按下中' : '按住 SW（或空白鍵）';
   }
@@ -458,74 +451,34 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
   cv.addEventListener('pointerleave', function(){ cursorX = null; $('cursorRead').textContent = '把滑鼠移到畫面上可讀數值。'; });
   ['vdiv1', 'vdiv2'].forEach(function(id){ $(id).addEventListener('change', draw); });
 
-  /* ---- schematic: Stimulator, n passive units, active membrane ---- */
-  var svg = $('sch');
+  /* ---- schematic: the full circuit, shared with the #2-2 page (schematic.js, opts.chain) ---- */
+  var svg = $('sch'), SCH = null;
   function drawSchematic(){
-    var n = st.chain, out = [], yT = 70, yB = 320;
-    function L(pts, cls){ out.push('<polyline class="' + (cls || 'w') + '" points="' + pts.map(function(p){ return p.join(','); }).join(' ') + '"/>'); }
-    function txt(x, y, s, cls, anchor, id){ out.push('<text' + (id ? ' id="' + id + '"' : '') + ' class="' + cls + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + s + '</text>'); }
-    function resH(y, x1, x2){ var a = (x1 + x2) / 2 - 18, b = a + 36, pts = [[a, y]], s = 36 / 8; L([[x1, y], [a, y]]); for(var i = 1; i < 8; i++) pts.push([a + s * i, y + (i % 2 ? -6 : 6)]); pts.push([b, y]); L(pts); L([[b, y], [x2, y]]); }
-    function unit(x){ /* 1 uF || 100 kohm between the rows */
-      L([[x, yT], [x, 130]]); L([[x - 24, 130], [x + 24, 130]]);
-      L([[x - 24, 130], [x - 24, 185]]); L([[x - 36, 185], [x - 12, 185]]); L([[x - 36, 193], [x - 12, 193]]); L([[x - 24, 193], [x - 24, 250]]);
-      var pts = [[x + 24, 160]]; for(var i = 1; i < 8; i++) pts.push([x + 24 + (i % 2 ? 6 : -6), 160 + 7 * i]); pts.push([x + 24, 216]);
-      L([[x + 24, 130], [x + 24, 160]]); L(pts); L([[x + 24, 216], [x + 24, 250]]);
-      L([[x - 24, 250], [x + 24, 250]]); L([[x, 250], [x, yB]]);
-    }
-    /* Stimulator */
-    out.push('<rect class="box" x="14" y="30" width="150" height="320" rx="6"/>');
-    txt(28, 342, 'ST Stimulator', 'bt');
-    txt(40, 120, st.src === 'ideal' ? '理想電流源' : '定電流（Q_pass）', 'lab');
-    out.push('<circle cx="90" cy="180" r="22" class="w"/>'); L([[90, 196], [90, 164]]); L([[84, 170], [90, 164], [96, 170]]);
-    L([[90, 158], [90, yT], [150, yT]]); L([[90, 202], [90, yB], [150, yB]]);
-    txt(100, 62, '', 'cur', null, 'tIs');
-    /* passive units */
-    var x0 = 230, dx = n ? Math.min(150, 560 / n) : 0, xs = [];
-    for(var k = 1; k <= n; k++) xs.push(x0 + (k - 1) * dx);
-    var xa = n ? xs[n - 1] + Math.max(dx, 140) : 300;
-    var vmCls = n ? 'w' : 'w vm';
-    L([[150, yT], [n ? xs[0] : xa, yT]], vmCls); L([[150, yB], [n ? xs[0] : xa, yB]]);
-    xs.forEach(function(x, i){
-      unit(x);
-      out.push('<circle class="dotn" cx="' + x + '" cy="' + yT + '" r="3"/><circle class="dotn" cx="' + x + '" cy="' + yB + '" r="3"/>');
-      txt(x, 290 - 8, '#' + (i + 1), 'lab', 'middle');
-      out.push('<text class="nv" data-node="PC' + (i + 1) + '" x="' + (x + 6) + '" y="' + (yT - 10) + '"></text>');
-      if(i > 0) out.push('<text class="nv" data-node="PX' + (i + 1) + '" data-mv="1" x="' + (x + 6) + '" y="' + (yB + 38) + '"></text>');
-      var nx = i < n - 1 ? xs[i + 1] : xa;
-      resH(yT, x, nx); txt((x + nx) / 2, yT + 22, '10 kΩ', 'lab', 'middle');
-      resH(yB, x, nx); txt((x + nx) / 2, yB + 22, '100 Ω', 'lab', 'middle');
+    SCH = MembraneSchematic(svg, {live:true, chain:st.chain});
+    svg.style.minWidth = Math.round(760 * (1080 + 130 * st.chain) / 1080) + 'px';
+    svg.querySelectorAll('.contact').forEach(function(g){
+      g.addEventListener('click', function(){ toggleContact(g.dataset.c); });
+      g.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleContact(g.dataset.c); } });
     });
-    if(n){
-      out.push('<rect class="box" x="' + (xs[0] - 50) + '" y="40" width="' + (xs[n - 1] - xs[0] + 100) + '" height="270" rx="6"/>');
-      txt(xs[0] - 42, 302, 'Passive membrane PCB：' + n + ' 個 unit（1 µF ∥ 100 kΩ）', 'lab');
-    }
-    /* active membrane */
-    var bx = xa, bw = 1060 - bx;
-    L([[bx, yT], [1050, yT]], 'w vm'); L([[bx, yB], [1050, yB]]);
-    out.push('<rect class="box" x="' + (bx + 10) + '" y="40" width="' + (bw - 16) + '" height="270" rx="6"/>');
-    var cx = bx + bw / 2;
-    txt(cx, 112, 'Active membrane', 'bt', 'middle');
-    txt(cx, 134, 'Leak（1 µF ∥ 100 kΩ）∥ Fast inward ∥ Slow out', 'lab', 'middle');
-    [cx - 90, cx, cx + 90].forEach(function(x){ L([[x, yT], [x, 150]]); L([[x, 260], [x, yB]]); out.push('<rect x="' + (x - 34) + '" y="150" width="68" height="110" rx="5" class="w"/>'); });
-    txt(cx - 90, 210, 'Leak', 'lab', 'middle'); txt(cx, 200, 'FI', 'lab', 'middle'); txt(cx + 90, 200, 'SO', 'lab', 'middle');
-    txt(cx, 222, '', 'cur', 'middle', 'tIf'); txt(cx + 90, 222, '', 'cur', 'middle', 'tIo');
-    out.push('<text class="nv" data-node="Vm" x="' + (bx + 18) + '" y="' + (yT - 10) + '"></text>');
-    out.push('<text class="nv" data-node="' + (n ? 'AX' : 'GND') + '" data-mv="1" x="' + (bx + 18) + '" y="' + (yB + 38) + '"></text>');
-    txt(1052, yT + 4, 'CH1', 'lab'); if(n) txt(1052, yB + 4, 'CH2', 'lab');
-    txt(170, 376, 'GND（Stimulator 的 −；示波器地線夾在這裡）', 'lab');
-    svg.innerHTML = out.join('');
+    syncSchematic();
   }
-  var NAMES = {PC1:'PC1', Vm:'Vm', AX:'AX', GND:'GND'};
+  function syncSchematic(){
+    if(!SCH) return;
+    SCH.setContacts(st); SCH.setQsense(st.qs); SCH.setResistors(st.r13, st.rfe, st.so_r2); SCH.setAddons(st);
+    SCH.setSupply(st.fi_supply); SCH.setSource(st.src);
+  }
+  function toggleContact(key){
+    if(key === 'sw'){ setSW(!st.sw); return; }
+    st[key] = !st[key];
+    $('ttx').checked = !(st.fi_vm || st.fi_vplus || st.fi_gnd);
+    $('tea').checked = !(st.so_vm || st.so_gnd);
+    AM.build(); syncSchematic();
+  }
   function updSchematic(Is, If, Io){
-    svg.querySelectorAll('[data-node]').forEach(function(t){
-      var nd = t.dataset.node, v = nd === 'GND' ? 0 : AM.v(nd);
-      t.innerHTML = '<tspan class="code">' + nd + '</tspan> ' + (t.dataset.mv ? (v * 1e3).toFixed(2) + ' mV' : v.toFixed(2) + ' V');
-    });
-    var u = function(a){ return (a * 1e6).toFixed(1) + ' µA'; };
-    var e;
-    if((e = svg.querySelector('#tIs'))) e.textContent = 'I ' + u(Is);
-    if((e = svg.querySelector('#tIf'))) e.textContent = u(If);
-    if((e = svg.querySelector('#tIo'))) e.textContent = u(Io);
+    SCH.setValues(function(code){ return AM.has(code) ? AM.v(code) : null; });
+    SCH.setCurrents({iStim:Is, iFi:If, iSo:Io});
+    SCH.setOn({qPass:-AM.q('pass')[0] > 2e-6, qSense:-AM.q('sense')[0] > 2e-6, qFi3904:AM.q('fi3904')[0] > 2e-6,
+      qFi4403:If > 2e-6, qSo3904:AM.q('so3904')[0] > 2e-6, qSo4403:-AM.q('so4403')[0] > 2e-6});
   }
 
   /* ---- readouts ---- */
