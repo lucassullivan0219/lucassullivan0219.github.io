@@ -72,6 +72,27 @@
     }
   };
 
+  /* ---- schematic symbols (circuit-sim IC_LIB): functional layout, real TQFP-64 pin numbers ---- */
+  (function () {
+    var pins = [], nN = [15, 13, 11, 9, 7, 5, 3, 1], nP = [16, 14, 12, 10, 8, 6, 4, 2];
+    for (var k = 0; k < 8; k++) {
+      pins.push({name: 'IN' + (k + 1) + 'N', side: 'l', at: 2 + 4 * k, num: String(nN[k]), kind: 'a'});
+      pins.push({name: 'IN' + (k + 1) + 'P', side: 'r', at: 2 + 4 * k, num: String(nP[k]), kind: 'a'});
+    }
+    pins.push({name: 'SRB2', side: 'l', at: 34, num: '17', kind: 'a'}, {name: 'SRB1', side: 'r', at: 34, num: '18', kind: 'a'},
+      {name: 'BIASOUT', side: 'l', at: 40, num: '63', kind: 'a'}, {name: 'BIASIN', side: 'l', at: 42, num: '62', kind: 'a'},
+      {name: 'BIASINV', side: 'l', at: 44, num: '61', kind: 'a'}, {name: 'BIASREF', side: 'l', at: 46, num: '60', kind: 'a'},
+      {name: 'AVDD', side: 't', at: 4, num: '19', all: '19, 21, 22, 54, 56, 59', kind: 'p'}, {name: 'VREFP', side: 't', at: 7, num: '24', kind: 'a'},
+      {name: 'VREFN', side: 't', at: 13, num: '25', kind: 'a'}, {name: 'VCAP1', side: 't', at: 15, num: '28', kind: 'a'},
+      {name: 'VCAP2', side: 't', at: 18, num: '30', kind: 'a'}, {name: 'VCAP3', side: 't', at: 21, num: '55', kind: 'a'},
+      {name: 'VCAP4', side: 't', at: 27, num: '26', kind: 'a'},
+      {name: 'AVSS', side: 'b', at: 5, num: '20', all: '20, 23, 32, 53, 57, 58', kind: 'p'}, {name: 'DGND', side: 'b', at: 9, num: '33', all: '33, 49, 51', kind: 'p'},
+      {name: 'DVDD', side: 'b', at: 14, num: '48', all: '48, 50', kind: 'p'}, {name: 'CLKSEL', side: 'b', at: 20, num: '52', kind: 'd'},
+      {name: 'CLK', side: 'b', at: 26, num: '37', kind: 'd'});
+    CS.IC_LIB.ads1299 = {title: 'ADS1299', sub: 'TQFP-64', w: 30, h: 48, stub: 2, pins: pins,
+      note: 'SPI、GPIO、DAISY_IN、RESET、PWDN、START 等數位腳沒有畫出來，也不模擬。'};
+  })();
+
   /* ---- derived chip quantities ---- */
   function fmod(chip, st) { return chip.id === 'ads1299' ? chip.fclk * st.clkErr / 2 : chip.fclk * st.clkErr / (st.hr ? 4 : 8); }
   function decim(chip, st) { return (chip.id === 'ads1299' ? 64 : 16) * Math.pow(2, st.dr); }
@@ -387,16 +408,205 @@
     return B.result({pdk: true});
   }
 
+  /* ===================== front end from a schematic document ===================== */
+  /* st.doc is a circuit-sim document with one IC of the selected chip.  Everything outside the chip
+     comes from the drawing; ELEC parts become Randles electrodes on the body; the chip becomes its
+     input-pin, switch, lead-off, bias-amplifier and reference models on the nets of its pins. */
+  var ELEC_KEYS = {wet: 'wet', dry: 'dry', gel: 'gel'};
+  function elecParams(part, st) {
+    var base = ELECTRODES[ELEC_KEYS[(part.params.TYPE || '').toLowerCase()]] || st.elec || ELECTRODES.wet, e = {};
+    for (var k in base) e[k] = base[k];
+    if (part.params.RS) e.Rs = CS.num(part.params.RS);
+    if (part.params.RCT) e.Rct = CS.num(part.params.RCT);
+    if (part.params.CDL) e.Cdl = CS.num(part.params.CDL);
+    return e;
+  }
+  function docElectrodes(text) {
+    return CS.parseDoc(text).parts.filter(function (p) { return p.type === 'ELEC'; }).map(function (p) { return p.name; });
+  }
+  /* capacitance drawn directly between two nets */
+  function capBetween(doc, a, b) {
+    var s = 0;
+    doc.parts.forEach(function (p) {
+      if (p.type !== 'C') return;
+      var n = p.nets;
+      if ((n[0] === a && n[1] === b) || (n[0] === b && n[1] === a)) s += p.params.value;
+    });
+    return s;
+  }
+  /* nets reachable from 'net' through two-pin parts of the drawing whose type matches 'types' */
+  function passiveReach(doc, net, depth, types) {
+    var seen = {}, front = [net], re = types || /^(R|C|L|SW|TVS|D)$/;
+    seen[net] = true;
+    for (var d = 0; d < depth && front.length; d++) {
+      var next = [];
+      doc.parts.forEach(function (p) {
+        if (!re.test(p.type)) return;
+        var a = p.nets[0], b = p.nets[1];
+        front.forEach(function (f) {
+          if (a === f && !seen[b] && b !== '0') { seen[b] = true; next.push(b); }
+          if (b === f && !seen[a] && a !== '0') { seen[a] = true; next.push(a); }
+        });
+      });
+      front = next;
+    }
+    return seen;
+  }
+
+  function expandADS1299(c, ic, st, rails, chip) {
+    var pre = ic.name + ':', N = {}, out = {channels: [], loffSrc: [], notes: [], taps: []};
+    CS.IC_LIB[ic.sym].pins.forEach(function (pd, i) { N[pd.name] = ic.nets[i]; });
+    var MID = pre + 'MID', avdd = N.AVDD, avss = N.AVSS;
+    c.V(pre + 'VMID', MID, avss, (rails.avdd - rails.avss) / 2);
+    function pinModel(pin, count) {
+      var net = N[pin];
+      c.C(pre + 'Cin:' + pin, net, avss, chip.cin * count);
+      c.R(pre + 'Rin:' + pin, net, MID, chip.rin / count);
+      if (st.ibias) c.I(pre + 'Ib:' + pin, MID, net, {dc: chip.ibias * count * st.ibiasSign});
+    }
+    function open(pin) { c.R(pre + 'Rnc:' + pin, N[pin], MID, 1e12); }
+    var anySrb2 = false;
+    for (var k = 0; k < 8; k++) {
+      var P = 'IN' + (k + 1) + 'P', Nn = 'IN' + (k + 1) + 'N';
+      pinModel(P, 1);
+      if (st.srb1) open(Nn); else pinModel(Nn, 1);
+      if ((st.srb2 >> k) & 1) { c.add('SW', pre + 'SRB2:' + (k + 1), [N[P], N.SRB2], {on: true, RON: 10, ROFF: 1e14}); anySrb2 = true; }
+    }
+    if (st.srb1) pinModel('SRB1', 8); else open('SRB1');
+    if (!anySrb2) open('SRB2');
+    function negPin(k) { return st.srb1 ? 'SRB1' : 'IN' + (k + 1) + 'N'; }
+    /* lead-off excitation */
+    var I = chip.loffI[st.ilead];
+    function loff(pin, up) {
+      var name = pre + 'Ilo:' + pin + (up ? '+' : '-'), net = N[pin];
+      if (st.loffMode === 'dc') { if (up) c.I(name, avdd, net, {dc: I, VC: 0.05}); else c.I(name, net, avss, {dc: I, VC: 0.05}); }
+      else { c.I(name, MID, net, {dc: 0, ac: 0}); out.loffSrc.push({name: name, pin: net, sign: up ? 1 : -1, I: I}); }
+    }
+    if (st.loffMode !== 'off') for (k = 0; k < 8; k++) {
+      var flip = (st.loffFlip >> k) & 1;
+      if ((st.loffP >> k) & 1) loff('IN' + (k + 1) + 'P', !flip);
+      if ((st.loffN >> k) & 1) loff(negPin(k), !!flip);
+    }
+    /* bias amplifier: internal taps (buffered PGA inputs through Rsum) into BIASINV */
+    if (st.biasRefInt !== false) c.R(pre + 'Rbref', MID, N.BIASREF, 1e3);
+    else c.R(pre + 'Rbref', MID, N.BIASREF, 1e12);
+    if (st.biasOn) {
+      c.U(pre + 'BIAS', N.BIASREF, N.BIASINV, N.BIASOUT, {A0: 1e5, GBW: chip.bias.gbw, VMAX: rails.avdd - 0.05, VMIN: rails.avss + 0.05, ILIM: chip.bias.isc, EN: chip.bias.en, ROUT: 50});
+      var rs = chip.bias.rsum;
+      for (k = 0; k < 8; k++) {
+        if ((st.biasP >> k) & 1) out.taps.push('IN' + (k + 1) + 'P');
+        if ((st.biasN >> k) & 1) out.taps.push(negPin(k));
+      }
+      out.taps.forEach(function (pin, i) {
+        c.G(pre + 'Gtap' + i, '0', N.BIASINV, N[pin], '0', 1 / rs);
+        c.R(pre + 'Rtap' + i, N.BIASINV, '0', rs);
+      });
+    } else c.R(pre + 'Roff:BIASOUT', N.BIASOUT, MID, 1e12);
+    if (!st.biasOn || !out.taps.length) c.R(pre + 'Rnc:BIASINV', N.BIASINV, MID, 1e12);
+    c.R(pre + 'Rnc:BIASIN', N.BIASIN, MID, 1e12);
+    /* internal reference VREFP - VREFN = 4.5 V (PD_REFBUF = 1); otherwise the pins wait for an external one */
+    if (st.refBuf) { c.V(pre + 'VREF', pre + 'vref', N.VREFN, 4.5); c.R(pre + 'Rref', pre + 'vref', N.VREFP, 10); }
+    else c.R(pre + 'Rnc:VREFP', N.VREFP, N.VREFN, 1e12);
+    ['VCAP1', 'VCAP2', 'VCAP3', 'VCAP4'].forEach(function (pin) { c.R(pre + 'Rnc:' + pin, N[pin], MID, 1e9); });
+    for (k = 0; k < 8; k++) {
+      out.channels.push({idx: k, name: 'CH' + (k + 1), label: '', p: N['IN' + (k + 1) + 'P'], n: N[negPin(k)],
+        gain: st.gain[k], mux: st.mux[k], pd: !!st.pd[k]});
+    }
+    out.N = N;
+    return out;
+  }
+
+  function buildDoc(st) {
+    var tb = performance.now(), chip = CHIPS[st.chip], doc = CS.parseDoc(st.doc);
+    var ics = doc.parts.filter(function (p) { return p.type === 'IC' && p.sym === chip.id; });
+    if (!ics.length) throw new Error('電路圖裡沒有 ' + chip.name + '（IC 元件）');
+    var elecs = doc.parts.filter(function (p) { return p.type === 'ELEC'; });
+    var hcu = hcOffsets(elecs.length, 1, st.seed), mul = mulFactors(elecs.length, st.zSpread, st.seed);
+    function once(rails) {
+      var built = CS.buildFromDoc(doc), c = built.circuit, env = st.env, fe = {elecs: [], notes: [], hard: []};
+      built.errors.forEach(function (e) { fe.hard.push(e); });
+      try {
+        c.V('Vmains', 'mains', 'earth', {dc: 0, ac: 1});
+        c.C('Cpow', 'mains', 'body', env.Cpow);
+        c.C('Cbody', 'body', 'earth', env.Cbody);
+        c.C('Ciso', 'earth', '0', env.Ciso);
+        c.R('Rleak', 'earth', '0', 1e12);
+      } catch (e) { throw new Error('元件名稱 Vmains、Cpow、Cbody、Ciso、Rleak 保留給人體與市電模型：' + e.message); }
+      elecs.forEach(function (p, i) {
+        var e = elecParams(p, st), name = p.name, m = mul[i] * (st.zMul[name] || 1), on = st.contact[name] !== false, cab = p.nets[0], hc = hcu[i] * e.hc * st.hcScale;
+        c.V('Ve:' + name, 'site:' + name, 'body', {dc: hc, ac: 0});
+        c.R('Rs:' + name, 'site:' + name, 'm:' + name, e.Rs * m);
+        c.R('Rct:' + name, 'm:' + name, 'el:' + name, e.Rct * m);
+        c.C('Cdl:' + name, 'm:' + name, 'el:' + name, e.Cdl / m);
+        c.add('SW', 'K:' + name, ['el:' + name, cab], {on: on, RON: 0.01, ROFF: 1e14});
+        c.C('Ccab:' + name, cab, '0', env.Ccab);
+        if (env.Cstray > 0) c.C('Cst:' + name, 'mains', cab, env.Cstray);
+        fe.elecs.push({name: name, src: 'Ve:' + name, mul: m, z10: electrodeZ(e, 10, m), on: on, hc: hc, net: cab, type: e.label});
+      });
+      var x = expandADS1299(c, ics[0], st, rails, chip);
+      var sim = new CS.Sim(c), op = sim.op();
+      fe.built = built; fe.circuit = c; fe.sim = sim; fe.op = op; fe.x = x;
+      return fe;
+    }
+    var guess = st.railGuess || {avdd: 2.5, avss: -2.5};
+    var fe = once(guess), N = fe.x.N, sim = fe.sim;
+    var rails = {avdd: sim.v(N.AVDD), avss: sim.v(N.AVSS)};
+    var railsOk = isFinite(rails.avdd) && isFinite(rails.avss) && rails.avdd - rails.avss > 0.5;
+    if (railsOk && (Math.abs(rails.avdd - guess.avdd) > 1e-3 || Math.abs(rails.avss - guess.avss) > 1e-3)) { fe = once(rails); N = fe.x.N; sim = fe.sim; }
+    if (!railsOk) { rails = guess; fe.notes.push('AVDD／AVSS 沒有接到電源：用 ' + fmtV(guess.avdd) + '／' + fmtV(guess.avss) + ' 當電源軌繼續算。'); }
+    if (ics.length > 1) fe.notes.push('電路圖有 ' + ics.length + ' 顆 ' + chip.name + '，只模擬 ' + ics[0].name + '。');
+    /* ---- design checks ---- */
+    var notes = fe.notes, x = fe.x, span = rails.avdd - rails.avss;
+    function v(net) { return sim.v(net); }
+    if (railsOk && (span < 4.75 || span > 5.25)) notes.push('AVDD − AVSS = ' + fmtV(span) + '：ADS1299 需要 4.75–5.25 V。');
+    var dgnd = isFinite(v(N.DGND)) ? v(N.DGND) : 0, dvdd = v(N.DVDD) - dgnd;
+    if (!isFinite(dvdd)) { notes.push('DVDD 沒有接電源：數位電路（SPI、時脈）不會動。'); dvdd = 3.3; }
+    else if (dvdd < 1.8 || dvdd > 3.6) notes.push('DVDD − DGND = ' + fmtV(dvdd) + '：資料手冊範圍 1.8–3.6 V。');
+    if (N.VREFN !== N.AVSS) notes.push('VREFN 要接到 AVSS（資料手冊腳位說明）；現在接在「' + N.VREFN + '」。');
+    var cref = capBetween(doc, N.VREFP, N.VREFN);
+    if (cref < 9.5e-6) notes.push('VREFP 對 VREFN 的電容 ' + CS.fmt(cref, 'F') + '：資料手冊要至少 10 µF，參考電壓的雜訊才會是表上的值。');
+    [['VCAP1', 100e-6], ['VCAP2', 1e-6], ['VCAP3', 1e-6], ['VCAP4', 1e-6]].forEach(function (q) {
+      var cv = capBetween(doc, N[q[0]], N.AVSS);
+      if (cv < q[1] * 0.95) notes.push(q[0] + ' 對 AVSS 的電容 ' + CS.fmt(cv, 'F') + '：資料手冊要 ' + CS.fmt(q[1], 'F') + '（內部穩壓器的旁路電容）。');
+    });
+    if (capBetween(doc, N.AVDD, '0') + capBetween(doc, N.AVDD, N.AVSS) <= 0) notes.push('AVDD 沒有去耦電容。');
+    if (st.refBuf === false && !(v(N.VREFP) - v(N.VREFN) > 0.5)) notes.push('內部參考關閉（PD_REFBUF = 0），VREFP 又沒有外部參考電壓。');
+    /* clock: CLKSEL high = internal 2.048 MHz oscillator, low = external clock on CLK */
+    var st2 = {}, kk;
+    for (kk in st) st2[kk] = st[kk];
+    var clksel = v(N.CLKSEL) - dgnd, clk = {internal: true, f: chip.fclk * st.clkErr};
+    if (!(clksel > dvdd / 2)) {
+      clk.internal = false;
+      var ci = fe.circuit.nodeIdx[N.CLK], src = null;
+      fe.circuit.elements.forEach(function (el) { if (el.type === 'V' && el.p.w.freq > 0 && ci !== undefined && el.nodes.indexOf(ci) >= 0) src = el; });
+      if (src) { clk.f = src.p.w.freq; clk.src = src.name; }
+      else { clk.f = chip.fclk; notes.push('CLKSEL 接低（外部時脈），但 CLK 腳沒有接時脈源：沒有時脈晶片不會轉換。這裡假設 2.048 MHz 繼續算。'); }
+      if (src && Math.abs(clk.f / chip.fclk - 1) > 0.05) notes.push('外部時脈 ' + CS.fmt(clk.f, 'Hz') + '，資料手冊標稱 2.048 MHz（1.6–2.1 MHz）。');
+    }
+    st2.clkErr = clk.f / chip.fclk; st2.dvdd = dvdd; st2.supply = Math.abs(rails.avdd + rails.avss) < 0.2 ? 'bi' : 'uni';
+    var vref = v(N.VREFP) - v(N.VREFN);
+    if (!(vref > 0.5)) vref = 4.5;
+    if (st.biasOn && isFinite(v(N.BIASOUT)) && (v(N.BIASOUT) > rails.avdd - 0.15 || v(N.BIASOUT) < rails.avss + 0.15))
+      notes.push('BIAS 放大器輸出 ' + fmtV(v(N.BIASOUT)) + '，撞到電源軌了：' + (x.taps.length ? '迴路沒有閉合（例如 BIAS 電極沒接上，或沒有回授）。' : 'BIAS_SENSP／N 一個都沒選，BIASINV 又沒有外部回授，放大器開迴路。'));
+    if (!fe.op.ok) notes.push('DC 工作點沒有收斂，結果可能不可信。');
+    fe.hard.forEach(function (e) { notes.unshift(e); });
+    return {chip: chip, st: st2, circuit: fe.circuit, channels: x.channels, elecs: fe.elecs, notes: notes, rails: rails, loffSrc: x.loffSrc,
+      doc: doc, built: fe.built, sim: sim, op: fe.op, pinNets: N, vref: vref, clk: clk, taps: x.taps, ic: ics[0],
+      biasOutNode: N.BIASOUT, biasInNode: N.BIASIN, fromDoc: true, buildMs: performance.now() - tb};
+  }
+  function fmtV(v) { return CS.fmt(v, 'V', 3); }
+
   function build(st) {
+    if (st.doc) return buildDoc(st);
     if (st.board === 'pdk') return buildPDK(st);
     return st.chip === 'ads1294' ? buildADS1294(st) : buildADS1299(st);
   }
 
   /* ===================== analysis ===================== */
   function analyze(fe) {
-    var chip = fe.chip, st = fe.st, sim = new CS.Sim(fe.circuit), r = fe.rails, t0 = performance.now();
-    var op = sim.op();
-    var VREF = vref(chip, st), fD = fdr(chip, st), fM = fmod(chip, st), N = decim(chip, st);
+    var chip = fe.chip, st = fe.st, sim = fe.sim || new CS.Sim(fe.circuit), r = fe.rails, t0 = performance.now() - (fe.buildMs || 0);
+    var op = fe.op || sim.op();
+    var VREF = fe.vref !== undefined ? fe.vref : vref(chip, st), fD = fdr(chip, st), fM = fmod(chip, st), N = decim(chip, st);
     var res = {op: op, sim: sim, fdr: fD, fmod: fM, decim: N, vref: VREF, ch: [], warn: [], rails: r};
     var span = r.avdd - r.avss;
     /* ---- DC ---- */
@@ -411,7 +621,8 @@
       res.ch.push(o);
     });
     res.bodyDC = sim.v('body');
-    res.biasOut = fe.circuit.nodeIdx.BIASOUT !== undefined ? sim.v('BIASOUT') : NaN;
+    res.biasOut = fe.biasOutNode ? sim.v(fe.biasOutNode) : fe.circuit.nodeIdx.BIASOUT !== undefined ? sim.v('BIASOUT') : NaN;
+    res.biasIn = fe.biasInNode ? sim.v(fe.biasInNode) : NaN;
     /* ---- AC: mains (fundamental and 3rd harmonic), EEG-band mixing, lead-off excitation, generator ---- */
     var mainsAmp = st.env.mainsV * Math.SQRT2, f0 = st.env.mainsF;
     function diff(sol, ch) { var a = sim.vac(sol, ch.p), b = sim.vac(sol, ch.n); return [a[0] - b[0], a[1] - b[1]]; }
@@ -431,6 +642,21 @@
         res.ch[i].mix = fe.elecs.map(function (e, j) { var d = diff(mix[j], ch); return d[0]; });
       });
     } else fe.channels.forEach(function (ch, i) { res.ch[i].mix = []; });
+    if (fe.fromDoc) {
+      /* name each channel after the electrodes that reach it, with their sign */
+      fe.channels.forEach(function (ch, i) {
+        var pos = [], neg = [];
+        res.ch[i].mix.forEach(function (m, j) { if (m > 0.3) pos.push(fe.elecs[j].name); else if (m < -0.3) neg.push(fe.elecs[j].name); });
+        ch.label = !pos.length && !neg.length ? '（沒有電極）' : (pos.join(' + ') || '0') + (neg.length ? ' − ' + neg.join(' − ') : '');
+      });
+      /* bias-driven or grounded (through resistors) electrodes are not meant to reach a channel */
+      var drive = passiveReach(fe.doc, fe.biasOutNode, 6), grounded = passiveReach(fe.doc, '0', 6, /^(R|L|SW)$/);
+      fe.elecs.forEach(function (e, j) {
+        var mx = 0;
+        res.ch.forEach(function (o) { mx = Math.max(mx, Math.abs(o.mix[j] || 0)); });
+        if (mx < 0.05 && e.on && !drive[e.net] && !grounded[e.net]) res.warn.push(e.name + ' 電極沒有進到任何通道：檢查它接的輸入腳，以及 SRB1／SRB2 的設定。');
+      });
+    }
     if (fe.loffSrc.length) {
       var fl = loffFreq(chip, st), lo = [];
       [1, 3, 5].forEach(function (h) {
@@ -469,7 +695,7 @@
       res.ch[i].psd = {f: freqs, v: Array.prototype.map.call(nz[i].total, Math.sqrt)};
     });
     res.ms = performance.now() - t0;
-    if (!op.ok) res.warn.push('DC 工作點沒有收斂，結果可能不可信。');
+    if (!op.ok && !fe.fromDoc) res.warn.push('DC 工作點沒有收斂，結果可能不可信。');
     return res;
   }
 
@@ -608,7 +834,10 @@
           cm = (rails.avdd + rails.avss) / 2;
         } else if (ch.mux === 4) { x = (this.chip.tempMv + this.chip.tempCoef * (st.tempC - 25)) * 1e-3; cm = (rails.avdd + rails.avss) / 2; }
         else if (ch.mux === 3) { x = (i === 2 || i === 3) ? st.dvdd / 4 : 0.5 * (rails.avdd - rails.avss); cm = (rails.avdd + rails.avss) / 2; }
-        else if (ch.mux === 2) { x = (isFinite(res.biasOut) ? res.biasOut : 0) - (rails.avdd + rails.avss) / 2; cm = (rails.avdd + rails.avss) / 2; }
+        else if (ch.mux === 2) {                                                                     // BIAS_MEAS: BIASIN against mid-supply
+          var bm = isFinite(res.biasIn) ? res.biasIn : res.biasOut;
+          x = (isFinite(bm) ? bm : 0) - (rails.avdd + rails.avss) / 2; cm = (rails.avdd + rails.avss) / 2;
+        }
         else {
           x = o.vd;
           for (k = 0; k < this.elecV.length; k++) x += o.mix[k] * this.elecV[k];
@@ -767,6 +996,12 @@
     s.board = 'chip';
     s.bias = {Rf: 1e6, Cf: 1.5e-9, Rprot: 10e3};
     s.filt = {R: 4.99e3, C: 4.7e-9};
+    /* the page draws the OpenBCI Cyton front end; OpenBCI's default channel setting x1060110X:
+       gain 24, normal input, in the bias, SRB2 on, SRB1 off.  Electrodes on INxN, reference on SRB2. */
+    if (global.AFE && global.AFE.boards) {
+      s.srb1 = false; s.srb2 = 0xFF; s.biasP = 0xFF; s.biasN = 0xFF;
+      s.doc = global.AFE.boards.cyton({labels: s.labels});
+    }
     return s;
   }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -774,6 +1009,7 @@
   global.AFE = {
     defaultState: defaultState, clone: clone,
     CHIPS: CHIPS, ELECTRODES: ELECTRODES, build: build, analyze: analyze, cmSweep: cmSweep, Stream: Stream,
+    buildDoc: buildDoc, docElectrodes: docElectrodes, capBetween: capBetween,
     fdr: fdr, fmod: fmod, decim: decim, vref: vref, rails: rails, chipNoise: chipNoise, sinc3: sinc3, testSignal: testSignal,
     loffFreq: loffFreq, registers: registers, initCode: initCode, statusWord: statusWord, hex2: hex2, electrodeZ: electrodeZ, sincTaps: sincTaps
   };

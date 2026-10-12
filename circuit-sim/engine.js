@@ -247,8 +247,13 @@
   var TYPES = {
     R: {pins: 2}, C: {pins: 2}, L: {pins: 2, br: 1}, V: {pins: 2, br: 1}, I: {pins: 2},
     D: {pins: 2}, SW: {pins: 2}, Q: {pins: 3}, M: {pins: 3}, U: {pins: 3, xi: 1},
+    TVS: {pins: 2},     // bidirectional TVS / back-to-back zener: conducts above +-BV
     G: {pins: 4}        // VCCS: current gm*(v(c+) - v(c-)) from n+ through the element to n- (programmatic only)
   };
+  /* document-only parts: no element of their own; a page expands them (see buildFromDoc) */
+  var MACRO_TYPES = {IC: 1, ELEC: 1, J: 1};
+  /* multi-pin IC symbols: IC_LIB[sym] = {title, w, h, stub, pins: [{name, side: 'l'|'r'|'t'|'b', at, num, kind}]} */
+  var IC_LIB = {};
 
   function Circuit() {
     this.elements = [];
@@ -282,6 +287,7 @@
 
   var DEFAULTS = {
     D: {IS: 2.52e-9, N: 1.752, BV: 0, CJ: 4e-12},                        // 1N4148-like
+    TVS: {IS: 1e-12, N: 1, BV: 6, CJ: 1e-12},
     Q: {type: 'npn', IS: 6.7e-15, BF: 200, BR: 0.74, CJE: 4.5e-12, CJC: 3.6e-12},   // 2N3904-like
     M: {type: 'nmos', KP: 2e-3, VT: 1, LAMBDA: 0.01},
     U: {A0: 1e5, GBW: 1e6, VMAX: 12, VMIN: -12, ROUT: 10, ILIM: 0, VOS: 0, EN: 0, FC: 0, IN: 0},
@@ -329,7 +335,7 @@
       el.u = el.nodes.map(function (n) { return n - 1; });        // unknown index, -1 = ground
       el.br = T.br ? k++ : -1;
       el.xi = T.xi ? k++ : -1;
-      if (el.type === 'D' || el.type === 'Q' || el.type === 'M' || el.type === 'U' ||
+      if (el.type === 'D' || el.type === 'TVS' || el.type === 'Q' || el.type === 'M' || el.type === 'U' ||
           (el.type === 'I' && el.p.VC)) this.linear = false;
     }
     this.n = k;
@@ -357,7 +363,7 @@
     for (var i = 0; i < els.length; i++) {
       var el = els[i];
       if (el.type === 'C') g(el.u[0], el.u[1], el.p.value);
-      else if (el.type === 'D' && el.p.CJ) g(el.u[0], el.u[1], el.p.CJ);       // constant junction capacitance
+      else if ((el.type === 'D' || el.type === 'TVS') && el.p.CJ) g(el.u[0], el.u[1], el.p.CJ);       // constant junction capacitance
       else if (el.type === 'Q') {                                           // constant B-E and B-C capacitances
         if (el.p.CJE) g(el.u[1], el.u[2], el.p.CJE);
         if (el.p.CJC) g(el.u[1], el.u[0], el.p.CJC);
@@ -442,6 +448,12 @@
           aJ(a, a, gdd); aJ(a, b, -gdd); aJ(b, a, -gdd); aJ(b, b, gdd);
           break;
         }
+        case 'TVS': {
+          var tv = tvs(p, V(a) - V(b));
+          aF(a, tv[0]); aF(b, -tv[0]);
+          aJ(a, a, tv[1]); aJ(a, b, -tv[1]); aJ(b, a, -tv[1]); aJ(b, b, tv[1]);
+          break;
+        }
         case 'Q': {
           var r = bjt(p.type, V(u[0]), V(u[1]), V(u[2]), p);
           for (var tt = 0; tt < 3; tt++) {
@@ -479,6 +491,12 @@
       }
     }
   };
+
+  /* bidirectional TVS: symmetric breakdown at +-BV, [current, conductance] */
+  function tvs(p, v) {
+    var nvt = p.N * VT, ep = lexp((v - p.BV) / nvt), en = lexp((-v - p.BV) / nvt);
+    return [p.IS * (ep[0] - en[0]), p.IS * (ep[1] + en[1]) / nvt];
+  }
 
   /* Ebers-Moll transport model: currents INTO (C,B,E) and Jacobian rows (same as sim.py) */
   var BJT_OUT = {i: [0, 0, 0], d: [0, 0, 0, 0, 0, 0, 0, 0, 0]};
@@ -690,6 +708,7 @@
         if (p.BV > 0) id -= p.IS * lexp(-(vd + p.BV) / (p.N * VT))[0];
         return id;
       }
+      case 'TVS': return tvs(p, V(u[0]) - V(u[1]))[0];
       case 'Q': return bjt(p.type, V(u[0]), V(u[1]), V(u[2]), p).i[0];
       case 'M': return mosfet(p, V(u[0]), V(u[1]), V(u[2])).id;
       case 'U': {
@@ -792,7 +811,7 @@
     els.forEach(function (el) {
       var p = el.p, u = el.u;
       if (el.type === 'R') src.push({el: el, a: u[0], b: u[1], s: 4 * KT / p.value});
-      else if (el.type === 'D') src.push({el: el, a: u[0], b: u[1], s: 2 * QE * Math.abs(self.i(el))});
+      else if (el.type === 'D' || el.type === 'TVS') src.push({el: el, a: u[0], b: u[1], s: 2 * QE * Math.abs(self.i(el))});
       else if (el.type === 'Q') {
         var pc = self.pinCurrents(el);
         src.push({el: el, a: u[0], b: u[2], s: 2 * QE * Math.abs(pc[0])});
@@ -870,7 +889,7 @@
         var el = els[e], p = el.p, u = el.u, s = 0;
         switch (el.type) {
           case 'R': s = 4 * KT / p.value * mag2(u[0], u[1]); break;
-          case 'D': s = 2 * QE * Math.abs(self.i(el)) * mag2(u[0], u[1]); break;
+          case 'D': case 'TVS': s = 2 * QE * Math.abs(self.i(el)) * mag2(u[0], u[1]); break;
           case 'Q': {
             var pc = self.pinCurrents(el);
             s = 2 * QE * Math.abs(pc[0]) * mag2(u[0], u[2]) + 2 * QE * Math.abs(pc[1]) * mag2(u[1], u[2]);
@@ -940,7 +959,13 @@
        NODE out 4,0                        net label (same name = same net)
        SCOPE out vin                       default scope probes
        TITLE text
-     Nets come from coincident points (union-find), net labels and ground symbols. */
+       TVS D1 0,0 0,2 BV=6                 bidirectional TVS (two-pin)
+       IC U1 ads1299 40,10                 multi-pin IC from IC_LIB; anchor = top-left of the body
+       ELEC Fp1 16,12 [l] TYPE=wet         electrode, one pin (the lead); the skin side is implicit
+       J J:1N 18,12 [a]                    connector pin (one pin, no element)
+       TEXT 2,0 [h] any text               annotation ([h] = heading)
+     Nets come from coincident points (union-find), net labels and ground symbols.
+     IC / ELEC / J are kept in built.macros with their nets for the page to expand. */
   function tokenize(line) {
     var out = [], cur = '', depth = 0;
     for (var i = 0; i < line.length; i++) {
@@ -955,21 +980,35 @@
   }
   function pt(s) { var m = /^(-?\d+),(-?\d+)$/.exec(s); return m ? [+m[1], +m[2]] : null; }
 
-  function pinsOf(type, at, flag) {
+  function pinsOf(type, at, flag, sym) {
     var x = at[0], y = at[1], h = /h/.test(flag || '') ? -1 : 1, v = /v/.test(flag || '') ? -1 : 1;
     if (type === 'Q' || type === 'M') return [[x + 2 * h, y - 2 * v], [x, y], [x + 2 * h, y + 2 * v]];   // C/D, B/G, E/S
     if (type === 'U') return [[x, y + v], [x, y - v], [x + 4 * h, y]];                                   // in+, in-, out
+    if (type === 'ELEC' || type === 'J') return [[x, y]];
+    if (type === 'IC' && IC_LIB[sym]) return IC_LIB[sym].pins.map(function (p) { return icPin(IC_LIB[sym], at, p); });
     return [];
+  }
+  function icPin(def, at, p) {
+    var s = def.stub || 2, x = at[0], y = at[1];
+    if (p.side === 'l') return [x - s, y + p.at];
+    if (p.side === 'r') return [x + def.w + s, y + p.at];
+    if (p.side === 't') return [x + p.at, y - s];
+    return [x + p.at, y + def.h + s];
   }
 
   function parseDoc(text) {
-    var doc = {title: '', parts: [], wires: [], grounds: [], labels: [], scope: [], directives: {}, errors: []};
+    var doc = {title: '', parts: [], wires: [], grounds: [], labels: [], texts: [], scope: [], directives: {}, errors: []}, names = {};
     String(text).split(/\r?\n/).forEach(function (raw, ln) {
       var line = raw.replace(/(^|\s)[#;].*$/, '').trim();
       if (!line) return;
       var tk = tokenize(line), kw = tk[0].toUpperCase();
       function err(msg) { doc.errors.push('第 ' + (ln + 1) + ' 行：' + msg); }
       if (kw === 'TITLE') { doc.title = line.slice(5).trim(); return; }
+      if (kw === 'TEXT') {
+        var tp = pt(tk[1]); if (!tp) return err('TEXT 需要座標');
+        var m = /^\S+\s+\S+\s*(\[[^\]]*\])?\s*(.*)$/.exec(line);
+        doc.texts.push({at: tp, flag: m && m[1] ? m[1].slice(1, -1) : '', text: m ? m[2] : ''}); return;
+      }
       if (kw === 'W') {
         var a = pt(tk[1]), b = pt(tk[2]);
         if (!a || !b) return err('W 需要兩個座標');
@@ -987,8 +1026,26 @@
         doc.directives[kw.toLowerCase()] = d; return;
       }
       var type = kw;
-      if (!TYPES[type]) return err('不認得的元件類型 ' + tk[0]);
+      if (!TYPES[type] && !MACRO_TYPES[type]) return err('不認得的元件類型 ' + tk[0]);
       var name = tk[1], rest = tk.slice(2), part = {type: type, name: name, params: {}, line: ln, flag: ''};
+      if (!name) return err(type + ' 需要名稱');
+      if (names[name]) return err('元件名稱 ' + name + ' 重複');
+      names[name] = true;
+      if (MACRO_TYPES[type]) {
+        if (type === 'IC') { part.sym = (rest[0] || '').toLowerCase(); rest = rest.slice(1); if (!IC_LIB[part.sym]) return err('不認得的 IC ' + part.sym); }
+        var at0 = pt(rest[0]);
+        if (!at0) return err(name + ' 需要錨點座標');
+        rest = rest.slice(1);
+        if (rest[0] && /^\[.*\]$/.test(rest[0])) { part.flag = rest[0].slice(1, -1); rest = rest.slice(1); }
+        part.at = at0; part.pins = pinsOf(type, at0, part.flag, part.sym);
+        rest.forEach(function (t) {
+          var kv = /^([A-Za-z]\w*)=(.*)$/.exec(t);
+          if (kv) part.params[kv[1].toUpperCase()] = kv[2];
+          else if (type === 'ELEC') part.params.TYPE = t;
+        });
+        doc.parts.push(part);
+        return;
+      }
       if (TYPES[type].pins === 2) {
         var p1 = pt(rest[0]), p2 = pt(rest[1]);
         if (!p1 || !p2) return err(name + ' 需要兩個座標');
@@ -1048,11 +1105,12 @@
       if (!netName[r]) { while (used['n' + auto]) auto++; netName[r] = 'n' + auto; used['n' + auto] = true; }
       return netName[r];
     }
-    var c = new Circuit(), errors = doc.errors.slice();
+    var c = new Circuit(), errors = doc.errors.slice(), macros = [];
     doc.parts.forEach(function (p) {
       var nodes = p.pins.map(function (q) { return nameOf(key(q)); });
-      try { c.add(p.type, p.name, nodes, p.params); } catch (e) { errors.push(e.message); }
       p.nets = nodes;
+      if (MACRO_TYPES[p.type]) { macros.push(p); return; }
+      try { c.add(p.type, p.name, nodes, p.params); } catch (e) { errors.push(e.message); }
     });
     /* connection count per point, for junction dots and floating-pin warnings */
     var count = {};
@@ -1063,14 +1121,49 @@
     var netCount = {};
     Object.keys(count).forEach(function (k) { var nm = nameOf(k); netCount[nm] = (netCount[nm] || 0) + count[k]; });
     doc.parts.forEach(function (p) {
-      p.nets.forEach(function (nm) { if (netCount[nm] < 2 && nm !== '0') errors.push(p.name + ' 有一腳浮接（' + nm + '）'); });
+      if (p.type === 'IC' || p.type === 'J') return;            // unused IC pins and open connector pins are normal
+      p.nets.forEach(function (nm) { if (netCount[nm] < 2 && nm !== '0') errors.push(p.name + (p.type === 'ELEC' ? ' 電極沒有接到電路' : ' 有一腳浮接') + '（' + nm + '）'); });
     });
     if (!doc.grounds.length && !doc.labels.some(function (l) { return l.name === '0' || /^gnd$/i.test(l.name); }))
       errors.push('電路沒有接地（GND）：所有電壓都相對於一個浮接點');
     return {
-      circuit: c, errors: errors, count: count,
+      circuit: c, errors: errors, count: count, macros: macros, netCount: netCount,
       netAt: function (pnt) { return nameOf(key(pnt)); }
     };
+  }
+
+  /* ================= document text ================= */
+  function fmtParam(v) { return typeof v === 'number' ? spiceNum(v) : String(v); }
+  function partLine(part) {
+    var t = part.type, p = part.params, out = [t, part.name];
+    if (t === 'IC') out.push(part.sym);
+    if (part.pts) { out.push(part.pts[0].join(','), part.pts[1].join(',')); if (part.flag) out.push('[' + part.flag + ']'); }
+    else { out.push(part.at.join(',')); if (p.type && (t === 'Q' || t === 'M')) out.push(p.type); if (part.flag) out.push('[' + part.flag + ']'); }
+    if (t === 'R' || t === 'C' || t === 'L') out.push(spiceNum(p.value));
+    else if (t === 'V' || t === 'I') out.push(typeof p.wave === 'number' ? spiceNum(p.wave) : p.wave === undefined ? '0' : p.wave);
+    else if (t === 'SW') out.push(p.on === false ? 'off' : 'on');
+    Object.keys(p).forEach(function (k) {
+      if (k === 'value' || k === 'wave' || k === 'type' || k === 'on' || k === 'acph' || p[k] === undefined || p[k] === '') return;
+      if (k === 'ac') { if (p.ac) out.push('AC=' + p.ac + (p.acph ? ',' + p.acph : '')); return; }
+      out.push(k + '=' + fmtParam(p[k]));
+    });
+    return out.join(' ');
+  }
+  /* the whole document as text (comments are not kept; use TEXT for notes that should stay) */
+  function docToText(doc) {
+    var L = [];
+    if (doc.title) L.push('TITLE ' + doc.title);
+    (doc.texts || []).forEach(function (t) { L.push('TEXT ' + t.at.join(',') + (t.flag ? ' [' + t.flag + ']' : '') + ' ' + t.text); });
+    doc.parts.forEach(function (p) { L.push(partLine(p)); });
+    doc.wires.forEach(function (w) { L.push('W ' + w.a.join(',') + ' ' + w.b.join(',')); });
+    doc.grounds.forEach(function (g) { L.push('GND ' + g.at.join(',')); });
+    doc.labels.forEach(function (l) { L.push('NODE ' + l.name + ' ' + l.at.join(',') + (l.flag ? ' [' + l.flag + ']' : '')); });
+    if (doc.scope && doc.scope.length) L.push('SCOPE ' + doc.scope.join(' '));
+    Object.keys(doc.directives || {}).forEach(function (k) {
+      var d = doc.directives[k];
+      L.push(k.toUpperCase() + Object.keys(d).map(function (q) { return ' ' + (d[q] === true ? q : q + '=' + d[q]); }).join(''));
+    });
+    return L.join('\n');
   }
 
   /* ================= SPICE export ================= */
@@ -1096,6 +1189,12 @@
         case 'D': {
           var dm = 'D_' + name; models[dm] = '.model ' + dm + ' D(IS=' + p.IS + ' N=' + p.N + (p.BV ? ' BV=' + p.BV : '') + (p.CJ ? ' CJO=' + spiceNum(p.CJ) + ' M=0' : '') + ')';
           L.push(pre('D', name) + ' ' + n[0] + ' ' + n[1] + ' ' + dm); break;
+        }
+        case 'TVS': {
+          /* two zeners in anti-series through an internal node */
+          var zm = 'DZ_' + name.replace(/\W/g, '_'), zi = 'tvs_' + name.replace(/\W/g, '_');
+          models[zm] = '.model ' + zm + ' D(IS=' + p.IS + ' N=' + p.N + ' BV=' + p.BV + (p.CJ ? ' CJO=' + spiceNum(2 * p.CJ) + ' M=0' : '') + ')';
+          L.push('D_' + name + 'a ' + n[0] + ' ' + zi + ' ' + zm); L.push('D_' + name + 'b ' + n[1] + ' ' + zi + ' ' + zm); break;
         }
         case 'Q': {
           var qm = 'Q_' + name; models[qm] = '.model ' + qm + ' ' + p.type.toUpperCase() + '(IS=' + p.IS + ' BF=' + p.BF + ' BR=' + p.BR +
@@ -1141,6 +1240,7 @@
 
   global.CircuitSim = {
     Circuit: Circuit, Sim: Sim, parseDoc: parseDoc, buildFromDoc: buildFromDoc, toSpice: toSpice,
+    partLine: partLine, docToText: docToText, IC_LIB: IC_LIB, MACRO_TYPES: MACRO_TYPES, icPin: icPin,
     num: num, fmt: fmt, spiceNum: spiceNum, makeWave: makeWave, integrate: integrate, logspace: logspace,
     rng: rng, gauss: gauss, pinsOf: pinsOf, TYPES: TYPES, KT: KT, QE: QE, VT: VT, luComplex: luComplex, luSolveComplex: luSolveComplex,
     _solveReal: solveReal, _solveComplex: solveComplex

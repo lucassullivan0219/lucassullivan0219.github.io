@@ -60,13 +60,21 @@
     var kind = cfg.kind, mount = cfg.mount;
     var S = {st: AFE.defaultState(kind), fe: null, res: null, stream: null, running: true, buf: null, seq: 0, frame: null, bufFs: 0};
     if (cfg.init) cfg.init(S.st);
-    var isECG = kind === 'ads1294', isPDK = kind === 'pdk';
+    var isECG = kind === 'ads1294', isPDK = kind === 'pdk', isDoc = !!(cfg.schematic && S.st.doc);
 
     /* ======================= layout ======================= */
     mount.innerHTML = '';
     var presetCard = h('section', {class: 'card', 'aria-label': '情境'});
     presetCard.innerHTML = '<h2>情境</h2><div class="presets" id="presets"></div><p class="hint" id="presetNote" style="margin:8px 0 0"></p>';
     mount.appendChild(presetCard);
+    if (isDoc) {
+      var schCard = h('section', {class: 'card', 'aria-label': '電路圖', style: 'margin-top:16px'});
+      schCard.innerHTML = '<h2>電路圖（可編輯）</h2>' + (cfg.schematicIntro ? '<p class="hint" style="margin:0 0 8px;max-width:70em">' + cfg.schematicIntro + '</p>' : '') + '<div id="schEd"></div>' +
+        '<div class="row" style="margin-top:8px"><button type="button" class="btn sm" id="docSave">下載電路圖</button>' +
+        '<label class="btn sm" style="display:inline-flex;align-items:center;gap:4px">載入電路圖<input type="file" id="docLoad" accept=".txt,.cir,text/plain" hidden></label>' +
+        '<button type="button" class="btn sm" id="docReset">還原預設電路圖</button><span class="hint" id="docNote"></span></div>';
+      mount.appendChild(schCard);
+    }
     var grid = h('div', {class: 'grid2 afe', style: 'margin-top:16px'});
     var left = h('section', {class: 'card', 'aria-label': '輸出'});
     var right = h('section', {class: 'card settings', 'aria-label': '設定'});
@@ -114,6 +122,55 @@
     var cmPlot = new global.LabPlot($('cmPlot'), {xlog: true, ylog: true, xunit: 'Hz', yunit: 'V', ylabel: '振幅（峰值）'});
     var nzPlot = new global.LabPlot($('nzPlot'), {xlog: true, ylog: true, xunit: 'Hz', yunit: 'V/√Hz'});
 
+    /* ======================= schematic editor ======================= */
+    var ed = null, DOC_KEY = 'afe-doc-' + kind + '-v1';
+    function saveDoc() { try { global.localStorage.setItem(DOC_KEY, S.st.doc); } catch (e) { /* storage unavailable */ } }
+    function savedDoc() { try { return global.localStorage.getItem(DOC_KEY); } catch (e) { return null; } }
+    function liveOf(sim) {
+      return {
+        v: function (n) { return sim.v(n); },
+        pin: function (name) { var el = sim.get(name); return el ? sim.pinCurrents(el) : null; },
+        on: function (name) { var el = sim.get(name); return el ? el.p.on : true; }
+      };
+    }
+    function describePart(p) {
+      if (!S.fe || !S.res || !S.fe.fromDoc) return '';
+      if (p.type === 'ELEC') {
+        var j = S.fe.elecs.map(function (e) { return e.name; }).indexOf(p.name);
+        if (j < 0) return '';
+        var e = S.fe.elecs[j], reach = [];
+        S.fe.channels.forEach(function (c, i) { var m = S.res.ch[i].mix[j]; if (Math.abs(m) > 0.05) reach.push(c.name + (m > 0 ? '（＋）' : '（−）')); });
+        return '<div class="reads"><div class="read"><span class="k">|Z|（10 Hz）</span><span class="v">' + fmt(e.z10, 'Ω') + '</span></div>' +
+          '<div class="read"><span class="k">半電池偏移</span><span class="v">' + fmt(e.hc, 'V') + '</span></div></div>' +
+          '<p class="hint">' + (e.on ? '' : '<b class="warn">接觸：脫落</b>（設定面板的電極表）。') +
+          (reach.length ? '訊號進到 ' + reach.join('、') + '。' : '這個電極沒有進到任何通道。') + '</p>';
+      }
+      if (p.type === 'IC') return '<p class="hint">暫存器（增益、MUX、SRB1／SRB2、BIAS_SENS、lead-off、參考電壓）在下方「設定」面板。晶片內部的輸入腳（20 pF、1 GΩ、200 pA）、SRB 開關、lead-off 電流源、BIAS 放大器與 4.5 V 參考會接到這些網路上。</p>';
+      return '';
+    }
+    if (isDoc) {
+      ed = new global.CircuitEditor($('schEd'), {
+        text: S.st.doc, height: cfg.schematicHeight || 600,
+        palette: ['R', 'C', 'L', 'V', 'I', 'D', 'TVS', 'SW', 'U', 'GND', 'NODE', 'J', 'ELEC', 'TEXT'],
+        elecTypes: Object.keys(AFE.ELECTRODES).map(function (k) { return [k, AFE.ELECTRODES[k].label]; }),
+        defaults: {U: {GBW: '1meg', VMAX: '2.5', VMIN: '-2.5'}},
+        describe: describePart,
+        onChange: function (t) { S.st.doc = t; saveDoc(); $('docNote').textContent = ''; changed(); }
+      });
+      $('docSave').addEventListener('click', function () { download(kind + '-schematic.txt', S.st.doc, 'text/plain'); });
+      $('docLoad').addEventListener('change', function () {
+        var f = this.files && this.files[0]; if (!f) return;
+        var rd = new FileReader();
+        rd.onload = function () { ed.setText(String(rd.result)); $('docNote').textContent = '已載入 ' + f.name + '。'; };
+        rd.readAsText(f); this.value = '';
+      });
+      $('docReset').addEventListener('click', function () {
+        ed.setText(AFE.defaultState(kind).doc);
+        try { global.localStorage.removeItem(DOC_KEY); } catch (e) { /* storage unavailable */ }
+        $('docNote').textContent = '已還原預設電路圖（可以按 ↶ 復原）。';
+      });
+    }
+
     /* ======================= settings panel ======================= */
     var box = $('settings');
     function section(title, open) {
@@ -157,13 +214,32 @@
       changed();
     }
 
+    function railsText() {
+      if (!S.fe || !S.fe.fromDoc) return '—';
+      return 'AVDD ' + fmt(S.fe.rails.avdd, 'V') + '、AVSS ' + fmt(S.fe.rails.avss, 'V') + '、DVDD ' + fmt(S.fe.st.dvdd, 'V');
+    }
+    function clkText() {
+      if (!S.fe || !S.fe.clk) return '';
+      var c = S.fe.clk;
+      return c.internal ? 'CLKSEL 接 DVDD：用內部振盪器（' + fmt(c.f, 'Hz', 4) + '）。' : 'CLKSEL 接低：外部時脈 ' + fmt(c.f, 'Hz', 4) + (c.src ? '（' + esc(c.src) + '）' : '') + '，下面這個設定不影響。';
+    }
+    var shownSig = '';
+    function settingsSig() {
+      if (!isDoc || !S.fe || !S.fe.fromDoc) return '';
+      return S.fe.channels.map(function (c) { return c.label; }).join('|') + '#' + AFE.docElectrodes(S.st.doc).join('|') + '#' + (S.fe.clk.internal ? 1 : 0);
+    }
+
     function renderSettings() {
+      shownSig = settingsSig();
       box.innerHTML = '';
       var st = S.st, chip = AFE.CHIPS[st.chip], nch = chip.nch;
-      var chNames = cfg.channelLabels ? cfg.channelLabels(st) : st.labels.map(function (l, i) { return 'CH' + (i + 1) + ' ' + l; });
+      var chNames = isDoc ? st.gain.map(function (g, i) { return 'CH' + (i + 1) + (S.fe && S.fe.fromDoc ? ' ' + S.fe.channels[i].label : ''); }) :
+        cfg.channelLabels ? cfg.channelLabels(st) : st.labels.map(function (l, i) { return 'CH' + (i + 1) + ' ' + l; });
       /* --- chip --- */
       var a = section('晶片與資料速率', true);
-      if (isECG) {
+      if (isDoc) {
+        row(a, '類比電源', h('span', {class: 'mono', id: 'railsInfo'}, railsText()), '由電路圖決定：改 VAVDD、VAVSS 的電壓或接法。');
+      } else if (isECG) {
         row(a, '類比電源', select([['3uni', '3 V 單電源'], ['5uni', '5 V 單電源'], ['3bi', '±1.5 V'], ['5bi', '±2.5 V']], st.avdd + st.supply, function (v) {
           S.st.avdd = +v[0]; S.st.supply = v.slice(1); if (S.st.avdd < 4.4) S.st.vref4 = false; changed(true); }));
         row(a, '參考電壓', select([['0', '2.4 V'], ['1', '4 V（需 5 V 電源）']], st.vref4 ? 1 : 0, function (v) { S.st.vref4 = v === '1' && S.st.avdd >= 4.4; changed(true); }));
@@ -176,16 +252,25 @@
       var drOpts = [];
       for (var d = 0; d < 7; d++) { var t = AFE.clone(st); t.dr = d; var f = AFE.fdr(chip, t); drOpts.push([d, d.toString(2).padStart(3, '0') + '：' + (f >= 1000 ? f / 1000 + ' kSPS' : f + ' SPS') + '（−3 dB ' + fmt(0.262 * f, 'Hz') + '）']); }
       row(a, '資料速率 DR', select(drOpts, st.dr, function (v) { S.st.dr = +v; changed(true); }));
-      row(a, '時脈', select([['1', '外部 2.048 MHz'], ['1.004', '內部振盪器（例：+0.4 %）']], st.clkErr, function (v) { S.st.clkErr = +v; changed(true); }),
+      if (isDoc) row(a, '內部振盪器', select([['1', '剛好 2.048 MHz'], ['1.004', '+0.4 %（典型誤差）'], ['0.995', '−0.5 %']], st.clkErr, function (v) { S.st.clkErr = +v; changed(true); }),
+        '<span id="clkInfo">' + clkText() + '</span> 內部振盪器 25 °C 時 ±0.5 %：資料速率跟著偏，sinc3 的零點就對不準 60 Hz。');
+      else row(a, '時脈', select([['1', '外部 2.048 MHz'], ['1.004', '內部振盪器（例：+0.4 %）']], st.clkErr, function (v) { S.st.clkErr = +v; changed(true); }),
         '內部振盪器 25 °C 時 ±0.5 %：資料速率、測試訊號頻率都跟著偏，sinc3 的零點就對不準 60 Hz。');
       /* --- channels --- */
       var c = section('通道（CHnSET）', true), tbl = h('table', {class: 'data chtable'});
-      tbl.innerHTML = '<thead><tr><th>通道</th><th>增益</th><th>MUX</th><th>關</th></tr></thead>';
+      tbl.innerHTML = '<thead><tr><th>通道</th><th>增益</th><th>MUX</th>' + (isDoc ? '<th title="CHnSET bit 3：INxP 接到 SRB2">SRB2</th>' : '') + '<th>關</th></tr></thead>';
       var tb = h('tbody');
       for (var k = 0; k < nch; k++) (function (k) {
-        var tr = h('tr'); tr.appendChild(h('td', {}, esc(chNames[k])));
+        var tr = h('tr');
+        if (isDoc) tr.appendChild(h('td', {}, 'CH' + (k + 1) + (S.fe && S.fe.fromDoc ? '<div class="chlab">' + esc(S.fe.channels[k].label) + '</div>' : '')));
+        else tr.appendChild(h('td', {}, esc(chNames[k])));
         var td1 = h('td'); td1.appendChild(select(chip.gains.map(function (g) { return [g, g + '×']; }), st.gain[k], function (v) { S.st.gain[k] = +v; changed(); })); tr.appendChild(td1);
         var td2 = h('td'); td2.appendChild(select(MUX_NAMES.map(function (m, i) { return [i, m]; }), st.mux[k], function (v) { S.st.mux[k] = +v; changed(); })); tr.appendChild(td2);
+        if (isDoc) {
+          var tds = h('td'), cs = h('input', {type: 'checkbox', 'aria-label': 'SRB2 ' + chNames[k]}); cs.checked = !!((st.srb2 >> k) & 1);
+          cs.addEventListener('change', function () { S.st.srb2 = cs.checked ? (S.st.srb2 | (1 << k)) : (S.st.srb2 & ~(1 << k)); changed(); });
+          tds.appendChild(cs); tr.appendChild(tds);
+        }
         var td3 = h('td'); var cb = h('input', {type: 'checkbox', 'aria-label': 'power down ' + chNames[k]}); cb.checked = !!st.pd[k]; cb.addEventListener('change', function () { S.st.pd[k] = cb.checked ? 1 : 0; changed(); }); td3.appendChild(cb); tr.appendChild(td3);
         tb.appendChild(tr);
       })(k);
@@ -194,18 +279,22 @@
       allRow.appendChild(h('span', {class: 'hint'}, '全部：'));
       allRow.appendChild(select([['', '增益…']].concat(chip.gains.map(function (g) { return [g, g + '×']; })), '', function (v) { if (v) { S.st.gain = S.st.gain.map(function () { return +v; }); changed(); renderSettings(); } }));
       allRow.appendChild(select([['', 'MUX…']].concat(MUX_NAMES.map(function (m, i) { return [i, m]; })), '', function (v) { if (v !== '') { S.st.mux = S.st.mux.map(function () { return +v; }); changed(); renderSettings(); } }));
+      if (isDoc) allRow.appendChild(select([['', 'SRB2…'], ['1', '全部接 SRB2'], ['0', '全部不接']], '', function (v) { if (v !== '') { S.st.srb2 = v === '1' ? 0xFF : 0; changed(); renderSettings(); } }));
       c.appendChild(allRow);
       /* --- reference and bias --- */
       var b = section(isECG ? 'RLD 與 WCT' : '參考（SRB1）與 BIAS', !isPDK);
       var shortLab = cfg.maskLabels || chNames.map(function (n, i) { return String(i + 1); });
       if (!isECG) row(b, 'MISC1.SRB1', check(st.srb1, function (v) { set('srb1', v); }, ' 所有負輸入接到 SRB1'),
-        isPDK ? 'SRB1 腳接 REF_ELEC（JP8）。不設這個位元時負輸入接各自的 AINxN。' : '參考電極接到 SRB1 腳。忘了設這個位元，負輸入就浮接。');
+        isPDK ? 'SRB1 腳接 REF_ELEC（JP8）。不設這個位元時負輸入接各自的 AINxN。' :
+        isDoc ? '設了以後晶片內部把每個通道的負輸入改接 SRB1 腳，INxN 腳就不用了。OpenBCI 預設不用 SRB1，而是用每個通道的 SRB2 位元把參考電極接到正輸入。' :
+        '參考電極接到 SRB1 腳。忘了設這個位元，負輸入就浮接。');
       row(b, isECG ? 'RLD 放大器' : 'BIAS 放大器', check(st.biasOn, function (v) { set('biasOn', v); }, ' 開（PD_' + (isECG ? 'RLD' : 'BIAS') + ' = 1）'));
       row(b, (isECG ? 'RLD' : 'BIAS') + 'REF', check(st.biasRefInt, function (v) { set('biasRefInt', v); }, ' 內部中點（AVDD + AVSS）/ 2'));
-      if (!isPDK) row(b, '放大器關時', select([['0', '電極浮接'], ['1', '電極接電路地 0 V']], st.biasToGnd ? 1 : 0, function (v) { set('biasToGnd', v === '1'); }));
+      if (!isPDK && !isDoc) row(b, '放大器關時', select([['0', '電極浮接'], ['1', '電極接電路地 0 V']], st.biasToGnd ? 1 : 0, function (v) { set('biasToGnd', v === '1'); }));
       row(b, '感測（P）', maskBoxes(nch, st.biasP, shortLab, function (m) { set('biasP', m); }));
       row(b, '感測（N）', maskBoxes(nch, st.biasN, shortLab, function (m) { set('biasN', m); }));
-      if (!isPDK) {
+      if (isDoc) b.appendChild(h('div', {class: 'shint'}, '感測的輸入各經 220 kΩ（資料手冊圖 38）加到 BIASINV。回授、保護電阻畫在電路圖上：Cyton 沒有接 BIASINV 的回授，BIAS_OUT 經 R5 1 MΩ ∥ C16 1 nF、RBIAS 2.2 kΩ 到 BIAS 電極，迴路經過人體閉合。'));
+      else if (!isPDK) {
         row(b, '回授 Rf', num(st.bias.Rf, 'Ω', function (v) { set('bias.Rf', v); }));
         row(b, '回授 Cf', num(st.bias.Cf, 'F', function (v) { set('bias.Cf', v); }));
         row(b, '保護電阻', num(st.bias.Rprot, 'Ω', function (v) { set('bias.Rprot', Math.max(v, 1)); }), '資料手冊典型 1 MΩ ∥ 1.5 nF。DC 增益 = Rf ×（感測數）/ 220 kΩ（圖 38；式 11 寫 330 kΩ，兩處不一致）。');
@@ -256,12 +345,21 @@
       /* --- electrodes and input --- */
       if (!isPDK || st.source === 'body') {
         var e = section('電極與輸入', !isPDK);
-        var eKey = Object.keys(AFE.ELECTRODES).filter(function (k) { return AFE.ELECTRODES[k] === st.elec || AFE.ELECTRODES[k].label === st.elec.label; })[0] || 'wet';
-        row(e, '電極', select(Object.keys(AFE.ELECTRODES).map(function (k) { return [k, AFE.ELECTRODES[k].label]; }), eKey, function (v) { S.st.elec = AFE.ELECTRODES[v]; changed(); renderSettings(); }),
-          'Randles 模型：Rs 串（Rct ∥ Cdl）。|Z(10 Hz)| ≈ ' + fmt(AFE.electrodeZ(st.elec, 10, 1), 'Ω') + '；半電池電位差 ±' + fmt(st.elec.hc, 'V') + ' 量級。');
+        if (isDoc) {
+          var dtypes = {};
+          CS.parseDoc(st.doc).parts.forEach(function (p) { if (p.type === 'ELEC') dtypes[(p.params.TYPE || 'wet').toLowerCase()] = 1; });
+          var dk = Object.keys(dtypes), common = dk.length === 1 && AFE.ELECTRODES[dk[0]] ? dk[0] : '', ce = AFE.ELECTRODES[common || 'wet'];
+          row(e, '電極（全部）', select([['', '（各自不同）']].concat(Object.keys(AFE.ELECTRODES).map(function (k) { return [k, AFE.ELECTRODES[k].label]; })), common, function (v) {
+            if (v) ed.setText(AFE.boards.setAll(S.st.doc, 'ELEC', 'TYPE', v)); renderSettings(); }),
+            '每個電極的種類存在電路圖的 ELEC 元件上（點電極可以單獨改）；這裡一次改全部。Randles 模型：Rs 串（Rct ∥ Cdl），' + ce.label + ' |Z(10 Hz)| ≈ ' + fmt(AFE.electrodeZ(ce, 10, 1), 'Ω') + '、半電池電位差 ±' + fmt(ce.hc, 'V') + ' 量級。');
+        } else {
+          var eKey = Object.keys(AFE.ELECTRODES).filter(function (k) { return AFE.ELECTRODES[k] === st.elec || AFE.ELECTRODES[k].label === st.elec.label; })[0] || 'wet';
+          row(e, '電極', select(Object.keys(AFE.ELECTRODES).map(function (k) { return [k, AFE.ELECTRODES[k].label]; }), eKey, function (v) { S.st.elec = AFE.ELECTRODES[v]; changed(); renderSettings(); }),
+            'Randles 模型：Rs 串（Rct ∥ Cdl）。|Z(10 Hz)| ≈ ' + fmt(AFE.electrodeZ(st.elec, 10, 1), 'Ω') + '；半電池電位差 ±' + fmt(st.elec.hc, 'V') + ' 量級。');
+        }
         row(e, '阻抗不匹配', select([['0', '無'], ['0.2', '±20 %'], ['0.5', '±50 %'], ['1', '±100 %']], st.zSpread, function (v) { set('zSpread', +v); }));
         row(e, '半電池偏移', select([['0', '0'], ['1', '典型'], ['3', '3 倍']], st.hcScale, function (v) { set('hcScale', +v); }));
-        var et = h('table', {class: 'data chtable'}), names = cfg.electrodeNames(st);
+        var et = h('table', {class: 'data chtable'}), names = isDoc ? AFE.docElectrodes(st.doc) : cfg.electrodeNames(st);
         et.innerHTML = '<thead><tr><th>電極</th><th>接觸</th><th>阻抗 ×</th></tr></thead>';
         var eb = h('tbody');
         names.forEach(function (nm) {
@@ -272,7 +370,7 @@
           eb.appendChild(tr);
         });
         et.appendChild(eb); e.appendChild(h('div', {class: 'scroll-x'})).appendChild(et);
-        if (!isPDK) {
+        if (!isPDK && !isDoc) {
           row(e, '輸入濾波 R', num(st.filt.R, 'Ω', function (v) { set('filt.R', v); }));
           row(e, '輸入濾波 C（對地）', num(st.filt.C, 'F', function (v) { set('filt.C', v); }), '截止 ' + fmt(1 / (2 * Math.PI * st.filt.R * st.filt.C), 'Hz') + '。對地電容不匹配會把共模轉成差模；資料手冊建議改用跨在 P、N 之間的差動電容。');
         }
@@ -333,6 +431,7 @@
       if (p.tab) showTab(p.tab);
       if (p.scale) { $('scale').value = p.scale; if (!$('scale').value) $('scale').value = 'auto'; }
       if (p.dfilt) $('dfilt').value = p.dfilt;
+      if (ed) { ed.setText(S.st.doc, {silent: true}); $('docNote').textContent = ''; }
       renderSettings(); changed(true);
       if (p.after) setTimeout(function () { p.after(api); }, 50);
     }
@@ -346,14 +445,28 @@
     }
     function recompute() {
       var t0 = performance.now();
+      var fe, res;
       try {
-        S.fe = AFE.build(S.st);
-        S.res = AFE.analyze(S.fe);
-      } catch (e) { $('liveStatus').textContent = '計算失敗：' + e.message; console.error(e); return; }
+        fe = AFE.build(S.st);
+        res = AFE.analyze(fe);
+      } catch (e) {
+        $('liveStatus').textContent = '計算失敗：' + e.message;
+        if (ed) ed.setMessages([{text: '計算失敗（保留上一次的結果）：' + e.message, level: 'err'}]);
+        console.error(e); return;
+      }
+      S.fe = fe; S.res = res;
+      if (ed) {
+        ed.setLive(liveOf(res.sim), S.st.doc);
+        var msgs = fe.notes.concat(res.warn).map(function (t) { return {text: t, level: 'err'}; });
+        ed.setMessages(msgs.length ? msgs : [{text: '設計檢查：電源、參考電壓、VCAP、時脈、BIAS 迴路都沒有發現問題。', level: 'ok'}]);
+        if ($('railsInfo')) $('railsInfo').textContent = railsText();
+        if ($('clkInfo')) $('clkInfo').textContent = clkText();
+        if (settingsSig() !== shownSig) renderSettings();
+      }
       var fs = S.res.fdr;
       if (!S.buf || S.resetBuf || S.bufFs !== fs || S.buf.n !== S.fe.channels.length) makeBuf(fs, S.fe.channels.length);
       S.resetBuf = false;
-      S.stream = new AFE.Stream(S.fe, S.res, S.st);
+      S.stream = new AFE.Stream(S.fe, S.res, S.fe.st);
       S.codes = new Float64Array(S.fe.channels.length); S.volts = new Float64Array(S.fe.channels.length);
       S.carry = 0; S.lastT = performance.now();
       S.ms = performance.now() - t0;
@@ -568,7 +681,7 @@
         for (k = 0; k < n; k++) { m += y[k]; if (y[k] < lo) lo = y[k]; if (y[k] > hi) hi = y[k]; }
         m /= n; var v = 0; for (k = 0; k < n; k++) v += (y[k] - m) * (y[k] - m); v = Math.sqrt(v / Math.max(1, n - 1));
         var o = S.res.ch[i];
-        return '<tr><td>' + esc(S.fe.channels[i].name) + '</td><td>' + esc(S.fe.channels[i].label) + '</td><td class="num">' + uv(m, 4) + '</td><td class="num">' + uv(v) + '</td><td class="num">' + uv(hi - lo) +
+        return '<tr><td>' + esc(S.fe.channels[i].name) + '</td><td class="lab">' + esc(S.fe.channels[i].label) + '</td><td class="num">' + uv(m, 4) + '</td><td class="num">' + uv(v) + '</td><td class="num">' + uv(hi - lo) +
           '</td><td class="num">' + uv(o.chipNoise.rms) + ' / ' + uv(o.chipNoise.pp) + '</td><td class="num">' + uv(o.circRms) + '</td></tr>';
       });
       $('statTable').innerHTML = '<thead><tr><th>通道</th><th></th><th>平均（偏移）</th><th>rms</th><th>峰對峰</th><th>資料手冊（短路）rms / pp</th><th>電路熱雜訊 rms</th></tr></thead><tbody>' + rows.join('') + '</tbody>';
@@ -600,6 +713,7 @@
       var sum = '<div class="reads">' +
         read('電源', fmt(rails.avdd, 'V') + ' / ' + fmt(rails.avss, 'V')) +
         read('VREF', fmt(r.vref, 'V')) +
+        (fe.clk ? read('時脈', (fe.clk.internal ? '內部 ' : '外部 ') + fmt(fe.clk.f, 'Hz', 4)) : '') +
         read('fMOD / 抽取', fmt(r.fmod, 'Hz') + ' / ' + r.decim) +
         read('人體 DC', fmt(r.bodyDC, 'V', 4)) +
         read('人體 ' + st.env.mainsF + ' Hz 共模', fmt(cmPeak, 'V') + ' 峰值') +
@@ -609,7 +723,7 @@
       $('feSummary').innerHTML = sum;
       var rows = fe.channels.map(function (ch, i) {
         var o = r.ch[i], mains = 2 * Math.hypot(o.mains1[0], o.mains1[1]);
-        return '<tr><td>' + esc(ch.name) + '</td><td>' + esc(ch.label) + '</td><td class="num">' + fmt(o.vp, 'V', 4) + '</td><td class="num">' + fmt(o.vn, 'V', 4) + '</td><td class="num">' + fmt(o.vd, 'V', 3) +
+        return '<tr><td>' + esc(ch.name) + '</td><td class="lab">' + esc(ch.label) + '</td><td class="num">' + fmt(o.vp, 'V', 4) + '</td><td class="num">' + fmt(o.vn, 'V', 4) + '</td><td class="num">' + fmt(o.vd, 'V', 3) +
           '</td><td class="num ' + (o.headroom < 0 ? 'warn' : '') + '">' + (o.headroom < 0 ? '超出 ' + fmt(-o.headroom, 'V') : '餘 ' + fmt(o.headroom, 'V')) +
           '</td><td class="num">' + fmt(mains, 'V') + '</td><td class="num">' + fmt(o.circRms, 'V') + '</td><td>' + (o.loffP ? 'P ' : '') + (o.loffN ? 'N' : '') + '</td></tr>';
       });
@@ -720,9 +834,18 @@
       /* for testing from the console: generate 'sec' seconds of data now and redraw */
       advance: function (sec) { produce(Math.round(sec * S.res.fdr)); drawScope(); liveStatus(); if (activeTab === 'fft') drawFFT(); },
       draw: function () { drawScope(); drawFFT(); }};
+    api.editor = ed;
     renderSettings();
     var first = (cfg.presets || [])[0];
     if (first) applyPreset(first); else recompute();
+    if (ed) {
+      var sv = savedDoc();
+      if (sv && sv !== S.st.doc) {
+        S.st.doc = sv; ed.setText(sv, true);
+        $('docNote').textContent = '已載入你上次在這個瀏覽器編輯的電路圖；按「還原預設電路圖」回到 Cyton。';
+        changed(true);
+      }
+    }
     requestAnimationFrame(tick);
     return api;
   };

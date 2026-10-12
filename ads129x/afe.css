@@ -18,6 +18,8 @@
 table.chtable{font-size:13px}
 table.chtable td,table.chtable th{padding:3px 5px}
 table.chtable select{font-size:12.5px;padding:1px 3px;max-width:10.5em}
+table.data td.lab{white-space:nowrap}
+.chlab{font-size:11.5px;color:var(--muted);white-space:nowrap;font-family:"IBM Plex Mono",ui-monospace,monospace}
 canvas.scopecv{display:block;width:100%;height:420px;border-radius:6px;margin-top:6px}
 .warnlist{margin:8px 0;padding-left:1.2em;color:var(--warn);font-size:14px}
 td.warn{color:var(--warn);font-weight:700}

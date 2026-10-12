@@ -4,7 +4,7 @@
   var CS = window.CircuitSim, $ = function (id) { return document.getElementById(id); };
   var EX = window.CIRCUIT_EXAMPLES;
   var COLORS = ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)'];
-  var TYPE_NAME = {R: '電阻', C: '電容', L: '電感', V: '電壓源', I: '電流源', D: '二極體', SW: '開關', Q: 'BJT', M: 'MOSFET', U: '運算放大器'};
+  var TYPE_NAME = {R: '電阻', C: '電容', L: '電感', V: '電壓源', I: '電流源', D: '二極體', TVS: 'TVS', SW: '開關', Q: 'BJT', M: 'MOSFET', U: '運算放大器'};
 
   var S = {
     ex: null, text: '', doc: null, built: null, sim: null, running: true,
@@ -275,20 +275,7 @@
     $('docText').value = S.text;
     updateSpice();
   }
-  function partLine(part) {
-    var t = part.type, p = part.params, out = [t, part.name];
-    if (part.pts) { out.push(part.pts[0].join(','), part.pts[1].join(',')); if (part.flag) out.push('[' + part.flag + ']'); }
-    else { out.push(part.at.join(',')); if (p.type && t !== 'U') out.push(p.type); if (part.flag) out.push('[' + part.flag + ']'); }
-    if (t === 'R' || t === 'C' || t === 'L') out.push(CS.spiceNum(p.value));
-    else if (t === 'V' || t === 'I') out.push(typeof p.wave === 'number' ? CS.spiceNum(p.wave) : p.wave);
-    else if (t === 'SW') out.push(p.on ? 'on' : 'off');
-    Object.keys(p).forEach(function (k) {
-      if (k === 'value' || k === 'wave' || k === 'type' || k === 'on' || k === 'acph') return;
-      if (k === 'ac') { if (p.ac) out.push('AC=' + p.ac + (p.acph ? ',' + p.acph : '')); return; }
-      out.push(k + '=' + (typeof p[k] === 'number' ? CS.spiceNum(p[k]) : p[k]));
-    });
-    return out.join(' ');
-  }
+  function partLine(part) { return CS.partLine(part); }
 
   /* ---------------- node readouts ---------------- */
   function buildNodeReads() {

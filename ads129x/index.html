@@ -22,7 +22,7 @@
 <p class="lede">TI 生醫類比前端的三個模擬，各自一頁。電極、導線、輸入濾波、BIAS／RLD 迴路、WCT 和人體對市電的耦合，用<a href="../circuit-sim/">電路模擬器</a>的引擎解（DC、AC、雜訊）；晶片內部照資料手冊做 PGA、sinc3、雜訊表、lead-off 比較器和 24-bit 輸出，即時產生資料。每頁都有示波器、頻譜、統計、前端電路分析和暫存器／初始化程式碼。</p>
 
 <div class="cards3">
-  <a class="card" href="ads1299/"><h3>ADS1299</h3><p>8 通道 EEG。參考式接法（SRB1）、BIAS 迴路、lead-off、測試訊號、Δ-Σ 與 sinc3 示意。10 個情境，從輸入短路雜訊到「單電源但人體接 0 V」。</p></a>
+  <a class="card" href="ads1299/"><h3>ADS1299</h3><p>8 通道 EEG，可以直接編輯的 OpenBCI Cyton 前端電路圖：拖拉元件、改數值、改接線，DC、60 Hz、雜訊與即時輸出跟著重算，並做電源、參考電壓、VCAP、時脈的設計檢查。SRB2／SRB1 兩種參考接法、BIAS 迴路、lead-off、Δ-Σ 示意，11 個情境。</p></a>
   <a class="card" href="ads1294/"><h3>ADS1294</h3><p>4 通道 ECG。Lead I、II、V1、V2、WCT、RLD、節律器脈衝、HR／LP 模式；導出 III、aVR、aVL、aVF。</p></a>
   <a class="card" href="ads1299-pdk/"><h3>ADS1299EEG-FE PDK</h3><p>TI 評估板。照 SLAU443B 的電路圖與跳線（JP1、JP6、JP8、JP25、J6），重現使用手冊第 7、8 章的測試並附手冊實測值。</p></a>
 </div>
@@ -70,7 +70,7 @@
     <li>電極是線性模型，沒有運動偽跡、電極的過量雜訊；腦波和心電是示意訊號。</li>
     <li>ADS1294 的雜訊表從 PDF 的表格文字整理，若有個別數字錯位，以資料手冊為準。</li>
   </ul>
-  <p class="src">資料來源：SBAS499C（ADS1299，2017）、SBAS459K（ADS1294／6／8，2015）、SLAU443B（ADS1299EEG-FE，2016）。<a href="test.html">模型測試</a>：暫存器值對照資料手冊上電流程、雜訊表、sinc3、PDK §8.2 雜訊、§7.2.2 交流 lead-off、WCT。</p>
+  <p class="src">資料來源：SBAS499C（ADS1299，2017）、SBAS459K（ADS1294／6／8，2015）、SLAU443B（ADS1299EEG-FE，2016）。<a href="test.html">模型測試</a>：暫存器值對照資料手冊上電流程、雜訊表、sinc3、PDK §8.2 雜訊、§7.2.2 交流 lead-off、WCT；由電路圖產生的前端和原本寫死的資料手冊電路逐項一致（DC、60 Hz、混合矩陣、雜訊），以及 Cyton 電路的設計檢查。</p>
 </section>
 <footer>這些頁面是開發輔助，不是醫療設備的設計驗證；接觸人體的電路請照醫療安全規範（IEC 60601）另行驗證。</footer>
 </div>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ADS1299 前端模擬</title>
-<meta name="description" content="ADS1299 8 通道 EEG 前端的電路與訊號模擬：電極、輸入濾波、SRB1 參考、BIAS 迴路、市電耦合用電路模擬器解，晶片內部用資料手冊的 PGA、sinc3、雜訊表；即時輸出、頻譜、統計、暫存器與初始化程式碼。">
+<meta name="description" content="可編輯的 ADS1299 EEG 前端電路圖（OpenBCI Cyton）：拖拉元件、改數值、改接線，DC 工作點、60 Hz 干擾、雜訊預算、PGA 共模範圍與即時輸出跟著電路重算；晶片內部用資料手冊的 PGA、sinc3、雜訊表；頻譜、統計、暫存器與初始化程式碼。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -20,60 +20,68 @@
   <a href="../ads1299-pdk/">ADS1299EEG-FE PDK</a>
   <a href="../../circuit-sim/">電路模擬器</a>
 </div>
-<h1>ADS1299：8 通道 EEG 前端</h1>
-<p class="lede">參考式接法（資料手冊圖 73）：Fp1、Fp2、C3、C4、P3、P4、O1、O2 接 IN1P–IN8P，參考電極接 SRB1（MISC1.SRB1 = 1），BIAS 電極由晶片的 BIAS 放大器驅動。電極、導線、輸入 RC、輸入腳、BIAS 迴路和人體對市電的耦合是一個真的電路，用<a href="../../circuit-sim/">電路模擬器</a>解 DC、AC 和雜訊；晶片內部照資料手冊做 PGA（含 200 mV 餘裕）、sinc3、雜訊表和 24-bit 輸出。改任何設定都會重算，暫存器分頁同步給出要寫的值。</p>
+<h1>ADS1299：8 通道 EEG 前端電路設計</h1>
+<p class="lede">電路圖是 <a href="https://docs.openbci.com/Cyton/CytonSpecs/">OpenBCI Cyton</a> 公開電路圖上的 ADS1299 前端：每個排針經 TVS、2.2 kΩ、1 nF 到晶片，BIAS_OUT 經 1 MΩ ∥ 1 nF 和 2.2 kΩ 驅動 BIAS 電極，加上 ±2.5 V 電源、VCAP1–4、VREFP／VREFN 去耦與內部時脈。電路圖可以直接編輯：拖拉元件、加元件、改接線、改數值。電路用<a href="../../circuit-sim/">電路模擬器</a>解 DC、AC 和雜訊，晶片內部照資料手冊做 PGA、sinc3、雜訊表和 24-bit 輸出；改電路或暫存器都會重算。</p>
 
 <div id="app"></div>
 
 <section class="card notes" style="margin-top:16px">
   <h2>這頁怎麼算的</h2>
   <ol>
-    <li><b>前端電路</b>：每個電極是 Randles 模型（Rs 串 Rct ∥ Cdl）加一個電壓源（半電池電位當 DC、訊號用 AC 求轉移），經接觸開關、導線電容到輸入 RC，再到輸入腳（20 pF、1 GΩ、200 pA 偏壓電流）。BIAS 放大器是運放巨集模型（GBW 100 kHz、短路電流 1.1 mA、2 µVrms 雜訊）；每個被選的輸入以 220 kΩ 接到 BIASINV（用受控電流源代表 PGA 抽頭，不吃輸入電流）。人體經 Cpow 耦合到市電、經 Cbody 對大地，電路地經 Ciso 對大地。</li>
-    <li><b>電路分析</b>：DC 工作點給出每個輸入的電壓（檢查 PGA 共模範圍、lead-off 比較器）；在市電頻率（和 3 次諧波）解 AC 得到每通道的差模干擾；在 10 Hz 解每個電極源到每個通道的轉移（混合矩陣）；lead-off 激勵電流的轉移就是電極阻抗；伴隨法雜訊分析給出每個電阻、放大器的雜訊，乘上 sinc3 的響應後積分。</li>
-    <li><b>晶片行為模型</b>：輸入 = 混合後的腦波 + 市電 + lead-off 方波 + DC；PGA 兩個輸出各自限制在離電源 200 mV 內；以 R 倍輸出速率（R = 2–8）做 sinc3 抽取（和 1.024 MHz 下的真實響應差 &lt; 0.3 dB）；加上資料手冊表 1–4 的輸入雜訊（依增益、資料速率）；量化成 24-bit 二補數。</li>
-    <li><b>腦波</b>：1/f 背景（部分共同）、後腦 10.2 Hz alpha（閉眼時約 30 µV）、Fp1／Fp2 眨眼（約 150 µV）、顳側肌電。是示意訊號，不是真實記錄。</li>
+    <li><b>電路圖就是前端電路</b>：電路圖上的每個元件都進模擬。電極（圓形符號）是 Randles 模型（Rs 串 Rct ∥ Cdl）加一個電壓源（半電池電位當 DC、腦波用 AC 求轉移），經接觸開關、導線電容接到你畫的位置；人體經 Cpow 耦合到市電、經 Cbody 對大地，電路地經 Ciso 對大地（設定面板的「環境」）。</li>
+    <li><b>ADS1299 元件</b>：晶片符號的每隻腳接到電路圖的網路上，晶片內部依暫存器展開成：每個用到的輸入腳 20 pF、1 GΩ、200 pA 偏壓電流；CHnSET.SRB2 把 INxP 接到 SRB2 的開關；MISC1.SRB1 讓負輸入改接 SRB1；lead-off 電流源；BIAS 放大器（GBW 100 kHz、短路電流 1.1 mA，被選的輸入各經 220 kΩ 加到 BIASINV）；VREFP − VREFN = 4.5 V 的內部參考。電源軌從電路圖上 AVDD、AVSS 腳的直流電壓讀出來，時脈看 CLKSEL 腳是高還是低。</li>
+    <li><b>設計檢查</b>：AVDD − AVSS、DVDD 的範圍，VREFN 有沒有接 AVSS，VREFP、VCAP1–4 的電容夠不夠，CLKSEL／CLK，BIAS 放大器有沒有撞到電源軌，每個電極有沒有進到某個通道。結果列在電路圖下方。</li>
+    <li><b>電路分析</b>：DC 工作點給出每個輸入的電壓（PGA 共模範圍、lead-off 比較器），也是電路圖上的顏色（綠＝正、紅＝負）；在市電頻率（和 3 次諧波）解 AC 得到每通道的差模干擾；在 10 Hz 解每個電極到每個通道的轉移，通道名稱就照這個寫（例如「REF − Fp1」）；伴隨法雜訊分析給出每個電阻、放大器的雜訊，乘上 sinc3 的響應後積分。</li>
+    <li><b>晶片行為模型</b>：輸入 = 混合後的腦波 + 市電 + lead-off 方波 + DC；PGA 兩個輸出各自限制在離電源 200 mV 內；以 R 倍輸出速率（R = 2–8）做 sinc3 抽取；加上資料手冊表 1–4 的輸入雜訊；量化成 24-bit 二補數。</li>
+    <li><b>腦波</b>：1/f 背景（部分共同）、後腦 10.2 Hz alpha（閉眼時約 30 µV）、Fp1／Fp2 眨眼（約 150 µV）、顳側肌電；電極名稱決定各成分的強弱。是示意訊號，不是真實記錄。</li>
   </ol>
   <h2 style="margin-top:14px">極限</h2>
   <ul>
-    <li>PGA 抽頭用輸入腳電壓近似（真實的抽頭在 PGA 輸出，含放大後的差模成分）；BIAS 的加總電阻資料手冊圖 38 寫 220 kΩ、式 11 寫 330 kΩ，這裡用 220 kΩ。</li>
-    <li>晶片雜訊用表格值當白雜訊加在輸出端；沒有模擬 1/f 形狀、通道間串音、增益誤差、INL。偏移是隨機抽的典型量級，不是某顆晶片的實測。</li>
-    <li>PGA 頻寬（增益 24 時 27 kHz）和迴轉率沒有進時域模型；輸入超過 PGA 共模範圍時用硬限幅近似。</li>
-    <li>電極模型是線性的、沒有運動偽跡與電極本身的過量雜訊；市電耦合用集總電容。</li>
-    <li>交流 lead-off 用方波的 1、3、5 次諧波合成；直流 lead-off 的電流源有 50 mV 的順從電壓。</li>
+    <li>PGA 抽頭用輸入腳電壓近似（真實的抽頭在 PGA 輸出，含放大後的差模成分）；BIAS 的加總電阻資料手冊圖 38 寫 220 kΩ、式 11 寫 330 kΩ，這裡用 220 kΩ。SRB2 開關用 10 Ω 的理想開關。</li>
+    <li>VCAP、VREF 的電容只做設計檢查，不影響訊號模擬；電源是理想電源，沒有電源雜訊與 PSRR。數位腳（SPI、GPIO、RESET、PWDN、START）沒有畫，也不模擬。</li>
+    <li>晶片雜訊用表格值當白雜訊加在輸出端；沒有模擬 1/f 形狀、通道間串音、增益誤差、INL。偏移是隨機抽的典型量級。</li>
+    <li>PGA 頻寬和迴轉率沒有進時域模型；輸入超過 PGA 共模範圍時用硬限幅近似。電極模型是線性的、沒有運動偽跡；市電耦合用集總電容。</li>
+    <li>OpenBCI 的元件值取自公開電路圖（TVS 用 6.5 V 崩潰、0.8 pF 的雙向模型）；預設暫存器是 OpenBCI 函式庫的通道預設 x1060110X。</li>
   </ul>
-  <p class="src">資料來源：TI ADS1299 資料手冊 SBAS499C（2017）表 1–5、圖 18、38、72–73、暫存器表 11–28；ADS1299EEG-FE 使用手冊 SLAU443B（偏壓電流 200 pA）。模型測試：<a href="../test.html">ADS129x 模型測試</a>、<a href="../../circuit-sim/test.html">電路引擎測試</a>。</p>
+  <p class="src">資料來源：TI ADS1299 資料手冊 SBAS499C（2017）表 1–5、圖 18、38、72–73、暫存器表；ADS1299EEG-FE 使用手冊 SLAU443B；OpenBCI Cyton 電路圖（OpenBCI V3_Hardware_Design_Files）與文件。模型測試：<a href="../test.html">ADS129x 模型測試</a>、<a href="../../circuit-sim/test.html">電路引擎測試</a>。</p>
 </section>
-<footer>電路部分用 <a href="../../circuit-sim/engine.js">circuit-sim/engine.js</a>（修正節點分析、伴隨法雜訊）；晶片部分見 <a href="../afe.js">afe.js</a>。</footer>
+<footer>電路部分用 <a href="../../circuit-sim/engine.js">circuit-sim/engine.js</a>（修正節點分析、伴隨法雜訊）與 <a href="../../circuit-sim/editor.js">editor.js</a>（電路圖編輯器）；晶片部分見 <a href="../afe.js">afe.js</a>，電路圖產生器見 <a href="../boards.js">boards.js</a>。</footer>
 </div>
 <script src="../../circuit-sim/engine.js"></script>
 <script src="../../circuit-sim/plots.js"></script>
+<script src="../../circuit-sim/schematic.js"></script>
+<script src="../../circuit-sim/editor.js"></script>
 <script src="../afe.js"></script>
+<script src="../boards.js"></script>
 <script src="../afe-ui.js"></script>
 <script>
-var FS1299 = [1, 2, 4, 6, 8, 12, 24];
+var B = AFE.boards;
 var app = AFEApp({
   kind: 'ads1299',
   mount: document.getElementById('app'),
   deltaSigma: true,
-  electrodeNames: function (st) { return st.labels.concat(['REF', 'BIAS']); },
+  schematic: true,
+  schematicIntro: '拖拉元件移動、拖拉空白處平移、點一下電路圖後滾輪縮放；工具列可以放新元件、畫導線，右邊改數值與名稱（電極的名稱就是它在頭上的位置）。每次修改都會重算 DC 工作點、60 Hz 干擾、雜訊預算和即時輸出；顏色是 DC 電壓。電路圖存在這個瀏覽器裡，也可以下載成文字檔。',
   presets: [
-    {id: 'eeg', label: '閉眼 EEG（預設）', note: '±2.5 V、250 SPS、增益 24、SRB1 參考式、BIAS 由 8 個正輸入的平均驅動（1 MΩ ∥ 1.5 nF）。顯示濾波選「0.5–45 Hz＋市電陷波」可以看到 O1、O2 的 alpha 和 Fp1、Fp2 的眨眼。', dfilt: 'band', scale: '50e-6'},
+    {id: 'eeg', label: 'OpenBCI 預設（閉眼 EEG）', note: '±2.5 V、250 SPS、增益 24，照 OpenBCI 的預設：電極接下排的 N 腳（INxN），參考電極接 SRB2，每個通道的 SRB2 位元把參考接到 INxP，8 個通道的 P、N 都進 BIAS。所以每個通道量的是「REF − 電極」，資料是反相的（OpenBCI 文件也這樣說）。顯示濾波選「0.5–45 Hz＋市電陷波」看 O1、O2 的 alpha 和 Fp1、Fp2 的眨眼（都是反相的）。', dfilt: 'band', scale: '50e-6'},
+    {id: 'srb1', label: '資料手冊接法（SRB1）', note: '電極改插上排的 P 腳（INxP），參考電極插 SRB1，MISC1.SRB1 = 1、所有 SRB2 位元清掉，BIAS 只用 8 個正輸入（資料手冊圖 73）。通道量的是「電極 − REF」，不反相。電路圖上電極移到了右邊。', dfilt: 'band', scale: '50e-6',
+      set: function (s) { s.doc = B.cyton({montage: 'srb1'}); s.srb1 = true; s.srb2 = 0; s.biasP = 0xFF; s.biasN = 0; }},
     {id: 'short', label: '輸入短路雜訊', note: '所有通道 MUX = 001（內部短路）：這就是資料手冊表 1–4 的量測條件。到「統計」按「擷取」：250 SPS、增益 24 時應約 0.14 µVrms、0.98 µVpp（資料手冊）。改資料速率和增益，對照表格怎麼變。', tab: 'stats', scale: '5e-6', dfilt: 'raw',
       set: function (s) { s.mux = s.mux.map(function () { return 1; }); }},
     {id: 'test', label: '內部測試訊號', note: 'CONFIG2 = D0h、CHnSET = 05h（增益 1、MUX = 101）：±VREF/2400 = ±1.875 mV、fCLK/2²¹ ≈ 0.98 Hz 的方波，和資料手冊圖 67 的上電流程一樣。用來確認整條訊號鏈有在動。', scale: '1e-3', dfilt: 'raw',
       set: function (s) { s.testInt = true; s.mux = s.mux.map(function () { return 5; }); s.gain = s.gain.map(function () { return 1; }); }},
-    {id: 'cmfail', label: '單電源但人體接 0 V', note: '常見錯誤：用 5 V 單電源，卻沒有用 BIAS 把人體拉到中點，而是把 BIAS 電極接到電路地。輸入共模約 0 V，低於 AVSS + 0.2 V，PGA 兩個輸出都被壓在下限，差值歸零或亂跳。「前端電路」分頁的共模範圍欄會標紅。', tab: 'fe',
-      set: function (s) { s.supply = 'uni'; s.biasOn = false; s.biasToGnd = true; }},
-    {id: 'nobias', label: '關掉 BIAS（插電筆電）', note: '關掉 BIAS 放大器、改成 USB 接插電的筆電（電路地對大地 200 pF）。人體的 60 Hz 共模大幅上升；兩個電極阻抗不同時就變成差模疊在腦波上。「前端電路」分頁比較人體共模和各通道差模。', tab: 'fe', dfilt: 'dc',
+    {id: 'cmfail', label: '單電源但人體接 0 V', note: '常見錯誤：電源改成 5 V 單電源（AVSS 接地），卻把 BIAS 電極經 2.2 kΩ 接到電路地、BIAS 放大器關掉。輸入共模約 0 V，低於 AVSS + 0.2 V，PGA 兩個輸出都被壓在下限，差值歸零或亂跳。「前端電路」分頁的共模範圍欄會標紅；看電路圖上的電源和 BIAS 那一段。', tab: 'fe',
+      set: function (s) { s.doc = B.cyton({supply: 'uni', biasToGnd: true}); s.biasOn = false; }},
+    {id: 'nobias', label: '關掉 BIAS（插電筆電）', note: '關掉 BIAS 放大器（BIAS 電極經 R5 接到高阻抗的 BIAS_OUT，等於浮接）、改成 USB 接插電的筆電（電路地對大地 200 pF），電極阻抗 ±50 % 不匹配。人體的 60 Hz 共模大幅上升，經不匹配的阻抗與 1 nF 對地電容變成差模疊在腦波上。「前端電路」分頁比較人體共模和各通道差模。', tab: 'fe', dfilt: 'dc',
       set: function (s) { s.biasOn = false; s.env.Ciso = 200e-12; s.zSpread = 0.5; }},
-    {id: 'dry', label: '乾電極', note: '乾電極 |Z(10 Hz)| 約 850 kΩ，阻抗不匹配 ±100 %。電極的熱雜訊、輸入偏壓電流造成的偏移（200 pA × 阻抗）、60 Hz 的共模轉差模都變大。到「前端電路」看雜訊預算。', tab: 'fe',
-      set: function (s) { s.elec = AFE.ELECTRODES.dry; s.zSpread = 1; }},
-    {id: 'leadoff', label: 'O1 脫落＋直流 lead-off', note: 'LOFF = 00h（直流、6 nA、95 % / 5 %）、LOFF_SENSP = FFh、CONFIG4 = 02h。O1 的電極拿掉後，6 nA 把 IN7P 拉到接近 AVDD，比較器亮起 LOFF_STATP bit 6，輸出飽和在 7FFFFFh。狀態列和 DOUT 的第一個字都看得到。', dfilt: 'raw', scale: 'auto',
-      set: function (s) { s.loffMode = 'dc'; s.ilead = 0; s.compTh = 0; s.loffP = 0xFF; s.compOn = true; s.contact = {O1: false}; }},
-    {id: 'acimp', label: '量電極阻抗（31.2 Hz）', note: '交流 lead-off：6 µA、31.2 Hz 方波打進 IN1P 和 SRB1（LOFF_SENSN 只開一個，因為參考電極共用）。頻譜上 31.2 Hz 的大小正比於電極阻抗：峰對峰 ≈ 2 × I ×（Z_P + Z_N）。這是帶內頻率，量測時不能同時記腦波。', tab: 'fft', dfilt: 'raw', scale: 'auto',
+    {id: 'dry', label: '乾電極', note: '電路圖上每個電極改成乾電極（|Z(10 Hz)| 約 850 kΩ），阻抗不匹配 ±100 %。電極熱雜訊、200 pA 偏壓電流造成的偏移、60 Hz 的共模轉差模都變大；1 nF 對地電容和 850 kΩ 也開始在幾百 Hz 濾掉訊號。到「前端電路」看雜訊預算。', tab: 'fe',
+      set: function (s) { s.doc = B.setAll(s.doc, 'ELEC', 'TYPE', 'dry'); s.zSpread = 1; }},
+    {id: 'leadoff', label: 'O1 脫落＋直流 lead-off', note: 'LOFF = 00h（直流、6 nA、95 % / 5 %）、LOFF_SENSN = FFh（電極在 N 腳）、CONFIG4 = 02h。O1 的電極拿掉後，6 nA 把 IN7N 拉到接近 AVSS，比較器亮起 LOFF_STATN bit 6，CH7 飽和在 7FFFFFh。狀態列和 DOUT 的第一個字都看得到；電路圖上 O1 變成虛線。', dfilt: 'raw', scale: 'auto',
+      set: function (s) { s.loffMode = 'dc'; s.ilead = 0; s.compTh = 0; s.loffP = 0; s.loffN = 0xFF; s.compOn = true; s.contact = {O1: false}; }},
+    {id: 'acimp', label: '量電極阻抗（31.2 Hz）', note: '交流 lead-off：6 µA、31.2 Hz 方波打進 IN1N（Fp1）和 IN1P（經 SRB2 開關接到參考電極）。頻譜上 31.2 Hz 的大小正比於兩個電極阻抗的和：峰對峰 ≈ 2 × I ×（Z_Fp1 + Z_REF），2.2 kΩ 保護電阻也算進去。這是帶內頻率，量測時不能同時記腦波。', tab: 'fft', dfilt: 'raw', scale: 'auto',
       set: function (s) { s.loffMode = 'ac31'; s.ilead = 2; s.loffP = 0x01; s.loffN = 0x01; s.gain = s.gain.map(function () { return 1; }); }},
-    {id: 'fdr4', label: '邊記錄邊量阻抗（fDR/4）', note: '4 kSPS、交流 lead-off 在 fDR/4 = 1 kHz、6 nA：在腦波頻帶外，可以和 EEG 同時進行，之後用帶通取出 1 kHz、用低通取出腦波（使用手冊 §7.2.2 建議只用 nA 級電流）。', tab: 'fft', dfilt: 'band',
-      set: function (s) { s.dr = 2; s.loffMode = 'acdr4'; s.ilead = 0; s.loffP = 0xFF; s.loffN = 0x01; }},
+    {id: 'fdr4', label: '邊記錄邊量阻抗（fDR/4）', note: '4 kSPS、交流 lead-off 在 fDR/4 = 1 kHz、6 nA：在腦波頻帶外，可以和 EEG 同時進行。LOFF_SENSN = FFh 量每個電極，LOFF_SENSP 只開 CH1（參考電極共用，開一個就好；8 個都開等於 8 倍電流灌進參考電極）。注意 1 nF 對地電容在 1 kHz 只有 160 kΩ，乾電極時會分掉一部分電流。', tab: 'fft', dfilt: 'band',
+      set: function (s) { s.dr = 2; s.loffMode = 'acdr4'; s.ilead = 0; s.loffP = 0x01; s.loffN = 0xFF; }},
     {id: 'fast', label: '16 kSPS 的量化雜訊', note: '16 kSPS（DR = 000）時抽取比只有 64，二階 Δ-Σ 的量化雜訊還沒被濾乾淨：資料手冊增益 1 時 21.7 µVrms，8 kSPS 只有 6.9 µVrms。看「Δ-Σ 示意」分頁。', tab: 'ds', dfilt: 'raw', scale: 'auto',
       set: function (s) { s.dr = 0; s.mux = s.mux.map(function () { return 1; }); s.gain = s.gain.map(function () { return 1; }); }}
   ]

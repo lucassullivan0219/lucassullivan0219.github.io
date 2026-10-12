@@ -188,6 +188,67 @@ test('SPICE export lists every element', function () {
   ok(/\.end$/.test(txt));
 });
 
+test('TVS: symmetric breakdown, blocks below BV, conducts above it', function () {
+  var c = new CS.Circuit();
+  c.V('V1', 'a', '0', 3); c.add('TVS', 'D1', ['a', 'b'], {BV: 6}); c.R('R1', 'b', '0', 1e3);
+  var s = new CS.Sim(c); ok(s.op().ok);
+  ok(Math.abs(s.i('D1')) < 1e-12, '3 V on a 6 V TVS leaks ' + s.i('D1'));
+  s.set('V1', 'wave', -9); ok(s.op().ok);
+  close(s.v('b'), -(9 - 6) + 0.3, 0.35, 'clamps near -BV');
+  s.set('V1', 'wave', 9); ok(s.op().ok);
+  close(s.v('b'), (9 - 6) - 0.3, 0.35, 'clamps near +BV');
+});
+
+/* documents: IC / ELEC / J / TEXT, serialisation, and the editor's pure operations */
+CS.IC_LIB.t4 = {title: 'T4', w: 6, h: 6, pins: [{name: 'A', side: 'l', at: 2}, {name: 'B', side: 'r', at: 2}, {name: 'V', side: 't', at: 3}, {name: 'G', side: 'b', at: 3}]};
+test('IC, ELEC, J and TEXT parts: pin positions, nets, round trip through docToText', function () {
+  var text = ['TITLE t', 'TEXT 0,-2 [h] 標題 text', 'IC U1 t4 10,10 X=1', 'ELEC Fp1 2,12 [l] TYPE=dry', 'W 2,12 8,12', 'J J:1 12,6 [a]', 'W 13,8 13,6', 'W 13,6 12,6',
+    'TVS D1 18,12 18,14 BV=6', 'GND 13,18', 'W 18,14 13,18'].join('\n');
+  var d = CS.parseDoc(text);
+  ok(!d.errors.length, d.errors.join('; '));
+  var u = d.parts.filter(function (p) { return p.name === 'U1'; })[0];
+  ok(String(u.pins) === String([[8, 12], [18, 12], [13, 8], [13, 18]]), 'pins ' + JSON.stringify(u.pins));
+  var b = CS.buildFromDoc(d);
+  ok(b.macros.length === 3, 'IC, ELEC, J kept as macros');
+  ok(u.nets[0] === d.parts[1].nets[0], 'electrode on pin A');
+  ok(u.nets[2] === b.netAt([12, 6]), 'connector on pin V');
+  ok(!b.errors.some(function (e) { return /U1|J:1/.test(e); }), 'no floating warnings for IC / connector pins: ' + b.errors.join('; '));
+  ok(d.texts.length === 1 && d.texts[0].text === '標題 text' && d.texts[0].flag === 'h', 'TEXT');
+  var t2 = CS.docToText(d), d2 = CS.parseDoc(t2);
+  ok(CS.docToText(d2) === t2, 'stable round trip');
+  ok(d2.parts.length === d.parts.length && d2.parts[1].params.TYPE === 'dry' && d2.parts[0].params.X === '1', 'params kept');
+  ok(/不認得的 IC/.test(CS.parseDoc('IC U9 nope 0,0').errors.join('')), 'unknown IC');
+  ok(/重複/.test(CS.parseDoc('R R1 0,0 4,0 1k\nR R1 0,2 4,2 1k').errors.join('')), 'duplicate names');
+});
+test('editor: moving a part stretches attached wires into L shapes, grounds come along', function () {
+  var E = window.CircuitEditor.core, d = CS.parseDoc('R R1 4,0 8,0 1k\nW 0,0 4,0\nC C1 8,0 8,2 1n\nGND 8,2');
+  var sel = E.emptySel(); sel.parts.C1 = 1;
+  E.translate(d, sel, 3, 2);
+  var c1 = d.parts[1];
+  ok(String(c1.pins) === String([[11, 2], [11, 4]]), 'C1 moved');
+  ok(String(d.grounds[0].at) === '11,4', 'ground on the moved pin follows');
+  var b = CS.buildFromDoc(CS.parseDoc(CS.docToText(d)));
+  ok(b.netAt([8, 0]) === b.netAt([11, 2]), 'R1 still connected to C1 through new wires');
+  ok(d.wires.every(function (w) { return w.a[0] === w.b[0] || w.a[1] === w.b[1]; }), 'all wires orthogonal');
+});
+test('editor: T-junction splitting, rotation, paste with new names, delete', function () {
+  var E = window.CircuitEditor.core, d = CS.parseDoc('W 0,0 10,0\nR R1 4,0 4,4 1k\nGND 4,4');
+  E.normalize(d);
+  ok(d.wires.length === 2, 'wire split at the resistor pin: ' + d.wires.length);
+  ok(CS.buildFromDoc(CS.parseDoc(CS.docToText(d))).netAt([0, 0]) === CS.buildFromDoc(CS.parseDoc(CS.docToText(d))).netAt([4, 0]), 'connected');
+  E.rotate(d, 'R1');
+  ok(String(d.parts[0].pins) === String([[6, 2], [2, 2]]), 'rotated about the middle: ' + JSON.stringify(d.parts[0].pins));
+  var sel = E.emptySel(); sel.parts.R1 = 1;
+  var r = E.duplicate(d, sel, 0, 6);
+  ok(r.doc.parts.length === 2 && r.doc.parts[1].name === 'R2' && r.sel.parts.R2, 'copy named R2');
+  ok(String(r.doc.parts[1].pins) === String([[6, 8], [2, 8]]), 'copy shifted');
+  E.remove(r.doc, r.sel);
+  ok(r.doc.parts.length === 1 && r.doc.parts[0].name === 'R1', 'deleted the copy');
+  var e = CS.parseDoc('ELEC Fp1 0,0 [l]'), s2 = E.emptySel(); s2.parts.Fp1 = 1;
+  var p = E.duplicate(e, s2, 0, 4);
+  ok(p.doc.parts[1].name === 'Fp2', 'electrode copy numbered: ' + p.doc.parts[1].name);
+});
+
 function runTests(out) {
   var pass = 0;
   TESTS.forEach(function (t) {

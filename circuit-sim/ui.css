@@ -90,3 +90,25 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
 .status{font-size:13px;color:var(--muted);min-height:1.5em}
 .status.err{color:var(--warn)}
 pre.code{font:12.5px/1.5 "IBM Plex Mono",ui-monospace,monospace;background:var(--chip);border-radius:6px;padding:10px;overflow:auto;max-height:340px;margin:6px 0;white-space:pre}
+/* schematic editor (editor.js) */
+.sched-bar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-bottom:8px}
+.sched-grp{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center}
+.sched-bar .btn.sm{padding:2px 9px}
+.sched-opts{gap:10px}
+.sched-main{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:12px;align-items:start}
+@media (max-width:860px){.sched-main{grid-template-columns:1fr}}
+.sched-cv{position:relative;border:1px solid var(--rule);border-radius:6px;overflow:hidden;resize:vertical;min-height:260px;background:var(--surface)}
+.sched-cv canvas{display:block;touch-action:none}
+.sched-insp{font-size:14px;min-width:0}
+.sched-insp h3{margin:0 0 8px}
+.sched-f{display:grid;grid-template-columns:5.6em minmax(0,1fr);gap:4px 8px;align-items:center;margin:5px 0;font-size:13.5px;color:var(--muted)}
+.sched-f input,.sched-f select{width:100%;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13px}
+.sched-insp .reads{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+.sched-insp .read .v{font-size:13.5px}
+table.sched-pins{font-size:12.5px}
+table.sched-pins td,table.sched-pins th{padding:2px 5px}
+.sched-pins-wrap{max-height:300px;overflow:auto}
+.sched-status{margin-top:6px}
+.sched-msgs{margin:4px 0 0;padding-left:1.2em;font-size:13.5px}
+.sched-text textarea{min-height:220px}
+.sched-extra{margin-top:8px;font-size:13.5px}
