@@ -12,18 +12,18 @@
 :root{
   --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72; --link:#1F5FA8; --rule:#CCD3CE;
   --warn:#A33A2B; --opt:#8A6100; --req:#2F5D3A; --infer:#7A3E8F;
-  --vmbus:#2a78d6; --qon:rgba(42,120,214,.16);
+  --vmbus:#2a78d6; --qon:rgba(42,120,214,.16); --mod:#B0307F; --eflow:#E8720C;
   --bg:#EDF2EA; --accent:#2F6B3A; --tint:rgba(47,107,58,.08); --side:clamp(190px,16.6vw,270px);
 }
 body[data-mode="adv"]{--bg:#F4EAE0; --accent:#A4471F; --tint:rgba(164,71,31,.09)}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){--surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0; --rule:#2C3533;
-    --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --vmbus:#3987e5; --qon:rgba(57,135,229,.22);
+    --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --vmbus:#3987e5; --qon:rgba(57,135,229,.22); --mod:#F07CC4; --eflow:#FFAA45;
     --bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
   :root:not([data-theme="light"]) body[data-mode="adv"]{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
 }
 :root[data-theme="dark"]{--surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0; --rule:#2C3533;
-  --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --vmbus:#3987e5; --qon:rgba(57,135,229,.22);
+  --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --vmbus:#3987e5; --qon:rgba(57,135,229,.22); --mod:#F07CC4; --eflow:#FFAA45;
   --bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
 :root[data-theme="dark"] body[data-mode="adv"]{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
 *,*::before,*::after{box-sizing:border-box}
@@ -88,6 +88,9 @@ tr.grp td{background:var(--tint);font-weight:700}
 .fsbox.fs{position:fixed;inset:0;z-index:50;overflow:auto;padding:40px 16px 16px;border-radius:0}
 .fsbtn{font-size:12px;padding:2px 9px;border:1.5px solid var(--rule);border-radius:999px;background:var(--surface);color:var(--ink);cursor:pointer}
 pre.mermaid{margin:0;min-width:900px;background:transparent}
+.schbox{overflow-x:auto;padding-top:4px}
+.schbox svg{display:block;width:100%;min-width:900px;height:auto}
+.fsbox.fs.schbox svg{min-width:0}
 .mmwrap{overflow-x:auto;padding:30px 6px 6px}
 
 /* ---------- sim regions: [center 4/6 | settings 1/6] ---------- */
@@ -260,6 +263,12 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
         </table></div>
         <p class="small muted">來源：M. W. Barnett, P. M. Larkman, “The action potential,” <i>Practical Neurology</i> 7:192–197 (2007)；D. Purves et al., <i>Neuroscience</i> 2nd ed., ch. 2–3（NCBI Bookshelf）；A. L. Hodgkin, A. F. Huxley, <i>J Physiol</i> 117:500 (1952)。</p>
       </details>
+
+      <details class="card wide" open><summary>真正的 AP 完整電路圖<span class="hint">紫紅色＝和原版電路不同</span></summary><div class="body">
+        <p class="small">原版電路（照 PCB 實際接法）加上所有外加元件，每顆都畫在實際夾的兩個點之間。<b style="color:var(--mod)">紫紅色</b>是和原版不同的地方：SO 的 R2 換成 1 MΩ（套件是 100 Ω）、Q<sub>pass</sub> E–B 並 22 kΩ、R13 並 11 kΩ、R13 下端到 FI.E3 的 680 kΩ、V+ 到 Vm 的 330 kΩ、SO C1 並 56 kΩ；#2-3 再加每個 Passive unit 的 560 kΩ 和拉到 FI 的 V+ 線。黑色是原版就有的（#2-2 的 V+ 走疊接排針）。要看電子流動，到 <a href="#r3">#2-2</a>、<a href="#r4">#2-3</a> 區域選「真正的 AP」。</p>
+        <div class="fsbox schbox"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><p class="small" style="margin:0"><b>#2-2</b>（n = 0）</p><svg data-trueap="0" role="img" aria-label="#2-2 真正的 AP 完整電路圖"></svg></div>
+        <div class="fsbox schbox" style="margin-top:10px"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><p class="small" style="margin:0"><b>#2-3</b>（以 n = 2 為例）</p><svg data-trueap="2" role="img" aria-label="#2-3 真正的 AP 完整電路圖，n = 2"></svg></div>
+      </div></details>
 
       <details class="card" open><summary>真正的 AP 電路（只加、可拆）<span class="hint">每顆的用途</span></summary><div class="body">
         <div class="tbl"><table>

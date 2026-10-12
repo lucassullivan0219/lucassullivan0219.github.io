@@ -42,70 +42,70 @@ var AM = (function(){
     if(old) names.forEach(function(n, i){ if(oldIdx[n] >= 0) V[i] = old[oldIdx[n]]; });
   }
   var R = [], C = [], D = [], Q = [];
-  var t = 0, gmin = GMIN;
+  var t = 0, gmin = GMIN, lastH = 0;                /* lastH: last accepted step, for capacitor currents */
 
   function link(ok){ return ok ? SHORT : OPEN; }
   function build(){
     var names = nodeNames();
     if(names.join() !== NODES.join()) alloc(names);
     R = []; C = []; D = []; Q = [];
-    function r(a, b, ohm){ R.push([IDX[a], IDX[b], 1 / ohm]); }
+    function r(a, b, ohm, name){ R.push([IDX[a], IDX[b], 1 / ohm, name]); }   /* name: branch id for currents() */
     var out = st.chain ? 'PC1' : 'Vm', ax = st.chain ? 'AX' : 'GND';
     /* Stimulator */
-    r('V+', 'ST.P', link(st.sw && st.src !== 'ideal'));
-    r('ST.P', 'ST.K', Math.max(st.rpot, 1));
-    r('ST.K', 'ST.Q', 7e3);
+    r('V+', 'ST.P', link(st.sw && st.src !== 'ideal'), 'sw');
+    r('ST.P', 'ST.K', Math.max(st.rpot, 1), 'pot');
+    r('ST.K', 'ST.Q', 7e3, 'r7a');
     Q.push(['p', IDX[out], IDX['ST.R'], IDX['ST.Q'], M4403, 'pass']);
     Q.push(['p', IDX['ST.R'], IDX['ST.Q'], st.qs === 'sw' ? IDX['ST.P'] : IDX['V+'], M4403, 'sense']);
-    if(st.qs === 'rx') r('ST.Q', 'ST.R', 22e3);      /* fix: 22 kohm across Qpass E-B */
-    if(st.qs === 'rx10') r('ST.Q', 'ST.R', 10e3);    /* 10 kohm there: pot range ~41-0.3 uA */
-    if(st.qs === 'rx12') r('ST.Q', 'ST.R', 12e3);    /* 12 kohm there: pot range ~51-2.6 uA (#2-3 I_min, true AP) */
-    r('ST.R', 'GND', 7e3);
+    if(st.qs === 'rx') r('ST.Q', 'ST.R', 22e3, 'rx');      /* fix: 22 kohm across Qpass E-B */
+    if(st.qs === 'rx10') r('ST.Q', 'ST.R', 10e3, 'rx');    /* 10 kohm there: pot range ~41-0.3 uA */
+    if(st.qs === 'rx12') r('ST.Q', 'ST.R', 12e3, 'rx');    /* 12 kohm there: pot range ~51-2.6 uA (#2-3 I_min, true AP) */
+    r('ST.R', 'GND', 7e3, 'r7b');
     /* Leak */
-    r('Vm', 'LK.Vm', link(st.leak));
-    C.push([IDX['LK.Vm'], IDX[ax], 1e-6]); r('LK.Vm', ax, 1e5);
+    r('Vm', 'LK.Vm', link(st.leak), 'lk');
+    C.push([IDX['LK.Vm'], IDX[ax], 1e-6, 'lkc']); r('LK.Vm', ax, 1e5, 'lkr');
     /* Fast inward */
     if(st.fi_on){
-    r('FI.Vm', 'Vm', link(st.fi_vm)); r('FI.V+', st.fi_supply === 'local' ? 'FI.BAT' : 'V+', link(st.fi_vplus)); r('FI.GND', ax, link(st.fi_gnd));
-    D.push([IDX['FI.Vm'], IDX['FI.B3']]);
-    r('FI.B3', 'FI.GND', 3e6);
+    r('FI.Vm', 'Vm', link(st.fi_vm), 'fivm'); r('FI.V+', st.fi_supply === 'local' ? 'FI.BAT' : 'V+', link(st.fi_vplus), 'fivp'); r('FI.GND', ax, link(st.fi_gnd), 'figd');
+    D.push([IDX['FI.Vm'], IDX['FI.B3'], 'fid']);
+    r('FI.B3', 'FI.GND', 3e6, 'fir3');
     Q.push(['n', IDX['FI.B4'], IDX['FI.B3'], IDX['FI.E3'], M3904, 'fi3904']);
-    r('FI.E3', 'FI.GND', st.rfe);
+    r('FI.E3', 'FI.GND', st.rfe, 'fire');
     Q.push(['p', IDX['FI.Vm'], IDX['FI.B4'], IDX['FI.E4'], M4403, 'fi4403']);
-    r('FI.E4', 'FI.V+', st.r13);
+    r('FI.E4', 'FI.V+', st.r13, 'r13');
     if(st.fi_supply === 'local'){                   /* FI's own battery, floating on its extracellular node */
       r('FI.BAT', ax, 1); r('BAT+', 'FI.BAT', 1e9); r('BAT-', ax, 1e9);
     }
     }
     /* Slow out */
     if(st.so_on){
-    r('SO.Vm', 'Vm', link(st.so_vm)); r('SO.GND', ax, link(st.so_gnd));
-    r('SO.Vm', 'SO.S', 1e5);
-    C.push([IDX['SO.S'], IDX['SO.GND'], 1e-6]);
-    D.push([IDX['SO.S'], IDX['SO.B3']]);
-    r('SO.B3', 'SO.GND', st.so_r2);                 /* 3M-R2 position: TA 1 Mohm, kit 100 ohm */
+    r('SO.Vm', 'Vm', link(st.so_vm), 'sovm'); r('SO.GND', ax, link(st.so_gnd), 'sogd');
+    r('SO.Vm', 'SO.S', 1e5, 'sor1');
+    C.push([IDX['SO.S'], IDX['SO.GND'], 1e-6, 'soc']);
+    D.push([IDX['SO.S'], IDX['SO.B3'], 'sod']);
+    r('SO.B3', 'SO.GND', st.so_r2, 'sor2');                 /* 3M-R2 position: TA 1 Mohm, kit 100 ohm */
     Q.push(['n', IDX['SO.B4'], IDX['SO.B3'], IDX['SO.GND'], M3904, 'so3904']);
     Q.push(['p', IDX['SO.C4'], IDX['SO.B4'], IDX['SO.Vm'], M4403, 'so4403']);
-    r('SO.C4', 'SO.GND', 1e3);
+    r('SO.C4', 'SO.GND', 1e3, 'sor1k');
     }
     /* add-ons: resistors clipped onto existing legs (sim.py extra=, check_ap.py) */
-    if(st.r13p && st.fi_on) r('FI.V+', 'FI.E4', st.r13p);   /* across R13 */
-    if(st.rf && st.fi_on) r('FI.V+', 'FI.E3', st.rf);        /* R13 lower end to 100K-R2 upper end */
-    if(st.rb) r('V+', 'Vm', st.rb);                          /* breadboard V+ row to Vm row */
-    if(st.rl) r('Vm', 'GND', st.rl);                         /* extra leak: Vm row to GND row */
-    if(st.rs && st.so_on) r('SO.S', 'SO.GND', st.rs);        /* across SO C1 */
+    if(st.r13p && st.fi_on) r('FI.V+', 'FI.E4', st.r13p, 'r13p');   /* across R13 */
+    if(st.rf && st.fi_on) r('FI.V+', 'FI.E3', st.rf, 'rf');        /* R13 lower end to 100K-R2 upper end */
+    if(st.rb) r('V+', 'Vm', st.rb, 'rb');                          /* breadboard V+ row to Vm row */
+    if(st.rl) r('Vm', 'GND', st.rl, 'rl');                         /* extra leak: Vm row to GND row */
+    if(st.rs && st.so_on) r('SO.S', 'SO.GND', st.rs, 'rs');        /* across SO C1 */
     /* #2-3 passive units: 1 uF || 100 kohm each, 10 kohm apart, 100 ohm extracellular */
     for(var k = 1; k <= st.chain; k++){
       var pc = 'PC' + k, px = k === 1 ? 'GND' : 'PX' + k;
-      C.push([IDX[pc], IDX[px], 1e-6]); r(pc, px, 1e5);
-      if(st.ru) r('V+', pc, st.ru);                 /* add-on: unit rests at the same level as the active end */
-      r(pc, k < st.chain ? 'PC' + (k + 1) : 'Vm', 1e4);
-      r(px, k < st.chain ? 'PX' + (k + 1) : 'AX', 100);
+      C.push([IDX[pc], IDX[px], 1e-6, 'pc' + k]); r(pc, px, 1e5, 'pr' + k);
+      if(st.ru) r('V+', pc, st.ru, 'ru' + k);                 /* add-on: unit rests at the same level as the active end */
+      r(pc, k < st.chain ? 'PC' + (k + 1) : 'Vm', 1e4, 'ps' + k);
+      r(px, k < st.chain ? 'PX' + (k + 1) : 'AX', 100, 'px' + k);
     }
-    if(st.src === 'ideal') r('IS', out, 1e9);       /* ideal current source */
+    if(st.src === 'ideal') r('IS', out, 1e9, 'is');       /* ideal current source */
     /* probes */
-    r(st.ch1 || 'Vm', 'GND', st.rprobe);
-    if(st.ch2) r(st.ch2, 'GND', st.rprobe);
+    r(st.ch1 || 'Vm', 'GND', st.rprobe, 'p1');
+    if(st.ch2) r(st.ch2, 'GND', st.rprobe, 'p2');
   }
 
   function gv(arr, i){
@@ -217,17 +217,29 @@ var AM = (function(){
     return newton(0, 3000);
   }
   /* power on: every capacitor (and node) at 0 V, like plugging in the battery */
-  function powerOn(){ V.fill(0); t = 0; }
+  function powerOn(){ V.fill(0); Vprev.fill(0); t = 0; lastH = 0; }
   function step(dt){
     Vprev.set(V);
-    if(newton(dt, 80)){ t += dt; return true; }
+    if(newton(dt, 80)){ t += dt; lastH = dt; return true; }
     V.set(Vprev);
     var ok = true;
     for(var k = 0; k < 10; k++){ Vprev.set(V); ok = newton(dt / 10, 400) && ok; }
-    t += dt;
+    t += dt; lastH = dt / 10;
     return ok;
   }
   function v(n){ return gv(V, IDX[n]); }
+  /* conventional current of every named branch, first node -> second node (amps); transistors by
+     tag as [into C, into B, into E].  Capacitors use the last step (backward Euler, like newton). */
+  function currents(){
+    var o = {}, k, e, x;
+    for(k = 0; k < R.length; k++){ e = R[k]; if(e[3]) o[e[3]] = e[2] * (gv(V, e[0]) - gv(V, e[1])); }
+    for(k = 0; k < C.length; k++){ e = C[k];
+      if(e[3]) o[e[3]] = lastH ? e[2] / lastH * ((gv(V, e[0]) - gv(V, e[1])) - (gv(Vprev, e[0]) - gv(Vprev, e[1]))) : 0; }
+    for(k = 0; k < D.length; k++){ e = D[k];
+      if(e[2]){ x = lexp((gv(V, e[0]) - gv(V, e[1])) / (MD.n * VT)); o[e[2]] = MD.Is * (x[0] - 1); } }
+    for(k = 0; k < Q.length; k++){ e = Q[k]; x = bjt(e[0], gv(V, e[1]), gv(V, e[2]), gv(V, e[3]), e[4]); o[e[5]] = [x.i[0], x.i[1], x.i[2]]; }
+    return o;
+  }
   function qCurrents(tag){
     for(var k = 0; k < Q.length; k++) if(Q[k][5] === tag){
       var e = Q[k], o = bjt(e[0], gv(V, e[1]), gv(V, e[2]), gv(V, e[3]), e[4]);
@@ -237,7 +249,7 @@ var AM = (function(){
   }
   alloc(nodeNames());
   return {
-    st:st, build:build, dc:dcSolve, powerOn:powerOn, step:step, v:v, q:qCurrents,
+    st:st, build:build, dc:dcSolve, powerOn:powerOn, step:step, v:v, q:qCurrents, currents:currents,
     time:function(){ return t; }, setTime:function(x){ t = x; }, nodes:function(){ return NODES; },
     has:function(n){ return IDX[n] !== undefined; }
   };

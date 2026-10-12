@@ -6,8 +6,8 @@
   var $ = function(s, r){ return (r || document).querySelector(s); };
   var $$ = function(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var DT = 2e-4;
-  var MODE = 'basic';
-  try{ MODE = localStorage.getItem('hw2mode') === 'adv' ? 'adv' : 'basic'; }catch(e){}
+  var MODE = 'basic', FLOW = true;
+  try{ MODE = localStorage.getItem('hw2mode') === 'adv' ? 'adv' : 'basic'; FLOW = localStorage.getItem('hw2flow') !== '0'; }catch(e){}
 
   /* the board as built (PCB), with the kit's 100 ohm in the Slow out R2 position */
   var BASE_ST = {vplus:7.8, rpot:700, r13:1e5, rfe:1e5, qs:'pcb', so_r2:100, rprobe:1e7, ch1:'Vm', ch2:'',
@@ -67,14 +67,17 @@
   function engineState(s){
     var u = s.state[MODE];
     var st = Object.assign({}, BASE_ST, u, s.fixed(MODE, u));
-    if(st.fi_supply === 'none'){ st.fi_vplus = false; st.fi_supply = 'stim'; }
+    if(st.fi_supply === 'none'){ if(st.chain) st.fi_vplus = false; st.fi_supply = 'stim'; }   /* n = 0: the header carries V+ */
     if(st.ch2 && st.ch2 !== '' && st.chain === 0 && /^(PC|PX|AX)/.test(st.ch2)) st.ch2 = '';
     return st;
   }
+  /* how FI.V+ is fed, as the engine has it: header (n = 0) or pulled wire 'stim', FI's battery 'local', 'none' */
   function supplyMode(s){
-    var u = s.state[MODE], st = engineState(s);
-    if(!st.fi_on || (!st.fi_vplus && st.chain)) return 'none';
-    return st.chain ? (u.fi_supply === 'local' ? 'local' : 'stim') : 'none';
+    var u = s.state[MODE], raw = Object.assign({}, BASE_ST, u, s.fixed(MODE, u)).fi_supply, st = engineState(s);
+    if(raw === 'local') return 'local';
+    if(!st.chain) return 'stim';
+    if(raw === 'none') return 'none';
+    return st.fi_vplus || MODE === 'adv' ? 'stim' : 'none';
   }
   function applyEngine(s){
     var st = engineState(s);
@@ -100,6 +103,7 @@
     st.sw = AM.st.sw && active === s;
     s.SCH.setContacts(st); s.SCH.setQsense(st.qs); s.SCH.setResistors(st.r13, st.rfe, st.so_r2); s.SCH.setAddons(st);
     s.SCH.setSupply(supplyMode(s)); s.SCH.setSource(st.src); s.SCH.setBoards({lk:st.leak, fi:st.fi_on, so:st.so_on});
+    s.SCH.setProbes([st.ch1, st.ch2]);
   }
   function contact(s, key){
     if(key === 'sw'){ setSW(s, !AM.st.sw); return; }
@@ -170,6 +174,14 @@
   }
   function buildPanels(s){
     var panel = $('.settings', s.el);
+    /* schematic: electron flow on / off (shared by all regions) */
+    var sg = $('[data-scope]', panel).closest('.grp'), fg = document.createElement('div');
+    fg.className = 'grp';
+    fg.innerHTML = '<div class="gt">電路圖</div><label class="chk"><input type="checkbox" data-flow> 顯示電子流動</label>' +
+      '<p class="small muted" style="margin:2px 0 0">橘點＝電子：逆著電流方向、往電池＋極走，越快＝電流越大（20 nA 以下不畫）。AP 只有十幾 ms，把下面的「速度」調到 1/100× 才看得到 AP 期間的電子。紫紅色＝和原版電路不同的地方。</p>';
+    sg.parentNode.insertBefore(fg, sg);
+    var cb = $('[data-flow]', fg); cb.checked = FLOW;
+    cb.addEventListener('change', function(){ setFlow(cb.checked); });
     /* pulse buttons */
     $$('[data-pulses]', panel).forEach(function(box){
       box.innerHTML = box.dataset.pulses.split(',').map(function(x){
@@ -205,10 +217,10 @@
         '<div class="row"><label>CH2 V/div</label><select data-sc="v2">' + vd(s.sc.v2) + '</select></div>' +
         '<div class="row"><label>時間/div</label><select data-sc="t">' + [0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5].map(function(v){ return '<option value="' + v + '">' + (v * 1e3) + ' ms</option>'; }).join('') + '</select></div>' +
         '<div class="btns" style="margin:4px 0"><button class="btn" type="button" data-scmode="roll">Roll</button><button class="btn" type="button" data-scmode="single">Single</button><button class="btn" type="button" data-arm>重新擷取</button></div>' +
+        '<div class="row"><label>速度</label><select data-sc="speed"><option value="1">1×</option><option value="0.25">¼×</option><option value="0.05">1/20×</option><option value="0.01">1/100×</option><option value="0">暫停</option></select></div>' +
         '<div data-show="adv"><div class="row"><label>觸發</label><select data-sc="tsrc"><option value="ch1">CH1 上升</option><option value="sw">按下 SW</option></select></div>' +
         '<div class="row"><label>觸發準位（V）</label><input type="number" step="0.1" data-sc="lvl" style="width:5em"></div>' +
-        '<div class="row"><label>CH2 零點</label><select data-sc="z2"><option value="1">底部</option><option value="4">中間</option></select></div>' +
-        '<div class="row"><label>速度</label><select data-sc="speed"><option value="1">1×</option><option value="0.25">¼×</option><option value="0">暫停</option></select></div></div>' +
+        '<div class="row"><label>CH2 零點</label><select data-sc="z2"><option value="1">底部</option><option value="4">中間</option></select></div></div>' +
         '<p class="small muted" data-trigstate style="margin:2px 0 0"></p>';
       s.sc.speed = 1;
       $$('[data-sc]', box).forEach(function(el){
@@ -255,9 +267,16 @@
     $$('[data-latch]', s.el).forEach(function(c){ c.checked = false; }); s.latch = false;
     syncSchematic(s);
   }
+  function setFlow(on){
+    FLOW = !!on;
+    try{ localStorage.setItem('hw2flow', FLOW ? '1' : '0'); }catch(e){}
+    $$('[data-flow]').forEach(function(c){ c.checked = FLOW; });
+    if(!FLOW) Object.keys(SIMS).forEach(function(k){ var s = SIMS[k]; if(s.SCH) s.SCH.flow(0, null); });
+  }
   function activate(s){
     if(active === s) return;
-    if(active){ AM.st.sw = false; var ob = $('[data-sw]', active.el); ob.classList.remove('on'); ob.textContent = '按住 SW'; syncSchematic(active); }
+    if(active){ AM.st.sw = false; var ob = $('[data-sw]', active.el); ob.classList.remove('on'); ob.textContent = '按住 SW'; syncSchematic(active);
+      if(active.SCH) active.SCH.flow(0, null); }
     active = s;
     powerOn(s);
   }
@@ -308,6 +327,7 @@
         sample(s);
       }
       drawScope(s);
+      if(s.SCH && FLOW) s.SCH.flow(real, AM.currents());   /* real time: the dots keep moving when paused or slowed */
       if(now - lastUI > 100){ updateUI(s); lastUI = now; }
     }
     requestAnimationFrame(frame);
@@ -465,6 +485,13 @@
       });
     });
   }
+
+  /* static full drawings of the true-AP circuit (summary, advanced) */
+  $$('svg[data-trueap]').forEach(function(svg){
+    var nn = +svg.dataset.trueap, st = Object.assign({}, BASE_ST, TRUE_AP, nn ? {chain:nn, ru:560e3} : {});
+    var sch = MembraneSchematic(svg, {chain:nn});
+    sch.setContacts(st); sch.setQsense(st.qs); sch.setResistors(st.r13, st.rfe, st.so_r2); sch.setAddons(st); sch.setSupply('stim');
+  });
 
   /* ---------------- start ---------------- */
   document.body.dataset.mode = MODE;
