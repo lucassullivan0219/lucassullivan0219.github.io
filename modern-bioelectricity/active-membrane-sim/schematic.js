@@ -10,8 +10,10 @@
    s.setAddons(state)     state.r13p / rf / rb / rs: add-on resistors clipped on (0 = none)
    opts.chain = n         #2-3: n passive units between the Stimulator and the Leak, 10 kohm
                           apart on top, 100 ohm apart on the extracellular row (PC1.., PX2.., AX)
-   s.setSupply('stim'|'local')  FI.V+ wired from the Stimulator (dashed wire) or FI's own battery
+   s.setSupply('stim'|'local'|'none')  FI.V+ wired from the Stimulator (dashed wire), FI's own battery, or not wired
    s.setSource('stim'|'ideal')  label the ideal current source that replaces SW
+   opts.passiveOnly       #2-1: only the passive units; the Leak board is drawn as the last unit
+   s.setBoards({lk, fi, so})    grey out boards that are unplugged
    Node codes follow hw2-debug/nodes.html: board + node, e.g. FI.B3.
 */
 (function(){
@@ -36,7 +38,8 @@
     '.msch .contact:not(.open) .ct{display:none}',
     '.msch.live .contact{cursor:pointer}',
     '.msch.live .contact:hover .blade{stroke-width:3}',
-    '.msch .sw .blade{stroke-width:2.4}'
+    '.msch .sw .blade{stroke-width:2.4}',
+    '.msch .ghost{opacity:.2}'
   ].join('\n');
   if(!document.getElementById('msch-css')){
     var st = document.createElement('style'); st.id = 'msch-css'; st.textContent = CSS; document.head.appendChild(st);
@@ -44,7 +47,8 @@
 
   window.MembraneSchematic = function(svg, opts){
     var live = !!(opts && opts.live), out = [];
-    var n = (opts && opts.chain) || 0, DX = 130, OX = n * DX;
+    var n = (opts && opts.chain) || 0, DX = 130, OX = n * DX, po = !!(opts && opts.passiveOnly);
+    var XE = po ? 430 : 1040;                          /* right end of the buses inside the active group */
     function ux(k){ return 370 + (k - 1) * DX; }       /* wire x of passive unit k (like the Leak) */
     function L(pts, cls){ out.push('<polyline class="' + (cls || 'w') + '" points="' + pts.map(function(p){ return p.join(','); }).join(' ') + '"/>'); }
     function dot(x, y){ out.push('<circle class="dotn" cx="' + x + '" cy="' + y + '" r="3"/>'); }
@@ -125,7 +129,7 @@
       resH(70, x, nx, gap + 4, gap + 40); txt(gap + 22, 86, '10k', 'lab', 'middle');
       resH(455, x + 26, nb, gap + 4, gap + 40); txt(gap + 22, 446, '100Ω', 'lab', 'middle');
     }
-    if(n) out.push('<polyline id="wVplus" class="w" style="stroke-dasharray:6 5;display:none" points="24,36 24,10 ' +
+    if(n && !po) out.push('<polyline id="wVplus" class="w" style="stroke-dasharray:6 5;display:none" points="24,36 24,10 ' +
       (695 + OX) + ',10 ' + (695 + OX) + ',362 ' + (634 + OX) + ',362"/>' +
       '<text id="lVplus" class="cur" x="336" y="26" style="display:none">V+ 從 Stimulator 拉線到 FI（Passive PCB 底板沒有串 V+）</text>');
     out.push('<text id="lIsrc" class="cur" x="282" y="100" style="display:none">理想電流源</text>');
@@ -165,24 +169,29 @@
 
     /* ---- the active membrane: Leak, Fast inward, Slow out (shifted right by the passive units) ---- */
     out.push('<g transform="translate(' + OX + ',0)">');
-    box(332, 86, 86, 362, 'LK', 'Leak', 370, 210, true);
-    box(428, 86, 262, 362, 'FI', 'Fast inward', 600, 439);
-    box(700, 86, 352, 362, 'SO', 'Slow out', 962, 439);
-    L([[370, 70], [1040, 70]], 'w vm');
-    L([[344, 455], [1040, 455]]);
-    txt(1046, 74, 'CH1', 'lab');
-    out.push('<text class="nvb" data-node="Vm" data-short="Vm =" data-bus="1" x="690" y="58" text-anchor="middle">Vm</text>');
-    if(n){
-      txt(1046, 459, 'CH2', 'lab');
-      out.push('<text class="nv" data-node="AX" data-short="AX" data-mv="1" x="420" y="472"><tspan class="code">AX</tspan></text>');
-      txt(505, 472, '（active 端細胞外）', 'lab');
+    L([[370, 70], [XE, 70]], 'w vm');
+    L([[344, 455], [XE, 455]]);
+    if(po){
+      out.push('<text class="nvb" data-node="Vm" data-short="#' + (n + 1) + ' =" data-bus="1" x="375" y="40" text-anchor="middle">Vm</text>');
+      out.push('</g><text class="lab" x="' + (ux(1) + 6) + '" y="44">CH1</text><g transform="translate(' + OX + ',0)">');
+      txt(436, 74, 'CH2', 'lab');
+    } else {
+      txt(1046, 74, 'CH1', 'lab');
+      out.push('<text class="nvb" data-node="Vm" data-short="Vm =" data-bus="1" x="690" y="58" text-anchor="middle">Vm</text>');
+      if(n){
+        txt(1046, 459, 'CH2', 'lab');
+        out.push('<text class="nv" data-node="AX" data-short="AX" data-mv="1" x="420" y="472"><tspan class="code">AX</tspan></text>');
+        txt(505, 472, '（active 端細胞外）', 'lab');
+      }
     }
-    out.push('<g id="gBat" style="display:none"><polyline class="w" points="634,362 662,362 662,390"/>' +
+    if(!po) out.push('<g id="gBat" style="display:none"><polyline class="w" points="634,362 662,362 662,390"/>' +
       '<polyline class="sym" points="650,390 674,390"/><polyline class="sym" points="656,398 668,398" style="stroke-width:3"/>' +
       '<polyline class="w" points="662,398 662,455"/><circle class="dotn" cx="662" cy="455" r="3"/>' +
       '<text class="lab" x="670" y="386">FI 自帶</text><text class="lab" x="670" y="412">電池</text></g>');
 
     /* ---- Leak ---- */
+    out.push('<g id="bLK">');
+    box(332, 86, 86, 362, po ? '#' + (n + 1) : 'LK', po ? 'Passive' : 'Leak', 370, 210, true);
     L([[370, 70], [370, 76]]); dot(370, 70);
     contactV('leak', 'LK:Vm', 370, 76, 112);
     L([[370, 112], [370, 130]]); L([[344, 130], [396, 130]]); dot(370, 130);
@@ -190,8 +199,12 @@
     capV(344, 130, 455, 290); txt(370, 302, '1µF', 'lab', 'middle');
     resV(396, 130, 455, 250, 330); txt(370, 345, '100k', 'lab', 'middle');
     dot(344, 455); dot(396, 455);
+    out.push('</g>');
 
+    if(!po){
     /* ---- Fast inward ---- */
+    out.push('<g id="bFI">');
+    box(428, 86, 262, 362, 'FI', 'Fast inward', 600, 439);
     L([[460, 70], [460, 76]]); dot(460, 70);
     contactV('fi_vm', 'FI:Vm', 460, 76, 112);
     L([[460, 112], [460, 120], [634, 120]]); tag('FI.Vm', 'Vm', 480, 112);
@@ -215,8 +228,11 @@
     L([[460, 405], [534, 405]]); dot(500, 405);
     contactV('fi_gnd', 'FI:GND', 500, 412, 448); L([[500, 405], [500, 412]]); L([[500, 448], [500, 455]]);
     tag('FI.GND', 'GND', 510, 432);
+    out.push('</g>');
 
     /* ---- Slow out ---- */
+    out.push('<g id="bSO">');
+    box(700, 86, 352, 362, 'SO', 'Slow out', 962, 439);
     L([[740, 70], [740, 76]]); dot(740, 70);
     contactV('so_vm', 'SO:Vm', 740, 76, 112);
     L([[740, 112], [740, 120], [994, 120]]); tag('SO.Vm', 'Vm', 760, 112);
@@ -241,8 +257,10 @@
     contactV('so_gnd', 'SO:GND', 870, 412, 448); L([[870, 405], [870, 412]]); L([[870, 448], [870, 455]]);
     tag('SO.GND', 'GND', 880, 432);
     out.push('</g>');
+    }
+    out.push('</g>');
 
-    svg.setAttribute('viewBox', '0 0 ' + (1080 + OX) + ' 480');
+    svg.setAttribute('viewBox', '0 0 ' + ((po ? 480 : 1080) + OX) + ' 480');
     svg.classList.add('msch'); if(live) svg.classList.add('live');
     svg.innerHTML = out.join('');
 
@@ -282,7 +300,8 @@
         svg.querySelector('#wQsPcb').style.display = pcb ? '' : 'none';
         svg.querySelector('#dQsPcb').style.display = pcb ? '' : 'none';
         svg.querySelector('#wQsSw').style.display = pcb ? 'none' : '';
-        svg.querySelector('#lRx').style.display = mode === 'rx' ? '' : 'none';
+        var lx = svg.querySelector('#lRx'); lx.style.display = (mode === 'rx' || mode === 'rx10') ? '' : 'none';
+        lx.textContent = mode === 'rx10' ? 'E–B 並 10k' : 'E–B 並 22k';
       },
       /* add-on resistors clipped onto existing legs: show what is fitted */
       setAddons: function(st){
@@ -296,15 +315,21 @@
         });
       },
       setSupply: function(mode){
-        var w = svg.querySelector('#wVplus'), l = svg.querySelector('#lVplus');
-        if(w){ w.style.display = mode === 'local' ? 'none' : ''; l.style.display = w.style.display; }
-        svg.querySelector('#gBat').style.display = mode === 'local' ? '' : 'none';
+        var w = svg.querySelector('#wVplus'), l = svg.querySelector('#lVplus'), b = svg.querySelector('#gBat');
+        if(w){ w.style.display = mode === 'stim' ? '' : 'none'; l.style.display = w.style.display; }   /* 'none': no V+ wire */
+        if(b) b.style.display = mode === 'local' ? '' : 'none';
+      },
+      setBoards: function(m){
+        [['bLK', m.lk], ['bFI', m.fi], ['bSO', m.so]].forEach(function(a){
+          var g = svg.querySelector('#' + a[0]); if(g) g.classList.toggle('ghost', a[1] === false);
+        });
       },
       setSource: function(src){ svg.querySelector('#lIsrc').style.display = src === 'ideal' ? '' : 'none'; },
       setResistors: function(r13, rfe, soR2){
-        svg.querySelector('#lR13').textContent = 'R13 ' + fmtR(r13);
-        svg.querySelector('#lRfe').textContent = fmtR(rfe);
-        if(soR2) svg.querySelector('#lSoR2').textContent = fmtR(soR2);
+        var e;
+        if((e = svg.querySelector('#lR13'))) e.textContent = 'R13 ' + fmtR(r13);
+        if((e = svg.querySelector('#lRfe'))) e.textContent = fmtR(rfe);
+        if(soR2 && (e = svg.querySelector('#lSoR2'))) e.textContent = fmtR(soR2);
       }
     };
   };

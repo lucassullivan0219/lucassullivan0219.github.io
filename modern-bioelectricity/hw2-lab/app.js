@@ -1,0 +1,475 @@
+/* HW2 實驗台：one engine (../active-membrane-sim/engine.js, same model as hw2-debug/sim/sim.py)
+   drives whichever simulation region is on screen.  Each region keeps its own settings for the
+   basic and the advanced mode; switching region or mode re-applies them and powers the circuit on. */
+(function(){
+  'use strict';
+  var $ = function(s, r){ return (r || document).querySelector(s); };
+  var $$ = function(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var DT = 2e-4;
+  var MODE = 'basic';
+  try{ MODE = localStorage.getItem('hw2mode') === 'adv' ? 'adv' : 'basic'; }catch(e){}
+
+  /* the board as built (PCB), with the kit's 100 ohm in the Slow out R2 position */
+  var BASE_ST = {vplus:7.8, rpot:700, r13:1e5, rfe:1e5, qs:'pcb', so_r2:100, rprobe:1e7, ch1:'Vm', ch2:'',
+    r13p:0, rf:0, rb:0, rs:0, rl:0, chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',
+    leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true, fi_on:true, so_on:true};
+
+  /* ---------------- simulation regions ---------------- */
+  var SIMS = {
+    s21:{
+      def:{basic:{rpot:700, ch2:'Vm'},
+           adv:{rpot:700, src:'stim', isrc:50e-6, qs:'pcb', vplus:7.8, ch1:'PC1', ch2:'Vm'}},
+      fixed:function(m, s){ var f = {chain:4, fi_on:false, so_on:false}; if(m === 'basic') f.ch1 = 'PC1'; return f; },
+      sch:function(st){ return {chain:4, passiveOnly:true}; },
+      meas:['global', 'global'], scope:{v1:0.5, v2:0.5, t:0.1, z2:1}
+    },
+    s22:{
+      def:{basic:{rpot:700, leak:true, fi_on:true, so_on:true, r13:1e5, ch2:''},
+           adv:{rpot:700, so_r2:1e6, leak:true, fi_on:true, so_on:true, ch2:''}},
+      fixed:function(m){ return m === 'basic' ? {so_r2:100} : {}; },
+      sch:function(st){ return {chain:0}; },
+      meas:['firstAP', 'global'], scope:{v1:1, v2:0.5, t:0.05, z2:1},
+      presets:[
+        ['now', '目前（R2 = 1 MΩ）', {so_r2:1e6}, '你的板子現在：R2 換成 1 MΩ。不按也每 0.1 秒左右冒一個小峰（Stimulator 漏電把 Vm 墊在 FI 門檻）。'],
+        ['kit', '套件原樣（R2 = 100 Ω）', {so_r2:100}, '同基礎目標：Slow out 不動作，按一次 FI 就鎖在約 2.4 V，要斷電重置。'],
+        ['fix1', '修正 1：並 22 kΩ', {so_r2:1e6, qs:'rx'}, '漏電消失，靜止 0 V，不自發；AP 約 3 V（R13 仍 100 kΩ）。刺激電流少 25 µA。'],
+        ['fix12', '修正 1 + 2', {so_r2:1e6, qs:'rx', r13p:11e3}, '再在 R13 並 11 kΩ：AP 約 5.9 V，門檻約 0.6 V，按住 20 Hz；沒有過極化。'],
+        ['plan3', '方案 3：過極化', {so_r2:1e6, rb:470e3, rf:470e3, rs:47e3, r13p:11e3}, '靜止 1.18 V、門檻約 2 V；AP 後掉到約 0.58 V（過極化 0.6 V）；按住 27 Hz。'],
+        ['sch', '講義電路圖數值', {vplus:9, r13:1e3, qs:'sw', so_r2:3e6}, '9 V、R13 = 1 kΩ、Q_sense 在 SW 後、R2 = 3 MΩ：完整 AP 約 8 V。']
+      ]
+    },
+    s23:{
+      def:{basic:{chain:4, rpot:700, ch2:'AX'},
+           adv:{chain:4, rpot:700, so_r2:1e6, qs:'rx', r13p:11e3, fi_supply:'stim', src:'stim', isrc:40e-6, ch2:'AX', fi_on:true, so_on:true}},
+      fixed:function(m, s){ return m === 'basic' ? {so_r2:100, fi_supply:'stim', fi_vplus:(s.chain || 0) === 0} : {}; },
+      sch:function(st){ return {chain:st.chain}; },
+      meas:['firstAP', 'signed'], scope:{v1:1, v2:0.02, t:0.1, z2:4},
+      presets:[
+        ['kit', '照實（同基礎）', {so_r2:100, fi_supply:'none', qs:'pcb', r13p:0}, 'R2 = 100 Ω、FI 沒有 V+：n ≥ 1 沒有 AP。'],
+        ['now', '目前（R2 = 1 MΩ）＋拉 V+', {so_r2:1e6, fi_supply:'stim', qs:'pcb', r13p:0}, 'R2 = 1 MΩ，FI 的 V+ 從 Stimulator 拉線。AP 約 1.6–2.3 V。'],
+        ['fix12', '修正 1 + 2 ＋拉 V+', {so_r2:1e6, fi_supply:'stim', qs:'rx', r13p:11e3}, 'AP 約 4–5 V；I_min 5.4–38 µA（n = 0–4），用理想電流源找。'],
+        ['local', '修正 1 + 2、FI 自帶電池', {so_r2:1e6, fi_supply:'local', qs:'rx', r13p:11e3}, '講義模擬器的接法：CH2 變成 ±20 mV 雙相。'],
+        ['cur10', '量 I_min：10 kΩ 並 Q_pass', {so_r2:1e6, fi_supply:'stim', qs:'rx10', r13p:11e3}, 'Q_pass E–B 改夾 10 kΩ（取代 22 kΩ）：可變電阻 0–10 kΩ 約 41–0.3 µA，涵蓋 n = 0–4 的 I_min。']
+      ]
+    }
+  };
+  Object.keys(SIMS).forEach(function(k){
+    var s = SIMS[k];
+    s.id = k; s.el = $('[data-sim="' + k + '"]'); s.svg = $('svg.sch', s.el); s.cv = $('canvas', s.el);
+    s.state = {basic:Object.assign({}, s.def.basic), adv:Object.assign({}, s.def.adv)};
+    s.sc = {v1:s.scope.v1, v2:s.scope.v2, t:s.scope.t, z1:1, z2:s.scope.z2, mode:'roll', tsrc:'ch1', lvl:1.0,
+            trig:'idle', t0:0, prev:0, frozen:null};
+    s.buf = {cap:40000, t:new Float64Array(40000), a:new Float64Array(40000), b:new Float64Array(40000), head:0, n:0};
+    s.rec = null; s.SCH = null; s.latch = false; s.pulseEnd = null; s.presetNote = '';
+  });
+
+  /* effective engine state for a region in the current mode */
+  function engineState(s){
+    var u = s.state[MODE];
+    var st = Object.assign({}, BASE_ST, u, s.fixed(MODE, u));
+    if(st.fi_supply === 'none'){ st.fi_vplus = false; st.fi_supply = 'stim'; }
+    if(st.ch2 && st.ch2 !== '' && st.chain === 0 && /^(PC|PX|AX)/.test(st.ch2)) st.ch2 = '';
+    return st;
+  }
+  function supplyMode(s){
+    var u = s.state[MODE], st = engineState(s);
+    if(!st.fi_on || (!st.fi_vplus && st.chain)) return 'none';
+    return st.chain ? (u.fi_supply === 'local' ? 'local' : 'stim') : 'none';
+  }
+  function applyEngine(s){
+    var st = engineState(s);
+    for(var k in st) AM.st[k] = st[k];
+    AM.build();
+  }
+
+  /* ---------------- schematic ---------------- */
+  function drawSchematic(s){
+    var st = engineState(s);
+    s.SCH = MembraneSchematic(s.svg, Object.assign({live:MODE === 'adv'}, s.sch(st)));
+    if(MODE === 'adv'){
+      $$('.contact', s.svg).forEach(function(g){
+        g.addEventListener('click', function(){ contact(s, g.dataset.c); });
+        g.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); contact(s, g.dataset.c); } });
+      });
+    }
+    syncSchematic(s);
+  }
+  function syncSchematic(s){
+    if(!s.SCH) return;
+    var st = engineState(s);
+    st.sw = AM.st.sw && active === s;
+    s.SCH.setContacts(st); s.SCH.setQsense(st.qs); s.SCH.setResistors(st.r13, st.rfe, st.so_r2); s.SCH.setAddons(st);
+    s.SCH.setSupply(supplyMode(s)); s.SCH.setSource(st.src); s.SCH.setBoards({lk:st.leak, fi:st.fi_on, so:st.so_on});
+  }
+  function contact(s, key){
+    if(key === 'sw'){ setSW(s, !AM.st.sw); return; }
+    var u = s.state[MODE], cur = engineState(s)[key];
+    u[key] = !cur;
+    if(active === s) applyEngine(s);
+    syncSchematic(s);
+  }
+
+  /* ---------------- controls ---------------- */
+  function ctlValue(el){
+    var sc = el.dataset.scale ? +el.dataset.scale : 1;
+    if(el.type === 'checkbox') return el.checked;
+    if(el.type === 'range' || el.type === 'number') return +el.value * sc;
+    if(el.hasAttribute('data-num')) return +el.value;
+    return el.value;
+  }
+  function setCtl(el, v){
+    var sc = el.dataset.scale ? +el.dataset.scale : 1;
+    if(v === undefined) return;
+    if(el.type === 'checkbox') el.checked = !!v;
+    else if(el.type === 'range' || el.type === 'number') el.value = +(v / sc).toFixed(6);
+    else el.value = String(v);
+    if(el.tagName === 'SELECT' && el.hasAttribute('data-num')){
+      var hit = $$('option', el).filter(function(o){ return +o.value === +v; })[0];
+      if(hit) el.value = hit.value;
+    }
+  }
+  function nodeOptions(s){
+    var st = engineState(s);
+    $$('select[data-nodes]', s.el).forEach(function(sel){
+      var kind = sel.dataset.nodes, opts = [];
+      if(kind === 'pc'){ for(var k = 1; k <= 4; k++) opts.push(['PC' + k, '第 ' + k + ' 個（PC' + k + '）']); opts.push(['Vm', '第 5 個（最後）']); if(sel.dataset.k === 'ch2') opts.unshift(['', '關']); }
+      if(kind === '23'){
+        opts.push(['', '關']);
+        if(st.chain){ opts.push(['AX', 'AX：active 端細胞外']); for(var j = 1; j <= st.chain; j++) opts.push(['PC' + j, 'PC' + j + (j === 1 ? '（刺激點）' : '')]); }
+        opts.push(['SO.S', 'SO.S'], ['FI.E4', 'FI.E4']);
+      }
+      sel.innerHTML = opts.map(function(o){ return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('');
+    });
+  }
+  function syncControls(s){
+    nodeOptions(s);
+    var u = s.state[MODE], st = engineState(s);
+    $$('[data-k]', s.el).forEach(function(el){
+      var blk = el.closest('[data-show]');
+      if(blk && blk.dataset.show !== MODE) return;
+      setCtl(el, u[el.dataset.k] !== undefined ? u[el.dataset.k] : st[el.dataset.k]);
+    });
+    $$('[data-out="rpot"]', s.el).forEach(function(o){ o.textContent = ((u.rpot || 0) / 1e3).toFixed(1) + ' kΩ'; });
+    $$('[data-nseg] button', s.el).forEach(function(b){ b.setAttribute('aria-pressed', +b.dataset.n === (u.chain || 0) ? 'true' : 'false'); });
+    $$('[data-presets] button', s.el).forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.p === u._preset ? 'true' : 'false'); });
+    var pn = $('[data-preset-note]', s.el); if(pn) pn.textContent = u._note || '';
+    var sc = s.sc;
+    $$('[data-sc]', s.el).forEach(function(el){ el.value = String(sc[el.dataset.sc]); });
+    $$('[data-scmode]', s.el).forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.scmode === sc.mode ? 'true' : 'false'); });
+  }
+  function onCtl(s, el){
+    var blk = el.closest('[data-show]');
+    if(blk && blk.dataset.show !== MODE) return;
+    var k = el.dataset.k, u = s.state[MODE];
+    u[k] = ctlValue(el);
+    if(k === 'rpot') $$('[data-out="rpot"]', s.el).forEach(function(o){ o.textContent = (u.rpot / 1e3).toFixed(1) + ' kΩ'; });
+    if(k === 'ch1' || k === 'ch2') clearBuf(s);
+    if(active === s) applyEngine(s);
+    if(k === 'fi_supply' || k === 'chain') { drawSchematic(s); if(active === s) powerOn(s); }
+    else syncSchematic(s);
+  }
+  function buildPanels(s){
+    var panel = $('.settings', s.el);
+    /* pulse buttons */
+    $$('[data-pulses]', panel).forEach(function(box){
+      box.innerHTML = box.dataset.pulses.split(',').map(function(x){
+        var T = +x; return '<button class="btn" type="button" data-t="' + T + '">按 ' + (T >= 1 ? T + ' s' : Math.round(T * 1e3) + ' ms') + '</button>';
+      }).join('');
+      $$('button', box).forEach(function(b){ b.addEventListener('click', function(){ pressFor(s, +b.dataset.t); }); });
+    });
+    var go = $('[data-pulse-go]', panel);
+    if(go) go.addEventListener('click', function(){ pressFor(s, +$('[data-pulse-ms]', panel).value / 1e3); });
+    /* n selector */
+    $$('[data-nseg]', panel).forEach(function(box){
+      box.innerHTML = [0, 1, 2, 3, 4].map(function(n){ return '<button class="btn" type="button" data-n="' + n + '">' + n + '</button>'; }).join('');
+      $$('button', box).forEach(function(b){ b.addEventListener('click', function(){
+        s.state[MODE].chain = +b.dataset.n; syncControls(s); clearBuf(s);
+        drawSchematic(s); if(active === s){ applyEngine(s); powerOn(s); }
+      }); });
+    });
+    /* presets */
+    $$('[data-presets]', panel).forEach(function(box){
+      box.innerHTML = s.presets.map(function(p){ return '<button class="btn" type="button" data-p="' + p[0] + '">' + p[1] + '</button>'; }).join('');
+      $$('button', box).forEach(function(b){ b.addEventListener('click', function(){
+        var p = s.presets.filter(function(x){ return x[0] === b.dataset.p; })[0];
+        var keep = {chain:s.state.adv.chain, ch2:s.state.adv.ch2, rpot:s.state.adv.rpot};
+        s.state.adv = Object.assign({}, s.def.adv, keep, p[2], {_preset:p[0], _note:p[3]});
+        syncControls(s); drawSchematic(s); if(active === s){ applyEngine(s); powerOn(s); }
+      }); });
+    });
+    /* scope controls */
+    $$('[data-scope]', panel).forEach(function(box){
+      var vd = function(sel){ return [0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2].map(function(v){ return '<option value="' + v + '"' + (v === sel ? ' selected' : '') + '>' + (v < 0.1 ? v * 1e3 + ' mV' : v + ' V') + '</option>'; }).join(''); };
+      box.innerHTML =
+        '<div class="row"><label>CH1 V/div</label><select data-sc="v1">' + vd(s.sc.v1) + '</select></div>' +
+        '<div class="row"><label>CH2 V/div</label><select data-sc="v2">' + vd(s.sc.v2) + '</select></div>' +
+        '<div class="row"><label>時間/div</label><select data-sc="t">' + [0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5].map(function(v){ return '<option value="' + v + '">' + (v * 1e3) + ' ms</option>'; }).join('') + '</select></div>' +
+        '<div class="btns" style="margin:4px 0"><button class="btn" type="button" data-scmode="roll">Roll</button><button class="btn" type="button" data-scmode="single">Single</button><button class="btn" type="button" data-arm>重新擷取</button></div>' +
+        '<div data-show="adv"><div class="row"><label>觸發</label><select data-sc="tsrc"><option value="ch1">CH1 上升</option><option value="sw">按下 SW</option></select></div>' +
+        '<div class="row"><label>觸發準位（V）</label><input type="number" step="0.1" data-sc="lvl" style="width:5em"></div>' +
+        '<div class="row"><label>CH2 零點</label><select data-sc="z2"><option value="1">底部</option><option value="4">中間</option></select></div>' +
+        '<div class="row"><label>速度</label><select data-sc="speed"><option value="1">1×</option><option value="0.25">¼×</option><option value="0">暫停</option></select></div></div>' +
+        '<p class="small muted" data-trigstate style="margin:2px 0 0"></p>';
+      s.sc.speed = 1;
+      $$('[data-sc]', box).forEach(function(el){
+        el.value = String(s.sc[el.dataset.sc]);
+        el.addEventListener('change', function(){
+          var k = el.dataset.sc, v = el.value;
+          s.sc[k] = (k === 'tsrc') ? v : +v;
+          if(k === 't' && s.sc.mode === 'single') arm(s);
+        });
+      });
+      $$('[data-scmode]', box).forEach(function(b){ b.addEventListener('click', function(){
+        s.sc.mode = b.dataset.scmode; s.sc.frozen = null;
+        if(s.sc.mode === 'single') arm(s); else s.sc.trig = 'idle';
+        syncControls(s);
+      }); });
+      $('[data-arm]', box).addEventListener('click', function(){ s.sc.mode = 'single'; arm(s); syncControls(s); });
+    });
+    /* measurement table */
+    $$('[data-meas]', panel).forEach(function(box){
+      box.innerHTML = '<table class="meas"><tr><th></th><th class="num">CH1</th><th class="num">CH2</th></tr>' +
+        ['基線', '峰值', '振幅', '到峰', '半高寬', 'rise τ', 'decay τ'].map(function(r, i){ return '<tr><td>' + r + '</td><td data-m="a' + i + '">—</td><td data-m="b' + i + '">—</td></tr>'; }).join('') +
+        '</table><p class="small" style="margin:4px 0 0">刺激電流：<span class="mono" data-m="I">—</span>　Vm：<span class="mono" data-m="vm">—</span></p>';
+    });
+    /* SW */
+    var sb = $('[data-sw]', panel);
+    sb.addEventListener('pointerdown', function(e){ e.preventDefault(); sb.setPointerCapture(e.pointerId); s.down = true; activate(s); setSW(s, true); });
+    var up = function(){ if(!s.down) return; s.down = false; if(!s.latch) setSW(s, false); };
+    sb.addEventListener('pointerup', up); sb.addEventListener('pointercancel', up);
+    $$('[data-latch]', panel).forEach(function(c){ c.addEventListener('change', function(){ s.latch = c.checked; activate(s); setSW(s, c.checked); }); });
+    $$('[data-reset]', panel).forEach(function(b){ b.addEventListener('click', function(){ activate(s); powerOn(s); }); });
+    /* parameter controls */
+    $$('[data-k]', panel).forEach(function(el){
+      el.addEventListener(el.type === 'range' ? 'input' : 'change', function(){ onCtl(s, el); });
+    });
+  }
+
+  /* ---------------- running ---------------- */
+  var active = null, running = true;
+  function clearBuf(s){ s.buf.head = 0; s.buf.n = 0; s.sc.frozen = null; }
+  function powerOn(s){
+    applyEngine(s); AM.st.sw = false; AM.build(); AM.powerOn();
+    s.pulseEnd = null; s.rec = null; clearBuf(s); if(s.sc.mode === 'single') arm(s);
+    var b = $('[data-sw]', s.el); b.classList.remove('on'); b.textContent = '按住 SW';
+    $$('[data-latch]', s.el).forEach(function(c){ c.checked = false; }); s.latch = false;
+    syncSchematic(s);
+  }
+  function activate(s){
+    if(active === s) return;
+    if(active){ AM.st.sw = false; var ob = $('[data-sw]', active.el); ob.classList.remove('on'); ob.textContent = '按住 SW'; syncSchematic(active); }
+    active = s;
+    powerOn(s);
+  }
+  function setSW(s, on){
+    if(active !== s) activate(s);
+    if(on && !AM.st.sw){
+      s.rec = {t0:AM.time(), t:[], a:[], b:[], imax:0};
+      if(s.sc.mode === 'single' && s.sc.tsrc === 'sw' && s.sc.trig === 'armed'){ s.sc.trig = 'capturing'; s.sc.t0 = AM.time(); }
+    }
+    AM.st.sw = on; AM.build();
+    var b = $('[data-sw]', s.el); b.classList.toggle('on', on); b.textContent = on ? 'SW 按下中' : '按住 SW';
+    if(!on) s.pulseEnd = null;
+    syncSchematic(s);
+  }
+  function pressFor(s, T){ activate(s); setSW(s, false); setSW(s, true); s.pulseEnd = AM.time() + T; }
+  function arm(s){ s.sc.trig = 'armed'; s.sc.frozen = null; s.sc.prev = AM.v(AM.st.ch1); }
+
+  function sample(s){
+    var b = s.buf, st = AM.st, t = AM.time(), a = AM.v(st.ch1), c = st.ch2 ? AM.v(st.ch2) : NaN;
+    b.t[b.head] = t; b.a[b.head] = a; b.b[b.head] = c; b.head = (b.head + 1) % b.cap; if(b.n < b.cap) b.n++;
+    var sc = s.sc;
+    if(sc.mode === 'single'){
+      if(sc.tsrc === 'ch1' && sc.trig === 'armed' && sc.prev < sc.lvl && a >= sc.lvl){ sc.trig = 'capturing'; sc.t0 = t; }
+      if(sc.trig === 'capturing' && t >= sc.t0 + 9 * sc.t){ sc.frozen = windowOf(s, sc.t0 - sc.t, sc.t0 + 9 * sc.t); sc.trig = 'done'; }
+      sc.prev = a;
+    }
+    if(s.rec && s.rec.t.length < 25000){
+      s.rec.t.push(t - s.rec.t0); s.rec.a.push(a); s.rec.b.push(c);
+      if(st.sw){ var I = -AM.q('pass')[0] + (st.src === 'ideal' ? st.isrc : 0); if(I > s.rec.imax) s.rec.imax = I; }
+    }
+  }
+  function windowOf(s, t0, t1){
+    var b = s.buf, ts = [], as = [], bs = [], start = (b.head - b.n + b.cap) % b.cap;
+    for(var k = 0; k < b.n; k++){ var i = (start + k) % b.cap; if(b.t[i] >= t0 && b.t[i] <= t1){ ts.push(b.t[i]); as.push(b.a[i]); bs.push(b.b[i]); } }
+    return {t0:t0, t1:t1, t:ts, a:as, b:bs};
+  }
+
+  var last = performance.now(), carry = 0, lastUI = 0;
+  function frame(now){
+    var real = Math.min(now - last, 50) / 1000; last = now;
+    var s = active;
+    if(s && running){
+      carry += real * (s.sc.speed === undefined ? 1 : s.sc.speed);
+      var n = Math.floor(carry / DT); carry -= n * DT;
+      for(var k = 0; k < n; k++){
+        AM.step(DT);
+        if(s.pulseEnd !== null && AM.time() >= s.pulseEnd){ s.pulseEnd = null; setSW(s, false); }
+        sample(s);
+      }
+      drawScope(s);
+      if(now - lastUI > 100){ updateUI(s); lastUI = now; }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------------- scope ---------------- */
+  function sizeCanvas(s){
+    var r = s.cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    s.cv.width = Math.max(10, Math.round(r.width * dpr)); s.cv.height = Math.max(10, Math.round(r.height * dpr));
+  }
+  function fmtV(v){ return Math.abs(v) < 0.1 ? (v * 1e3).toFixed(1) + ' mV' : v.toFixed(2) + ' V'; }
+  function drawScope(s){
+    var cv = s.cv, ctx = cv.getContext('2d'), W = cv.width, H = cv.height, dpr = window.devicePixelRatio || 1, sc = s.sc, st = AM.st;
+    var gx = W / 10, gy = H / 8;
+    ctx.fillStyle = '#0d1114'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1; ctx.beginPath();
+    for(var i = 1; i < 10; i++){ ctx.moveTo(Math.round(i * gx) + .5, 0); ctx.lineTo(Math.round(i * gx) + .5, H); }
+    for(i = 1; i < 8; i++){ ctx.moveTo(0, Math.round(i * gy) + .5); ctx.lineTo(W, Math.round(i * gy) + .5); }
+    ctx.stroke();
+    var y1 = H - sc.z1 * gy, y2 = H - sc.z2 * gy;
+    var Y1 = function(v){ return y1 - v / sc.v1 * gy; }, Y2 = function(v){ return y2 - v / sc.v2 * gy; };
+    var w;
+    if(sc.mode === 'single' && sc.frozen) w = sc.frozen;
+    else if(sc.mode === 'single' && sc.trig === 'capturing') w = windowOf(s, sc.t0 - sc.t, sc.t0 + 9 * sc.t);
+    else { var tn = AM.time(); w = windowOf(s, tn - 10 * sc.t, tn); }
+    var X = function(t){ return (t - w.t0) / (w.t1 - w.t0) * W; };
+    function mark(y, c){ ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(0, y - 6 * dpr); ctx.lineTo(9 * dpr, y); ctx.lineTo(0, y + 6 * dpr); ctx.fill(); }
+    mark(y1, '#3987e5'); if(st.ch2) mark(y2, '#e0703f');
+    function trace(arr, Y, col){
+      var n = w.t.length; if(n < 2) return;
+      var stride = Math.max(1, Math.floor(n / (W * 1.5)));
+      ctx.strokeStyle = col; ctx.lineWidth = 2 * dpr; ctx.lineJoin = 'round'; ctx.beginPath();
+      var on = false;
+      for(var k = 0; k < n; k += stride){ var v = arr[k]; if(isNaN(v)) continue; var x = X(w.t[k]), y = Math.max(-4, Math.min(H + 4, Y(v))); if(!on){ ctx.moveTo(x, y); on = true; } else ctx.lineTo(x, y); }
+      ctx.stroke();
+    }
+    if(st.ch2) trace(w.b, Y2, '#e0703f');
+    trace(w.a, Y1, '#3987e5');
+    ctx.font = (12 * dpr) + 'px "IBM Plex Mono", monospace';
+    ctx.fillStyle = '#3987e5'; ctx.fillText('CH1 ' + st.ch1 + '  ' + (sc.v1 < 0.1 ? sc.v1 * 1e3 + ' mV' : sc.v1 + ' V') + '/div', 8 * dpr, H - 8 * dpr);
+    if(st.ch2){ ctx.fillStyle = '#e0703f'; ctx.fillText('CH2 ' + st.ch2 + '  ' + (sc.v2 < 0.1 ? sc.v2 * 1e3 + ' mV' : sc.v2 + ' V') + '/div', 8 * dpr, 16 * dpr); }
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    var tl = (sc.t * 1e3) + ' ms/div' + (sc.mode === 'single' ? '  Single' : '');
+    ctx.fillText(tl, W - ctx.measureText(tl).width - 34 * dpr, H - 8 * dpr);
+    if(s.cursor != null && w.t.length){
+      var cx = s.cursor * dpr, tc = w.t0 + cx / W * (w.t1 - w.t0), lo = 0, hi = w.t.length - 1;
+      while(hi - lo > 1){ var mid = (lo + hi) >> 1; if(w.t[mid] < tc) lo = mid; else hi = mid; }
+      var j = (tc - w.t[lo] < w.t[hi] - tc) ? lo : hi;
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+      var txt = 't ' + ((w.t[j] - (sc.mode === 'single' && sc.trig !== 'armed' ? sc.t0 : w.t1)) * 1e3).toFixed(1) + ' ms  CH1 ' + w.a[j].toFixed(3) + ' V' + (st.ch2 ? '  CH2 ' + fmtV(w.b[j]) : '');
+      ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillText(txt, W - ctx.measureText(txt).width - 34 * dpr, 16 * dpr);
+    }
+    var ts = $('[data-trigstate]', s.el);
+    if(ts) ts.textContent = sc.mode === 'roll' ? '' : ({armed:'等待觸發…', capturing:'擷取中…', done:'已擷取'})[sc.trig] || '';
+  }
+
+  /* ---------------- measurements of the last press ---------------- */
+  function metrics(t, v, kind, refIdx){
+    if(!t.length) return null;
+    var base = v[0], ip = -1, i;
+    if(kind === 'signed'){
+      var end = refIdx != null ? Math.min(v.length, refIdx + 250) : v.length, best = 0;
+      for(i = 0; i < end; i++){ if(!isNaN(v[i]) && Math.abs(v[i] - base) > best){ best = Math.abs(v[i] - base); ip = i; } }
+    } else {
+      if(kind === 'firstAP'){
+        for(i = 1; i < v.length - 1; i++) if(v[i] - base > 0.5 && v[i] >= v[i - 1] && v[i] > v[i + 1]){ ip = i; break; }
+      }
+      if(ip < 0){ var mx = -Infinity; for(i = 0; i < v.length; i++) if(v[i] > mx){ mx = v[i]; ip = i; } }
+    }
+    if(ip < 0) return null;
+    var a = v[ip] - base; if(Math.abs(a) < 1e-6) return {base:base, peak:v[ip], amp:0};
+    var f = function(x){ return (x - base) / a; };
+    var r = null; for(i = 0; i <= ip; i++) if(f(v[i]) >= 0.632){ r = t[i]; break; }
+    var d = null; for(i = ip; i < v.length; i++) if(f(v[i]) <= 0.368){ d = t[i] - t[ip]; break; }
+    var lo = ip; while(lo > 0 && f(v[lo]) >= 0.5) lo--;
+    var hi = ip; while(hi < v.length - 1 && f(v[hi]) >= 0.5) hi++;
+    var hw = (hi < v.length - 1 && f(v[hi]) < 0.5) ? t[hi] - t[lo] : null;
+    return {base:base, peak:v[ip], amp:a, tp:t[ip], hw:hw, rise:r, decay:d, ip:ip};
+  }
+  function updateUI(s){
+    var st = AM.st, set = function(k, txt){ var e = $('[data-m="' + k + '"]', s.el); if(e) e.textContent = txt; };
+    set('vm', AM.v('Vm').toFixed(3) + ' V');
+    var rec = s.rec;
+    if(rec && rec.t.length > 2){
+      var m1 = metrics(rec.t, rec.a, s.meas[0]);
+      var m2 = st.ch2 ? metrics(rec.t, rec.b, s.meas[1], m1 ? m1.ip : null) : null;
+      [[m1, 'a'], [m2, 'b']].forEach(function(p){
+        var m = p[0], c = p[1], V = function(x){ return x == null ? '—' : fmtV(x); }, ms = function(x){ return x == null ? '—' : (x * 1e3).toFixed(1) + ' ms'; };
+        var row = m ? [V(m.base), V(m.peak), V(m.amp), ms(m.tp), ms(m.hw), ms(m.rise), ms(m.decay)] : ['—', '—', '—', '—', '—', '—', '—'];
+        row.forEach(function(x, i){ set(c + i, x); });
+      });
+      set('I', rec.imax > 0 ? (rec.imax * 1e6).toFixed(1) + ' µA' : '—');
+    }
+    s.SCH && s.SCH.setValues(function(code){ return AM.has(code) ? AM.v(code) : null; });
+    var qp = AM.q('pass'), q4 = AM.q('fi4403'), q6 = AM.q('so4403');
+    var Is = -qp[0] + (st.src === 'ideal' && st.sw ? st.isrc : 0);
+    s.SCH && s.SCH.setCurrents({iStim:Is, iFi:-q4[0], iSo:q6[2]});
+    s.SCH && s.SCH.setOn({qPass:-qp[0] > 2e-6, qSense:-AM.q('sense')[0] > 2e-6, qFi3904:AM.q('fi3904')[0] > 2e-6,
+      qFi4403:-q4[0] > 2e-6, qSo3904:AM.q('so3904')[0] > 2e-6, qSo4403:-q6[0] > 2e-6});
+  }
+
+  /* ---------------- mode, navigation, fullscreen, mermaid ---------------- */
+  function setMode(m){
+    MODE = m; document.body.dataset.mode = m;
+    try{ localStorage.setItem('hw2mode', m); }catch(e){}
+    $$('.mode button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false'); });
+    Object.keys(SIMS).forEach(function(k){ var s = SIMS[k]; syncControls(s); drawSchematic(s); });
+    if(active){ var a = active; active = null; activate(a); }
+  }
+  $$('.mode button').forEach(function(b){ b.addEventListener('click', function(){ setMode(b.dataset.mode); }); });
+
+  var navLinks = $$('nav.regions a');
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting && e.intersectionRatio >= 0.5){
+        navLinks.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id); });
+        var key = e.target.dataset.sim;
+        if(key){ var s = SIMS[key]; activate(s); sizeCanvas(s); }
+      }
+    });
+  }, {root:$('#main'), threshold:[0.5]});
+  $$('.region').forEach(function(r){ io.observe(r); });
+
+  $$('[data-fs]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var box = b.closest('.pane, .fsbox'), on = !box.classList.contains('fs');
+      box.classList.toggle('fs', on); b.textContent = on ? '✕' : (box.classList.contains('fsbox') ? '⤢ 全螢幕' : '⤢');
+      Object.keys(SIMS).forEach(function(k){ sizeCanvas(SIMS[k]); });
+    });
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') $$('.fs').forEach(function(x){ x.classList.remove('fs'); var b = $('[data-fs]', x); if(b) b.textContent = x.classList.contains('fsbox') ? '⤢ 全螢幕' : '⤢'; });
+    var tg = e.target.tagName;
+    if(e.code === 'Space' && !e.repeat && active && tg !== 'INPUT' && tg !== 'SELECT' && tg !== 'TEXTAREA' && tg !== 'BUTTON'){ e.preventDefault(); setSW(active, true); }
+  });
+  document.addEventListener('keyup', function(e){
+    var tg = e.target.tagName;
+    if(e.code === 'Space' && active && tg !== 'INPUT' && tg !== 'SELECT' && tg !== 'TEXTAREA' && tg !== 'BUTTON'){ e.preventDefault(); if(!active.latch) setSW(active, false); }
+  });
+  window.addEventListener('resize', function(){ Object.keys(SIMS).forEach(function(k){ sizeCanvas(SIMS[k]); }); });
+
+  Object.keys(SIMS).forEach(function(k){
+    var s = SIMS[k];
+    s.cv.addEventListener('pointermove', function(e){ var r = s.cv.getBoundingClientRect(); s.cursor = e.clientX - r.left; });
+    s.cv.addEventListener('pointerleave', function(){ s.cursor = null; });
+  });
+
+  if(window.mermaid){
+    var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    mermaid.initialize({startOnLoad:false, theme:dark ? 'dark' : 'neutral', securityLevel:'loose', flowchart:{useMaxWidth:false}});
+    $$('details[data-mm]').forEach(function(d){
+      d.addEventListener('toggle', function(){
+        var pre = $('pre.mermaid', d);
+        if(d.open && pre && !pre.dataset.done){ pre.dataset.done = '1'; mermaid.run({nodes:[pre]}); }
+      });
+    });
+  }
+
+  /* ---------------- start ---------------- */
+  document.body.dataset.mode = MODE;
+  $$('.mode button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.mode === MODE ? 'true' : 'false'); });
+  Object.keys(SIMS).forEach(function(k){ var s = SIMS[k]; buildPanels(s); syncControls(s); drawSchematic(s); sizeCanvas(s); });
+  requestAnimationFrame(frame);
+  window.HW2 = {SIMS:SIMS, activate:activate, setMode:setMode, pressFor:pressFor, engineState:engineState};
+})();

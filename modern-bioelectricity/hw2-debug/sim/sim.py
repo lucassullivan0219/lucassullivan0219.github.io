@@ -6,7 +6,11 @@ Method
   * Diodes and BJTs: Ebers-Moll transport model with analytic Jacobian.
   * Each time step is solved with damped Newton-Raphson
     (no node may move more than 0.1 V per iteration, so the exponentials stay tame).
-  * Every node has 1e-12 S to ground (gmin) so floating nodes stay solvable.
+    A step is also accepted after 20 iterations once KCL holds to 10 pA at every node.
+  * Every node has 1e-12 S to ground (gmin) so floating nodes stay solvable, and, in
+    transients, 10 pF of stray capacitance (x10 probe ~10-15 pF, wiring): a node with no
+    capacitor (Vm with the Leak unplugged) otherwise has no dynamics and a latch has no
+    unique step solution.  10 pF x 100 kohm = 1 us, far below the 0.2 ms step.
 
 Circuit.  Node names follow the node dictionary (../nodes.html):
 board code + node, ST = Stimulator, LK = Leak, FI = Fast inward, SO = Slow out;
@@ -57,6 +61,7 @@ import math
 VT = 0.02585          # thermal voltage at about 27 C
 EXPLIM = 40.0         # exp() is continued linearly above this argument
 GMIN = 1e-12
+CPAR = 10e-12        # stray capacitance from every node to GND (transients only)
 SHORT, OPEN = 0.05, 1e13
 
 # Typical small-signal parameters.  run monte_carlo.py to see how much the
@@ -210,7 +215,7 @@ class Circuit:
         N = len(self.nodes)
         idx = self.idx
         V = list(V0)
-        for _ in range(maxit):
+        for it in range(maxit):
             F = [0.0] * N
             J = [[0.0] * N for _ in range(N)]
 
@@ -233,6 +238,9 @@ class Circuit:
             for n in self.nodes:
                 stamp_g(n, 'GND', gmin)
             if dt is not None:
+                gp = CPAR / dt
+                for n in self.nodes:
+                    stamp_g(n, 'GND', gp, -gp * self.v(Vprev, n))
                 for a, b, c in self.C:
                     g = c / dt
                     stamp_g(a, b, g, -g * (self.v(Vprev, a) - self.v(Vprev, b)))
@@ -262,6 +270,8 @@ class Circuit:
                         j = idx.get(ns)
                         if j is not None:
                             J[i][j] += d[t][s]
+            if it >= 20 and max(abs(f) for f in F) < 1e-11:
+                return V, True
             dx = _gauss(J, [-f for f in F])
             mx = max(abs(x) for x in dx)
             sc = 1.0 if mx <= 0.1 else 0.1 / mx

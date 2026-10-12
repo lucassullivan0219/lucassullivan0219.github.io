@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HW2 實驗台</title>
+<meta name="description" content="近代生醫電學 HW2 的唯一介面：基礎目標（照助教的電路量完每一題）與進階目標（做出真正的 AP、解釋電路問題），#2-1、#2-2、#2-3 的即時電路模擬與示波器。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72; --link:#1F5FA8; --rule:#CCD3CE;
+  --warn:#A33A2B; --opt:#8A6100; --req:#2F5D3A; --infer:#7A3E8F;
+  --vmbus:#2a78d6; --qon:rgba(42,120,214,.16);
+  --bg:#EDF2EA; --accent:#2F6B3A; --tint:rgba(47,107,58,.08); --side:clamp(190px,16.6vw,270px);
+}
+body[data-mode="adv"]{--bg:#F4EAE0; --accent:#A4471F; --tint:rgba(164,71,31,.09)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0; --rule:#2C3533;
+    --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --vmbus:#3987e5; --qon:rgba(57,135,229,.22);
+    --bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
+  :root:not([data-theme="light"]) body[data-mode="adv"]{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
+}
+:root[data-theme="dark"]{--surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0; --rule:#2C3533;
+  --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --vmbus:#3987e5; --qon:rgba(57,135,229,.22);
+  --bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
+:root[data-theme="dark"] body[data-mode="adv"]{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Noto Sans TC",system-ui,"Microsoft JhengHei",sans-serif;font-size:14.5px;line-height:1.65;transition:background .25s}
+a{color:var(--link)}
+button,select,input{font:inherit}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-size:.93em}
+:focus-visible{outline:3px solid var(--link);outline-offset:2px}
+body[data-mode="basic"] [data-show="adv"],body[data-mode="adv"] [data-show="basic"]{display:none!important}
+
+/* ---------- layout: sidebar | main ---------- */
+.app{display:grid;grid-template-columns:var(--side) minmax(0,1fr);height:100vh}
+aside.side{background:var(--surface);border-right:1px solid var(--rule);display:flex;flex-direction:column;overflow-y:auto;padding:14px 12px}
+.side .top{display:flex;gap:10px;font-size:13px;margin-bottom:6px}
+.side .top a{color:var(--muted);text-decoration:none}
+.side h1{font-size:19px;font-weight:900;margin:2px 0 10px;line-height:1.3}
+.mode{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--accent);border-radius:10px;overflow:hidden;margin-bottom:6px}
+.mode button{border:0;background:transparent;color:var(--ink);padding:7px 4px;cursor:pointer;line-height:1.25;font-weight:700}
+.mode button small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+.mode button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.mode button[aria-pressed="true"] small{color:var(--surface);opacity:.85}
+.mode-note{font-size:12px;color:var(--muted);margin:0 0 12px}
+nav.regions{display:flex;flex-direction:column;gap:2px}
+nav.regions a{display:flex;gap:8px;align-items:baseline;text-decoration:none;color:var(--ink);padding:6px 8px;border-radius:6px;font-weight:500}
+nav.regions a .n{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-weight:700;min-width:1.2em}
+nav.regions a.on{background:var(--tint);outline:1.5px solid var(--accent)}
+nav.regions a small{display:block;color:var(--muted);font-weight:400;font-size:11.5px;line-height:1.35}
+.side .foot{margin-top:auto;padding-top:12px;font-size:12px;color:var(--muted)}
+.side .foot a{color:var(--muted)}
+main{overflow-y:auto;scroll-snap-type:y proximity;scroll-behavior:smooth}
+.region{min-height:100vh;scroll-snap-align:start;border-bottom:1px solid var(--rule)}
+
+/* ---------- text regions ---------- */
+.textreg{padding:22px 24px 40px}
+.textreg h2{font-size:22px;font-weight:900;margin:0 0 4px}
+.textreg .lede{color:var(--muted);margin:0 0 14px;max-width:70em}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:0}
+.card.wide{grid-column:1/-1}
+.card > summary{list-style:none;cursor:pointer;padding:10px 14px;font-weight:700;display:flex;gap:8px;align-items:baseline}
+.card > summary::-webkit-details-marker{display:none}
+.card > summary::before{content:"▸";color:var(--accent);transition:transform .15s}
+.card[open] > summary::before{transform:rotate(90deg)}
+.card > summary .hint{font-weight:400;color:var(--muted);font-size:12.5px;margin-left:auto;text-align:right}
+.card .body{padding:0 14px 12px}
+.card .body > :first-child{margin-top:0}
+.card p,.card li{max-width:72em}
+.card ul,.card ol{padding-left:1.25em;margin:6px 0}
+.card li{margin:3px 0}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:0 6px;border-radius:999px;border:1.5px solid currentColor;margin-right:4px;vertical-align:1px}
+.t-warn{color:var(--warn)} .t-ok{color:var(--req)} .t-part{color:var(--opt)} .t-inf{color:var(--infer)}
+.tbl{overflow-x:auto;border:1px solid var(--rule);margin:6px 0}
+table{border-collapse:collapse;width:100%;font-size:13px;background:var(--surface)}
+th,td{text-align:left;padding:5px 7px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{background:var(--tint);color:var(--muted);font-size:12px}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.grp td{background:var(--tint);font-weight:700}
+.calc{font-family:"IBM Plex Mono",monospace;font-size:12.5px;white-space:pre;overflow-x:auto;background:var(--tint);border-left:3px solid var(--accent);padding:8px 10px;margin:6px 0}
+.fsbox{position:relative;background:var(--surface)}
+.fsbox .fsbtn{position:absolute;top:6px;right:6px;z-index:3}
+.fsbox.fs{position:fixed;inset:0;z-index:50;overflow:auto;padding:40px 16px 16px;border-radius:0}
+.fsbtn{font-size:12px;padding:2px 9px;border:1.5px solid var(--rule);border-radius:999px;background:var(--surface);color:var(--ink);cursor:pointer}
+pre.mermaid{margin:0;min-width:900px;background:transparent}
+.mmwrap{overflow-x:auto;padding:30px 6px 6px}
+
+/* ---------- sim regions: [center 4/6 | settings 1/6] ---------- */
+.simreg{display:grid;grid-template-columns:minmax(0,4fr) minmax(200px,1fr);height:100vh}
+.center{display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr);min-height:0;padding:10px 10px 10px 12px;gap:0;position:relative}
+.pane{position:relative;min-height:0;background:var(--surface);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.pane.top{margin-bottom:8px}
+.pane.bot{margin-top:8px;background:#0d1114;border-color:#0d1114}
+.center::before{content:"";position:absolute;left:25%;right:25%;top:50%;border-top:2px solid var(--accent);z-index:2;pointer-events:none}
+.pane svg.sch{display:block;width:100%;height:100%}
+.pane canvas{display:block;width:100%;height:100%}
+.pane .fsbtn{position:absolute;top:6px;right:6px;z-index:3;opacity:.85}
+.pane.fs{position:fixed;inset:0;z-index:60;margin:0;border-radius:0}
+.settings{border-left:1px solid var(--rule);background:var(--surface);overflow-y:auto;padding:12px 12px 30px;font-size:13.5px}
+.settings h2{font-size:17px;font-weight:900;margin:0 0 2px}
+.settings .sub{color:var(--muted);font-size:12px;margin:0 0 10px}
+.grp{border-top:1px solid var(--rule);padding:8px 0}
+.grp > .gt{font-size:12px;font-weight:700;color:var(--accent);margin:0 0 4px;letter-spacing:.03em}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center;margin:4px 0}
+.row label{color:var(--muted);font-size:12.5px}
+.row .val{font-family:"IBM Plex Mono",monospace;font-size:12px}
+.row.full{grid-template-columns:1fr}
+input[type=range]{width:100%}
+select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(--rule);border-radius:5px;background:var(--surface);color:var(--ink);max-width:100%}
+.btns{display:flex;flex-wrap:wrap;gap:4px}
+.btn{font-size:12.5px;padding:3px 9px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:999px;cursor:pointer;line-height:1.35}
+.btn:hover{background:var(--tint)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.btn.acc{border-color:var(--accent);color:var(--accent)}
+.swbtn{width:100%;font-size:15px;font-weight:700;padding:9px;border-radius:8px;border:2px solid var(--accent);background:var(--surface);color:var(--accent);cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none}
+.swbtn.on{background:var(--accent);color:var(--surface)}
+.chk{display:flex;gap:6px;align-items:center;font-size:12.5px}
+.meas{width:100%;font-size:12px}
+.meas td,.meas th{padding:3px 4px}
+.meas td{font-family:"IBM Plex Mono",monospace;text-align:right}
+.meas td:first-child{font-family:inherit;text-align:left;color:var(--muted)}
+.settings details{border-top:1px solid var(--rule);padding:6px 0}
+.settings details > summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--ink)}
+.settings details .tbl{font-size:12px}
+.small{font-size:12.5px} .muted{color:var(--muted)}
+
+@media (max-width:900px){
+  .app{grid-template-columns:1fr;height:auto}
+  aside.side{position:sticky;top:0;z-index:20;flex-direction:row;flex-wrap:wrap;gap:8px;align-items:center;padding:8px}
+  .side h1{margin:0;font-size:16px}
+  .side .foot,.mode-note,nav.regions a small{display:none}
+  nav.regions{flex-direction:row;flex-wrap:wrap}
+  main{overflow:visible;scroll-snap-type:none}
+  .simreg{grid-template-columns:1fr;height:auto}
+  .center{height:120vh}
+  .settings{border-left:0;border-top:1px solid var(--rule)}
+}
+</style>
+</head>
+<body data-mode="basic">
+<div class="app">
+<aside class="side" aria-label="導覽">
+  <div class="top"><a href="../../">⌂ 個人首頁</a><a href="../">← Modern Bioelectricity</a></div>
+  <h1>HW2 實驗台</h1>
+  <div class="mode" role="group" aria-label="目標切換">
+    <button type="button" data-mode="basic" aria-pressed="true">基礎目標<small>照助教的電路</small></button>
+    <button type="button" data-mode="adv" aria-pressed="false">進階目標<small>做出真正的 AP</small></button>
+  </div>
+  <p class="mode-note" data-show="basic">完整測試助教給的電路、完成每一題，測出什麼就寫什麼。</p>
+  <p class="mode-note" data-show="adv">做出真正能模擬 AP 的電路，具體計算、解釋助教電路的問題。</p>
+  <nav class="regions" aria-label="區域">
+    <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small data-show="basic">模型定義、題目清單、可能的問題</small><small data-show="adv">電路的問題、改法、AP 判定</small></span></a>
+    <a href="#r2"><span class="n">2</span><span>#2-1 Passive<small>5 個 Passive unit</small></span></a>
+    <a href="#r3"><span class="n">3</span><span>#2-2 Active<small>Stimulator + LK + FI + SO</small></span></a>
+    <a href="#r4"><span class="n">4</span><span>#2-3 Passive → active<small>0–4 個 unit + active</small></span></a>
+    <a href="#r5"><span class="n">5</span><span>補充與紀錄<small>定義、手算、時間線、History</small></span></a>
+  </nav>
+  <div class="foot">
+    <p style="margin:0 0 4px"><a href="#history">History／Log（舊頁面）</a></p>
+    <p style="margin:0">空白鍵 = 按住目前區域的 SW。每張圖右上角 ⤢ 可全螢幕。</p>
+  </div>
+</aside>
+
+<main id="main">
+
+<!-- ======================= 1 摘要 ======================= -->
+<section class="region textreg" id="r1">
+  <div data-show="basic">
+    <h2>1 摘要與注意事項（基礎目標）</h2>
+    <p class="lede">照助教給的電路量完每一題。模擬也照實體 PCB 建，唯一的差別寫在下面第一張卡。</p>
+    <div class="cards">
+      <details class="card" open><summary>基礎模型＝助教給的電路<span class="hint">所有模擬區域都用這個</span></summary><div class="body">
+        <ul>
+          <li><b>完全照 PCB 實際接法</b>（從講義 PCB 圖追線），不是講義的模擬器電路圖。</li>
+          <li><b>Slow out 的 R2 = 100 Ω</b>：PCB 標 3M，套件給的是 100 Ω（助教以為是 1 MΩ）。這是唯一和 PCB 標示不同的地方。</li>
+          <li><b>R13 = 100 kΩ</b>（PCB 標示；講義電路圖畫 1 kΩ）。</li>
+          <li><b>Stimulator 的 Q<sub>sense</sub> 接在 SW 之前</b>：SW 放開時仍漏出約 6 µA。</li>
+          <li>V+ = 7.8 V（9 V 電池實測）。示波器 ×10 探棒（10 MΩ）。可變電阻預設 0.7 kΩ（約 90 µA，第二、三輪的位置）。</li>
+          <li><b>#2-3</b>：Passive PCB 底板沒有串 V+，n ≥ 1 時 FI 沒有電。基礎版照實模擬：做不出 AP 就是做不出來。</li>
+        </ul>
+      </div></details>
+
+      <details class="card" open><summary>作業題目與狀態<span class="hint">點題號跳到對應區域</span></summary><div class="body">
+        <div class="tbl"><table>
+          <tr><th>題目</th><th>要交</th><th>狀態</th></tr>
+          <tr class="grp"><td colspan="3">#2-0：合照、組員名單</td></tr>
+          <tr class="grp"><td colspan="3"><a href="#r2">#2-1 Passive</a></td></tr>
+          <tr><td>Q1–Q3</td><td>照片；五參數；五種刺激時間的 4 張圖（第一 vs 最後）</td><td class="t-ok">已量，和模擬相同</td></tr>
+          <tr><td>Q4–Q5</td><td>差異原因、生理意義</td><td class="t-part">要寫</td></tr>
+          <tr class="grp"><td colspan="3"><a href="#r3">#2-2 Active</a></td></tr>
+          <tr><td>Q1–Q2</td><td>照片；一個 AP 的五參數</td><td class="t-warn">未量</td></tr>
+          <tr><td>Q3</td><td>五種電流 vs 峰值、半高寬、rise τ、decay τ</td><td class="t-warn">未量</td></tr>
+          <tr><td>Q4</td><td>電阻 50k–3M 的四張圖</td><td class="t-warn">未量</td></tr>
+          <tr><td>Q5</td><td>靜止電位、內向／外向電流的反轉電位</td><td class="t-part">有線索</td></tr>
+          <tr><td>Q6</td><td>TTX（拔 FI）、TEA（拔 SO）</td><td class="t-part">第二輪有組合數值</td></tr>
+          <tr><td>Q7</td><td>生理意義</td><td class="t-part">要寫</td></tr>
+          <tr class="grp"><td colspan="3"><a href="#r4">#2-3 Passive → active</a></td></tr>
+          <tr><td>Q1–Q5</td><td>照片；AP 五參數；n vs I<sub>min</sub>；n vs delay；intra vs extra</td><td class="t-warn">未量</td></tr>
+          <tr><td>Q6</td><td>生理意義</td><td class="t-part">要寫</td></tr>
+        </table></div>
+      </div></details>
+
+      <details class="card" open><summary>我認為可能有問題的地方<span class="hint">會影響基礎目標的量測</span></summary><div class="body">
+        <ol>
+          <li><b>你的板子現在 R2 是 1 MΩ</b>，基礎版是 100 Ω。量基礎版前換回 100 Ω，或在報告寫清楚用哪一顆。兩者行為完全不同：100 Ω 時按一次 FI 就鎖在 2.4 V；1 MΩ 時不按也每 0.1 秒冒一個 1.6 V 小峰。</li>
+          <li><b>R2 = 100 Ω 時 Slow out 完全不作用</b>：按住 SW 升到約 4.5 V 平台，放開後 FI 鎖在約 2.4 V 下不來。每量一次都要斷電重置（拔電池或拔 FI 再插回）。</li>
+          <li><b>R13 = 100 kΩ</b>：FI 最多只送約 70 µA，「AP」和拔掉 FI 的被動反應差不多，TTX 看不太出差別。</li>
+          <li><b>基線不是 0</b>：Stimulator 放開時漏 6 µA，只接 Leak 時基線約 0.6–0.7 V。amplitude 一律用「波峰 − 基線」。</li>
+          <li><b>#2-3 n ≥ 1 沒有 AP</b>：FI 沒有 V+，Q2–Q5 只量得到被動反應，Q3、Q4 沒有門檻可量。照實記錄。</li>
+          <li><b>#2-3 Q3 就算有 AP 也量不到門檻</b>：模擬的 I<sub>min</sub> 多數低於可變電阻最小的約 44 µA，每按一次都會觸發。</li>
+          <li><b>S+FI 那列</b>：我預期約 <b>4.5 V／7.1 V</b>（FI 不按就自己鎖住；按住時頂到 Stimulator 的上限 7.1 V）。你量的 3.0／5.9 V 和 S+LK+FI 幾乎一樣，表示 Vm 上還有約 100 kΩ 到地，最可能是 Leak 還插著（模型加 100 kΩ 正好是 3.05／5.85 V）。拔掉 Leak 重量一次。</li>
+          <li><b>#2-2 Q5 的反轉電位</b>：照實量的話，靜止＝基線；內向電流能把 Vm 推到的最高點（S+FI 鎖住約 4.5 V，理論上限是 V+）；外向電流能把 Vm 拉到的最低點（R2 = 100 Ω 時 Slow out 只剩 100 kΩ 串二極體，約 0.4 V）。</li>
+        </ol>
+      </div></details>
+
+      <details class="card"><summary>第二輪麵包板：你量的 vs 基礎模型<span class="hint">模型就是你的電路</span></summary><div class="body">
+        <div class="tbl"><table>
+          <tr><th>組合</th><th class="num">實測 靜止／按住</th><th class="num">基礎模型（R2 = 100 Ω）</th></tr>
+          <tr><td>S</td><td class="num">7.1／7.3</td><td class="num">7.14／7.14</td></tr>
+          <tr><td>S + LK</td><td class="num">0.7／7.2</td><td class="num">0.62／7.13</td></tr>
+          <tr><td>S + FI</td><td class="num t-warn">3.0／5.9</td><td class="num">4.55／7.13</td></tr>
+          <tr><td>S + SO</td><td class="num">1.0／7.2</td><td class="num">0.97／7.13</td></tr>
+          <tr><td>S + LK + FI</td><td class="num">3.1／5.9</td><td class="num">3.04／5.83</td></tr>
+          <tr><td>S + LK + SO</td><td class="num">0.5／4.8</td><td class="num">0.46／4.72</td></tr>
+          <tr><td>全接，FI 鎖住</td><td class="num">2.4／4.5</td><td class="num">2.39／4.49</td></tr>
+        </table></div>
+        <p class="small muted">V；可變電阻 0.7 kΩ。只有 S+FI 對不上，見上一張卡第 7 點。可以在 <a href="#r3">#2-2 區域</a>勾掉板子重現。</p>
+      </div></details>
+
+      <details class="card"><summary>量測注意事項<span class="hint">五參數、電流、示波器</span></summary><div class="body">
+        <ul>
+          <li><b>五參數</b>：stimulation current、peak amplitude（波峰 − 基線）、half-width（50 % 高度的寬度）、rise τ（刺激開始到 63 % 振幅）、decay τ（波峰到剩 37 %）。講義的 “decade” 理解成 decay。模擬區右側會自動算。</li>
+          <li><b>量電流（沒有三用電表）</b>：只接 Stimulator + 1 個 Passive unit，按住 SW 超過 0.5 秒，平台電壓 ÷ 100 kΩ。量好就不要再轉可變電阻。</li>
+          <li><b>示波器</b>：#2-1 0.2–0.5 V/div、100–200 ms/div；#2-2 1 V/div、10–50 ms/div；#2-3 CH2 細胞外 10–50 mV/div。上升緣觸發、Single。</li>
+          <li>每按一次至少隔 1 秒，讓電容放電。圖要標格子大小和量測點。</li>
+        </ul>
+      </div></details>
+    </div>
+  </div>
+
+  <div data-show="adv">
+    <h2>1 摘要：助教電路的問題與改法（進階目標）</h2>
+    <p class="lede">以下每一點都有手算或模擬（<a href="#r5">補充區</a>有計算）。改法一律只加可拆的電阻。所有數字都是模擬，還沒實測。</p>
+    <div class="cards">
+      <details class="card" open><summary>助教電路的問題<span class="hint">依影響大小</span></summary><div class="body">
+        <ol>
+          <li><b>Slow out 的 R2</b>：PCB 標 3M，套件給 100 Ω，助教以為 1 MΩ。100 Ω 讓 SO.B3 接地、2N3904 永遠不導通，FI 一觸發就鎖在 2.4 V（第二輪 6 個數值吻合到 0.1 V）。</li>
+          <li><b>R13 = 100 kΩ（電路圖 1 kΩ）</b>：FI 最多送 (V+ + 0.85 − 2Vm)/100k ≈ 70 µA，Slow out 10–20 ms 就截斷上升，AP 和拔掉 FI 的被動反應只差零點幾伏。</li>
+          <li><b>Q<sub>sense</sub> 接在 SW 前</b>：放開時漏 I<sub>B</sub> = 0.946 mA ÷ 150 = 6.3 µA，基線 0.63 V，剛好在 FI 門檻附近。R2 = 1 MΩ 時變成每 0.1 秒自己冒小峰（實測 1.6 V／100 ms，模擬 1.46 V／128 ms）。</li>
+          <li><b>FI 門檻和 Slow out 的鉗位都在約 0.6 V</b>：餘裕太小。修好漏電後，8 組隨機參數中仍有 1 組在第一個 AP 後自己振盪。</li>
+          <li><b>沒有過極化</b>：Slow out 只能把 Vm 拉到約 0.57 V（這個電路的 E<sub>K</sub>），Leak 接 GND（E<sub>leak</sub> = 0 V）比它還低，順序和神經相反。</li>
+          <li><b>#2-3：Passive PCB 底板沒有串 V+</b>：FI 沒電；拉線補上後，FI 的電流經細胞外 100 Ω 回到電池，CH2 被它主導（+0.14 V 單相）。</li>
+          <li><b>可變電阻最小約 44 µA</b>，高於 #2-3 多數的 I<sub>min</sub>（5–38 µA），量不到門檻。</li>
+          <li>Stimulator 輸出上限約 7.1 V；電池實測 7.8 V。</li>
+        </ol>
+      </div></details>
+
+      <details class="card" open><summary>改法（只加、可拆）<span class="hint">夾在元件腳上或插麵包板</span></summary><div class="body">
+        <div class="tbl"><table>
+          <tr><th>名稱</th><th>加什麼</th><th>效果</th><th>代價</th></tr>
+          <tr><td>R2</td><td>換回 1 MΩ（助教指定）</td><td>Slow out 動作</td><td>出現自發小峰</td></tr>
+          <tr><td>修正 1</td><td>22 kΩ：ST.Q ↔ ST.R（7K-R1 下端 ↔ 7K-R2 上端）</td><td>漏電 0，靜止 0 V，不自發</td><td>刺激電流少 25 µA</td></tr>
+          <tr><td>修正 2</td><td>11 kΩ 並 R13（→ 9.9 kΩ）</td><td>AP 5.5–5.9 V，門檻約 0.6 V，按住 20 Hz</td><td>只加修正 2 會變成自發 AP</td></tr>
+          <tr><td>備案 1b</td><td>1 MΩ：R13 下端 → FI.E3</td><td>FI 門檻約 1.4 V，不碰 Stimulator</td><td>AP 小一點，按住不連續</td></tr>
+          <tr><td>方案 3</td><td>470k V+→Vm、470k R13 下端→FI.E3、47k 並 SO C1、11k 並 R13</td><td>過極化 0.6 V（16 組參數成立），按住 27 Hz 連續發放</td><td>膜變了；#2-3 不適用</td></tr>
+          <tr><td>#2-3 電流</td><td>10 kΩ：ST.Q ↔ ST.R（取代 22k）</td><td>可變電阻 → 約 41–0.3 µA，量得到 I<sub>min</sub></td><td>電流要用方法 B 量</td></tr>
+        </table></div>
+      </div></details>
+
+      <details class="card"><summary>修正後算不算 AP<span class="hint">門檻、all-or-none、去／再極化、過極化</span></summary><div class="body">
+        <div class="tbl"><table>
+          <tr><th>情況</th><th class="num">靜止</th><th class="num">門檻</th><th class="num">峰值（拔 FI）</th><th>過極化</th></tr>
+          <tr><td>目前（R2 = 1 MΩ）</td><td colspan="3">自己一直冒小峰</td><td class="t-warn">✗</td></tr>
+          <tr><td>修正 1</td><td class="num">0</td><td class="num">0.58 V</td><td class="num">3.02（2.08）</td><td class="t-warn">✗</td></tr>
+          <tr><td>修正 1 + 2</td><td class="num">0</td><td class="num">0.58 V</td><td class="num">5.87（2.08）</td><td class="t-warn">✗（最低 0.10 V）</td></tr>
+          <tr><td>方案 3</td><td class="num">1.18</td><td class="num">2.05 V</td><td class="num">5.65（3.27）</td><td class="t-ok">✓ 0.60 V</td></tr>
+        </table></div>
+        <p class="small">再加 leak（Vm → GND）：靜止往 0 V 掉、最低點不動，47 kΩ 時過極化消失。神經的 E<sub>leak</sub> 在 E<sub>K</sub> 之上，不會這樣。</p>
+      </div></details>
+
+      <details class="card"><summary>還沒量、要量的<span class="hint">加上修正後的對照值</span></summary><div class="body">
+        <div class="tbl"><table>
+          <tr><th>加了什麼</th><th>量</th><th class="num">目前</th><th class="num">預期</th></tr>
+          <tr><td>22 kΩ</td><td>ST.Q − ST.R（SW 放開）</td><td class="num">0.52</td><td class="num">0.15</td></tr>
+          <tr><td>22 kΩ</td><td>S + LK 按住的 Vm</td><td class="num">7.2</td><td class="num">6.3</td></tr>
+          <tr><td>＋11 kΩ</td><td>按一下的峰值／AP 後最低</td><td class="num">約 2.2／0.5</td><td class="num">5.5–5.9／約 0.1</td></tr>
+          <tr><td>方案 3</td><td>靜止 Vm／FI.E3／SO.S</td><td class="num">—</td><td class="num">1.18／1.37／0.37</td></tr>
+          <tr><td>—</td><td>S + FI（拔掉 Leak）</td><td class="num">3.0／5.9</td><td class="num">4.55／7.13</td></tr>
+        </table></div>
+      </div></details>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 2 #2-1 ======================= -->
+<section class="region simreg" id="r2" data-sim="s21">
+  <div class="center">
+    <div class="pane top"><button class="fsbtn" type="button" data-fs>⤢</button><svg class="sch" role="img" aria-label="#2-1 電路圖"></svg></div>
+    <div class="pane bot"><button class="fsbtn" type="button" data-fs>⤢</button><canvas aria-label="示波器"></canvas></div>
+  </div>
+  <div class="settings">
+    <h2>#2-1 Passive</h2>
+    <p class="sub">Stimulator → 5 個 Passive unit（1 µF ∥ 100 kΩ，隔 10 kΩ）。CH1 = 第 1 個，CH2 = 最後一個（或中間）。</p>
+    <div class="grp"><div class="gt">刺激</div>
+      <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
+      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
+      <div data-show="adv">
+        <div class="row"><label>來源</label><select data-k="src"><option value="stim">Stimulator</option><option value="ideal">理想電流源</option></select></div>
+        <div class="row"><label>理想電流（µA）</label><input type="number" data-k="isrc" min="0" max="300" step="1" data-scale="1e-6" style="width:5.5em"></div>
+        <div class="row"><label>Stimulator 漏電</label><select data-k="qs"><option value="pcb">原樣</option><option value="rx">並 22 kΩ</option></select></div>
+        <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
+      </div>
+      <div class="gt" style="margin-top:6px">脈衝長度（題目要五種）</div>
+      <div class="btns" data-pulses="0.01,0.05,0.1,0.2,0.5"></div>
+      <div class="row" data-show="adv"><label>自訂（ms）</label><span><input type="number" data-pulse-ms value="300" min="1" max="5000" style="width:5em"> <button class="btn" type="button" data-pulse-go>按</button></span></div>
+      <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
+      <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
+    </div>
+    <div class="grp"><div class="gt">示波器</div>
+      <div class="row" data-show="basic"><label>CH2 量</label><select data-k="ch2"><option value="Vm">第 5 個（最後）</option><option value="PC3">第 3 個（中間）</option></select></div>
+      <div data-show="adv">
+        <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="pc"></select></div>
+        <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="pc"></select></div>
+      </div>
+      <div data-scope></div>
+    </div>
+    <div class="grp"><div class="gt">自動量測（上一次按壓）</div><div data-meas></div></div>
+    <details><summary>題目與量法</summary>
+      <ul class="small">
+        <li><b>Q1</b> 照片標元件（5 個 unit 的 C1、R1，上排 10 kΩ、下排 100 Ω）。</li>
+        <li><b>Q2</b> 一次刺激的五參數；比較第一、中間、最後一個。</li>
+        <li><b>Q3</b> 五種刺激時間（左上按鈕），第一 vs 最後：amplitude、delay of peak、rise τ、decay τ 四張圖。電流寫一次。</li>
+        <li><b>Q4–Q5</b> 原因：電流沿路從 100 kΩ 漏掉、後面的電容要隔著 10 kΩ 充電（低通）；生理意義：被動的 dendrite／axon（cable）。</li>
+      </ul>
+    </details>
+    <details data-show="adv"><summary>進階：怎麼解讀</summary>
+      <ul class="small">
+        <li>每個 unit τ = 100 kΩ × 1 µF = 100 ms；第一個看到的等效電阻約 30 kΩ（電流流到後面），所以長刺激 rise τ 約 63 ms。</li>
+        <li>λ ≈ √(100k/10k) ≈ 3 個 unit（離散近似）。</li>
+        <li>Stimulator 漏電 6 µA 讓第一個 unit 的基線約 0.2 V。並 22 kΩ 可以消掉。</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<!-- ======================= 3 #2-2 ======================= -->
+<section class="region simreg" id="r3" data-sim="s22">
+  <div class="center">
+    <div class="pane top"><button class="fsbtn" type="button" data-fs>⤢</button><svg class="sch" role="img" aria-label="#2-2 電路圖"></svg></div>
+    <div class="pane bot"><button class="fsbtn" type="button" data-fs>⤢</button><canvas aria-label="示波器"></canvas></div>
+  </div>
+  <div class="settings">
+    <h2>#2-2 Active</h2>
+    <p class="sub" data-show="basic">助教給的電路：R2 = 100 Ω、R13 = 100 kΩ。CH1 = Vm。</p>
+    <p class="sub" data-show="adv">自由調整。點電路圖上的紅色接點可以斷開排針。</p>
+    <div class="grp" data-show="adv"><div class="gt">情境</div>
+      <div class="btns" data-presets="s22"></div>
+      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
+    </div>
+    <div class="grp"><div class="gt">板子（拔掉 = TTX／TEA）</div>
+      <label class="chk"><input type="checkbox" data-k="leak"> LK Leak</label>
+      <label class="chk"><input type="checkbox" data-k="fi_on"> FI Fast inward（拔掉 = TTX）</label>
+      <label class="chk"><input type="checkbox" data-k="so_on"> SO Slow out（拔掉 = TEA）</label>
+    </div>
+    <div class="grp"><div class="gt">刺激</div>
+      <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
+      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
+      <div class="btns" data-pulses="0.02,0.1,1"></div>
+      <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
+      <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
+      <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button>
+    </div>
+    <div class="grp"><div class="gt">元件</div>
+      <div class="row"><label>R13（Q4）</label><select data-k="r13" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option><option value="1e4" data-show="adv">10 kΩ</option><option value="1e3" data-show="adv">1 kΩ</option></select></div>
+      <div data-show="adv">
+        <div class="row"><label>SO 的 R2</label><select data-k="so_r2" data-num><option value="100">100 Ω（套件）</option><option value="1e6">1 MΩ（助教）</option><option value="3e6">3 MΩ（PCB 標）</option></select></div>
+        <div class="row"><label>FI 3904 E 電阻</label><select data-k="rfe" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select></div>
+        <div class="row"><label>Stimulator 漏電</label><select data-k="qs"><option value="pcb">原樣</option><option value="rx">並 22 kΩ（修正 1）</option><option value="sw">Q_sense 改接（對照）</option></select></div>
+        <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="1e5">100 kΩ</option><option value="11e3">11 kΩ（修正 2）</option><option value="1e3">1 kΩ</option></select></div>
+        <div class="row"><label>R13 下端→FI.E3</label><select data-k="rf" data-num><option value="0">不加</option><option value="1e6">1 MΩ（1b）</option><option value="470e3">470 kΩ（方案 3）</option></select></div>
+        <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="470e3">470 kΩ（方案 3）</option></select></div>
+        <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="47e3">47 kΩ（方案 3）</option></select></div>
+        <div class="row"><label>Vm → GND（多加 leak）</label><select data-k="rl" data-num><option value="0">不加</option><option value="1e6">1 MΩ</option><option value="220e3">220 kΩ</option><option value="47e3">47 kΩ</option></select></div>
+        <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
+      </div>
+    </div>
+    <div class="grp"><div class="gt">示波器</div>
+      <div class="row"><label>CH2 量</label><select data-k="ch2"><option value="">關</option><option value="SO.S">SO.S</option><option value="FI.E4">FI.E4</option><option value="FI.E3" data-show="adv">FI.E3</option><option value="SO.B3" data-show="adv">SO.B3</option><option value="FI.V+" data-show="adv">FI.V+</option></select></div>
+      <div data-scope></div>
+    </div>
+    <div class="grp"><div class="gt">自動量測（上一次按壓，第一個 AP）</div><div data-meas></div></div>
+    <details data-show="basic"><summary>題目與量法</summary>
+      <ul class="small">
+        <li><b>Q2</b> 按一下（例如 100 ms）記錄一個「AP」的五參數。R2 = 100 Ω 時按住會停在約 4.5 V、放開後鎖在 2.4 V：量完按「斷電重置」。</li>
+        <li><b>Q3</b> 五種可變電阻位置，每個量一次（電流用 S + 1 個 Passive unit 換算）。</li>
+        <li><b>Q4</b> R13 換 50k–3M，電流固定。</li>
+        <li><b>Q5</b> 基線、FI 能推到的最高點（拔 SO、FI 鎖住）、SO 能拉到的最低點。</li>
+        <li><b>Q6</b> 拔 FI（TTX）、拔 SO（TEA）各量一次。</li>
+      </ul>
+    </details>
+    <details data-show="adv"><summary>進階：重點數字</summary>
+      <ul class="small">
+        <li>R2 = 1 MΩ：不按約每 130 ms 一個 1.46 V 小峰；按下的第一個峰 1.8–2.1 V（看落在小峰的哪個階段；實測 2.2 V）；按住停 0.78 V。</li>
+        <li>修正 1 + 2：AP 5.87 V，按住 20 Hz（0.62–2.39 V）。</li>
+        <li>方案 3：靜止 1.18 V，AP 5.3–5.7 V，AP 後 0.58 V，按住 27 Hz。</li>
+        <li>電路圖數值（9 V、1 kΩ、Q<sub>sense</sub> 在 SW 後、3 MΩ）：完整 AP 約 8 V。</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<!-- ======================= 4 #2-3 ======================= -->
+<section class="region simreg" id="r4" data-sim="s23">
+  <div class="center">
+    <div class="pane top"><button class="fsbtn" type="button" data-fs>⤢</button><svg class="sch" role="img" aria-label="#2-3 電路圖"></svg></div>
+    <div class="pane bot"><button class="fsbtn" type="button" data-fs>⤢</button><canvas aria-label="示波器"></canvas></div>
+  </div>
+  <div class="settings">
+    <h2>#2-3 Passive → active</h2>
+    <p class="sub" data-show="basic">照實：n ≥ 1 時 FI 沒有 V+（底板沒串），只有 n = 0 有 AP。CH1 = active 端 Vm。</p>
+    <p class="sub" data-show="adv">可以補 V+ 線、換電流源、套用修正。</p>
+    <div class="grp"><div class="gt">Passive unit 數 n</div>
+      <div class="btns" data-nseg></div>
+    </div>
+    <div class="grp" data-show="adv"><div class="gt">情境</div>
+      <div class="btns" data-presets="s23"></div>
+      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
+      <div class="row"><label>FI 的 V+</label><select data-k="fi_supply"><option value="none">沒接（照實）</option><option value="stim">從 Stimulator 拉線</option><option value="local">FI 自帶電池</option></select></div>
+      <label class="chk"><input type="checkbox" data-k="fi_on"> FI（拔掉 = TTX）</label>
+      <label class="chk"><input type="checkbox" data-k="so_on"> SO（拔掉 = TEA）</label>
+    </div>
+    <div class="grp"><div class="gt">刺激</div>
+      <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
+      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
+      <div data-show="adv">
+        <div class="row"><label>來源</label><select data-k="src"><option value="stim">Stimulator</option><option value="ideal">理想電流源</option></select></div>
+        <div class="row"><label>理想電流（µA）</label><input type="number" data-k="isrc" min="0" max="300" step="0.5" data-scale="1e-6" style="width:5.5em"></div>
+      </div>
+      <div class="btns" data-pulses="0.1,1"></div>
+      <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
+      <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
+      <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button>
+    </div>
+    <div class="grp"><div class="gt">示波器</div>
+      <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="23"></select></div>
+      <div data-scope></div>
+    </div>
+    <div class="grp"><div class="gt">自動量測（上一次按壓）</div><div data-meas></div></div>
+    <details data-show="basic"><summary>題目與量法</summary>
+      <ul class="small">
+        <li><b>Q2</b> n = 4，按住 1 秒，記錄五參數（照實只有被動反應）。</li>
+        <li><b>Q3</b> 每個 n 從小電流往上加，找剛好出現 AP 的電流；照實會「沒有 AP」或「最小電流也觸發」，照記錄。</li>
+        <li><b>Q4</b> 電流固定，n = 4…0 各按 1 秒，讀「到峰」。</li>
+        <li><b>Q5</b> n = 2，CH2 = AX（下方紅箭頭），10–50 mV/div。</li>
+      </ul>
+    </details>
+    <details data-show="adv"><summary>進階：重點數字</summary>
+      <ul class="small">
+        <li>修正 1 + 2、FI 拉線：I<sub>min</sub> = 5.4／11.1／18.0／27.0／38.2 µA（n = 0–4），比例和手算 1 : 2.1 : 3.4 : 5.1 : 7.2 一致。</li>
+        <li>Delay（1.05 × I<sub>min</sub>(4)）= 37／69／115／203／569 ms。</li>
+        <li>n ≥ 1 時不會自發（漏電傳到 active 端只剩 0.09–0.29 V）。</li>
+        <li>CH2：拉線時 +0.14 V 單相（FI 電流）；自帶電池時 ±20 mV 雙相。</li>
+        <li>方案 3 在 n ≥ 2 時沒有過極化，n = 3、4 觸發不了。</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<!-- ======================= 5 補充 ======================= -->
+<section class="region textreg" id="r5">
+  <h2>5 補充與紀錄</h2>
+  <div class="cards">
+    <details class="card" data-show="basic"><summary>繳交規定（#2-0）<span class="hint">英文、檔名、字型</span></summary><div class="body"><ul>
+      <li>全英文；Times New Roman 12；檔名 <code>HW02_學號_姓名.pdf</code>；不可抄襲。</li>
+      <li>圖片要標註；示波器截圖標格子大小；標出量測點或範圍。</li>
+      <li>#2-0：組員合照、組員名單。</li>
+    </ul></div></details>
+    <details class="card" data-show="basic"><summary>節點與接點速查<span class="hint">回報量測時用</span></summary><div class="body"><ul>
+      <li>格式「板.節點」：ST Stimulator、LK Leak、FI Fast inward、SO Slow out。單寫 Vm = Stimulator 輸出（CH1）。</li>
+      <li>FI.V+ = R13 下端（應為 7.8 V）；FI.E4 = R13 上端；SO.S = SO 的 C1 上腳；SO.B3 = SO 的 D1「−」端。</li>
+      <li>電壓都對 GND（Stimulator 電源「−」）量；兩點相減用 MATH CH1 − CH2。</li>
+      <li>完整表：<a href="../hw2-debug/nodes.html">節點命名（舊頁）</a>。</li>
+    </ul></div></details>
+
+    <details class="card" data-show="adv"><summary>手算重點<span class="hint">Stimulator、FI、Slow out、過極化</span></summary><div class="body">
+<div class="calc">Stimulator 按住：I ≈ 0.65 V / (pot + 7 kΩ) + 6 µA = 44–99 µA；輸出上限 ≈ 7.8 − 0.65 − 0.05 = 7.1 V
+Stimulator 放開：ST.R = 7.8 − 0.65 − 0.53 = 6.62 V → I_C(sense) = 6.62/7k = 0.946 mA
+                 I_B(sense) = 0.946 mA / 150 = 6.3 µA → 接 Leak：0.63 V
+FI 自鎖：(V+ − Vm)/100k = (Vm − 0.85)/100k → Vm = (7.8 + 0.85)/2 ≈ 4.4 V（實測 4.0，模擬 4.24）
+       接 Leak 與漏電：3·Vm = 7.8 + 0.85 + 0.63 → 3.1 V（10d、S+LK+FI）
+Slow out 鉗位（R2 = 3M，pot 0）：SO.B3 = 0.47 V、SO.S = 0.66 V、Vm = 0.68 V
+R2 = 100 Ω：Slow out ≈ 100 kΩ 串二極體 → 全接 FI 鎖住：0.63 + 8.65 + 0.4 = 4·Vm → 2.42 V
+Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) ≈ 0.59 V
+方案 3 靜止：(7.8 − Vm)/470k + 6.3 µA = Vm/100k + Vm/147k + 0.4 µA → 1.19 V
+         FI 門檻：FI.E3 = 7.8·100/570 = 1.37 V → Vm ≈ 2.1 V；過極化 ≈ 1.19 − 0.59 = 0.6 V</div>
+    </div></details>
+    <details class="card" data-show="adv"><summary>PCB 和講義電路圖的差異<span class="hint">追線結果</span></summary><div class="body">
+      <div class="tbl"><table>
+        <tr><th>位置</th><th>電路圖</th><th>PCB 實際</th></tr>
+        <tr><td>FI：V+ → 2N4403 E</td><td>1 kΩ＋板上 9 V 電池</td><td>R13 = 100 kΩ，V+ 從排針來</td></tr>
+        <tr><td>Stimulator Q<sub>sense</sub> 的 E</td><td>SW 之後</td><td>SW 之前（漏 6 µA）</td></tr>
+        <tr><td>Slow out R2</td><td>3 MΩ</td><td>標 3M；套件 100 Ω；助教說 1 MΩ</td></tr>
+        <tr><td>Passive PCB 底板</td><td>—</td><td>只串 Intracellular（10 kΩ）與 GND（100 Ω），沒有 V+</td></tr>
+        <tr><td>電源</td><td>9 V</td><td>實測 7.8 V</td></tr>
+      </table></div>
+      <p class="small">TO-92 方形焊墊 = E；2×2 排針：和方形焊墊同一排 = GND，對角 = V+。</p>
+    </div></details>
+    <details class="card" data-show="adv"><summary>模擬方法<span class="hint">和 Python 版相同</span></summary><div class="body"><ul>
+      <li>修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton、Ebers–Moll 電晶體與二極體模型；DC 不收斂時 gmin stepping。</li>
+      <li>10-12 起每個節點加 10 pF 雜散電容（×10 探棒約 10–15 pF）：拔掉 Leak 時 Vm 節點沒有電容，FI 自鎖在數值上沒有唯一解（S+FI 會卡住）。時間常數約 1 µs，波形幾乎不變（重跑所有檢查，差 ≤ 0.07 V；R2 = 1 MΩ 時「按下的第一個峰」看落在小峰的哪個階段，1.75–2.06 V）。另外 Newton 在 20 次迭代後、各節點 KCL 誤差 &lt; 10 pA 也算收斂。</li>
+      <li>參數：2N3904 I<sub>S</sub> 6.7 fA、β 200；2N4403 I<sub>S</sub> 10 fA、β 150；1N4148 I<sub>S</sub> 2.52 nA、n 1.752。</li>
+      <li>網頁引擎 <a href="../active-membrane-sim/engine.js">engine.js</a>、電路圖 <a href="../active-membrane-sim/schematic.js">schematic.js</a>；Python 在 <a href="../hw2-debug/sim/">hw2-debug/sim/</a>（<code>check_ap.py</code>、<code>check_23.py</code> 等）。</li>
+    </ul></div></details>
+
+    <details class="card wide" data-mm><summary>時間線：從第一輪到現在<span class="hint">測試、假設、驗證、錯誤</span></summary><div class="body">
+      <div class="fsbox"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><div class="mmwrap"><pre class="mermaid">
+flowchart LR
+  P0["hw2 講解頁初版<br/>照模擬器電路圖"]:::page --> R1["第一輪：堆疊排針<br/>測試 1–10d"]:::test
+  R1 --> A1["PCB 追線：R13 100k、<br/>Q_sense 在 SW 前（漏 6 µA）"]:::page
+  A1 --> V1["FI 板是好的 ✓<br/>FI:V+ 沒接上 ✓"]:::ver
+  A1 --> E1["錯：Slow out 只是沒接上<br/>錯：測試 9 解讀<br/>錯：DC 沒 gmin"]:::err
+  R1 -.-> U1["排針接觸不良"]:::user
+  V1 --> R2["第二輪：麵包板<br/>7 種組合"]:::test
+  R2 --> H1["Slow out 壞了：<br/>四個故障假設"]:::hyp --> V2["SO.B3 拉到地 ✓<br/>6 值差 ≤ 0.1 V"]:::ver
+  R2 -.-> U2["S+FI 列對不上<br/>（Leak 還插著？）"]:::user
+  V2 --> U3["你發現 R2 = 100 Ω<br/>（助教以為 1 MΩ）"]:::user
+  U3 --> R3["第三輪：R2 = 1 MΩ<br/>自發小峰 1.6 V／100 ms"]:::test
+  R3 --> V3["漏電把 Vm 墊在門檻 ✓<br/>模擬 1.46 V／128 ms"]:::ver
+  V3 --> F1["修正：外加 22k、11k、1M<br/>方案 3 過極化"]:::page
+  F1 -.-> E2["錯：先建議割線、拔腳"]:::err
+  F1 --> S3["2-3 模擬：底板沒串 V+<br/>CH2 被 FI 電流主導"]:::ver
+  S3 --> NOW["現在：重整網站<br/>基礎目標開始量測"]:::now
+  classDef page fill:#E3ECF7,stroke:#1F5FA8,color:#0F2A4A
+  classDef test fill:#FBEFD2,stroke:#8A6100,color:#3D2B00
+  classDef hyp fill:#F3E1F7,stroke:#7A3E8F,color:#3B1745
+  classDef ver fill:#DCEFD9,stroke:#2F5D3A,color:#16301C
+  classDef err fill:#FBE3DE,stroke:#A33A2B,color:#4A120A
+  classDef user fill:#FDE7CF,stroke:#C26A12,color:#4A2A05
+  classDef now fill:#1E262C,stroke:#1E262C,color:#FFFFFF
+</pre></div></div>
+      <p class="small muted">完整版（49 個節點、錯誤清單、假設驗證表）在 <a href="../hw2-status/">HW2 現況整理（舊頁）</a>。</p>
+    </div></details>
+
+    <details class="card wide" id="history" open><summary>History／Log：舊頁面<span class="hint">新介面建立前的內容，保留不再更新</span></summary><div class="body">
+      <div class="tbl"><table>
+        <tr><th>頁面</th><th>內容</th><th>最後更新</th></tr>
+        <tr><td><a href="../hw2-status/">HW2 現況整理</a></td><td>分頁清單、測試與回報、完整時間線、錯誤清單、假設驗證表、題目進度</td><td>10-12 <code>1e56826</code></td></tr>
+        <tr><td><a href="../hw2/">HW2 實驗講解</a></td><td>三個實驗的操作指引、五參數定義、量電流方法、示波器設定、預期趨勢、題目對應、常見問題</td><td>10-12</td></tr>
+        <tr><td><a href="../hw2-debug/">HW2 #2-2 除錯分析</a></td><td>三輪量測、PCB 追線、手算、模擬方法與對照、AP 判定、過極化、修正與量測對照表</td><td>10-12</td></tr>
+        <tr><td><a href="../hw2-debug/nodes.html">節點命名</a></td><td>每個節點的焊墊位置與預期電壓、外加元件夾點、接點表</td><td>10-09</td></tr>
+        <tr><td><a href="../active-membrane-sim/">#2-2 互動模擬（舊）</a></td><td>舊版 #2-2 單頁模擬</td><td>10-12</td></tr>
+        <tr><td><a href="../passive-active-sim/">#2-3 互動模擬（舊）</a></td><td>舊版 #2-3 單頁模擬與結果表</td><td>10-12</td></tr>
+        <tr><td><a href="../hw2-debug/sim/">Python 模擬程式</a></td><td>sim.py 與所有 check_*.py</td><td>10-12</td></tr>
+      </table></div>
+      <p class="small muted">舊頁的數字是 10 pF 雜散電容加入前算的，和現在差 ≤ 0.07 V（R2 = 1 MΩ 按下的第一個峰除外，見補充區「模擬方法」）。</p>
+      <p class="small muted">git：878d56f（除錯頁）→ 16b0e49（節點命名）→ 1b24c64（講解頁改照 PCB）→ 51aca21（第二輪）→ 22a8396（R2 故障）→ 61d2ea1（外加修正、AP 判定）→ 057f4c7（#2-3）→ 36844c3（完整電路圖、leak）→ 1e56826（現況整理）。</p>
+    </div></details>
+  </div>
+</section>
+
+</main>
+</div>
+<script src="../active-membrane-sim/schematic.js"></script>
+<script src="../active-membrane-sim/engine.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

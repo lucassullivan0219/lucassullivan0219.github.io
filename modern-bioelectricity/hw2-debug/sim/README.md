@@ -53,6 +53,7 @@ python make_figures.py
 | 外加元件 | `Circuit(extra=[('ST.Q', 'ST.R', 22e3), ...])`：夾在既有元件腳上的電阻（不割線、不改線）。常用的幾顆定義在 `check_ap.py` 開頭 |
 | #2-3 被動鏈 | `Circuit(chain=n)`：Stimulator → n 個 1 µF ∥ 100 kΩ（各隔 10 kΩ，細胞外各隔 100 Ω）→ active membrane。`fi_supply='local'` 讓 FI 自帶電池（講義模擬器） |
 | 示波器探棒 | 10 MΩ（×10） |
+| 雜散電容 | 每個節點 10 pF 到 GND（只在暫態；10-12 加入，讓拔掉 Leak 時的 FI 自鎖有唯一解，其他結果差 ≤ 0.07 V） |
 | 電源 | V+ = 7.8 V（實測） |
 
 這些是典型值，不是你手上那幾顆的實際值。`monte_carlo.py`、`power_on.py` 用來確認：結論在參數變動下不會翻盤。

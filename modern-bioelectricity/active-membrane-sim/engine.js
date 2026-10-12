@@ -11,7 +11,7 @@
    with vplus/1 ohm amps from fixed nodes 'BAT+'/'BAT-' at +-vplus*1e9 V through 1 Gohm).
    Default 'stim': FI.V+ is wired to the Stimulator's battery. */
 var AM = (function(){
-  var VT = 0.02585, EXPLIM = 40, GMIN = 1e-12, SHORT = 0.05, OPEN = 1e13;
+  var VT = 0.02585, EXPLIM = 40, GMIN = 1e-12, SHORT = 0.05, OPEN = 1e13, CPAR = 10e-12;
   var M3904 = {Is:6.7e-15, bf:200, br:0.74}, M4403 = {Is:1e-14, bf:150, br:4}, MD = {Is:2.52e-9, n:1.752};
   var BASE = ['ST.P','ST.K','ST.Q','ST.R','Vm','LK.Vm','FI.Vm','FI.V+','FI.GND','FI.B3','FI.E3','FI.B4','FI.E4',
               'SO.Vm','SO.GND','SO.S','SO.B3','SO.B4','SO.C4'];
@@ -19,9 +19,10 @@ var AM = (function(){
 
   var st = {
     vplus:7.8, sw:false, rpot:0, r13:1e5, rfe:1e5, qs:'pcb', so_r2:1e6, rprobe:1e7, ch2:'',
-    r13p:0, rf:0, rb:0, rs:0,                       /* add-ons clipped on, 0 = not fitted */
+    r13p:0, rf:0, rb:0, rs:0, rl:0,                 /* add-ons clipped on, 0 = not fitted */
     chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',   /* #2-3: passive units, source, FI battery */
-    leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true
+    leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true,
+    fi_on:true, so_on:true, ch1:'Vm'                /* board plugged in at all (sim.py fi=/so=); CH1 probe node */
   };
   var V, Vprev, F, J, dx, A;
   /* node list for the current st.chain; node voltages carry over by name */
@@ -57,11 +58,13 @@ var AM = (function(){
     Q.push(['p', IDX[out], IDX['ST.R'], IDX['ST.Q'], M4403, 'pass']);
     Q.push(['p', IDX['ST.R'], IDX['ST.Q'], st.qs === 'sw' ? IDX['ST.P'] : IDX['V+'], M4403, 'sense']);
     if(st.qs === 'rx') r('ST.Q', 'ST.R', 22e3);      /* fix: 22 kohm across Qpass E-B */
+    if(st.qs === 'rx10') r('ST.Q', 'ST.R', 10e3);    /* 10 kohm there: pot range ~41-0.3 uA (#2-3 I_min) */
     r('ST.R', 'GND', 7e3);
     /* Leak */
     r('Vm', 'LK.Vm', link(st.leak));
     C.push([IDX['LK.Vm'], IDX[ax], 1e-6]); r('LK.Vm', ax, 1e5);
     /* Fast inward */
+    if(st.fi_on){
     r('FI.Vm', 'Vm', link(st.fi_vm)); r('FI.V+', st.fi_supply === 'local' ? 'FI.BAT' : 'V+', link(st.fi_vplus)); r('FI.GND', ax, link(st.fi_gnd));
     D.push([IDX['FI.Vm'], IDX['FI.B3']]);
     r('FI.B3', 'FI.GND', 3e6);
@@ -72,7 +75,9 @@ var AM = (function(){
     if(st.fi_supply === 'local'){                   /* FI's own battery, floating on its extracellular node */
       r('FI.BAT', ax, 1); r('BAT+', 'FI.BAT', 1e9); r('BAT-', ax, 1e9);
     }
+    }
     /* Slow out */
+    if(st.so_on){
     r('SO.Vm', 'Vm', link(st.so_vm)); r('SO.GND', ax, link(st.so_gnd));
     r('SO.Vm', 'SO.S', 1e5);
     C.push([IDX['SO.S'], IDX['SO.GND'], 1e-6]);
@@ -81,11 +86,13 @@ var AM = (function(){
     Q.push(['n', IDX['SO.B4'], IDX['SO.B3'], IDX['SO.GND'], M3904, 'so3904']);
     Q.push(['p', IDX['SO.C4'], IDX['SO.B4'], IDX['SO.Vm'], M4403, 'so4403']);
     r('SO.C4', 'SO.GND', 1e3);
+    }
     /* add-ons: resistors clipped onto existing legs (sim.py extra=, check_ap.py) */
-    if(st.r13p) r('FI.V+', 'FI.E4', st.r13p);      /* across R13 */
-    if(st.rf) r('FI.V+', 'FI.E3', st.rf);           /* R13 lower end to 100K-R2 upper end */
-    if(st.rb) r('V+', 'Vm', st.rb);                 /* breadboard V+ row to Vm row */
-    if(st.rs) r('SO.S', 'SO.GND', st.rs);           /* across SO C1 */
+    if(st.r13p && st.fi_on) r('FI.V+', 'FI.E4', st.r13p);   /* across R13 */
+    if(st.rf && st.fi_on) r('FI.V+', 'FI.E3', st.rf);        /* R13 lower end to 100K-R2 upper end */
+    if(st.rb) r('V+', 'Vm', st.rb);                          /* breadboard V+ row to Vm row */
+    if(st.rl) r('Vm', 'GND', st.rl);                         /* extra leak: Vm row to GND row */
+    if(st.rs && st.so_on) r('SO.S', 'SO.GND', st.rs);        /* across SO C1 */
     /* #2-3 passive units: 1 uF || 100 kohm each, 10 kohm apart, 100 ohm extracellular */
     for(var k = 1; k <= st.chain; k++){
       var pc = 'PC' + k, px = k === 1 ? 'GND' : 'PX' + k;
@@ -95,7 +102,7 @@ var AM = (function(){
     }
     if(st.src === 'ideal') r('IS', out, 1e9);       /* ideal current source */
     /* probes */
-    r('Vm', 'GND', st.rprobe);
+    r(st.ch1 || 'Vm', 'GND', st.rprobe);
     if(st.ch2) r(st.ch2, 'GND', st.rprobe);
   }
 
@@ -144,6 +151,10 @@ var AM = (function(){
       var k, e;
       for(k = 0; k < R.length; k++){ e = R[k]; stampG(e[0], e[1], e[2], 0); }
       for(k = 0; k < N; k++) stampG(k, -1, gmin, 0);
+      /* 10 pF stray capacitance from every node to GND (x10 probe ~10-15 pF, wiring): without it a
+         node with no capacitor (Vm with the Leak unplugged) has no dynamics and a latch has no
+         unique step solution; tau = 10 pF x 100 kohm = 1 us, far below the 0.2 ms step */
+      if(dt){ var gp = CPAR / dt; for(k = 0; k < N; k++) stampG(k, -1, gp, -gp * Vprev[k]); }
       if(dt){
         for(k = 0; k < C.length; k++){ e = C[k]; var g = e[2] / dt; stampG(e[0], e[1], g, -g * (gv(Vprev, e[0]) - gv(Vprev, e[1]))); }
       }
@@ -163,6 +174,9 @@ var AM = (function(){
           for(var s = 0; s < 3; s++){ var col = nn[s]; if(col >= 0) J[row * N + col] += o.d[tt * 3 + s]; }
         }
       }
+      /* nearly floating nodes (FI.B4 with the Fast inward off, no Leak) can keep the step above
+         0.1 uV for hundreds of iterations; accept once KCL holds to 10 pA at every node */
+      if(it >= 20){ var fm = 0; for(k = 0; k < N; k++) if(Math.abs(F[k]) > fm) fm = Math.abs(F[k]); if(fm < 1e-11) return true; }
       /* solve J dx = -F (Gaussian elimination, partial pivoting) */
       var W = N + 1, r, cc, p, q;
       for(r = 0; r < N; r++){ for(cc = 0; cc < N; cc++) A[r * W + cc] = J[r * N + cc]; A[r * W + N] = -F[r]; }
