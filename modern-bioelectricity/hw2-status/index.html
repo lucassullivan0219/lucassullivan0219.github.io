@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HW2 現況整理</title>
+<meta name="description" content="HW2 到目前為止的分頁、測試與回報、時間線、錯誤、假設與驗證，以及作業每一題的進度。給重新規劃網站架構用。">
+<style>
+:root{--paper:#F2F4F1;--surface:#FFFFFF;--ink:#1E262C;--muted:#5F6B72;--link:#1F5FA8;--req:#2F5D3A;--warn:#A33A2B;--opt:#8A6100;--rule:#CCD3CE;--grid:rgba(47,93,58,.07)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#151A1C;--surface:#1C2224;--ink:#E6EAE7;--muted:#9AA5A0;--link:#7DB3F0;--req:#7FB089;--warn:#E8826F;--opt:#E0B64F;--rule:#2C3533;--grid:rgba(127,176,137,.08)}}
+:root[data-theme="dark"]{--paper:#151A1C;--surface:#1C2224;--ink:#E6EAE7;--muted:#9AA5A0;--link:#7DB3F0;--req:#7FB089;--warn:#E8826F;--opt:#E0B64F;--rule:#2C3533;--grid:rgba(127,176,137,.08)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Noto Sans TC",system-ui,"Microsoft JhengHei",sans-serif;font-size:15.5px;line-height:1.7}
+a{color:var(--link)}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 18px 70px}
+h1{font-size:28px;margin:0 0 6px}
+h2{font-size:21px;margin:40px 0 10px;padding-top:12px;border-top:2px solid var(--ink)}
+h3{font-size:17px;margin:22px 0 6px}
+p,li{max-width:62em}
+ul,ol{padding-left:1.3em}
+li{margin:3px 0}
+.muted{color:var(--muted)} .small{font-size:14px}
+.goal{background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--req);padding:10px 14px;margin:14px 0}
+.scroll{overflow-x:auto;border:1px solid var(--rule);margin:8px 0}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px;background:var(--surface)}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{background:var(--paper);color:var(--muted);font-size:13px}
+tr.grp td{background:var(--grid);font-weight:700}
+.st-no{color:var(--warn);font-weight:700} .st-part{color:var(--opt);font-weight:700} .st-ok{color:var(--req);font-weight:700}
+code{font-size:13.5px}
+.mm{background:var(--surface);border:1px solid var(--rule);padding:10px;overflow-x:auto}
+.mm pre.mermaid{min-width:980px;margin:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="small"><a href="../">← Modern Bioelectricity</a></p>
+<h1>HW2 現況整理（2026-10-12）</h1>
+<p class="muted">給重新規劃網站用的盤點，不求好看。內容依據 git 紀錄（<code>878d56f</code> → <code>36844c3</code>）、各頁現有內容和對話中的回報。</p>
+
+<div class="goal">
+  <b>基礎目標</b>：完整測試助教給的電路（照助教指定，Slow out 的 R2 = 1 MΩ，不加任何外加元件），完成作業每一題，測出什麼就寫什麼。<br>
+  <b>進階目標</b>：做出真正能模擬 AP 的電路，並具體計算、詳細解釋助教的電路有哪些問題。<br>
+  <span class="muted">目前網站大部分內容屬於進階目標（除錯、模擬、修正方案）；基礎目標需要的「每題的實測數據」幾乎還沒有。見 <a href="#q">§4 作業題目進度</a>。</span>
+</div>
+
+<h2 id="pages">1. 現有架構：HW2 相關的分頁</h2>
+<div class="scroll"><table>
+<thead><tr><th>分頁</th><th>內容</th><th>屬於哪個目標</th><th>備註</th></tr></thead>
+<tbody>
+<tr><td><a href="../hw2/">hw2/</a><br>作業講解</td><td>§0 總覽、繳交規定、名詞；§1 準備（板子、Stimulator 原理、量電流三種方法、示波器設定、五參數怎麼量）；§2 #2-1 Passive；§3 #2-2 Active；§4 #2-3 Passive to active；§5 交件檢查、常見問題表。每個實驗都有：電路架構、實驗流程（mermaid）、逐步操作、預期趨勢、題目對應。</td><td>基礎（操作指引）＋部分進階</td><td>最早的頁（10-07 以前，照講義「模擬器電路圖」寫）。#2-2、#2-3 後來改成照 PCB 實際值，並塞進除錯結論與外加修正的連結，#2-1 沒改過。預期趨勢都是模擬，不是實測。</td></tr>
+<tr><td><a href="../hw2-debug/">hw2-debug/</a><br>#2-2 除錯分析</td><td>§0 結論；§1 三輪量測紀錄；§2 PCB 追線與和電路圖的差異；§3 Stimulator 手算（含 6 µA 漏電）；§4 FI 手算（板子是好的）；§5 FI:V+ 沒接上；§6 Slow out 手算；§7 AP 為什麼小；§8 模擬方法；§9 模擬 vs 量測（數值、波形圖、第二輪故障假設比對、第三輪 R2、算不算 AP、過極化方案 3、加 leak、餘裕、隨機參數、Q4 掃描）；§10 每筆觀察的解讀；§11 下一步（外加修正與量測對照表）；§12 檔案。</td><td>進階</td><td>最長、最雜的一頁。結論改過多次，有多個「更正」標記。</td></tr>
+<tr><td><a href="../hw2-debug/nodes.html">hw2-debug/nodes.html</a><br>節點命名</td><td>命名規則（板.節點）、電路圖、每個節點的焊墊位置與五種狀態的預期電壓、常用相減換算、外加元件夾點表、排針接點表、回報範例、舊名稱對照。</td><td>工具（兩個目標都用）</td><td>預期電壓表用 3M-R2 算，不是目前的 1 MΩ（有註記）。</td></tr>
+<tr><td><a href="../active-membrane-sim/">active-membrane-sim/</a><br>#2-2 互動模擬</td><td>即時電路模擬：示波器（Roll／Single）、按 SW、可變電阻、R13、R2、接點開關、外加元件、10 個情境（目前電路、R2 = 100 Ω、修正 1、修正 1+2、方案 3、測試 1、SO 沒接、ST+LK、TTX、TEA、電路圖數值）。</td><td>進階（也可用來預習基礎量測）</td><td>引擎 <code>engine.js</code>、電路圖 <code>schematic.js</code> 和 #2-3 頁共用。</td></tr>
+<tr><td><a href="../passive-active-sim/">passive-active-sim/</a><br>#2-3 互動模擬</td><td>Stimulator → 0–4 個 Passive unit → active membrane；雙通道示波器（CH2 = active 端細胞外）、理想電流源、「按下到第一個波峰」讀數、四種主動膜狀態、FI 電源兩種接法、完整電路圖；模擬結果表（Q2–Q5）。</td><td>基礎（預習）＋進階</td><td>10-12 新增。</td></tr>
+<tr><td><a href="../hw2-debug/sim/">hw2-debug/sim/</a><br>Python 模擬</td><td><code>sim.py</code>（引擎，含外加元件 extra、被動鏈 chain、FI 電源 fi_supply）、<code>check_dc</code>、<code>check_transient</code>、<code>check_breadboard</code>（第二輪）、<code>check_r2</code>（第三輪＋修正）、<code>check_ap</code>（AP 判定、過極化、leak、連續發放、隨機參數）、<code>check_23</code>（#2-3）、<code>node_table</code>、<code>power_on</code>、<code>variants</code>、<code>sweep_q4</code>、<code>monte_carlo</code>、<code>measure</code>、<code>make_figures</code>、README。</td><td>進階</td><td>只用標準函式庫。</td></tr>
+<tr><td><a href="../">課程首頁</a></td><td>四張卡片連到上面各頁。</td><td>—</td><td></td></tr>
+</tbody></table></div>
+<h3>目前架構的混亂點（給改版參考）</h3>
+<ul>
+  <li><b>同一件事散在多處</b>：PCB 和電路圖的差異（hw2 §3 警告框、debug §2、模擬頁說明）；外加修正（debug §0、§9、§11、hw2 §3 與常見問題、nodes 外加元件表、兩個模擬頁）；#2-3 結果（hw2 §4、#2-3 模擬頁）。</li>
+  <li><b>hw2 頁混了兩種東西</b>：照講義的操作指引（基礎目標要的），和後來補的除錯／修正結論（進階）。</li>
+  <li><b>debug 頁是時間順序堆起來的</b>：第一輪的結論在第二輪被推翻、第三輪又找到真正故障，舊段落用「更正」標記保留，讀起來要自己拼。</li>
+  <li><b>沒有一個地方記錄「作業每一題的實測數據」</b>，也就是基礎目標的成品。</li>
+  <li>#2-1 完全沒有實測紀錄，也沒有被檢查過是否符合 PCB。</li>
+</ul>
+
+<h2 id="tests">2. 你做過的測試和回報</h2>
+<div class="scroll"><table>
+<thead><tr><th>輪次</th><th>#</th><th>做了什麼</th><th>看到什麼</th><th>後來的解讀</th></tr></thead>
+<tbody>
+<tr class="grp"><td colspan="5">第一輪：四塊板垂直堆疊（排針），10-09 以前</td></tr>
+<tr><td></td><td>1</td><td>全部接上，pot 最大、最小都試</td><td>平滑上升、平台約 4.4 V、平滑下降，沒有尖峰</td><td>FI:V+ 沒接上＋Slow out 沒作用</td></tr>
+<tr><td></td><td>2</td><td>量各板供電腳</td><td>FI 供電腳只有約 0.4 V 且震盪</td><td>FI:V+ 接點斷開，浮接撿到 60 Hz</td></tr>
+<tr><td></td><td>3</td><td>斷開 FI 的 Vm</td><td>FI 供電腳恢復</td><td>不是因果，是動到板子讓接點接上</td></tr>
+<tr><td></td><td>4–5</td><td>FI:Vm 斷開，量 FI 各腳 DC</td><td>Vm 腳約 ½ V+；4403 E 4.0、C 4.0、B 3.5；3904 E 3.0、B 3.7、C 3.5</td><td>FI 正常自鎖，元件都好；R13 約 100 kΩ</td></tr>
+<tr><td></td><td>6</td><td>接回 Slow out，按 SW</td><td>仍無 AP</td><td>Slow out 的 R2 是錯的電阻（第三輪才知道）</td></tr>
+<tr><td></td><td>7</td><td>全部接回，按 SW，量 FI V+ 腳</td><td>V+ 腳波形跟著 Vm，稍小</td><td>FI:V+ 斷開，電流從 Vm 經 4403 倒灌</td></tr>
+<tr><td></td><td>8</td><td>飛線短路 R13</td><td>仍無 AP</td><td>當時 V+ 沒進來，測試無效</td></tr>
+<tr><td></td><td>9</td><td>閒置後按 SW</td><td>先沒反應 → 卡在約 4 V → 自己回到 0.6 V</td><td>先解讀成 Slow out 鉗住（錯），後改為接點時通時斷</td></tr>
+<tr><td></td><td>10a–d</td><td>逐塊加板：S、S+LK、S+LK+SO、S+LK+FI</td><td>7 V；0.6／7.2 V；和 10b 一樣；晃動後卡 3 V</td><td>6 µA 漏電；SO 當時沒接上；FI:V+ 晃到接上就自鎖</td></tr>
+<tr class="grp"><td colspan="5">第二輪：改插麵包板，10-09</td></tr>
+<tr><td></td><td>—</td><td>7 種組合的靜止／按住 Vm，各重複 3 次以上（S、S+LK、S+FI、S+SO、S+LK+FI、S+LK+SO、四塊全接兩種插入順序）</td><td>見 debug §1 表；S+LK+SO 按住 4.8 V；四塊全接鎖在 2.4 V</td><td>接觸問題解決；Slow out 主動部分壞了 → SO.B3 對地短路；S+FI 列未解</td></tr>
+<tr class="grp"><td colspan="5">第三輪：Slow out 的 R2 換成 1 MΩ，10-09</td></tr>
+<tr><td></td><td>—</td><td>發現套件給的 R2 是 100 Ω（助教指定 1 MΩ），換掉後四塊全接</td><td>不按 SW 每約 100 ms 一個 1.6 V 小峰；按下 2.2 V 短峰；按住 0.6–1.0 V 約 40 Hz</td><td>Stimulator 漏電把 Vm 墊在 FI 門檻附近；模型吻合</td></tr>
+<tr class="grp"><td colspan="5">其他回報（非量測）</td></tr>
+<tr><td></td><td>—</td><td>電池焊在 Stimulator 上；修正只能加、要可拆</td><td></td><td>修正改成外加元件</td></tr>
+<tr><td></td><td>—</td><td>問：修正後算不算 AP、過極化、方案 3 按住連續 AP、#2-2 有 Leak、加 leak 與過極化</td><td></td><td>都用模擬回答，見時間線</td></tr>
+</tbody></table></div>
+<p class="small muted">還沒量的：debug §11 對照表（加 22 kΩ、11 kΩ 等之後的值）、S+FI 列重量、所有作業題目的正式數據（見 §4）。</p>
+
+<h2 id="timeline">3. 時間線</h2>
+<p class="small">顏色：<b>藍</b> 頁面／分析產出、<b>黃</b> 你的測試、<b>紫</b> 假設、<b>綠</b> 驗證結果、<b>紅</b> 分析上的錯誤（我方）、<b>橘</b> 硬體或操作問題（你方）、<b>灰</b> 你提出的問題或資訊。</p>
+<div class="mm"><pre class="mermaid">
+flowchart TD
+  P0["10-07 以前：hw2 作業講解頁初版<br/>照講義模擬器電路圖寫三個實驗"]:::page
+
+  subgraph R1["第一輪：堆疊排針"]
+    T1["測試 1：全部接上<br/>平台約 4.4 V、沒有尖峰"]:::test
+    T2["測試 2–3：FI 供電腳 0.4 V 震盪<br/>斷開 FI:Vm 後恢復"]:::test
+    T45["測試 4–5：FI 單獨的各腳 DC<br/>Vm 腳約 ½ V+"]:::test
+    T678["測試 6–8：接回 SO 仍無 AP、<br/>FI V+ 腳跟著 Vm、短路 R13 無效"]:::test
+    T9["測試 9：沒反應→卡 4 V→回 0.6 V"]:::test
+    T10["測試 10a–d：逐塊加板<br/>S 7 V、S+LK 0.6 V、加 SO 不變、加 FI 卡 3 V"]:::test
+    U1["堆疊排針接觸不良<br/>FI:V+、SO:Vm 時通時斷"]:::user
+    U2["測試 8 在 V+ 沒接上時做，無效"]:::user
+  end
+  P0 --> T1 --> T2 --> T45 --> T678 --> T9 --> T10
+
+  A1["10-09 878d56f：建立除錯頁與 2-2 互動模擬<br/>PCB 追線：R13 = 100 kΩ（圖 1 kΩ）、<br/>Q_sense 接 SW 前 → 放開時漏 6 µA"]:::page
+  T10 --> A1
+  H1["假設：FI 板是好的"]:::hyp
+  V1["驗證：測試 4–5 的 DC 和自鎖手算／模擬一致<br/>4.0 V vs 4.24 V"]:::ver
+  H2["假設：FI:V+ 接點斷開"]:::hyp
+  V2["驗證：模擬重現測試 2、7<br/>V+ 腳 = Vm − 0.03 V"]:::ver
+  H3["假設：10c 時 Slow out 沒接上，Slow out 本身正常"]:::hyp
+  A1 --> H1 --> V1
+  A1 --> H2 --> V2
+  A1 --> H3
+  T2 -.-> U1
+  T678 -.-> U2
+  E1["錯誤：DC 解沒用 gmin stepping<br/>FI 內部數值不可靠 → 16b0e49 重算"]:::err
+  E2["錯誤：hw2 頁照模擬器電路圖寫<br/>和 PCB 不符 → 1b24c64 改正"]:::err
+  E3["錯誤：測試 9 解讀成 Slow out 鉗住"]:::err
+  A1 --> E1
+  A1 --> E2
+  T9 --> E3
+  N1["16b0e49：節點命名頁"]:::page
+  E1 --> N1
+
+  subgraph R2["第二輪：麵包板"]
+    T11["7 種組合的靜止／按住 Vm<br/>S+LK+SO 按住 4.8 V；全接鎖在 2.4 V"]:::test
+  end
+  N1 --> T11
+  V3["結果：數值穩定 → 接觸問題解決"]:::ver
+  X1["推翻 H3：接觸沒問題 Slow out 卻沒鉗住<br/>→ Slow out 主動部分壞了"]:::err
+  H4["四個故障假設：SO.B3 對地短路、<br/>R2 實為 3 kΩ、R3 實為 100 kΩ、R3 開路"]:::hyp
+  V4["驗證：DC 模擬比對<br/>只有「SO.B3 拉到地」類 6 個值都差 ≤ 0.1 V"]:::ver
+  O1["未解：S+FI 列 3.0／5.9 V 對不上<br/>懷疑當時 Leak 還接著"]:::user
+  T11 --> V3
+  T11 --> X1 --> H4 --> V4
+  T11 --> O1
+  H3 -.-> X1
+  E3 -.->|撤回| X1
+  P1["51aca21：除錯頁改寫第二輪"]:::page
+  V4 --> P1
+
+  subgraph R3["第三輪：R2 換 1 MΩ"]
+    U3["你發現：助教指定 R2 = 1 MΩ<br/>套件給成 100 Ω = SO.B3 拉到地"]:::user
+    T12["量到：每 100 ms 一個 1.6 V 小峰<br/>按下 2.2 V；按住 0.6–1.0 V 40 Hz"]:::test
+  end
+  P1 --> U3 --> T12
+  V4 -.->|確認| U3
+  H5["假設：Stimulator 6 µA 漏電把 Vm 墊在<br/>FI 門檻附近 → 自己振盪"]:::hyp
+  V5["驗證：模擬 R2 = 1 MΩ<br/>每 128 ms 一個 1.46 V，吻合"]:::ver
+  T12 --> H5 --> V5
+  F1["22a8396：提出修正<br/>Q_sense 改接或並 22 kΩ；R13 換 10 k／1 k"]:::page
+  V5 --> F1
+
+  C1["你告知：電池焊在 Stimulator 上，<br/>只能加可拆的元件"]:::q
+  E4["錯誤：之前建議割線、拔腳、<br/>「拔掉 Stimulator 確認」"]:::err
+  F1 --> C1 --> E4
+  F2["61d2ea1：修正改成外加<br/>22 kΩ 並 Q_pass E–B、R13 並 11 kΩ、<br/>備案 1 MΩ 到 FI.E3；§11 量測對照表"]:::page
+  E4 --> F2
+  Q1["你問：修正 1+2 算 AP 嗎？過極化呢？"]:::q
+  V6["模擬判定：門檻、all-or-none、再極化 ✓<br/>過極化 ✗：Slow out 極限 0.57 V 高於靜止 0 V"]:::ver
+  H6["假設：抬高靜止、FI 門檻、Slow out 門檻<br/>就能過極化（方案 3）"]:::hyp
+  V7["驗證：過極化 0.6 V、16 組隨機參數都成立；<br/>少任何一顆都不行"]:::ver
+  F2 --> Q1 --> V6 --> H6 --> V7
+
+  Q2["10-12 你問：做 2-3 模擬；<br/>方案 3 按住會一直 AP 對嗎"]:::q
+  F3["發現：Passive PCB 底板沒有串 V+<br/>→ FI 要拉線，CH2 被 FI 電流主導"]:::ver
+  V8["2-3 模擬：I_min 比例和手算一致、<br/>n ≥ 1 不自發、方案 3 不適用"]:::ver
+  V9["按住：方案 3 27／20／15.5 Hz 連續發放，合理"]:::ver
+  P3["057f4c7：2-3 互動模擬、共用引擎"]:::page
+  V7 --> Q2
+  Q2 --> F3 --> V8 --> P3
+  Q2 --> V9 --> P3
+  Q3["你指出：2-2 還有 Leak"]:::q
+  E5["錯誤：頁面寫「n = 0 直接接 active」，<br/>看起來像沒有 Leak（模型本身有）"]:::err
+  Q4["你問：加 leak 讓過極化不低於基線對嗎"]:::q
+  V10["模擬：leak 越多靜止越低、最低點不動<br/>47 kΩ 時過極化消失；神經不會這樣"]:::ver
+  P4["36844c3：2-3 完整電路圖、leak 分析"]:::page
+  P3 --> Q3 --> E5 --> P4
+  P3 --> Q4 --> V10 --> P4
+  NOW["現在：基礎目標（照助教電路量完每一題）<br/>還沒有系統性的實測數據"]:::now
+  P4 --> NOW
+
+  classDef page fill:#E3ECF7,stroke:#1F5FA8,color:#0F2A4A
+  classDef test fill:#FBEFD2,stroke:#8A6100,color:#3D2B00
+  classDef hyp fill:#F3E1F7,stroke:#7A3E8F,color:#3B1745
+  classDef ver fill:#DCEFD9,stroke:#2F5D3A,color:#16301C
+  classDef err fill:#FBE3DE,stroke:#A33A2B,color:#4A120A
+  classDef user fill:#FDE7CF,stroke:#C26A12,color:#4A2A05
+  classDef q fill:#ECEEEC,stroke:#5F6B72,color:#1E262C
+  classDef now fill:#1E262C,stroke:#1E262C,color:#FFFFFF
+</pre></div>
+
+<h3>錯誤清單</h3>
+<div class="scroll"><table>
+<thead><tr><th>誰</th><th>錯誤</th><th>影響</th><th>怎麼發現／修正</th></tr></thead>
+<tbody>
+<tr><td>你方（硬體／操作）</td><td>堆疊排針接觸不良（FI:V+、SO:Vm）</td><td>第一輪大部分現象時好時壞，難以解讀</td><td>第二輪改麵包板</td></tr>
+<tr><td>你方</td><td>Slow out 的 R2 用了套件給的 100 Ω（助教指定 1 MΩ）</td><td>Slow out 不動作，FI 一觸發就鎖在 2.4 V</td><td>第二輪數據推出 SO.B3 對地短路，第三輪你確認並換掉</td></tr>
+<tr><td>你方</td><td>測試 8 在 V+ 沒接上時做</td><td>結果無效</td><td>事後分析</td></tr>
+<tr><td>你方（未確認）</td><td>S+FI 那列可能量的時候 Leak 還接著</td><td>和模型差 1.5 V</td><td>尚未重量</td></tr>
+<tr><td>我方</td><td>hw2 頁照講義模擬器電路圖寫（R13 1 kΩ、Q_sense 在 SW 後）</td><td>預期波形和實際 PCB 不符</td><td>PCB 追線後改正（1b24c64）</td></tr>
+<tr><td>我方</td><td>DC 解初版沒有 gmin stepping</td><td>FI 內部節點、Q4 掃描數值錯</td><td>16b0e49 重算</td></tr>
+<tr><td>我方</td><td>測試 9 解讀成「Slow out 把 Vm 鉗住」；第一輪認為 Slow out 本身正常</td><td>漏掉 Slow out 故障</td><td>第二輪數據推翻</td></tr>
+<tr><td>我方</td><td>在不知道限制時建議割線、拔腳、拔掉 Stimulator</td><td>不可行、有破壞性</td><td>你告知限制後全部改成外加元件</td></tr>
+<tr><td>我方</td><td>#2-3 頁寫「n = 0 是 Stimulator 直接接 active」</td><td>看起來像 #2-2 沒有 Leak（模型其實有）</td><td>你指出後改寫</td></tr>
+</tbody></table></div>
+
+<h3>假設與驗證總表</h3>
+<div class="scroll"><table>
+<thead><tr><th>假設</th><th>怎麼驗證</th><th>結果</th></tr></thead>
+<tbody>
+<tr><td>FI 板元件都好</td><td>測試 4–5 的各腳 DC 對 KCL 手算與模擬（自鎖 ≈ (V+ + 1 V)/2）</td><td class="st-ok">成立</td></tr>
+<tr><td>FI:V+ 接點斷開</td><td>FI V+ 腳 0.4 V 震盪、跟著 Vm 走；模擬重現</td><td class="st-ok">成立（第一輪）</td></tr>
+<tr><td>Stimulator 放開時漏 6 µA</td><td>PCB 追線＋手算；S+LK 量到 0.6–0.7 V、只接 S 量到 7 V</td><td class="st-ok">成立</td></tr>
+<tr><td>第一輪 Slow out 只是沒接上</td><td>第二輪麵包板 S+LK+SO 按住 4.8 V</td><td class="st-no">推翻</td></tr>
+<tr><td>Slow out 故障是 SO.B3 對地短路（vs R2 3 kΩ／R3 100 kΩ／R3 開路）</td><td>6 個實測值對 DC 模擬，誤差 ≤ 0.1 V</td><td class="st-ok">成立；實際原因是 R2 = 100 Ω</td></tr>
+<tr><td>自發小峰來自漏電</td><td>模擬 R2 = 1 MΩ 吻合實測；模擬加 22 kΩ 或 Vm 對地 100 kΩ 小峰消失</td><td class="st-part">模擬成立，實測未做</td></tr>
+<tr><td>R13 = 100 kΩ 讓 AP 小</td><td>手算 FI 最多約 70 µA；模擬拔掉 FI 和有 FI 只差零點幾伏</td><td class="st-part">模擬成立，實測未做</td></tr>
+<tr><td>修正 1+2 後有門檻與 all-or-none、沒有過極化</td><td>模擬按壓長度掃描、和拔 FI 比較；手算 Slow out 極限</td><td class="st-part">模擬成立，實測未做</td></tr>
+<tr><td>方案 3 可做出過極化</td><td>模擬＋16 組隨機參數＋手算</td><td class="st-part">模擬成立，實測未做</td></tr>
+<tr><td>S+FI 列是因為 Leak 還接著</td><td>模型加 100 kΩ 到地變 3.05／5.85 V</td><td class="st-no">待重量</td></tr>
+</tbody></table></div>
+
+<h2 id="q">4. 作業題目進度（基礎目標）</h2>
+<p class="small muted">「照助教的電路」= 目前電路（R2 = 1 MΩ），不加 22 kΩ、11 kΩ 等外加元件。「有指引」指 hw2 頁有操作步驟。實測欄只算對話中回報過的數據。</p>
+<div class="scroll"><table>
+<thead><tr><th>題目</th><th>要交</th><th>實測狀態</th><th>指引／參考</th></tr></thead>
+<tbody>
+<tr class="grp"><td colspan="4">#2-0</td></tr>
+<tr><td>Q1–Q2</td><td>組員合照、名單</td><td class="st-no">未回報</td><td>—</td></tr>
+<tr class="grp"><td colspan="4">#2-1 Passive membrane</td></tr>
+<tr><td>Q1</td><td>電路照片並標元件</td><td class="st-no">未回報</td><td>hw2 §2 逐步操作</td></tr>
+<tr><td>Q2</td><td>反應的五參數（電流、峰值、半高寬、rise τ、decay τ）＋第一、中間、最後一個的差別</td><td class="st-no">未回報</td><td>hw2 §1 五參數、§2</td></tr>
+<tr><td>Q3</td><td>五種刺激時間：第一 vs 最後一個 unit 的 amplitude、delay、rise τ、decay τ 四張圖</td><td class="st-no">未回報</td><td>hw2 §2（有理想模擬的預期表）</td></tr>
+<tr><td>Q4–Q5</td><td>差異的原因；生理意義</td><td class="st-no">未寫</td><td>hw2 §2 題目對應</td></tr>
+<tr class="grp"><td colspan="4">#2-2 Active membrane</td></tr>
+<tr><td>Q1</td><td>電路照片並標元件</td><td class="st-no">未回報</td><td>hw2 §3、nodes 頁</td></tr>
+<tr><td>Q2</td><td>一個 AP 的五參數截圖</td><td class="st-part">有現象（第三輪按下約 2.2 V 短峰），沒有截圖與五參數</td><td>hw2 §3；模擬：約 1.75 V</td></tr>
+<tr><td>Q3</td><td>五種電流 vs 峰值、半高寬、rise τ、decay τ</td><td class="st-no">未量</td><td>hw2 §3</td></tr>
+<tr><td>Q4</td><td>紅箭頭電阻換 50k–3M 的四張圖（寫電流）</td><td class="st-no">未量</td><td>hw2 §3；debug §9 Q4（哪一顆電阻待確認）</td></tr>
+<tr><td>Q5</td><td>靜止電位、內向與外向電流的反轉電位</td><td class="st-part">有線索：基線 0.6 V；按住被拉回約 0.6–1.0 V；FI 鎖住時往 V+ 方向</td><td>debug §6、§9（Slow out 極限約 0.57 V）</td></tr>
+<tr><td>Q6</td><td>TTX（拔 FI）、TEA（拔 SO）各量五參數</td><td class="st-part">第二輪有 S+LK+FI、S+LK+SO 的靜止／按住值（R2 = 100 Ω 時），R2 = 1 MΩ 後未量</td><td>hw2 §3</td></tr>
+<tr><td>Q7</td><td>生理意義</td><td class="st-no">未寫</td><td>hw2 §3 題目對應</td></tr>
+<tr class="grp"><td colspan="4">#2-3 Passive to active</td></tr>
+<tr><td>Q1</td><td>電路照片</td><td class="st-no">未回報</td><td>hw2 §4；注意 FI 的 V+ 要拉線</td></tr>
+<tr><td>Q2</td><td>一個 AP 的五參數</td><td class="st-no">未量</td><td>hw2 §4；#2-3 模擬（目前電路 n = 4 約 1.6 V）</td></tr>
+<tr><td>Q3</td><td>n vs 最小刺激電流</td><td class="st-no">未量</td><td>hw2 §4；模擬 I<sub>min</sub> 5–38 µA 低於可變電阻下限 44 µA，n 小時量不到門檻</td></tr>
+<tr><td>Q4</td><td>固定 I<sub>min</sub>(4)，n vs 第一個波峰 delay</td><td class="st-no">未量</td><td>hw2 §4</td></tr>
+<tr><td>Q5</td><td>2 passive + 1 active：intracellular vs extracellular 四參數</td><td class="st-no">未量</td><td>hw2 §4；CH2 形狀取決於 FI 電源接法</td></tr>
+<tr><td>Q6</td><td>生理意義</td><td class="st-no">未寫</td><td>hw2 §4</td></tr>
+</tbody></table></div>
+
+<h2 id="open">5. 待決問題（會影響基礎目標的）</h2>
+<ul>
+  <li><b>#2-2 Q4 的「紅箭頭電阻」是哪一顆</b>：電路圖上看起來是 2N3904 的 100 kΩ，DIP 版 FI 板換的是 R13（V+ → 2N4403 E）。要問助教。</li>
+  <li><b>R13 原設計是 1 kΩ（電路圖）還是 100 kΩ（PCB）</b>：決定 AP 會不會大。基礎目標照 PCB 量即可，但報告要寫。</li>
+  <li><b>#2-3 FI 的 V+ 怎麼接</b>：Passive PCB 底板沒有串 V+，要自己拉線或問助教的接法；會影響 Q5。</li>
+  <li><b>#2-3 Q3 量不到門檻</b>：可變電阻最小約 44 µA，模擬的 I<sub>min</sub> 多數比它小。照助教電路就記錄「最小電流也會觸發」，或問助教能否加電阻把電流調小。</li>
+  <li><b>S+FI 那列</b>：拔掉 Leak 重量一次。</li>
+  <li><b>#2-1 沒有做過任何檢查</b>：Passive PCB 和講義是否一致、Stimulator 漏電對 #2-1 基線的影響，都還沒看。</li>
+</ul>
+
+<footer class="small muted" style="margin-top:40px;border-top:1px solid var(--rule);padding-top:10px">2026-10-12 盤點。依據 git 紀錄、各頁內容與對話中的回報；模擬結論都還沒有實測確認。</footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>
+(function(){
+  var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({startOnLoad:true, theme: dark ? 'dark' : 'neutral', securityLevel:'loose', flowchart:{htmlLabels:true, useMaxWidth:false}});
+})();
+</script>
+</body>
+</html>
