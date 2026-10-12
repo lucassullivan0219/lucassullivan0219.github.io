@@ -19,7 +19,7 @@ var AM = (function(){
 
   var st = {
     vplus:7.8, sw:false, rpot:0, r13:1e5, rfe:1e5, qs:'pcb', so_r2:1e6, rprobe:1e7, ch2:'',
-    r13p:0, rf:0, rb:0, rs:0, rl:0,                 /* add-ons clipped on, 0 = not fitted */
+    r13p:0, rf:0, rb:0, rs:0, rl:0, ru:0,           /* add-ons clipped on, 0 = not fitted; ru: V+ -> every passive unit */
     chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',   /* #2-3: passive units, source, FI battery */
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true,
     fi_on:true, so_on:true, ch1:'Vm'                /* board plugged in at all (sim.py fi=/so=); CH1 probe node */
@@ -58,7 +58,8 @@ var AM = (function(){
     Q.push(['p', IDX[out], IDX['ST.R'], IDX['ST.Q'], M4403, 'pass']);
     Q.push(['p', IDX['ST.R'], IDX['ST.Q'], st.qs === 'sw' ? IDX['ST.P'] : IDX['V+'], M4403, 'sense']);
     if(st.qs === 'rx') r('ST.Q', 'ST.R', 22e3);      /* fix: 22 kohm across Qpass E-B */
-    if(st.qs === 'rx10') r('ST.Q', 'ST.R', 10e3);    /* 10 kohm there: pot range ~41-0.3 uA (#2-3 I_min) */
+    if(st.qs === 'rx10') r('ST.Q', 'ST.R', 10e3);    /* 10 kohm there: pot range ~41-0.3 uA */
+    if(st.qs === 'rx12') r('ST.Q', 'ST.R', 12e3);    /* 12 kohm there: pot range ~51-2.6 uA (#2-3 I_min, true AP) */
     r('ST.R', 'GND', 7e3);
     /* Leak */
     r('Vm', 'LK.Vm', link(st.leak));
@@ -97,6 +98,7 @@ var AM = (function(){
     for(var k = 1; k <= st.chain; k++){
       var pc = 'PC' + k, px = k === 1 ? 'GND' : 'PX' + k;
       C.push([IDX[pc], IDX[px], 1e-6]); r(pc, px, 1e5);
+      if(st.ru) r('V+', pc, st.ru);                 /* add-on: unit rests at the same level as the active end */
       r(pc, k < st.chain ? 'PC' + (k + 1) : 'Vm', 1e4);
       r(px, k < st.chain ? 'PX' + (k + 1) : 'AX', 100);
     }

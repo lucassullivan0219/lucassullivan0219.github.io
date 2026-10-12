@@ -123,6 +123,7 @@
       L([[x, 70], [x, 130]]); dot(x, 70); L([[x - 26, 130], [x + 26, 130]]); dot(x, 130);
       capV(x - 26, 130, 455, 290); txt(x, 302, '1µF', 'lab', 'middle');
       resV(x + 26, 130, 455, 250, 330); txt(x, 345, '100k', 'lab', 'middle');
+      out.push('<text class="cur" data-ru="1" x="' + x + '" y="392" text-anchor="middle" style="display:none">＋560k←V+</text>');
       L([[x - 26, 455], [x + 26, 455]]); dot(x - 26, 455); dot(x + 26, 455);
       out.push('<text class="nv" data-node="PC' + k + '" data-short="PC' + k + '" x="' + (x + 6) + '" y="62"><tspan class="code">PC' + k + '</tspan></text>');
       if(k > 1) out.push('<text class="nv" data-node="PX' + k + '" data-short="PX' + k + '" data-mv="1" x="' + (x - 20) + '" y="472"><tspan class="code">PX' + k + '</tspan></text>');
@@ -300,11 +301,12 @@
         svg.querySelector('#wQsPcb').style.display = pcb ? '' : 'none';
         svg.querySelector('#dQsPcb').style.display = pcb ? '' : 'none';
         svg.querySelector('#wQsSw').style.display = pcb ? 'none' : '';
-        var lx = svg.querySelector('#lRx'); lx.style.display = (mode === 'rx' || mode === 'rx10') ? '' : 'none';
-        lx.textContent = mode === 'rx10' ? 'E–B 並 10k' : 'E–B 並 22k';
+        var lx = svg.querySelector('#lRx'); lx.style.display = /^rx/.test(mode) ? '' : 'none';
+        lx.textContent = 'E–B 並 ' + ({rx:'22k', rx10:'10k', rx12:'12k'})[mode];
       },
       /* add-on resistors clipped onto existing legs: show what is fitted */
       setAddons: function(st){
+        svg.querySelectorAll('[data-ru]').forEach(function(e){ e.style.display = st.ru ? '' : 'none'; if(st.ru) e.textContent = '＋' + fmtR(st.ru) + '←V+'; });
         [['lR13p', st.r13p, function(r){ return '∥ ' + fmtR(r); }],
          ['lRf', st.rf, function(r){ return '＋' + fmtR(r) + ' ← V+'; }],
          ['lRb', st.rb, function(r){ return '＋' + fmtR(r) + '：V+ → Vm'; }],

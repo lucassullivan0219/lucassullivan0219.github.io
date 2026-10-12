@@ -213,7 +213,7 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
           <li><b>基線不是 0</b>：Stimulator 放開時漏 6 µA，只接 Leak 時基線約 0.6–0.7 V。amplitude 一律用「波峰 − 基線」。</li>
           <li><b>#2-3 n ≥ 1 沒有 AP</b>：FI 沒有 V+，Q2–Q5 只量得到被動反應，Q3、Q4 沒有門檻可量。照實記錄。</li>
           <li><b>#2-3 Q3 就算有 AP 也量不到門檻</b>：模擬的 I<sub>min</sub> 多數低於可變電阻最小的約 44 µA，每按一次都會觸發。</li>
-          <li><b>S+FI 那列</b>：我預期約 <b>4.5 V／7.1 V</b>（FI 不按就自己鎖住；按住時頂到 Stimulator 的上限 7.1 V）。你量的 3.0／5.9 V 和 S+LK+FI 幾乎一樣，表示 Vm 上還有約 100 kΩ 到地，最可能是 Leak 還插著（模型加 100 kΩ 正好是 3.05／5.85 V）。拔掉 Leak 重量一次。</li>
+          <li><b>S+FI 那列（已解決）</b>：拔掉 Leak 重量是 <b>4.4／7.2 V</b>，和預測的 4.55／7.13 V 一樣（FI 不按就自己鎖住；按住時頂到 Stimulator 上限）。第二輪的 3.0／5.9 V 是 Leak 還插著。</li>
           <li><b>#2-2 Q5 的反轉電位</b>：照實量的話，靜止＝基線；內向電流能把 Vm 推到的最高點（S+FI 鎖住約 4.5 V，理論上限是 V+）；外向電流能把 Vm 拉到的最低點（R2 = 100 Ω 時 Slow out 只剩 100 kΩ 串二極體，約 0.4 V）。</li>
         </ol>
       </div></details>
@@ -223,13 +223,13 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
           <tr><th>組合</th><th class="num">實測 靜止／按住</th><th class="num">基礎模型（R2 = 100 Ω）</th></tr>
           <tr><td>S</td><td class="num">7.1／7.3</td><td class="num">7.14／7.14</td></tr>
           <tr><td>S + LK</td><td class="num">0.7／7.2</td><td class="num">0.62／7.13</td></tr>
-          <tr><td>S + FI</td><td class="num t-warn">3.0／5.9</td><td class="num">4.55／7.13</td></tr>
+          <tr><td>S + FI（重量，拔掉 Leak）</td><td class="num t-ok">4.4／7.2</td><td class="num">4.55／7.13</td></tr>
           <tr><td>S + SO</td><td class="num">1.0／7.2</td><td class="num">0.97／7.13</td></tr>
           <tr><td>S + LK + FI</td><td class="num">3.1／5.9</td><td class="num">3.04／5.83</td></tr>
           <tr><td>S + LK + SO</td><td class="num">0.5／4.8</td><td class="num">0.46／4.72</td></tr>
           <tr><td>全接，FI 鎖住</td><td class="num">2.4／4.5</td><td class="num">2.39／4.49</td></tr>
         </table></div>
-        <p class="small muted">V；可變電阻 0.7 kΩ。只有 S+FI 對不上，見上一張卡第 7 點。可以在 <a href="#r3">#2-2 區域</a>勾掉板子重現。</p>
+        <p class="small muted">V；可變電阻 0.7 kΩ。第二輪 S+FI 量到 3.0／5.9 V（Leak 還插著），重量後吻合。可以在 <a href="#r3">#2-2 區域</a>勾掉板子重現。</p>
       </div></details>
 
       <details class="card"><summary>量測注意事項<span class="hint">五參數、電流、示波器</span></summary><div class="body">
@@ -244,53 +244,100 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
   </div>
 
   <div data-show="adv">
-    <h2>1 摘要：助教電路的問題與改法（進階目標）</h2>
-    <p class="lede">以下每一點都有手算或模擬（<a href="#r5">補充區</a>有計算）。改法一律只加可拆的電阻。所有數字都是模擬，還沒實測。</p>
+    <h2>1 摘要：真正的 AP（進階目標）</h2>
+    <p class="lede">先照文獻定義 AP，再設計一組只加、可拆的電阻，讓 #2-2 和 #2-3 每個應該有 AP 的情境都符合定義。所有數字都是模擬（<code>check_trueap.py</code>），還沒實測。</p>
     <div class="cards">
-      <details class="card" open><summary>助教電路的問題<span class="hint">依影響大小</span></summary><div class="body">
-        <ol>
-          <li><b>Slow out 的 R2</b>：PCB 標 3M，套件給 100 Ω，助教以為 1 MΩ。100 Ω 讓 SO.B3 接地、2N3904 永遠不導通，FI 一觸發就鎖在 2.4 V（第二輪 6 個數值吻合到 0.1 V）。</li>
-          <li><b>R13 = 100 kΩ（電路圖 1 kΩ）</b>：FI 最多送 (V+ + 0.85 − 2Vm)/100k ≈ 70 µA，Slow out 10–20 ms 就截斷上升，AP 和拔掉 FI 的被動反應只差零點幾伏。</li>
-          <li><b>Q<sub>sense</sub> 接在 SW 前</b>：放開時漏 I<sub>B</sub> = 0.946 mA ÷ 150 = 6.3 µA，基線 0.63 V，剛好在 FI 門檻附近。R2 = 1 MΩ 時變成每 0.1 秒自己冒小峰（實測 1.6 V／100 ms，模擬 1.46 V／128 ms）。</li>
-          <li><b>FI 門檻和 Slow out 的鉗位都在約 0.6 V</b>：餘裕太小。修好漏電後，8 組隨機參數中仍有 1 組在第一個 AP 後自己振盪。</li>
-          <li><b>沒有過極化</b>：Slow out 只能把 Vm 拉到約 0.57 V（這個電路的 E<sub>K</sub>），Leak 接 GND（E<sub>leak</sub> = 0 V）比它還低，順序和神經相反。</li>
-          <li><b>#2-3：Passive PCB 底板沒有串 V+</b>：FI 沒電；拉線補上後，FI 的電流經細胞外 100 Ω 回到電池，CH2 被它主導（+0.14 V 單相）。</li>
-          <li><b>可變電阻最小約 44 µA</b>，高於 #2-3 多數的 I<sub>min</sub>（5–38 µA），量不到門檻。</li>
-          <li>Stimulator 輸出上限約 7.1 V；電池實測 7.8 V。</li>
+      <details class="card" open><summary>AP 的定義（文獻）<span class="hint">換成這個電路的判準</span></summary><div class="body">
+        <p class="small">Barnett &amp; Larkman（2007）把 AP 描述成膜電位短暫反轉、分三個主要階段：去極化、再極化、慢慢恢復的後過極化；Na⁺ 通道的招募是再生性的，所以一過門檻就是完整的 AP（all-or-nothing），去極化會越過 0 mV 但停在 E<sub>Na</sub> 之前；Na⁺ 通道失活造成絕對不反應期，K⁺ 通道關得慢造成後過極化與相對不反應期。Purves 等人的教科書（第 2–3 章）也用門檻、自我增強的 Na⁺ 通透度上升、較慢的 K⁺ 通透度上升來描述 AP；這個電路的 FI／Slow out 就對應 Hodgkin &amp; Huxley（1952）模型裡的 Na⁺／K⁺ 電流。</p>
+        <div class="tbl"><table>
+          <tr><th>判準</th><th>文獻</th><th>這個電路怎麼驗</th></tr>
+          <tr><td>C1 門檻</td><td>過門檻才有 AP，之下只有局部反應</td><td>按壓長度由短到長：未觸發時和拔掉 FI 一樣；超過某長度就觸發</td></tr>
+          <tr><td>C2 all-or-none、再生性</td><td>一過門檻就是完整 AP，大小不隨刺激變</td><td>不同按壓長度、電流的峰值幾乎相同；上升 dV/dt 遠大於被動充電</td></tr>
+          <tr><td>C3 峰值</td><td>越過 0 mV、停在 E<sub>Na</sub> 之前</td><td>峰值遠高於門檻、低於 V+（內向電流的反轉電位）。「越過 0 mV」在這裡沒有意義：Vm 對 GND 量，靜止本來就是正的</td></tr>
+          <tr><td>C4 再極化</td><td>K⁺ 外向電流拉回</td><td>Slow out 拉回，比被動放電快</td></tr>
+          <tr><td>C5 後過極化</td><td>低於靜止電位、慢慢恢復</td><td>AP 後 Vm 低於靜止再回來</td></tr>
+          <tr><td>C6 不反應期</td><td>剛發完 AP 不能（或較難）再發</td><td>AP 後不同間隔再按一次</td></tr>
+        </table></div>
+        <p class="small muted">來源：M. W. Barnett, P. M. Larkman, “The action potential,” <i>Practical Neurology</i> 7:192–197 (2007)；D. Purves et al., <i>Neuroscience</i> 2nd ed., ch. 2–3（NCBI Bookshelf）；A. L. Hodgkin, A. F. Huxley, <i>J Physiol</i> 117:500 (1952)。</p>
+      </details>
+
+      <details class="card" open><summary>真正的 AP 電路（只加、可拆）<span class="hint">每顆的用途</span></summary><div class="body">
+        <div class="tbl"><table>
+          <tr><th>加什麼</th><th>夾在哪</th><th>為什麼</th></tr>
+          <tr><td>R2 = 1 MΩ</td><td>SO 的 R2（換回助教值）</td><td>Slow out 才會動作</td></tr>
+          <tr><td>22 kΩ</td><td>ST.Q ↔ ST.R（Q<sub>pass</sub> E–B）</td><td>消除 6 µA 漏電，靜止點不隨 n 改變</td></tr>
+          <tr><td>11 kΩ</td><td>R13 兩端</td><td>FI 能送約 0.6 mA：快速、再生性的上升（C2）</td></tr>
+          <tr><td>680 kΩ</td><td>R13 下端 → FI.E3</td><td>FI 門檻抬到約 1.66 V，高於靜止</td></tr>
+          <tr><td>330 kΩ</td><td>V+ → Vm</td><td>靜止抬到 1.19 V，高於 Slow out 能拉到的約 0.6 V（才有 C5）</td></tr>
+          <tr><td>56 kΩ</td><td>SO 的 C1 兩腳</td><td>SO.S = 0.36 Vm：靜止時 Slow out 關著，AP 時打開</td></tr>
+          <tr><td>560 kΩ × n</td><td>V+ → 每個 Passive unit（#2-3）</td><td>每段膜的靜止都是 1.19 V，被動鏈不會把 active 端拉低</td></tr>
+          <tr><td>V+ 線</td><td>Stimulator V+ → FI.V+（#2-3）</td><td>Passive PCB 底板沒串 V+</td></tr>
+        </table></div>
+<div class="calc">靜止：(7.8 − Vm)/330k = Vm/100k + Vm/156k + 約 0.2 µA → Vm ≈ 1.19 V
+FI 門檻：FI.E3 = 7.8 × 100/780 = 1.0 V → Vm ≈ 1.0 + 0.5 + 0.2 ≈ 1.7 V（模擬 1.66 V）
+Slow out：SO.S = 1.19 × 56/156 = 0.43 V（要約 0.62 V 才開）→ 靜止時關著
+AP 後最低：Vm ≈ SO.B4 + V_EB ≈ 0.05 + 0.54 = 0.59 V → 後過極化 ≈ 0.6 V
+Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜止時沒有電流</div>
+        <p class="small">#2-3 量 Q3 的 I<sub>min</sub> 時，把 22 kΩ 換成 12 kΩ：可變電阻 0–10 kΩ 變成約 51–2.6 µA，涵蓋 n = 0–4 的 I<sub>min</sub>（7.6–44.8 µA）。12 kΩ 一樣消除漏電，靜止不變。</p>
+        <p class="small muted">試過 47 kΩ：n = 4、長按後，8 組隨機參數中有 3 組 FI 和 Slow out 互相抵住，鎖在約 2.9 V；改 56 kΩ 後全部正常。</p>
+      </div></details>
+
+      <details class="card wide" open><summary>驗證：每個應該有 AP 的情境<span class="hint">C1–C6</span></summary><div class="body">
+        <div class="tbl"><table>
+          <tr><th>情境</th><th class="num">靜止</th><th>C1 門檻</th><th>C2 峰值（拔 FI）／dV/dt</th><th>C5 後過極化</th><th>C6</th></tr>
+          <tr><td>#2-2 Q2</td><td class="num">1.19</td><td>按 7.5 ms，1.66 V</td><td>5.2–5.4（2.0）／601 vs 72 V/s</td><td class="t-ok">0.61 V、125 ms</td><td class="t-ok">AP 後 20 ms 內不能再發，40 ms 起恢復</td></tr>
+          <tr><td>#2-3 n = 1</td><td class="num">1.19</td><td>按 17.5 ms，1.66 V</td><td>4.5–4.6（1.8）／569 vs 27</td><td class="t-ok">0.48 V</td><td class="t-part">第二個 AP 變小（3.9 V）</td></tr>
+          <tr><td>#2-3 n = 2</td><td class="num">1.19</td><td>按 33 ms，1.66 V</td><td>4.4（1.7）／619 vs 14</td><td class="t-ok">0.49 V</td><td class="t-part">同上（4.1 V）</td></tr>
+          <tr><td>#2-3 n = 3</td><td class="num">1.19</td><td>按 59 ms，1.68 V</td><td>4.3（1.7）／689 vs 8</td><td class="t-ok">0.50 V</td><td class="t-part">同上（4.2 V）</td></tr>
+          <tr><td>#2-3 n = 4</td><td class="num">1.20</td><td>按 106 ms，1.67 V</td><td>4.2–4.3（1.7）／689 vs 5</td><td class="t-ok">0.49 V</td><td class="t-part">被動鏈延遲 &gt; 100 ms，第二個刺激到的時候已恢復</td></tr>
+        </table></div>
+        <p class="small">C3：峰值 4.2–5.4 V，遠高於門檻、低於 V+ 7.8 V。C4：半高寬 12–15 ms，Slow out 拉回。#2-3 的後過極化在剛過門檻的按壓下只持續約 12 ms（電容還有電的被動鏈把 active 端充回來），按 300 ms 時是 130–200 ms。不反應期是 active membrane 的性質，#2-3 用的是同一塊，所以以 #2-2 的量測為準。</p>
+        <div class="tbl"><table>
+          <tr><th>其他題目</th><th>結果</th></tr>
+          <tr><td>#2-2 Q3 五種電流（72／48／34／26／19 µA）</td><td>峰值 5.44／5.31／5.21／5.13／5.05 V，到峰 20→47 ms，半高寬都約 11.6 ms：all-or-none</td></tr>
+          <tr><td>#2-2 Q4 R13（有效值）10k → 3M</td><td>峰值 5.43 → 2.80 V、dV/dt 597 → 72 V/s（= 被動）：FI 越弱 AP 越小越慢，820k 以上已不是 AP</td></tr>
+          <tr><td>#2-2 Q6 TTX（拔 FI）</td><td>只剩被動反應（2.9 V），沒有 AP</td></tr>
+          <tr><td>#2-2 Q6 TEA（拔 SO）</td><td>沒有再極化：拔掉後 56 kΩ 也跟著拔掉，靜止升到門檻以上，FI 自己鎖在 6.6 V</td></tr>
+          <tr><td>#2-3 Q3 I<sub>min</sub>（n = 0–4）</td><td>7.6／13.4／20.9／31.0／44.8 µA</td></tr>
+          <tr><td>#2-3 Q4 delay（47 µA）</td><td>24／46／79／136／370 ms</td></tr>
+          <tr><td>#2-3 Q5 CH2（n = 2，FI 拉 V+ 線）</td><td>CH1 4.44 V；CH2 單相 +118 mV，比 CH1 波峰晚 5 ms（主要是 FI 的電流經細胞外 100 Ω）</td></tr>
+          <tr><td>隨機參數（16 組，n = 0 與 4）</td><td>全部安靜、會觸發、後過極化 0.40–0.61 V、長按 1 秒放開後回到靜止</td></tr>
+        </table></div>
+      </div></details>
+
+      <details class="card"><summary>為什麼 #2-3 不能用方案 3<span class="hint">被動鏈就是 leak</span></summary><div class="body">
+        <p class="small">方案 3（470k V+→Vm、470k→FI.E3、47k 並 C1、11k 並 R13）只把 active 端的靜止抬高。接上 Passive unit 後：</p>
+        <ol class="small">
+          <li><b>被動鏈對 active 端是一顆接 GND 的電阻</b>：n = 1–4 時約 110／62／48／43 kΩ（每個 unit 100 kΩ 到 GND，中間隔 10 kΩ）。Passive unit 的靜止是 0 V，等於多了一條反轉電位 0 V 的 leak。</li>
+          <li><b>Stimulator 的漏電改從 unit 1 進去</b>，大部分流進 unit 1 的 100 kΩ，不再幫 active 端偏壓。</li>
+          <li>結果 active 端靜止掉到 0.79／0.61／0.52／0.46 V（n = 1–4），n ≥ 2 已經碰到 Slow out 能拉到的約 0.6 V，後過極化消失（和「再加 leak」那節同一件事：加 47 kΩ 就沒了）。</li>
+          <li>門檻還在約 2 V，和靜止的距離變大、轉移電阻變小，I<sub>min</sub> 變成 40／68／102／147 µA，n = 3、4 超過 Stimulator 的最大電流。</li>
+        </ol>
+<div class="calc">n = 1 手算：unit：6.3 µA + (Vm − P)/10k = P/100k
+        active：(7.8 − Vm)/470k = Vm/100k + Vm/147k + (Vm − P)/10k → Vm = 0.80 V（模擬 0.79 V）</div>
+        <p class="small">改法就是讓每段膜都有同樣的靜止電位（神經裡每段膜的 E<sub>leak</sub> 相同，樹突不會把胞體拉低）：每個 Passive unit 加 560 kΩ 接 V+，再用 22 kΩ 消掉漏電，讓靜止不隨 n 改變。</p>
+      </div></details>
+
+      <details class="card"><summary>助教電路的問題<span class="hint">原版、R2 = 1 MΩ 為什麼沒有真正的 AP</span></summary><div class="body">
+        <ol class="small">
+          <li><b>SO 的 R2</b>：PCB 標 3M，套件給 100 Ω（助教以為 1 MΩ）。100 Ω 讓 Slow out 不動作，FI 一觸發就鎖在 2.4 V：沒有 C4。</li>
+          <li><b>R13 = 100 kΩ（電路圖 1 kΩ）</b>：FI 最多約 70 µA，上升和被動充電差不多：C2 不明顯。</li>
+          <li><b>Q<sub>sense</sub> 接在 SW 前</b>：放開時漏 6.3 µA，靜止 0.53 V 剛好在 FI 門檻附近；R2 = 1 MΩ 時不按也自己冒小峰：沒有穩定的靜止，C1 不成立。</li>
+          <li><b>E<sub>leak</sub>（0 V）低於 Slow out 的極限（約 0.6 V）</b>：後過極化不可能（C5）。</li>
+          <li><b>FI 門檻和 Slow out 鉗位都在約 0.6 V</b>：餘裕太小。</li>
+          <li><b>#2-3</b>：Passive PCB 底板沒有串 V+，FI 沒電；可變電阻最小約 44 µA，量不到 I<sub>min</sub>。</li>
         </ol>
       </div></details>
 
-      <details class="card" open><summary>改法（只加、可拆）<span class="hint">夾在元件腳上或插麵包板</span></summary><div class="body">
+      <details class="card"><summary>加上真正的 AP 電路後要量的<span class="hint">確認夾對</span></summary><div class="body">
         <div class="tbl"><table>
-          <tr><th>名稱</th><th>加什麼</th><th>效果</th><th>代價</th></tr>
-          <tr><td>R2</td><td>換回 1 MΩ（助教指定）</td><td>Slow out 動作</td><td>出現自發小峰</td></tr>
-          <tr><td>修正 1</td><td>22 kΩ：ST.Q ↔ ST.R（7K-R1 下端 ↔ 7K-R2 上端）</td><td>漏電 0，靜止 0 V，不自發</td><td>刺激電流少 25 µA</td></tr>
-          <tr><td>修正 2</td><td>11 kΩ 並 R13（→ 9.9 kΩ）</td><td>AP 5.5–5.9 V，門檻約 0.6 V，按住 20 Hz</td><td>只加修正 2 會變成自發 AP</td></tr>
-          <tr><td>備案 1b</td><td>1 MΩ：R13 下端 → FI.E3</td><td>FI 門檻約 1.4 V，不碰 Stimulator</td><td>AP 小一點，按住不連續</td></tr>
-          <tr><td>方案 3</td><td>470k V+→Vm、470k R13 下端→FI.E3、47k 並 SO C1、11k 並 R13</td><td>過極化 0.6 V（16 組參數成立），按住 27 Hz 連續發放</td><td>膜變了；#2-3 不適用</td></tr>
-          <tr><td>#2-3 電流</td><td>10 kΩ：ST.Q ↔ ST.R（取代 22k）</td><td>可變電阻 → 約 41–0.3 µA，量得到 I<sub>min</sub></td><td>電流要用方法 B 量</td></tr>
-        </table></div>
-      </div></details>
-
-      <details class="card"><summary>修正後算不算 AP<span class="hint">門檻、all-or-none、去／再極化、過極化</span></summary><div class="body">
-        <div class="tbl"><table>
-          <tr><th>情況</th><th class="num">靜止</th><th class="num">門檻</th><th class="num">峰值（拔 FI）</th><th>過極化</th></tr>
-          <tr><td>目前（R2 = 1 MΩ）</td><td colspan="3">自己一直冒小峰</td><td class="t-warn">✗</td></tr>
-          <tr><td>修正 1</td><td class="num">0</td><td class="num">0.58 V</td><td class="num">3.02（2.08）</td><td class="t-warn">✗</td></tr>
-          <tr><td>修正 1 + 2</td><td class="num">0</td><td class="num">0.58 V</td><td class="num">5.87（2.08）</td><td class="t-warn">✗（最低 0.10 V）</td></tr>
-          <tr><td>方案 3</td><td class="num">1.18</td><td class="num">2.05 V</td><td class="num">5.65（3.27）</td><td class="t-ok">✓ 0.60 V</td></tr>
-        </table></div>
-        <p class="small">再加 leak（Vm → GND）：靜止往 0 V 掉、最低點不動，47 kΩ 時過極化消失。神經的 E<sub>leak</sub> 在 E<sub>K</sub> 之上，不會這樣。</p>
-      </div></details>
-
-      <details class="card"><summary>還沒量、要量的<span class="hint">加上修正後的對照值</span></summary><div class="body">
-        <div class="tbl"><table>
-          <tr><th>加了什麼</th><th>量</th><th class="num">目前</th><th class="num">預期</th></tr>
-          <tr><td>22 kΩ</td><td>ST.Q − ST.R（SW 放開）</td><td class="num">0.52</td><td class="num">0.15</td></tr>
-          <tr><td>22 kΩ</td><td>S + LK 按住的 Vm</td><td class="num">7.2</td><td class="num">6.3</td></tr>
-          <tr><td>＋11 kΩ</td><td>按一下的峰值／AP 後最低</td><td class="num">約 2.2／0.5</td><td class="num">5.5–5.9／約 0.1</td></tr>
-          <tr><td>方案 3</td><td>靜止 Vm／FI.E3／SO.S</td><td class="num">—</td><td class="num">1.18／1.37／0.37</td></tr>
-          <tr><td>—</td><td>S + FI（拔掉 Leak）</td><td class="num">3.0／5.9</td><td class="num">4.55／7.13</td></tr>
+          <tr><th>量</th><th>條件</th><th class="num">預期</th></tr>
+          <tr><td>Vm</td><td>SW 放開</td><td class="num">1.19 V，平的</td></tr>
+          <tr><td>FI.E3</td><td>SW 放開</td><td class="num">約 1.0 V</td></tr>
+          <tr><td>SO.S</td><td>SW 放開</td><td class="num">約 0.43 V</td></tr>
+          <tr><td>ST.Q − ST.R</td><td>SW 放開</td><td class="num">0.15 V（22 kΩ）</td></tr>
+          <tr><td>Vm 峰值／AP 後最低</td><td>按一下（10 ms 以上）</td><td class="num">5.2–5.4 V／0.58 V</td></tr>
+          <tr><td>#2-3 各 PC 節點</td><td>SW 放開</td><td class="num">都約 1.19 V</td></tr>
         </table></div>
       </div></details>
     </div>
@@ -380,11 +427,11 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
       <div data-show="adv">
         <div class="row"><label>SO 的 R2</label><select data-k="so_r2" data-num><option value="100">100 Ω（套件）</option><option value="1e6">1 MΩ（助教）</option><option value="3e6">3 MΩ（PCB 標）</option></select></div>
         <div class="row"><label>FI 3904 E 電阻</label><select data-k="rfe" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select></div>
-        <div class="row"><label>Stimulator 漏電</label><select data-k="qs"><option value="pcb">原樣</option><option value="rx">並 22 kΩ（修正 1）</option><option value="sw">Q_sense 改接（對照）</option></select></div>
-        <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="1e5">100 kΩ</option><option value="11e3">11 kΩ（修正 2）</option><option value="1e3">1 kΩ</option></select></div>
-        <div class="row"><label>R13 下端→FI.E3</label><select data-k="rf" data-num><option value="0">不加</option><option value="1e6">1 MΩ（1b）</option><option value="470e3">470 kΩ（方案 3）</option></select></div>
-        <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="470e3">470 kΩ（方案 3）</option></select></div>
-        <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="47e3">47 kΩ（方案 3）</option></select></div>
+        <div class="row"><label>Q_pass E–B 並</label><select data-k="qs"><option value="pcb">不加</option><option value="rx">22 kΩ（真 AP）</option><option value="rx10">10 kΩ</option><option value="sw">Q_sense 改接（對照）</option></select></div>
+        <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="11e3">11 kΩ（真 AP）</option><option value="1e5">100 kΩ</option><option value="1e3">1 kΩ</option></select></div>
+        <div class="row"><label>R13 下端→FI.E3</label><select data-k="rf" data-num><option value="0">不加</option><option value="680e3">680 kΩ（真 AP）</option><option value="1e6">1 MΩ</option><option value="470e3">470 kΩ</option></select></div>
+        <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="330e3">330 kΩ（真 AP）</option><option value="470e3">470 kΩ</option></select></div>
+        <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="56e3">56 kΩ（真 AP）</option><option value="47e3">47 kΩ</option></select></div>
         <div class="row"><label>Vm → GND（多加 leak）</label><select data-k="rl" data-num><option value="0">不加</option><option value="1e6">1 MΩ</option><option value="220e3">220 kΩ</option><option value="47e3">47 kΩ</option></select></div>
         <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
       </div>
@@ -403,12 +450,11 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
         <li><b>Q6</b> 拔 FI（TTX）、拔 SO（TEA）各量一次。</li>
       </ul>
     </details>
-    <details data-show="adv"><summary>進階：重點數字</summary>
+    <details data-show="adv"><summary>進階：三個情境</summary>
       <ul class="small">
-        <li>R2 = 1 MΩ：不按約每 130 ms 一個 1.46 V 小峰；按下的第一個峰 1.8–2.1 V（看落在小峰的哪個階段；實測 2.2 V）；按住停 0.78 V。</li>
-        <li>修正 1 + 2：AP 5.87 V，按住 20 Hz（0.62–2.39 V）。</li>
-        <li>方案 3：靜止 1.18 V，AP 5.3–5.7 V，AP 後 0.58 V，按住 27 Hz。</li>
-        <li>電路圖數值（9 V、1 kΩ、Q<sub>sense</sub> 在 SW 後、3 MΩ）：完整 AP 約 8 V。</li>
+        <li><b>原版電路</b>：按住升到約 4.5 V，放開鎖在 2.4 V；沒有再極化。</li>
+        <li><b>R2 = 1 MΩ</b>：不按約每 130 ms 一個 1.46 V 小峰；按下的第一個峰 1.8–2.1 V（實測 2.2 V）；按住停 0.78 V。</li>
+        <li><b>真正的 AP</b>：靜止 1.19 V、按 7.5 ms 以上觸發、AP 5.2–5.4 V（拔 FI 2.0 V）、AP 後 0.58 V 持續約 125 ms、AP 後 20 ms 內不能再發；按住時連續發放。Q4 換 R13 有效值、Q6 拔 FI／SO 都可以在這裡試。</li>
       </ul>
     </details>
   </div>
@@ -433,6 +479,13 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
       <div class="row"><label>FI 的 V+</label><select data-k="fi_supply"><option value="none">沒接（照實）</option><option value="stim">從 Stimulator 拉線</option><option value="local">FI 自帶電池</option></select></div>
       <label class="chk"><input type="checkbox" data-k="fi_on"> FI（拔掉 = TTX）</label>
       <label class="chk"><input type="checkbox" data-k="so_on"> SO（拔掉 = TEA）</label>
+      <div class="row"><label>SO 的 R2</label><select data-k="so_r2" data-num><option value="100">100 Ω（套件）</option><option value="1e6">1 MΩ（助教）</option></select></div>
+      <div class="row"><label>Q_pass E–B 並</label><select data-k="qs"><option value="pcb">不加</option><option value="rx">22 kΩ（真 AP）</option><option value="rx12">12 kΩ（量 I_min）</option></select></div>
+      <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="11e3">11 kΩ（真 AP）</option></select></div>
+      <div class="row"><label>R13 下端→FI.E3</label><select data-k="rf" data-num><option value="0">不加</option><option value="680e3">680 kΩ（真 AP）</option></select></div>
+      <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="330e3">330 kΩ（真 AP）</option></select></div>
+      <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="56e3">56 kΩ（真 AP）</option></select></div>
+      <div class="row"><label>V+ → 每個 unit</label><select data-k="ru" data-num><option value="0">不加</option><option value="560e3">560 kΩ（真 AP）</option></select></div>
     </div>
     <div class="grp"><div class="gt">刺激</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
@@ -459,13 +512,12 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
         <li><b>Q5</b> n = 2，CH2 = AX（下方紅箭頭），10–50 mV/div。</li>
       </ul>
     </details>
-    <details data-show="adv"><summary>進階：重點數字</summary>
+    <details data-show="adv"><summary>進階：三個情境</summary>
       <ul class="small">
-        <li>修正 1 + 2、FI 拉線：I<sub>min</sub> = 5.4／11.1／18.0／27.0／38.2 µA（n = 0–4），比例和手算 1 : 2.1 : 3.4 : 5.1 : 7.2 一致。</li>
-        <li>Delay（1.05 × I<sub>min</sub>(4)）= 37／69／115／203／569 ms。</li>
-        <li>n ≥ 1 時不會自發（漏電傳到 active 端只剩 0.09–0.29 V）。</li>
-        <li>CH2：拉線時 +0.14 V 單相（FI 電流）；自帶電池時 ±20 mV 雙相。</li>
-        <li>方案 3 在 n ≥ 2 時沒有過極化，n = 3、4 觸發不了。</li>
+        <li><b>原版電路</b>：FI 沒有 V+，n ≥ 1 沒有 AP。</li>
+        <li><b>R2 = 1 MΩ</b>（FI 拉 V+ 線）：AP 只有約 1.6–2.3 V，看不出和被動反應的差別。</li>
+        <li><b>真正的 AP</b>：每個 unit 也接 560 kΩ 到 V+，所以 n = 0–4 靜止都是 1.19 V。I<sub>min</sub> = 7.6／13.4／20.9／31.0／44.8 µA；量 I<sub>min</sub> 時把「Q_pass E–B 並」改成 12 kΩ（可變電阻約 51–2.6 µA）。Delay（47 µA）= 24／46／79／136／370 ms。後過極化 0.4–0.5 V。</li>
+        <li>為什麼不能直接用方案 3：見摘要區。</li>
       </ul>
     </details>
   </div>
@@ -496,8 +548,9 @@ FI 自鎖：(V+ − Vm)/100k = (Vm − 0.85)/100k → Vm = (7.8 + 0.85)/2 ≈ 4.
 Slow out 鉗位（R2 = 3M，pot 0）：SO.B3 = 0.47 V、SO.S = 0.66 V、Vm = 0.68 V
 R2 = 100 Ω：Slow out ≈ 100 kΩ 串二極體 → 全接 FI 鎖住：0.63 + 8.65 + 0.4 = 4·Vm → 2.42 V
 Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) ≈ 0.59 V
-方案 3 靜止：(7.8 − Vm)/470k + 6.3 µA = Vm/100k + Vm/147k + 0.4 µA → 1.19 V
-         FI 門檻：FI.E3 = 7.8·100/570 = 1.37 V → Vm ≈ 2.1 V；過極化 ≈ 1.19 − 0.59 = 0.6 V</div>
+真正的 AP 靜止：(7.8 − Vm)/330k = Vm/100k + Vm/156k + 0.2 µA → 1.19 V（22 kΩ 已消掉漏電）
+         FI 門檻：FI.E3 = 7.8·100/780 = 1.0 V → Vm ≈ 1.7 V；SO.S = 0.36 Vm = 0.43 V（關）
+         過極化 ≈ 1.19 − 0.59 = 0.6 V；每個 Passive unit：7.8·100/660 = 1.18 V</div>
     </div></details>
     <details class="card" data-show="adv"><summary>PCB 和講義電路圖的差異<span class="hint">追線結果</span></summary><div class="body">
       <div class="tbl"><table>

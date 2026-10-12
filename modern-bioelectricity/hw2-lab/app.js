@@ -14,6 +14,10 @@
     r13p:0, rf:0, rb:0, rs:0, rl:0, chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true, fi_on:true, so_on:true};
 
+  /* the 'true AP' add-on set (hw2-debug/sim/check_trueap.py): 22k across Qpass E-B, 11k across
+     R13, 680k R13 lower end -> FI.E3, 56k across SO C1, 330k V+ -> Vm (#2-3 adds 560k V+ -> each unit) */
+  var TRUE_AP = {so_r2:1e6, qs:'rx', r13p:11e3, rf:680e3, rs:56e3, rb:330e3};
+
   /* ---------------- simulation regions ---------------- */
   var SIMS = {
     s21:{
@@ -30,26 +34,21 @@
       sch:function(st){ return {chain:0}; },
       meas:['firstAP', 'global'], scope:{v1:1, v2:0.5, t:0.05, z2:1},
       presets:[
-        ['now', '目前（R2 = 1 MΩ）', {so_r2:1e6}, '你的板子現在：R2 換成 1 MΩ。不按也每 0.1 秒左右冒一個小峰（Stimulator 漏電把 Vm 墊在 FI 門檻）。'],
-        ['kit', '套件原樣（R2 = 100 Ω）', {so_r2:100}, '同基礎目標：Slow out 不動作，按一次 FI 就鎖在約 2.4 V，要斷電重置。'],
-        ['fix1', '修正 1：並 22 kΩ', {so_r2:1e6, qs:'rx'}, '漏電消失，靜止 0 V，不自發；AP 約 3 V（R13 仍 100 kΩ）。刺激電流少 25 µA。'],
-        ['fix12', '修正 1 + 2', {so_r2:1e6, qs:'rx', r13p:11e3}, '再在 R13 並 11 kΩ：AP 約 5.9 V，門檻約 0.6 V，按住 20 Hz；沒有過極化。'],
-        ['plan3', '方案 3：過極化', {so_r2:1e6, rb:470e3, rf:470e3, rs:47e3, r13p:11e3}, '靜止 1.18 V、門檻約 2 V；AP 後掉到約 0.58 V（過極化 0.6 V）；按住 27 Hz。'],
-        ['sch', '講義電路圖數值', {vplus:9, r13:1e3, qs:'sw', so_r2:3e6}, '9 V、R13 = 1 kΩ、Q_sense 在 SW 後、R2 = 3 MΩ：完整 AP 約 8 V。']
+        ['kit', '原版電路', {so_r2:100}, '助教給的電路（同基礎目標）：R2 = 100 Ω，Slow out 不動作，按一次 FI 就鎖在約 2.4 V，要斷電重置。'],
+        ['r2m', 'R2 = 1 MΩ', {so_r2:1e6}, '助教指定的 R2（你的板子現在）：不按也每 0.1 秒左右冒一個小峰（Stimulator 漏電把 Vm 墊在 FI 門檻）。'],
+        ['true', '真正的 AP', Object.assign({rpot:0}, TRUE_AP), 'R2 = 1 MΩ 再外加 5 顆電阻（見摘要區）：靜止 1.19 V、門檻約 1.66 V、AP 5.2–5.4 V、AP 後低於靜止約 0.6 V（125 ms）、AP 後 20 ms 內不能再發；按住時連續發放。']
       ]
     },
     s23:{
       def:{basic:{chain:4, rpot:700, ch2:'AX'},
-           adv:{chain:4, rpot:700, so_r2:1e6, qs:'rx', r13p:11e3, fi_supply:'stim', src:'stim', isrc:40e-6, ch2:'AX', fi_on:true, so_on:true}},
+           adv:{chain:4, rpot:0, so_r2:1e6, fi_supply:'stim', src:'stim', isrc:40e-6, ch2:'AX', fi_on:true, so_on:true}},
       fixed:function(m, s){ return m === 'basic' ? {so_r2:100, fi_supply:'stim', fi_vplus:(s.chain || 0) === 0} : {}; },
       sch:function(st){ return {chain:st.chain}; },
       meas:['firstAP', 'signed'], scope:{v1:1, v2:0.02, t:0.1, z2:4},
       presets:[
-        ['kit', '照實（同基礎）', {so_r2:100, fi_supply:'none', qs:'pcb', r13p:0}, 'R2 = 100 Ω、FI 沒有 V+：n ≥ 1 沒有 AP。'],
-        ['now', '目前（R2 = 1 MΩ）＋拉 V+', {so_r2:1e6, fi_supply:'stim', qs:'pcb', r13p:0}, 'R2 = 1 MΩ，FI 的 V+ 從 Stimulator 拉線。AP 約 1.6–2.3 V。'],
-        ['fix12', '修正 1 + 2 ＋拉 V+', {so_r2:1e6, fi_supply:'stim', qs:'rx', r13p:11e3}, 'AP 約 4–5 V；I_min 5.4–38 µA（n = 0–4），用理想電流源找。'],
-        ['local', '修正 1 + 2、FI 自帶電池', {so_r2:1e6, fi_supply:'local', qs:'rx', r13p:11e3}, '講義模擬器的接法：CH2 變成 ±20 mV 雙相。'],
-        ['cur10', '量 I_min：10 kΩ 並 Q_pass', {so_r2:1e6, fi_supply:'stim', qs:'rx10', r13p:11e3}, 'Q_pass E–B 改夾 10 kΩ（取代 22 kΩ）：可變電阻 0–10 kΩ 約 41–0.3 µA，涵蓋 n = 0–4 的 I_min。']
+        ['kit', '原版電路', {so_r2:100, fi_supply:'none'}, '助教給的電路（同基礎目標）：R2 = 100 Ω，FI 沒有 V+（Passive PCB 底板沒串），n ≥ 1 沒有 AP。'],
+        ['r2m', 'R2 = 1 MΩ', {so_r2:1e6, fi_supply:'stim'}, 'R2 = 1 MΩ，FI 的 V+ 從 Stimulator 拉線（助教的設計 FI 有電）。AP 只有約 1.6–2.3 V。'],
+        ['true', '真正的 AP', Object.assign({ru:560e3, fi_supply:'stim', rpot:0}, TRUE_AP), '真正的 AP 外加元件，加上每個 Passive unit 一顆 560 kΩ 接 V+、FI 拉 V+ 線：n = 0–4 靜止都是 1.19 V，都有門檻、all-or-none、後過極化。I_min = 7.6／13.4／20.9／31.0／44.8 µA；量 I_min 時把 Q_pass E–B 改成 12 kΩ。']
       ]
     }
   };
@@ -57,6 +56,7 @@
     var s = SIMS[k];
     s.id = k; s.el = $('[data-sim="' + k + '"]'); s.svg = $('svg.sch', s.el); s.cv = $('canvas', s.el);
     s.state = {basic:Object.assign({}, s.def.basic), adv:Object.assign({}, s.def.adv)};
+    if(s.presets){ var tp = s.presets[s.presets.length - 1]; Object.assign(s.state.adv, tp[2], {_preset:tp[0], _note:tp[3]}); }
     s.sc = {v1:s.scope.v1, v2:s.scope.v2, t:s.scope.t, z1:1, z2:s.scope.z2, mode:'roll', tsrc:'ch1', lvl:1.0,
             trig:'idle', t0:0, prev:0, frozen:null};
     s.buf = {cap:40000, t:new Float64Array(40000), a:new Float64Array(40000), b:new Float64Array(40000), head:0, n:0};
@@ -193,7 +193,7 @@
       $$('button', box).forEach(function(b){ b.addEventListener('click', function(){
         var p = s.presets.filter(function(x){ return x[0] === b.dataset.p; })[0];
         var keep = {chain:s.state.adv.chain, ch2:s.state.adv.ch2, rpot:s.state.adv.rpot};
-        s.state.adv = Object.assign({}, s.def.adv, keep, p[2], {_preset:p[0], _note:p[3]});
+        s.state.adv = Object.assign({}, s.def.adv, keep, p[2], {_preset:p[0], _note:p[3]});   /* def.adv has no add-ons */
         syncControls(s); drawSchematic(s); if(active === s){ applyEngine(s); powerOn(s); }
       }); });
     });
