@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ADS1299EEGFE-PDK 採購：陽明交大碩士生從 DigiKey 下單的注意事項</title>
+<meta name="description" content="國立陽明交通大學碩士班學生向 DigiKey 台灣購買 TI ADS1299EEGFE-PDK 的依序注意事項：經費分類、套件內容、下單、報關、驗收、財產登記、核銷與開始使用。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F1; --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72;
+  --link:#1F5FA8; --req:#2F5D3A; --opt:#8A6100; --infer:#7A3E8F; --warn:#A33A2B; --rule:#CCD3CE;
+  --grid:rgba(47,93,58,.07);
+  --side:260px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+    --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+    --grid:rgba(127,176,137,.08);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151A1C; --surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0;
+  --link:#7DB3F0; --req:#7FB089; --opt:#E0B64F; --infer:#C99BDB; --warn:#E8826F; --rule:#2C3533;
+  --grid:rgba(127,176,137,.08);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px);scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  font-size:16.5px;line-height:1.8}
+a{color:var(--link);text-underline-offset:3px}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--link);outline-offset:2px;border-radius:3px}
+code,pre{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:14px}
+p{margin:0 0 14px;max-width:46em}
+
+/* ---------- sidebar ---------- */
+.side{position:fixed;top:0;left:0;bottom:0;width:var(--side);background:var(--surface);border-right:1.5px solid var(--ink);
+  padding:calc(env(safe-area-inset-top,0px) + 20px) 16px 24px;overflow-y:auto;z-index:30;transition:transform .2s ease}
+.side-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.side .brand{font-weight:900;font-size:16px;line-height:1.3;margin:0}
+.side nav ul{list-style:none;margin:0;padding:0}
+.side nav > ul > li{margin-bottom:4px}
+.side nav a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:15px;line-height:1.4}
+.side nav a:hover{background:var(--grid)}
+.side nav > ul > li > a{font-weight:700}
+.side nav ul ul a{padding-left:22px;font-size:13.5px;color:var(--muted);font-weight:400}
+.side nav a.active{background:var(--grid);box-shadow:inset 3px 0 0 var(--req)}
+.side .tools{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.btn{font:inherit;font-size:13.5px;padding:4px 12px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:999px;cursor:pointer;line-height:1.5}
+.btn:hover{background:var(--grid)}
+.fab{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:25;display:none;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+main{margin-left:var(--side);transition:margin-left .2s ease}
+body.side-closed .side{transform:translateX(-102%)}
+body.side-closed main{margin-left:0}
+body.side-closed .fab{display:inline-block}
+.scrim{display:none}
+@media (max-width:1000px){
+  main{margin-left:0}
+  body:not(.side-closed) .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:28}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.side,main{transition:none}}
+.wrap{max-width:940px;margin:0 auto;padding:44px 26px 80px}
+@media (max-width:560px){.wrap{padding-left:16px;padding-right:16px}}
+body.side-closed .wrap{padding-top:64px}
+
+/* ---------- header ---------- */
+h1{font-weight:900;font-size:clamp(28px,5vw,42px);line-height:1.2;letter-spacing:-.01em;margin:0 0 14px}
+.lede{font-size:18px;color:var(--muted);max-width:40em}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--muted);margin:14px 0 0}
+
+/* ---------- sections ---------- */
+details.sec{border-top:2px solid var(--ink);margin-top:36px}
+details.sec > summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:14px;padding:16px 0 6px}
+details.sec > summary::-webkit-details-marker{display:none}
+details.sec > summary .no{font-weight:900;font-size:30px;line-height:1;color:var(--req);font-variant-numeric:tabular-nums;min-width:1.2em}
+details.sec > summary h2{font-weight:900;font-size:26px;margin:0;line-height:1.3;flex:1}
+details.sec > summary .hint{font-size:13px;color:var(--muted);white-space:nowrap}
+details.sec[open] > summary .hint .c{display:none}
+details.sec:not([open]) > summary .hint .o{display:none}
+.body{padding:6px 0 4px}
+h3{font-weight:900;font-size:20px;margin:36px 0 10px;padding-top:4px}
+h3:first-child{margin-top:8px}
+h4{font-weight:700;font-size:17px;margin:20px 0 6px}
+
+/* ---------- atoms ---------- */
+.src{font-size:13px;white-space:nowrap}
+.src::before{content:"↗ "}
+q{font-style:italic}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:0 7px;border-radius:999px;border:1.5px solid currentColor;vertical-align:2px;margin-right:5px;white-space:nowrap;line-height:1.6}
+.req{color:var(--req)} .opt{color:var(--opt)} .inf{color:var(--infer)} .warn{color:var(--warn)}
+.note-inf{border-left:3px solid var(--infer);padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.note-warn{border-left:3px solid var(--warn);padding:6px 0 6px 14px;margin:14px 0;font-size:15.5px}
+.muted{color:var(--muted)} .small{font-size:14.5px}
+ul.specs,ol.specs{margin:6px 0 10px;padding-left:1.2em;font-size:15px}
+.specs li{margin:2px 0}
+
+/* tables */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px 0 6px;border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14.5px;background:var(--surface)}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:700;font-size:13px;color:var(--muted);background:var(--paper);position:sticky;top:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.grp td{background:var(--grid);font-weight:700;font-size:14px}
+tfoot td{font-weight:900;border-bottom:none;font-size:15.5px}
+td ul{margin:0;padding-left:1.1em} td li{margin:1px 0}
+
+/* paths */
+.paths{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));border:1.5px solid var(--ink);margin:14px 0 8px}
+.path{padding:18px;background:var(--surface)}
+.path + .path{border-left:1.5px solid var(--ink)}
+@media (max-width:560px){.path + .path{border-left:none;border-top:1.5px solid var(--ink)}}
+.path h4{margin:0 0 6px}
+.path .price{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}
+.path .price small{font-size:15px;font-weight:500;color:var(--muted)}
+.path p{font-size:15px;margin:8px 0 0}
+.path.pick{background:var(--grid)}
+
+/* flow */
+.flow{margin:14px -26px 0;padding:22px;background:
+  linear-gradient(var(--grid) 1px,transparent 1px) 0 0/22px 22px,
+  linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/22px 22px,var(--surface);
+  border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);overflow-x:auto}
+@media (max-width:560px){.flow{margin-left:-16px;margin-right:-16px}}
+.flow pre.mermaid{background:transparent;margin:0;text-align:center;min-width:620px}
+.keys{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;margin:12px 0 0}
+.key{display:inline-flex;align-items:center;gap:7px}
+.sw{width:18px;height:14px;border-radius:3px;border:2px solid}
+
+/* steps */
+ol.steps{counter-reset:st;list-style:none;padding:0;margin:12px 0}
+ol.steps > li{counter-increment:st;position:relative;padding:12px 0 12px 52px;border-bottom:1px solid var(--rule)}
+ol.steps > li::before{content:counter(st);position:absolute;left:0;top:12px;width:34px;height:34px;border-radius:6px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-weight:900}
+ol.steps b.t{display:block;font-size:16.5px;margin-bottom:2px}
+ol.steps .ph{display:inline-block;font-size:12px;font-weight:700;color:var(--muted);margin-left:6px}
+
+/* qa */
+.qa{border-left:4px solid var(--req);padding:2px 0 2px 16px;margin:30px 0 8px}
+.qa h3{margin:0}
+footer{margin-top:50px;font-size:13.5px;color:var(--muted)}
+</style>
+</head>
+<body class="">
+<aside class="side" id="side" aria-label="目錄">
+  <p style="margin:0 0 10px;font-size:13px"><a href="../" style="color:var(--muted);text-decoration:none">← ADS1299EEG-FE PDK 模擬</a></p>
+  <div class="side-head">
+    <p class="brand">ADS1299EEGFE-PDK 採購</p>
+    <button class="btn" id="sideClose" type="button" aria-label="收合目錄">收合 ‹</button>
+  </div>
+  <nav>
+    <ul>
+      <li><a href="#s1">1 結論與依序清單</a>
+        <ul>
+          <li><a href="#s1-cost">預估總花費</a></li>
+          <li><a href="#s1-list">依序注意事項</a></li>
+        </ul></li>
+      <li><a href="#s2">2 流程圖</a>
+        <ul>
+          <li><a href="#s2-flow">從決定要買到開始量測</a></li>
+          <li><a href="#s2-routes">三種付款管道</a></li>
+        </ul></li>
+      <li><a href="#s3">3 依據與出處</a>
+        <ul>
+          <li><a href="#s3-item">商品與套件內容</a></li>
+          <li><a href="#s3-money">經費科目與財產</a></li>
+          <li><a href="#s3-ship">運送、報關與稅</a></li>
+          <li><a href="#s3-nycu">陽明交大的程序</a></li>
+          <li><a href="#s3-use">軟體、安全與 IRB</a></li>
+        </ul></li>
+      <li><a href="#s4">4 文件清單</a>
+        <ul>
+          <li><a href="#s4-docs">要保存的單據</a></li>
+          <li><a href="#s4-address">地址怎麼填</a></li>
+        </ul></li>
+      <li><a href="#s5">5 Q&amp;A</a>
+        <ul>
+          <li><a href="#q-tax">要不要辦免稅令？</a></li>
+          <li><a href="#q-ti">TI 官網能直接買嗎？</a></li>
+          <li><a href="#q-first">到貨後先做什麼？</a></li>
+        </ul></li>
+    </ul>
+  </nav>
+  <div class="tools">
+    <button class="btn" id="openAll" type="button">全部展開</button>
+    <button class="btn" id="closeAll" type="button">全部收合</button>
+  </div>
+</aside>
+<div class="scrim" id="scrim"></div>
+<button class="btn fab" id="sideOpen" type="button" aria-controls="side">› 目錄</button>
+
+<main>
+<div class="wrap">
+<header>
+  <h1>從 DigiKey 買 ADS1299EEGFE-PDK</h1>
+  <p class="lede">寫給國立陽明交通大學的碩士班學生：用老師的計畫經費，在 <a href="https://www.digikey.tw/zh/products/detail/texas-instruments/ADS1299EEGFE-PDK/3661882">DigiKey 台灣站</a>買一套 TI 的 ADS1299 腦波前端評估套件，從問老師、下單、報關、驗收、財產登記、核銷到第一次通電，依序要注意哪些事。價格與條款取自 DigiKey 與 TI 頁面，查詢日 2026-10-13。</p>
+  <div class="legend">
+    <span><span class="tag req">必要</span>不做會卡住或違規</span>
+    <span><span class="tag opt">建議</span>不做也能買，但之後會麻煩</span>
+    <span><span class="tag inf">推論</span>我自己的判斷，非來源原文</span>
+    <span><span class="tag warn">未查到</span>查不到可靠來源，請問承辦人</span>
+  </div>
+</header>
+
+<!-- ===================== 1 結論 ===================== -->
+<details class="sec" id="s1" open>
+<summary><span class="no">1</span><h2>結論與依序清單</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<div class="paths" style="grid-template-columns:1fr">
+  <div class="path pick">
+    <h4>建議做法：老師同意後自己刷卡，選 UPS 預付（DDP），到貨後依小額採購核銷</h4>
+    <div class="price">NT$9,558 <small>DigiKey 單價（1 盒），台灣免運</small></div>
+    <p>DigiKey 料號 296-34948-ND，查詢日庫存 71 盒、原廠交期 12 週。訂單滿 NT$1,400 免運，約 4 個工作天送到台灣；選 UPS 預付時關稅由 DigiKey 付，<b>營業稅在送達時向你收</b>。<a class="src" href="https://www.digikey.tw/zh/products/detail/texas-instruments/ADS1299EEGFE-PDK/3661882">DigiKey 商品頁</a> 套件只有前端板和 MMB0 主板，<b>不附變壓器、電極、導線</b>，要另外準備。<a class="src" href="https://www.ti.com/lit/ug/slau443b/slau443b.pdf">SLAU443B §2.4、§9.4</a></p>
+  </div>
+</div>
+
+<p class="note-warn"><span class="tag warn">非行政或法律意見</span>以下整理自 DigiKey、TI、國科會與陽明交大的公開文件；經費能不能刷卡、怎麼分類、要附哪些單據，最後以系辦、主計室、採購組與經管組承辦人的說法為準。</p>
+
+<h3 id="s1-cost">預估總花費</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>項目</th><th class="num">金額（NT$）</th><th>說明</th></tr></thead>
+  <tbody>
+    <tr><td>ADS1299EEGFE-PDK ×1</td><td class="num">9,558</td><td>DigiKey 台灣站以新臺幣標價；10 盒以上單價 9,536.2。</td></tr>
+    <tr><td>運費</td><td class="num">0</td><td>滿 NT$1,400 免運；未滿收 600。</td></tr>
+    <tr><td>關稅</td><td class="num">0</td><td>選 UPS 預付（DDP）時由 DigiKey 支付；選 FedEx／DHL（CPT）則送達時由你付。</td></tr>
+    <tr><td>5% 營業稅</td><td class="num">≈ 480</td><td><span class="tag inf">推論</span>以商品價估算；海關以完稅價格計，實際以稅單為準。完稅價格超過 NT$2,000 必課。<a class="src" href="https://www.etax.nat.gov.tw/etwmain/tax-info/network-transaction-taxtation-area/seller/import-notice">財政部稅務入口網</a></td></tr>
+    <tr><td>信用卡國外交易手續費</td><td class="num">≈ 140</td><td><span class="tag inf">推論</span>DigiKey 是境外公司，即使以新臺幣結帳，發卡行仍可能收約 1.5%。<a class="src" href="https://finance.ettoday.net/news/1100898">ETtoday</a> 能否一併報支要問主計室。</td></tr>
+    <tr><td>電源（4×AA 電池盒＋DC 插頭線）、USB 線、電極與導線</td><td class="num">另計</td><td>套件不附。見第 3 段「商品與套件內容」。</td></tr>
+  </tbody>
+  <tfoot><tr><td>合計（不含另購配件）</td><td class="num">≈ 10,180</td><td>單價未滿 1 萬，但連稅費可能超過 1 萬，影響財產分類（第 7 步）。</td></tr></tfoot>
+</table>
+</div>
+
+<h3 id="s1-list">依序注意事項</h3>
+<p>依時間排序。每一步右邊的灰字是它在第 2 段流程圖裡的階段。</p>
+<ol class="steps">
+  <li><b class="t">先問指導教授：要不要買、用哪個計畫付<span class="ph">① 先問人</span></b>碩士生自己沒有經費，請購、驗收、核銷都掛在老師的計畫下。先確認計畫名稱與編號、經費還有多少、這筆是不是和計畫研究直接相關。<span class="tag inf">推論</span>同時問老師「能不能先自己刷卡墊付」，這決定你走哪一條付款管道（第 2 段）。</li>
+  <li><b class="t">確認經費科目：單價未滿 1 萬元列業務費<span class="ph">① 先問人</span></b>國科會計畫的研究設備費是 <b>單價新臺幣一萬元以上、使用年限二年以上</b> 的設備，看的是單價不是總價。<a class="src" href="https://oa-22.adm.ncu.edu.tw/word/34511242023.pdf">中央大學會計 Q&amp;A</a> 這套目前 NT$9,558，<span class="tag inf">推論</span>可列業務費（耗材、物品）。但 DigiKey 新臺幣價格會隨匯率調整，<b>下單當天如果超過 1 萬</b>，就變成設備費，必須在計畫核定清單內。</li>
+  <li><b class="t">問系辦或主計室：個人刷卡墊付外國網站可以核銷嗎<span class="ph">① 先問人</span></b><span class="tag warn">未查到</span>陽明交大對「個人信用卡在國外網站購物後核銷」的明文規定。要問清楚三件事：可不可以、要附哪些單據、國外交易手續費能不能報。不行的話，改請國內廠商報價代購（第 2 段路線 B）。</li>
+  <li><b class="t">搞清楚套件裡沒有什麼，一起準備<span class="ph">② 下單前</span></b>SLAU443B Rev B 的套件內容只有 <b>ADS1299EEG-FE 前端板＋MMB0 主板</b>，Rev B 已刪掉「變壓器」這一項。<a class="src" href="https://www.ti.com/lit/ug/slau443b/slau443b.pdf">SLAU443B 修訂紀錄</a>
+    <ul class="specs">
+      <li><b>電源：</b>MMB0 的 DC 插座要 5.5–15 V、正極在中心、<b>內徑 2.5 mm</b>／外徑 5.5 mm 的插頭（常見的 2.1 mm 插不緊）。手冊建議用 4 顆 1.5 V 電池串聯，比接市電少 50/60 Hz 雜訊。</li>
+      <li><b>USB 線：</b><span class="tag inf">推論</span>手冊沒有把 USB 線列入套件，收貨前先找一條，接頭型式到貨對照 MMB0 確認。</li>
+      <li><b>電極與導線：</b>不附。電極接到前端板的 J6 排針，要自己做轉接。</li>
+    </ul></li>
+  <li><b class="t">裝好 EZ WAY 易利委並完成實名認證<span class="ph">② 下單前</span></b>2026 年 3 月 1 日起，個人進口快遞全面實名認證與預先確認委任，沒在 App 按「申報相符」海關不受理。<a class="src" href="https://www.businesstoday.com.tw/article/category/183030/post/202602260003/">今周刊</a> <span class="tag inf">推論</span>收件人寫誰，就由誰在 EZ WAY 認證；個人刷卡時收件人寫自己最單純。</li>
+  <li><b class="t">下單：選 UPS 預付（DDP），信用卡或 PayPal<span class="ph">③ 下單</span></b>台灣站兩種運送：UPS 預付是 DDP，<q>關稅由 DigiKey 支付，稅賦在送達時收取</q>；FedEx／DHL 預付是 CPT，關稅與稅賦都在送達時收取。兩者都只收信用卡與 PayPal。<a class="src" href="https://www.digikey.tw/zh/products/detail/texas-instruments/ADS1299EEGFE-PDK/3661882">DigiKey 商品頁運送說明</a> 地址寫學校實驗室（第 4 段）。下單後立刻存訂單確認信與 Invoice PDF。</li>
+  <li><b class="t">到貨時：EZ WAY 核對、繳營業稅、拿稅費收據<span class="ph">④ 報關</span></b>品名、金額與訂單相符才按「申報相符」，不符按「申報不符」並聯絡 UPS。送達時繳 5% 營業稅，<b>收據要留著核銷</b>。這套沒有無線電，<span class="tag inf">推論</span>不需要 NCC 自用切結（和 UAV 頁的 Crazyflie 不同）。</li>
+  <li><b class="t">點收、驗收、登記財產或非消耗品<span class="ph">⑤ 驗收</span></b>開箱拍照、通電確認 MMB0 的綠色 LED 亮。驗收依小額採購規定由系所、院或一級單位主管擔任驗收人核章。<a class="src" href="https://www.nycu.edu.tw/ga/ch/app/data/doc?module=nycu0143&amp;detailNo=1415528239299825664&amp;type=s">科研採購作業流程</a> 陽明交大的財產物品流程圖把單價 1 萬元以上、使用兩年以上列為財產，並另有 6,000–10,000 元的級距。<a class="src" href="https://ga.nycu.edu.tw/userfiles/gach/files/20250319111134888.pdf">財產物品增加流程圖（114 年 3 月）</a> <span class="tag inf">推論</span>這套多半要登記「非消耗品」並貼標籤；如果單價連同稅費算入取得成本後超過 1 萬，可能要改列財產，請經管組判定。</li>
+  <li><b class="t">核銷<span class="ph">⑥ 核銷</span></b>在主計經費報支系統送出，附 Invoice、刷卡帳單或簽單、營業稅收據、驗收紀錄，以及財產（物品）增加單。<span class="tag inf">推論</span>DigiKey 台灣站以新臺幣計價，Invoice 金額本身就是新臺幣，不必另附匯率證明；但主計室若要求國外單據加註中文品名，照辦。</li>
+  <li><b class="t">下載軟體：要 TI 帳號與出口管制申報<span class="ph">⑦ 開始使用</span></b>TI 頁面上的 ADS1299EEGFE-PDK-SW、韌體與原始碼下載都標示需要 export approval（約 1 分鐘）。<a class="src" href="https://www.ti.com/tool/ADS1299EEGFE-PDK">TI 產品頁</a> 官方只寫 Windows XP／7；Windows 10／11 有人用得起來，但常卡在 MMB0 的 USB 驅動（第 3 段）。</li>
+  <li><b class="t">要量人的腦波：先過 IRB，並做好電氣安全<span class="ph">⑦ 開始使用</span></b>TI 寫明這塊板子 <q>not intended for direct interface with a patient</q>，接觸人體的電氣安全由使用者負責。<a class="src" href="https://www.ti.com/lit/ug/slau443b/slau443b.pdf">SLAU443B</a> 學生論文的人體研究由指導教授當計畫主持人送陽明交大 IRB。<a class="src" href="https://irb.nycu.edu.tw/">陽明交大 IRB</a> <span class="tag inf">推論</span>收生理訊號屬人體研究，核准前不收受試者資料；只做假人或電阻網路測試則不用。</li>
+</ol>
+
+</div>
+</details>
+
+<!-- ===================== 2 流程圖 ===================== -->
+<details class="sec" id="s2" open>
+<summary><span class="no">2</span><h2>流程圖</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s2-flow">從決定要買到開始量測</h3>
+<p>主線是路線 A（自己刷卡）。① 的判斷沒過時，紅色節點是備案。</p>
+<div class="flow">
+<pre class="mermaid">
+flowchart TD
+  subgraph P0["① 先問人"]
+    A0(["開始：實驗需要 ADS1299EEGFE-PDK"]):::ok
+    A1{"指導教授同意，<br/>決定由哪個計畫付款？"}:::chk
+    X1["先不要下單"]:::risk
+    A2{"下單當天 DigiKey 單價<br/>未滿 NT$10,000？"}:::chk
+    A2y["列業務費：耗材、物品"]:::doc
+    A2n["列研究設備費：<br/>須在核定清單內<br/>或依校內程序增列"]:::risk
+    A3{"系辦／主計室：<br/>可以個人刷卡墊付<br/>國外網站再核銷？"}:::chk
+    XB["改走路線 B：<br/>國內廠商報價、代購<br/>開統一發票"]:::risk
+    A0 --> A1
+    A1 -->|否| X1
+    A1 -->|是| A2
+    A2 -->|是| A2y --> A3
+    A2 -->|否| A2n --> A3
+    A3 -->|否| XB
+  end
+  subgraph P1["② 下單前準備"]
+    B1["EZ WAY 易利委：<br/>下載 → 註冊 → 實名認證<br/>由收件人本人完成"]:::doc
+    B2["套件只有前端板＋MMB0<br/>Rev B 起不附變壓器"]:::chk
+    B3["另備：4×AA 電池盒＋DC 插頭<br/>5.5–15 V、中心正、內徑 2.5 mm<br/>USB 線、電極與導線"]:::doc
+    B4["DigiKey 帳號：<br/>地址填學校實驗室<br/>收件人＝EZ WAY 認證的人"]:::act
+    B1 --> B2 --> B3 --> B4
+  end
+  A3 -->|是| B1
+  subgraph P2["③ 下單"]
+    C1["購物車：ADS1299EEGFE-PDK ×1<br/>DigiKey 296-34948-ND"]:::act
+    C2{"運送選 UPS 預付<br/>DDP？"}:::chk
+    C2n["FedEx／DHL 是 CPT：<br/>送達時關稅也要自己繳"]:::risk
+    C3["信用卡或 PayPal 結帳"]:::act
+    C4["存：訂單確認信、Invoice PDF、<br/>刷卡簽單"]:::doc
+    C1 --> C2
+    C2 -->|是| C3
+    C2 -->|否| C2n --> C3
+    C3 --> C4
+  end
+  B4 --> C1
+  subgraph P3["④ 運送與報關：約 4 個工作天"]
+    D1{"EZ WAY 推播的品名、<br/>金額與訂單相符？"}:::chk
+    D2["按「申報相符」"]:::gov
+    D2x["按「申報不符」<br/>聯絡 UPS 更正"]:::risk
+    D3["送達時繳 5% 營業稅<br/>關稅已由 DigiKey 付<br/>保留稅費收據"]:::gov
+    D1 -->|是| D2 --> D3
+    D1 -->|否| D2x --> D1
+  end
+  C4 --> D1
+  subgraph P4["⑤ 收貨與驗收"]
+    E1["開箱點收、拍照<br/>電池供電，MMB0 綠燈亮"]:::act
+    E2["驗收人核章：<br/>系所、院或一級單位主管"]:::doc
+    E3{"經管組判定：<br/>財產或非消耗品？"}:::chk
+    E4["財管系統填增加單<br/>貼標籤，列入每年盤點"]:::doc
+    E1 --> E2 --> E3 --> E4
+  end
+  D3 --> E1
+  subgraph P5["⑥ 核銷"]
+    F1["主計經費報支系統：<br/>Invoice、刷卡帳單、稅費收據、<br/>驗收紀錄、增加單"]:::doc
+    F2{"帳單有國外交易手續費？"}:::chk
+    F3["問主計室能否一併報支"]:::chk
+    F1 --> F2
+    F2 -->|有| F3
+  end
+  E4 --> F1
+  subgraph P6["⑦ 開始使用"]
+    G1["TI 帳號登入<br/>填 export approval<br/>下載 ADS1299EEGFE-PDK-SW"]:::doc
+    G2{"Windows 認得 MMB0？"}:::chk
+    G3["以系統管理員重裝<br/>先接電再插 USB<br/>必要時暫停驅動程式簽章強制"]:::risk
+    G4{"要量真人腦波？"}:::chk
+    G5["指導教授為主持人送 IRB<br/>核准後才收受試者資料"]:::gov
+    G6["電池供電、筆電拔掉變壓器<br/>不接市電設備"]:::risk
+    E5(["完成：可以開始量測"]):::ok
+    G1 --> G2
+    G2 -->|否| G3 --> G2
+    G2 -->|是| G4
+    G4 -->|是| G5 --> G6 --> E5
+    G4 -->|否：只測電路| E5
+  end
+  F2 -->|沒有| G1
+  F3 --> G1
+  classDef chk fill:#E3ECF7,stroke:#1F5FA8,stroke-width:2px,color:#0F2A4A
+  classDef doc fill:#FBEFD2,stroke:#8A6100,stroke-width:2px,color:#3D2B00
+  classDef gov fill:#F3E1F7,stroke:#7A3E8F,stroke-width:2px,color:#3B1745
+  classDef act fill:#F4F4F2,stroke:#8A9399,stroke-width:1px,color:#1E262C
+  classDef risk fill:#FBE3DE,stroke:#A33A2B,stroke-width:2px,color:#4A120A
+  classDef ok fill:#DCEFD9,stroke:#2F5D3A,stroke-width:2.5px,color:#16301C
+</pre>
+</div>
+<div class="keys">
+  <span class="key"><span class="sw" style="background:#E3ECF7;border-color:#1F5FA8"></span>要先確認的事</span>
+  <span class="key"><span class="sw" style="background:#FBEFD2;border-color:#8A6100"></span>要準備或保存的文件</span>
+  <span class="key"><span class="sw" style="background:#F3E1F7;border-color:#7A3E8F"></span>向政府或學校申報、送審</span>
+  <span class="key"><span class="sw" style="background:#FBE3DE;border-color:#A33A2B"></span>備案或要小心的地方</span>
+  <span class="key"><span class="sw" style="background:#F4F4F2;border-color:#8A9399"></span>一般動作</span>
+</div>
+<p class="note-inf"><span class="tag inf">推論</span>「⑦ 開始使用」裡的 IRB 不必等到貨才送。審查委員收件後 10 個工作天內回覆意見，之後還要修正與追認，最好在下單的同時就和老師準備送審文件。</p>
+
+<h3 id="s2-routes">三種付款管道</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th></th><th>A. 自己刷卡（DigiKey 台灣站）</th><th>B. 國內廠商報價、代購</th><th>C. 學校直接向 DigiKey 下 PO</th></tr></thead>
+  <tbody>
+    <tr><td><b>怎麼下單</b></td><td>網站結帳，信用卡或 PayPal</td><td>請國內貿易商或代理商報價，學校依小額採購向它買</td><td>向 DigiKey 申請機構信用帳戶，以 PO 下單、電匯付款</td></tr>
+    <tr><td><b>單據</b></td><td>DigiKey Invoice（新臺幣）＋刷卡帳單＋稅費收據</td><td>統一發票</td><td>DigiKey Invoice＋結匯水單</td></tr>
+    <tr><td><b>速度</b></td><td>最快；約 4 個工作天</td><td>看廠商；多半要再加幾天到幾週</td><td>最慢；要先辦帳戶與校內結匯</td></tr>
+    <tr><td><b>價格</b></td><td>NT$9,558＋營業稅＋國外交易手續費</td><td><span class="tag inf">推論</span>廠商會加服務費</td><td>NT$9,558＋稅＋電匯手續費</td></tr>
+    <tr><td><b>要先確認</b></td><td><span class="tag warn">未查到</span>陽明交大是否允許個人刷卡墊付，問系辦或主計室</td><td>採購組、主計室對代購的看法</td><td><span class="tag warn">未查到</span>DigiKey 台灣站是否開放；美國站有機構信用帳戶與預付電匯 <a class="src" href="https://www.digikey.com/en/help-support/payment-and-pricing/payment-methods">DigiKey 付款方式</a>，但台灣站運送說明寫只收信用卡與 PayPal</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note-inf"><span class="tag inf">推論</span>一萬元左右的單件評估板，A 最省時間；B 適合經費不能刷卡、或主計室只收統一發票的情況；C 只有實驗室會長期大量向 DigiKey 下單時才值得辦。</p>
+
+</div>
+</details>
+
+<!-- ===================== 3 依據 ===================== -->
+<details class="sec" id="s3" open>
+<summary><span class="no">3</span><h2>依據與出處</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s3-item">商品與套件內容</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>項目</th><th>內容</th><th>來源</th></tr></thead>
+  <tbody>
+    <tr><td><b>DigiKey 品項</b></td><td>296-34948-ND；類比前端評估板，8 通道，SPI／USB 介面，附 GUI；狀態「現行」；內容物欄只寫「板」。</td><td><a class="src" href="https://www.digikey.tw/zh/products/detail/texas-instruments/ADS1299EEGFE-PDK/3661882">DigiKey</a></td></tr>
+    <tr><td><b>價格與庫存</b></td><td>1 盒 NT$9,558；10 盒 NT$9,536.2；25 盒 NT$9,527.4。查詢日庫存 71 盒，原廠標準交期 12 週。每位客戶每 30 天限購 10 盒。</td><td><a class="src" href="https://www.digikey.tw/zh/products/detail/texas-instruments/ADS1299EEGFE-PDK/3661882">DigiKey</a></td></tr>
+    <tr><td><b>套件內容（Rev B）</b></td><td>ADS1299EEG-FE 印刷電路板 Rev A；MMB0 模組化 EVM 主板 Rev D 以上。修訂紀錄：從 §2.4 刪除 <q>Universal AC to DC wall adapter</q>。</td><td><a class="src" href="https://www.ti.com/lit/ug/slau443b/slau443b.pdf">SLAU443B</a></td></tr>
+    <tr><td><b>電源規格</b></td><td>5.5–15 VDC；500 mA；桶型插頭中心正極，內徑 2.5 mm × 外徑 5.5 mm，插入深度 9 mm；建議用 4 顆 1.5 V 電池（6 V 電源線不附）。</td><td><a class="src" href="https://www.ti.com/lit/ug/slau443b/slau443b.pdf">SLAU443B §9.4</a></td></tr>
+    <tr><td><b>有無無線電</b></td><td><span class="tag inf">推論</span>前端板與 MMB0 只用 USB 連電腦，沒有 Wi-Fi、藍牙或其他射頻模組，所以不適用 NCC 的低功率射頻器材進口規定。</td><td>SLAU443B 架構說明</td></tr>
+    <tr><td><b>商品檢驗</b></td><td><span class="tag inf">推論</span>套件不含變壓器，少了最可能被 BSMI 管到的品項。電源若在台灣買，挑有商品安全標章的變壓器或直接用電池盒。</td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="s3-money">經費科目與財產</h3>
+<ul class="specs">
+  <li><b>研究設備費的定義：</b>國科會專題研究計畫的研究設備費，是執行計畫所需 <b>單價在新臺幣一萬元以上，且使用年限在二年以上</b> 的儀器、機械及資訊設備。<a class="src" href="https://ord.nccu.edu.tw/files/rd_research/1828_591b4c94.pdf">經費處理原則（政大轉載）</a> 「一萬元以上」指個體單價，不是總價。<a class="src" href="https://oa-22.adm.ncu.edu.tw/word/34511242023.pdf">中央大學會計 Q&amp;A</a></li>
+  <li><b>設備要在核定清單內：</b>研究設備費依經費核定清單所列設備核實列支；計畫執行中要增列研究設備費、額度 5 萬元以下者，執行機構可依內部程序辦理。<a class="src" href="https://ord.nccu.edu.tw/files/rd_research/1828_591b4c94.pdf">經費處理原則</a></li>
+  <li><b>匯率風險：</b><span class="tag inf">推論</span>NT$9,558 離 1 萬只差約 4.6%；DigiKey 新臺幣價格隨匯率調整，如果下單當天超過 1 萬，科目就會從業務費變成設備費。所以「先確認科目」要用下單當天的價格。</li>
+  <li><b>陽明交大的財產與非消耗品：</b>財物驗收合格後，由保管單位在財物管理系統產出「財產（物品）增加單」，單位財產管理人與主管簽核後隨核銷送審，經管組登錄、印標籤，每年盤點。流程圖列有 10,000 元與 6,000–10,000 元兩個級距。<a class="src" href="https://ga.nycu.edu.tw/userfiles/gach/files/20250319111134888.pdf">財產物品增加流程圖</a> <span class="tag inf">推論</span>這套在非消耗品那一級；稅費要不要算入取得成本，請經管組判定。</li>
+  <li><b>不要拆單：</b>同一採購目的或同一預算科目的經費應合併辦理，不可刻意切割來規避門檻。<a class="src" href="https://ep.nycu.edu.tw/wp-content/uploads/2022/06/10國立陽明交通大學採購案權責劃分表（適用科學技術基本法）.pdf">陽明交大採購案權責劃分表</a> <span class="tag inf">推論</span>同一計畫要買兩套時，一起買比分兩次刷卡安全。</li>
+</ul>
+
+<h3 id="s3-ship">運送、報關與稅</h3>
+<ul class="specs">
+  <li><b>DigiKey 台灣站運送：</b><q>訂購產品一般會在 4個工作日內送抵臺灣</q>；滿 NT$1,400 免運，未滿收 NT$600。UPS 預付為 DDP，<q>關稅由 DigiKey 支付，稅賦在送達時收取</q>；FedEx 或 DHL 預付為 CPT，<q>相關稅賦與關稅在送達時收取</q>；兩者 <q>僅接受以信用卡和 PayPal 付款</q>。<a class="src" href="https://www.digikey.tw/zh/products/detail/texas-instruments/ADS1299EEGFE-PDK/3661882">DigiKey 商品頁</a></li>
+  <li><b>營業稅：</b>網購進口完稅價格超過 NT$2,000 要課稅。<a class="src" href="https://www.etax.nat.gov.tw/etwmain/tax-info/network-transaction-taxtation-area/seller/import-notice">財政部稅務入口網</a> <span class="tag inf">推論</span>即使是 DDP，營業稅仍在送達時由你繳，約 NT$480。</li>
+  <li><b>EZ WAY 實名與預先委任：</b>2026 年 3 月 1 日起適用於個人進口快遞貨物；資訊有誤按「申報不符」並聯絡報關業者。<a class="src" href="https://www.businesstoday.com.tw/article/category/183030/post/202602260003/">今周刊</a> 實名認證可選電信認證或簡訊認證。<a class="src" href="https://www.fedex.com/content/dam/fedex/apac-asia-pacific/downloads/fedex-import-RNA-app-guide-zh-tw.pdf">EZ WAY 說明（FedEx 版）</a> <span class="tag inf">推論</span>UPS 送件同樣會推播到 EZ WAY。</li>
+  <li><b>國外交易手續費：</b>境外公司的網站刷卡屬境外交易，發卡機構可能收取國外交易服務費。<a class="src" href="https://finance.ettoday.net/news/1100898">ETtoday</a></li>
+</ul>
+
+<h3 id="s3-nycu">陽明交大的程序</h3>
+<ul class="specs">
+  <li><b>小額科研採購：</b>國科會等補助計畫適用科研採購；小額可逕洽廠商採購後核銷，國外採購要辦結匯或進口免稅時，請購單核定後送採購組；100 萬以下小額由請購單位附證明文件及發票依經費程序核銷，驗收人由系所、院或一級單位主管核章。<a class="src" href="https://www.nycu.edu.tw/ga/ch/app/data/doc?module=nycu0143&amp;detailNo=1415528239299825664&amp;type=s">科研採購作業流程</a></li>
+  <li><b>個人刷卡墊付：</b><span class="tag warn">未查到</span>陽明交大公開文件裡沒有找到「國外網站、個人信用卡」的專門規定。他校的類似規定多要求附信用卡帳單影本作外幣支出佐證，但那是他校規定。</li>
+  <li><b>和 UAV 頁的差別：</b>Crazyflie 有無線電要辦 NCC，又是瑞典出貨、要自己處理關稅；這套沒有無線電，DigiKey 用 UPS DDP 代付關稅，流程短很多。詳細的海外採購、免稅令與押款提貨流程見 <a href="../../../uav/crazyflie/#s2-nycu">UAV／Crazyflie 頁的陽明交大規範</a>。</li>
+</ul>
+
+<h3 id="s3-use">軟體、安全與 IRB</h3>
+<ul class="specs">
+  <li><b>軟體下載：</b>TI 產品頁列出 ADS1299EEGFE-PDK-SW、韌體原始碼 ADS1299EEGFEFW-C5509、軟體原始碼 ADS1299EEGFESW-SOURCE，三者都要 export approval；軟體描述為 Windows XP 或 Windows 7 用。<a class="src" href="https://www.ti.com/tool/ADS1299EEGFE-PDK">TI 產品頁</a> 使用手冊 Rev B（2016）甚至只列 XP SP2，且提醒 <b>先裝軟體、再接硬體</b>，否則 Windows 可能認不到。<a class="src" href="https://www.ti.com/lit/ug/slau443b/slau443b.pdf">SLAU443B §3</a></li>
+  <li><b>Windows 10／11：</b>TI 工程師在論壇上說 GUI 可以在 Windows 11 執行。<a class="src" href="https://e2echina.ti.com/support/machine-translation/mt-data-converters/f/mt-data-converters-forum/1091505/ads1299eegfe-pdk-windows">E2E 中文論壇</a> 常見問題是 MMB0 的 USB 驅動：先接電、再插 USB，裝置管理員應先出現 MMB0（NI-VISA）；裝不上時以系統管理員身分重裝。<a class="src" href="https://e2echina.ti.com/support/machine-translation/mt-data-converters/f/mt-data-converters-forum/505821/ads1299-ads1299">E2E：Win10 安裝</a> <a class="src" href="https://e2e.ti.com/support/data-converters/f/73/t/843829">E2E：ADS129x EVM 與 Win10</a> 同一塊 MMB0 主板在其他 TI 評估套件上，問題是驅動沒有簽章，要先停用驅動程式簽章強制才裝得上，而且不保證成功；TI 人員的備案是改用 Windows 7 電腦。<a class="src" href="https://e2e.ti.com/support/data-converters-group/data-converters/f/data-converters-forum/779140/ads1278evm-pdk-mmb0-with-windows-10">E2E：MMB0 與 Win10</a> <span class="tag inf">推論</span>實驗室有舊筆電就先留著。</li>
+  <li><b>電氣安全：</b>TI 寫明板子不供直接接觸病人、不供診斷、只供開發用途，接觸人體的電氣安全由使用者負責。<a class="src" href="https://www.ti.com/lit/ug/slau443b/slau443b.pdf">SLAU443B</a> <span class="tag inf">推論</span>板子沒有隔離，接人時整套（含筆電）都用電池，不要讓受試者經 USB 連到接市電的設備。</li>
+  <li><b>IRB：</b>學生論文的人體研究由指導教授擔任計畫主持人送審，審查委員收件後 10 個工作天內送回意見。<a class="src" href="https://irb.nycu.edu.tw/">陽明交大 IRB</a> <span class="tag inf">推論</span>收集腦波屬於生理資料，通常要送審；只量電阻網路或訊號產生器不用。</li>
+</ul>
+
+</div>
+</details>
+
+<!-- ===================== 4 文件 ===================== -->
+<details class="sec" id="s4" open>
+<summary><span class="no">4</span><h2>文件清單</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<h3 id="s4-docs">要保存的單據</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>文件</th><th>什麼時候拿到</th><th>用途</th><th>從哪裡來</th></tr></thead>
+  <tbody>
+    <tr><td>老師同意、計畫編號</td><td>下單前</td><td><span class="tag req">必要</span>請購與核銷都要</td><td>指導教授</td></tr>
+    <tr><td>主計室對刷卡墊付的回覆</td><td>下單前</td><td><span class="tag opt">建議</span>留 email 或對話紀錄</td><td>系辦、主計室</td></tr>
+    <tr><td>DigiKey 訂單確認信、Invoice</td><td>下單後</td><td><span class="tag req">必要</span>核銷主單據</td><td>DigiKey 帳號「訂單記錄」</td></tr>
+    <tr><td>信用卡帳單或簽單</td><td>帳單日</td><td><span class="tag req">必要</span>證明實際付款</td><td>發卡銀行</td></tr>
+    <tr><td>營業稅收據</td><td>送達時</td><td><span class="tag req">必要</span>稅費核銷</td><td>UPS、EZ WAY</td></tr>
+    <tr><td>開箱照片</td><td>到貨當天</td><td><span class="tag opt">建議</span>驗收佐證、缺件時找原廠</td><td>自己拍</td></tr>
+    <tr><td>驗收紀錄</td><td>驗收時</td><td><span class="tag req">必要</span>主管核章</td><td>經費報支系統</td></tr>
+    <tr><td>財產（物品）增加單</td><td>驗收後</td><td><span class="tag req">必要</span>非消耗品或財產登記</td><td>財物管理系統</td></tr>
+    <tr><td>IRB 核准函</td><td>收受試者資料前</td><td>要量人時 <span class="tag req">必要</span></td><td>陽明交大 IRB</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="s4-address">地址怎麼填</h3>
+<p>陽明交大採購組提醒：收貨人資訊（系所、館室、電話分機、手機）要完整，以免報關時找不到人。<a class="src" href="https://ga.nycu.edu.tw/userfiles/gach/files/20250508105332249.pdf">免稅申請＆報關注意事項</a></p>
+<div class="scroll">
+<table>
+  <thead><tr><th>欄位</th><th>填法（光復校區）</th><th>說明</th></tr></thead>
+  <tbody>
+    <tr><td>姓名</td><td>收件人英文姓名</td><td><span class="tag inf">推論</span>自己刷卡就寫自己，EZ WAY 由同一人認證</td></tr>
+    <tr><td>公司</td><td>National Yang Ming Chiao Tung University</td><td>讓快遞找得到學校</td></tr>
+    <tr><td>地址 1</td><td>Room ___, ___ Building, Dept. of ___ (Lab name)</td><td>房號、館名、系所</td></tr>
+    <tr><td>地址 2</td><td>1001, Daxue Rd., East Dist.</td><td>陽明校區：155, Sec. 2, Linong St., Beitou Dist.</td></tr>
+    <tr><td>城市／郵遞區號</td><td>Hsinchu City　300093</td><td>陽明校區：Taipei City　112304</td></tr>
+    <tr><td>電話</td><td>收件人手機</td><td><span class="tag inf">推論</span>UPS 與 EZ WAY 都會找這支</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small">英文地址取自陽明交大官方網站，與 <a href="../../../uav/crazyflie/#s2-address">UAV／Crazyflie 頁</a>相同。</p>
+
+</div>
+</details>
+
+<!-- ===================== 5 Q&A ===================== -->
+<details class="sec" id="s5" open>
+<summary><span class="no">5</span><h2>Q&amp;A</h2><span class="hint"><span class="o">收合</span><span class="c">展開</span></span></summary>
+<div class="body">
+
+<div class="qa" id="q-tax"><h3>要不要以學校名義辦教育研究用品免稅令？</h3></div>
+<p><span class="tag inf">推論</span>不划算。DDP 下關稅已由 DigiKey 付，免稅令能省的只剩約 NT$480 營業稅；免稅令從採購組送件到海關核發約 10–14 天，而且要在貨到海關前核准。<a class="src" href="https://ga.nycu.edu.tw/userfiles/gach/files/20250508105332249.pdf">免稅申請＆報關注意事項</a> DigiKey 現貨約 4 個工作天就送到，個人刷卡的訂單也無法請它延後出貨。一次買很多套、或改走學校 PO 時再考慮。</p>
+
+<div class="qa" id="q-ti"><h3>TI 官網能直接買嗎？</h3></div>
+<p><span class="tag warn">未查到</span>TI 產品頁有「Order now」，但查詢時看不到價格與庫存，搜尋結果裡也有 TI 頁面版本寫「Not available on TI.com」。<a class="src" href="https://www.ti.com/tool/ADS1299EEGFE-PDK">TI 產品頁</a> 要比價請登入 TI 帳號查看；DigiKey 的好處是新臺幣報價、DDP、現貨。</p>
+
+<div class="qa" id="q-first"><h3>到貨後先做什麼？</h3></div>
+<ol class="specs">
+  <li>對照出廠跳線表檢查跳線沒有在運送中鬆脫（SLAU443B 表 1）。</li>
+  <li>在電腦先裝軟體，再用電池盒供電、接 USB。</li>
+  <li>跑使用手冊第 7、8 章的輸入短路雜訊測試：手冊實測小於 1 µVpp。結果可以和本站的 <a href="../">PDK 模擬頁</a> 對照。</li>
+  <li>確認無誤再辦驗收；有缺件或故障，拿開箱照片找 DigiKey。</li>
+</ol>
+
+</div>
+</details>
+
+<footer>查詢日期 2026-10-13。價格、庫存、匯率與行政規定隨時變動，下單與核銷前請以 DigiKey、TI 與陽明交大承辦人的說法為準。</footer>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="../../../diagrams.js"></script>
+<script>
+(function(){
+  var body = document.body;
+  var secs = Array.prototype.slice.call(document.querySelectorAll('details.sec'));
+  var mq = window.matchMedia('(max-width:1000px)');
+
+  /* ---- sidebar open / close ---- */
+  function setSide(open){
+    body.classList.toggle('side-closed', !open);
+    document.getElementById('sideOpen').setAttribute('aria-expanded', open ? 'true' : 'false');
+    try{ if(!mq.matches) localStorage.setItem('pdkBuySide', open ? '1' : '0'); }catch(e){}
+  }
+  var saved = null; try{ saved = localStorage.getItem('pdkBuySide'); }catch(e){}
+  setSide(mq.matches ? false : saved !== '0');
+  document.getElementById('sideClose').addEventListener('click', function(){ setSide(false); });
+  document.getElementById('sideOpen').addEventListener('click', function(){ setSide(true); });
+  document.getElementById('scrim').addEventListener('click', function(){ setSide(false); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && mq.matches) setSide(false); });
+
+  /* ---- links open their section ---- */
+  function openFor(hash){
+    if(!hash || hash.length < 2) return;
+    var t = document.getElementById(hash.slice(1));
+    if(!t) return;
+    var d = t.tagName === 'DETAILS' ? t : t.closest('details.sec');
+    if(d && !d.open){ d.open = true; }
+    if(t.tagName !== 'DETAILS'){ setTimeout(function(){ t.scrollIntoView({block:'start'}); }, 30); }
+  }
+  document.querySelectorAll('.side nav a').forEach(function(a){
+    a.addEventListener('click', function(){ openFor(a.getAttribute('href')); if(mq.matches) setSide(false); });
+  });
+  openFor(location.hash);
+  window.addEventListener('hashchange', function(){ openFor(location.hash); });
+
+  document.getElementById('openAll').addEventListener('click', function(){ secs.forEach(function(d){ d.open = true; }); });
+  document.getElementById('closeAll').addEventListener('click', function(){ secs.forEach(function(d){ d.open = false; }); });
+
+  /* ---- highlight current position ---- */
+  if('IntersectionObserver' in window){
+    var links = {};
+    document.querySelectorAll('.side nav a').forEach(function(a){ links[a.getAttribute('href').slice(1)] = a; });
+    var targets = Object.keys(links).map(function(id){ return document.getElementById(id); }).filter(Boolean);
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting && links[en.target.id]){
+          Object.keys(links).forEach(function(k){ links[k].classList.remove('active'); });
+          links[en.target.id].classList.add('active');
+        }
+      });
+    }, {rootMargin:'-15% 0px -75% 0px'});
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+</body>
+</html>
