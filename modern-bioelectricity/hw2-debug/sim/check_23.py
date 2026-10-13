@@ -3,10 +3,13 @@
 (sim.py chain=n).  Slow out R2 = 1 Mohm.  CH1 = Vm at the active end, CH2 = AX, the
 extracellular node of the active end (both against the Stimulator GND).
 
-FI supply: the passive base PCB does not carry V+ between slots, so FI.V+ needs a wire
-from the Stimulator's battery and the FI current then returns through the extracellular
-100 ohm row ('stim', default).  The '... own battery' states give FI a battery between
-FI.V+ and its own extracellular node, as drawn in the handout's simulator ('local').
+FI supply: the passive base PCB does not carry V+ between slots, so FI.V+ needs a flying
+wire from the Stimulator's battery and the FI current then returns through the extracellular
+100 ohm row ('stim', default).  Without that wire FI has no supply at n >= 1 (fi_vplus=False,
+'no V+ wire' states; at n = 0 they also open the header's V+ contact): only the passive
+response is left.  The '... own battery' states give
+FI a battery between FI.V+ and its own extracellular node, as drawn in the handout's
+simulator ('local').
 
 For each active-membrane state (add-ons from check_ap.py) and n = 0..4:
   quiet   SW released, last 0.7 s of 1.5 s after power-on: Vm range at the active end
@@ -22,6 +25,9 @@ For each active-membrane state (add-ons from check_ap.py) and n = 0..4:
 
     python check_23.py              (all states, a few minutes on 4+ cores)
     python check_23.py 1            (state 1 only)
+    python check_23.py combos       (the original circuit: V+ wire to FI yes/no x Slow out R2
+                                     100 ohm/1 Mohm, SW held 1 s at pot 0.7k, n = 1-4; tells from
+                                     the bench waveform which of the two is missing)
 """
 import os, sys
 from multiprocessing import Pool
@@ -34,18 +40,20 @@ RPOT = 700.0
 PULSE = 1.0
 NS = range(5)
 STATES = [
-    ('now: R2 = 1M, nothing added', {}),
+    ('now: R2 = 1M, V+ wire to FI, nothing added', {}),
     ('11k across R13 only (leak not fixed)', dict(extra=[R13_11K])),
     ('fix 1 + 2: 22k across Qpass E-B, 11k across R13', dict(extra=[RX, R13_11K])),
     ('undershoot set (plan 3)', dict(extra=[RB_470K, RF_470K, RS_47K, R13_11K])),
     ('now, FI on its own battery (handout simulator)', dict(fi_supply='local')),
     ('11k across R13 only, FI on its own battery', dict(extra=[R13_11K], fi_supply='local')),
     ('fix 1 + 2, FI on its own battery', dict(extra=[RX, R13_11K], fi_supply='local')),
+    ('R2 = 1M, no V+ wire to FI', dict(fi_vplus=False)),
+    ('kit as plugged: R2 = 100 ohm, no V+ wire to FI', dict(r_so_r2=100, fi_vplus=False)),
 ]
 
 
 def circuit(n, kw, fi=True, rpot=RPOT, src=True):
-    c = Circuit(rpot=rpot, r_so_r2=1e6, chain=n, fi=fi, **kw)
+    c = Circuit(**dict(dict(rpot=rpot, r_so_r2=1e6, chain=n, fi=fi), **kw))
     if src:                                   # ideal current source: IS (1e9 x I volts) -> 1 Gohm
         c.fixed['IS'] = 0.0
         c.R.append(['IS', 'PC1' if n else 'Vm', 1e9, 'src'])
@@ -176,7 +184,39 @@ def report(si, rows, dl):
         print(s, flush=True)
 
 
+COMBOS = [('R2 1M, V+ wire', dict(r_so_r2=1e6)), ('R2 1M, no wire', dict(r_so_r2=1e6, fi_vplus=False)),
+          ('R2 100, V+ wire', dict(r_so_r2=100)), ('R2 100, no wire', dict(r_so_r2=100, fi_vplus=False))]
+
+
+def combo(args):
+    """Original circuit, real Stimulator at pot 0.7k, SW held 1 s, then 0.5 s released."""
+    ci, n = args
+    kw = COMBOS[ci][1]
+    c = circuit(n, kw, src=False)
+    V, lo, hi = settle(c)
+    t, v, _ = press(n, kw, V, after=0.5)
+    held = [x for tt, x in zip(t, v) if tt <= PULSE]
+    return ci, n, dict(rest=v[0], peak=max(held), t_peak=t[v.index(max(held))] * 1e3,
+                       end=held[-1], after=v[-1])
+
+
+def report_combos(res):
+    print('original circuit, pot 0.7k, SW held 1 s (V): rest | max while held (at ms) | Vm at the end of'
+          ' the press | 0.5 s after release')
+    for ci, (lab, _) in enumerate(COMBOS):
+        print(lab)
+        for n in range(1, 5):
+            r = res[ci, n]
+            print(f'   n={n}: rest {r["rest"]:.2f} | max {r["peak"]:.2f} ({r["t_peak"]:.0f} ms) |'
+                  f' end of press {r["end"]:.2f} | after {r["after"]:.2f}')
+
+
 if __name__ == '__main__':
+    if sys.argv[1:] == ['combos']:
+        with Pool() as pool:
+            out = pool.map(combo, [(ci, n) for ci in range(len(COMBOS)) for n in range(1, 5)])
+        report_combos({(ci, n): r for ci, n, r in out})
+        sys.exit()
     sel = [int(a) for a in sys.argv[1:]] or list(range(len(STATES)))
     with Pool() as pool:
         out = pool.map(job, [(si, n) for si in sel for n in NS])

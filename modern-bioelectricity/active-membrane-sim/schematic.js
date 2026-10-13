@@ -351,7 +351,7 @@
       });
       beginG('fiw', n ? 'mod' : '');
       L([[XR, 10], [XR, 362], [634 + G, 362]]);
-      txt(XR + 8, 30, n ? 'V+ 拉線到 FI（Passive 底板沒串 V+）' : 'V+（疊接排針，Stimulator → FI）', 'lab');
+      txt(XR + 8, 30, n ? 'V+ 飛線到 FI（Passive 底板沒串 V+）' : 'V+（疊接排針，Stimulator → FI）', 'lab');
       endG();
       beginG('rb', 'mod');                             /* add-on: breadboard V+ row -> Vm row */
       resV(XA, 10, 70, 24, 56, 'rb'); dot(XA, 10); dot(XA, 70); val('rb', XA + 10, 44);

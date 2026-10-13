@@ -11,7 +11,7 @@
 
   /* the board as built (PCB), with the kit's 100 ohm in the Slow out R2 position */
   var BASE_ST = {vplus:7.8, rpot:700, r13:1e5, rfe:1e5, qs:'pcb', so_r2:100, rprobe:1e7, ch1:'Vm', ch2:'',
-    r13p:0, rf:0, rb:0, rs:0, rl:0, chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',
+    r13p:0, rf:0, rb:0, rs:0, rl:0, ru:0, chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true, fi_on:true, so_on:true};
 
   /* the 'true AP' add-on set (hw2-debug/sim/check_trueap.py): 22k across Qpass E-B, 11k across
@@ -42,12 +42,19 @@
     s23:{
       def:{basic:{chain:4, rpot:700, ch2:'AX'},
            adv:{chain:4, rpot:0, so_r2:1e6, fi_supply:'stim', src:'stim', isrc:40e-6, ch2:'AX', fi_on:true, so_on:true}},
-      fixed:function(m, s){ return m === 'basic' ? {so_r2:100, fi_supply:'stim', fi_vplus:(s.chain || 0) === 0} : {}; },
+      fixed:function(m, s){ return {}; },
       sch:function(st){ return {chain:st.chain}; },
       meas:['firstAP', 'signed'], scope:{v1:1, v2:0.02, t:0.1, z2:4},
+      /* basic: the circuit as given; only the V+ flying wire and the Slow out R2 differ (hw2-debug/sim/check_23.py combos) */
+      presetsBasic:[
+        ['kit', '照實：沒飛線', {so_r2:100, fi_supply:'none'}, 'R2 = 100 Ω（套件）、FI 沒有 V+：n ≥ 1 只有被動反應，按住 1 秒平滑升到約 2.4／1.75／1.3／1.0 V（n = 1–4），沒有尖峰。n = 0 的 V+ 走疊接排針，有電。'],
+        ['wire', '飛線＋R2 = 1 MΩ', {so_r2:1e6, fi_supply:'stim'}, 'Stimulator 的 V+ 拉一條飛線到 FI.V+，R2 = 1 MΩ（助教指定）：n ≥ 1 有 AP，峰值約 2.3／2.0／1.8／1.6 V（n = 1–4），過門檻 FI 衝高、SO 拉回；沒有後過極化。另一組實測到的就是這個。n = 3、4 按住 0.3 秒以上，放開後會卡在約 0.76 V（FI 和 SO 互相撐住），要斷電重置；n = 0 不按也會自己冒小峰。'],
+        ['wire100', '飛線＋R2 = 100 Ω', {so_r2:100, fi_supply:'stim'}, 'FI 有電但 Slow out 不動作：按住時 FI 鎖住、Vm 一路升到 3.5／2.8／2.4／2.1 V（n = 1–4），放開後停在 1.5–1.9 V 回不到靜止，要斷電重置。']
+      ],
+      basicPreset:'wire',
       presets:[
-        ['kit', '原版電路', {so_r2:100, fi_supply:'none'}, '助教給的電路（同基礎目標）：R2 = 100 Ω，FI 沒有 V+（Passive PCB 底板沒串），n ≥ 1 沒有 AP。'],
-        ['r2m', 'R2 = 1 MΩ', {so_r2:1e6, fi_supply:'stim'}, 'R2 = 1 MΩ，FI 的 V+ 從 Stimulator 拉線（助教的設計 FI 有電）。AP 只有約 1.6–2.3 V。'],
+        ['kit', '原版電路', {so_r2:100, fi_supply:'none'}, '套件原樣：R2 = 100 Ω，FI 沒有 V+（Passive PCB 底板沒串）。n ≥ 1 只有被動反應；拉了 V+ 飛線但 R2 仍是 100 Ω 則 FI 會鎖住。'],
+        ['wire', '原版＋V+ 飛線', {so_r2:1e6, fi_supply:'stim'}, 'R2 = 1 MΩ（助教指定），Stimulator 的 V+ 拉飛線到 FI，其他照原版：n ≥ 1 有 AP（門檻、FI 衝高、SO 拉回），峰值約 2.3–1.6 V（n = 1–4）。Passive unit 的 100 kΩ 吸掉 Stimulator 的 6 µA 漏電，靜止降到 0.1–0.3 V，所以不像 #2-2 會自己冒小峰；但靜止低於 SO 能拉到的約 0.6 V，沒有後過極化（C5）。n = 3、4 按住 0.3 秒以上，放開後卡在約 0.76 V（FI 和 SO 互鎖）。'],
         ['true', '真正的 AP', Object.assign({ru:560e3, fi_supply:'stim', rpot:0}, TRUE_AP), '真正的 AP 外加元件，加上每個 Passive unit 一顆 560 kΩ 接 V+、FI 拉 V+ 線：n = 0–4 靜止都是 1.19 V，都有門檻、all-or-none、後過極化。I_min = 7.6／13.4／20.9／31.0／44.8 µA；量 I_min 時把 Q_pass E–B 改成 12 kΩ。']
       ]
     }
@@ -57,6 +64,7 @@
     s.id = k; s.el = $('[data-sim="' + k + '"]'); s.svg = $('svg.sch', s.el); s.cv = $('canvas', s.el);
     s.state = {basic:Object.assign({}, s.def.basic), adv:Object.assign({}, s.def.adv)};
     if(s.presets){ var tp = s.presets[s.presets.length - 1]; Object.assign(s.state.adv, tp[2], {_preset:tp[0], _note:tp[3]}); }
+    if(s.presetsBasic){ var bp = s.presetsBasic.filter(function(p){ return p[0] === s.basicPreset; })[0]; Object.assign(s.state.basic, bp[2], {_preset:bp[0], _note:bp[3]}); }
     s.sc = {v1:s.scope.v1, v2:s.scope.v2, t:s.scope.t, z1:1, z2:s.scope.z2, mode:'roll', tsrc:'ch1', lvl:1.0,
             trig:'idle', t0:0, prev:0, frozen:null};
     s.buf = {cap:40000, t:new Float64Array(40000), a:new Float64Array(40000), b:new Float64Array(40000), head:0, n:0};
@@ -155,12 +163,14 @@
     });
     $$('[data-out="rpot"]', s.el).forEach(function(o){ o.textContent = ((u.rpot || 0) / 1e3).toFixed(1) + ' kΩ'; });
     $$('[data-nseg] button', s.el).forEach(function(b){ b.setAttribute('aria-pressed', +b.dataset.n === (u.chain || 0) ? 'true' : 'false'); });
-    $$('[data-presets] button', s.el).forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.p === u._preset ? 'true' : 'false'); });
-    var pn = $('[data-preset-note]', s.el); if(pn) pn.textContent = u._note || '';
+    $$('[data-presets] button', s.el).forEach(function(b){ if(boxMode(b) === MODE) b.setAttribute('aria-pressed', b.dataset.p === u._preset ? 'true' : 'false'); });
+    $$('[data-preset-note]', s.el).forEach(function(pn){ if(boxMode(pn) === MODE) pn.textContent = u._note || ''; });
     var sc = s.sc;
     $$('[data-sc]', s.el).forEach(function(el){ el.value = String(sc[el.dataset.sc]); });
     $$('[data-scmode]', s.el).forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.scmode === sc.mode ? 'true' : 'false'); });
   }
+  /* which mode a preset box belongs to (its data-show block; adv when it has none) */
+  function boxMode(el){ var b = el.closest('[data-show]'); return b ? b.dataset.show : 'adv'; }
   function onCtl(s, el){
     var blk = el.closest('[data-show]');
     if(blk && blk.dataset.show !== MODE) return;
@@ -201,11 +211,12 @@
     });
     /* presets */
     $$('[data-presets]', panel).forEach(function(box){
-      box.innerHTML = s.presets.map(function(p){ return '<button class="btn" type="button" data-p="' + p[0] + '">' + p[1] + '</button>'; }).join('');
+      var m = boxMode(box), list = m === 'basic' ? s.presetsBasic : s.presets;
+      box.innerHTML = list.map(function(p){ return '<button class="btn" type="button" data-p="' + p[0] + '">' + p[1] + '</button>'; }).join('');
       $$('button', box).forEach(function(b){ b.addEventListener('click', function(){
-        var p = s.presets.filter(function(x){ return x[0] === b.dataset.p; })[0];
-        var keep = {chain:s.state.adv.chain, ch2:s.state.adv.ch2, rpot:s.state.adv.rpot};
-        s.state.adv = Object.assign({}, s.def.adv, keep, p[2], {_preset:p[0], _note:p[3]});   /* def.adv has no add-ons */
+        var p = list.filter(function(x){ return x[0] === b.dataset.p; })[0];
+        var keep = {chain:s.state[m].chain, ch2:s.state[m].ch2, rpot:s.state[m].rpot};
+        s.state[m] = Object.assign({}, s.def[m], keep, p[2], {_preset:p[0], _note:p[3]});   /* def has no add-ons */
         syncControls(s); drawSchematic(s); if(active === s){ applyEngine(s); powerOn(s); }
       }); });
     });

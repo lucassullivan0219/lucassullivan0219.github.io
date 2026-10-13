@@ -11,7 +11,7 @@
 | `check_breadboard.py` | 第二輪麵包板：各板組合的穩態 Vm，和設計值、Slow out 故障假設比較。 |
 | `check_r2.py` | 第三輪：Slow out 的 R2 = 100 Ω／1 MΩ／3 MΩ，以及各個外加修正（22 kΩ 消除漏電、R13 並聯電阻、1 MΩ 抬高 FI 門檻）的效果。 |
 | `check_ap.py` | 修正後算不算 AP：門檻、all-or-none、再極化、過極化；「方案 3」做出過極化；`mc` 模式用隨機參數檢查餘裕；`train` 模式看按住 SW 時的連續發放；`leak` 模式看方案 3 再加 leak（或前面接 Passive unit）時過極化怎麼變。 |
-| `check_23.py` | #2-3 passive to active：n = 0–4 個 Passive unit 時的 I_min、delay、AP，以及 active 端的細胞外訊號（FI 的 V+ 從 Stimulator 拉線，或自帶電池）。用 multiprocessing 平行算。 |
+| `check_23.py` | #2-3 passive to active：n = 0–4 個 Passive unit 時的 I_min、delay、AP，以及 active 端的細胞外訊號（FI 的 V+ 從 Stimulator 拉飛線、沒拉，或自帶電池）。`combos` 模式：原版電路 V+ 飛線有／沒有 × R2 100 Ω／1 MΩ 四種組合按住 1 秒的波形，用來從實測波形判斷少了什麼。用 multiprocessing 平行算。 |
 | `check_trueap.py` | 進階目標的「真正的 AP」外加元件組：照文獻定義（門檻、all-or-none、峰值、再極化、後過極化、不反應期）逐條檢查 #2-2 與 #2-3（n = 0–4）、#2-2 Q3／Q4／Q6、#2-3 Q3–Q5，以及隨機參數。 |
 | `power_on.py` | 開機後電路自己會做什麼：安靜停住、自發冒小峰，或（沒有 Slow out 時）自己鎖住。 |
 | `variants.py` | 全部接好時，換不同設計值（R13、電源、Qsense 接法）AP 會長怎樣。 |
@@ -33,6 +33,7 @@ python check_ap.py mc 7 8 1
 python check_ap.py train 7
 python check_ap.py leak
 python check_23.py
+python check_23.py combos
 python check_trueap.py
 python check_trueap.py mc
 python check_trueap.py q23
