@@ -1008,7 +1008,7 @@
 
   global.AFE = {
     defaultState: defaultState, clone: clone,
-    CHIPS: CHIPS, ELECTRODES: ELECTRODES, build: build, analyze: analyze, cmSweep: cmSweep, Stream: Stream,
+    CHIPS: CHIPS, ELECTRODES: ELECTRODES, build: build, analyze: analyze, cmSweep: cmSweep, Stream: Stream, EEGSource: EEGSource,
     buildDoc: buildDoc, docElectrodes: docElectrodes, capBetween: capBetween,
     fdr: fdr, fmod: fmod, decim: decim, vref: vref, rails: rails, chipNoise: chipNoise, sinc3: sinc3, testSignal: testSignal,
     loffFreq: loffFreq, registers: registers, initCode: initCode, statusWord: statusWord, hex2: hex2, electrodeZ: electrodeZ, sincTaps: sincTaps

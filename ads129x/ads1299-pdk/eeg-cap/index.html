@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PDK 腦波帽麵包板</title>
+<meta name="description" content="用 ADS1299EEGFE-PDK 接 8 通道耳夾參考式腦波帽：麵包板上每一條線怎麼插、為什麼這樣接，可以插探棒即時看訊號，也看得到 ADS1299 的 8 通道輸出。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --surface:#FFFFFF; --ink:#1E262C; --muted:#5F6B72; --link:#1F5FA8; --rule:#CCD3CE;
+  --warn:#A33A2B; --opt:#8A6100; --req:#2F5D3A; --infer:#7A3E8F;
+  --bg:#EDF2EA; --accent:#2F6B3A; --tint:rgba(47,107,58,.08); --side:clamp(190px,16.6vw,270px);
+  --ch1:#3987e5; --ch2:#e0703f;
+}
+body[data-mode="adv"]{--bg:#F4EAE0; --accent:#A4471F; --tint:rgba(164,71,31,.09)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0; --rule:#2C3533;
+    --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
+  :root:not([data-theme="light"]) body[data-mode="adv"]{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
+}
+:root[data-theme="dark"]{--surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0; --rule:#2C3533;
+  --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
+:root[data-theme="dark"] body[data-mode="adv"]{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Noto Sans TC",system-ui,"Microsoft JhengHei",sans-serif;font-size:14.5px;line-height:1.65;transition:background .25s}
+a{color:var(--link)}
+button,select,input{font:inherit}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-size:.93em}
+:focus-visible{outline:3px solid var(--link);outline-offset:2px}
+body[data-mode="basic"] [data-show="adv"],body[data-mode="adv"] [data-show="basic"]{display:none!important}
+
+/* ---------- layout: sidebar | main ---------- */
+.app{display:grid;grid-template-columns:var(--side) minmax(0,1fr);height:100vh}
+aside.side{background:var(--surface);border-right:1px solid var(--rule);display:flex;flex-direction:column;overflow-y:auto;padding:14px 12px}
+.side .top{display:flex;gap:10px;font-size:13px;margin-bottom:6px;flex-wrap:wrap}
+.side .top a{color:var(--muted);text-decoration:none}
+.side h1{font-size:19px;font-weight:900;margin:2px 0 10px;line-height:1.3}
+.mode{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--accent);border-radius:10px;overflow:hidden;margin-bottom:6px}
+.mode button{border:0;background:transparent;color:var(--ink);padding:7px 4px;cursor:pointer;line-height:1.25;font-weight:700}
+.mode button small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+.mode button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.mode button[aria-pressed="true"] small{color:var(--surface);opacity:.85}
+.mode-note{font-size:12px;color:var(--muted);margin:0 0 12px}
+nav.regions{display:flex;flex-direction:column;gap:2px}
+nav.regions a{display:flex;gap:8px;align-items:baseline;text-decoration:none;color:var(--ink);padding:6px 8px;border-radius:6px;font-weight:500}
+nav.regions a .n{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-weight:700;min-width:1.2em}
+nav.regions a.on{background:var(--tint);outline:1.5px solid var(--accent)}
+nav.regions a small{display:block;color:var(--muted);font-weight:400;font-size:11.5px;line-height:1.35}
+.side .foot{margin-top:auto;padding-top:12px;font-size:12px;color:var(--muted)}
+.side .foot a{color:var(--muted)}
+main{overflow-y:auto;scroll-snap-type:y proximity;scroll-behavior:smooth}
+.region{min-height:100vh;scroll-snap-align:start;border-bottom:1px solid var(--rule)}
+
+/* ---------- text regions ---------- */
+.textreg{padding:22px 24px 40px}
+.textreg h2{font-size:22px;font-weight:900;margin:0 0 4px}
+.textreg .lede{color:var(--muted);margin:0 0 14px;max-width:72em}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:0;min-width:0}
+.card.wide{grid-column:1/-1}
+.card > summary{list-style:none;cursor:pointer;padding:10px 14px;font-weight:700;display:flex;gap:8px;align-items:baseline}
+.card > summary::-webkit-details-marker{display:none}
+.card > summary::before{content:"▸";color:var(--accent);transition:transform .15s}
+.card[open] > summary::before{transform:rotate(90deg)}
+.card > summary .hint{font-weight:400;color:var(--muted);font-size:12.5px;margin-left:auto;text-align:right}
+.card .body{padding:0 14px 12px}
+.card .body > :first-child{margin-top:0}
+.card p,.card li{max-width:76em}
+.card ul,.card ol{padding-left:1.25em;margin:6px 0}
+.card li{margin:3px 0}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:0 6px;border-radius:999px;border:1.5px solid currentColor;margin-right:4px;vertical-align:1px}
+.t-warn{color:var(--warn)} .t-ok{color:var(--req)} .t-part{color:var(--opt)} .t-inf{color:var(--infer)}
+.tbl{overflow-x:auto;border:1px solid var(--rule);margin:6px 0}
+table{border-collapse:collapse;width:100%;font-size:13px;background:var(--surface)}
+th,td{text-align:left;padding:5px 7px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{background:var(--tint);color:var(--muted);font-size:12px}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.grp td{background:var(--tint);font-weight:700}
+tr.go{cursor:pointer} tr.go:hover td{background:var(--tint)}
+.calc{font-family:"IBM Plex Mono",monospace;font-size:12.5px;white-space:pre;overflow-x:auto;background:var(--tint);border-left:3px solid var(--accent);padding:8px 10px;margin:6px 0}
+.sw{display:inline-block;width:.9em;height:.9em;border-radius:3px;border:1px solid rgba(0,0,0,.35);vertical-align:-1px;margin-right:3px}
+.small{font-size:12.5px} .muted{color:var(--muted)}
+kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--surface)}
+
+/* ---------- sim region: [center | settings] ---------- */
+.simreg{display:grid;grid-template-columns:minmax(0,4fr) minmax(230px,1.15fr);height:100vh}
+.center{display:grid;grid-template-rows:minmax(0,1.25fr) minmax(0,1fr);min-height:0;padding:10px 10px 10px 12px;position:relative}
+.pane{position:relative;min-height:0;background:var(--surface);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.pane.top{margin-bottom:8px;background:#e9ece6}
+.pane.bot{margin-top:8px;background:#0d1114;border-color:#0d1114}
+.center::before{content:"";position:absolute;left:25%;right:25%;top:55.5%;border-top:2px solid var(--accent);z-index:2;pointer-events:none}
+.pane svg.bb{display:block;width:100%;height:100%;user-select:none;-webkit-user-select:none}
+.pane canvas{display:block;width:100%;height:100%}
+.fsbtn{font-size:12px;padding:2px 9px;border:1.5px solid var(--rule);border-radius:999px;background:var(--surface);color:var(--ink);cursor:pointer}
+.pane .fsbtn{position:absolute;top:6px;right:6px;z-index:3;opacity:.85}
+.pane.fs{position:fixed;inset:0;z-index:60;margin:0;border-radius:0}
+.pane .tabs{position:absolute;top:6px;left:8px;z-index:3;display:flex;gap:4px}
+.pane .tabs button{font-size:12px;padding:2px 10px;border-radius:999px;border:1.5px solid #4a5560;background:#161c20;color:#cfd6da;cursor:pointer}
+.pane .tabs button[aria-pressed="true"]{background:#cfd6da;color:#0d1114;border-color:#cfd6da}
+.pane .zoombar{position:absolute;top:6px;left:8px;z-index:3;display:flex;gap:3px;flex-wrap:wrap}
+.pane .zoombar button{font-size:11.5px;padding:1px 8px;border-radius:999px;border:1.5px solid #9aa39c;background:rgba(255,255,255,.85);color:#2a3236;cursor:pointer}
+.pane .zoombar button[aria-pressed="true"]{background:#2a3236;color:#fff;border-color:#2a3236}
+svg.bb.drag{cursor:grabbing}
+.pane .hint{position:absolute;left:10px;bottom:6px;z-index:3;font-size:12px;color:#40484e;background:rgba(255,255,255,.8);padding:1px 8px;border-radius:999px;pointer-events:none}
+.pane .hint:empty{display:none}
+.settings{border-left:1px solid var(--rule);background:var(--surface);overflow-y:auto;padding:12px 12px 30px;font-size:13.5px}
+.settings h2{font-size:17px;font-weight:900;margin:0 0 2px}
+.settings .sub{color:var(--muted);font-size:12px;margin:0 0 10px}
+.grp{border-top:1px solid var(--rule);padding:8px 0}
+.grp > .gt{font-size:12px;font-weight:700;color:var(--accent);margin:0 0 4px;letter-spacing:.03em}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center;margin:4px 0}
+.row label{color:var(--muted);font-size:12.5px}
+.row.full{grid-template-columns:1fr}
+select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(--rule);border-radius:5px;background:var(--surface);color:var(--ink);max-width:100%}
+.btns{display:flex;flex-wrap:wrap;gap:4px}
+.btn{font-size:12.5px;padding:3px 9px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:999px;cursor:pointer;line-height:1.35}
+.btn:hover{background:var(--tint)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.btn.acc{border-color:var(--accent);color:var(--accent)}
+.btn.p1{border-color:var(--ch1);color:var(--ch1)} .btn.p2{border-color:var(--ch2);color:var(--ch2)}
+.btn.p1[aria-pressed="true"]{background:var(--ch1);color:#fff} .btn.p2[aria-pressed="true"]{background:var(--ch2);color:#fff}
+.btn:disabled{opacity:.4;cursor:default}
+.chk{display:flex;gap:6px;align-items:center;font-size:12.5px}
+.chks{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}
+.meas{width:100%;font-size:12px}
+.meas td,.meas th{padding:3px 4px}
+.meas td{font-family:"IBM Plex Mono",monospace;text-align:right;white-space:nowrap}
+.meas td:first-child{font-family:inherit;text-align:left;color:var(--muted);white-space:normal}
+.why{background:var(--tint);border-left:3px solid var(--accent);padding:6px 9px;border-radius:0 6px 6px 0}
+.why h3{font-size:13.5px;margin:0 0 2px;line-height:1.4}
+.why .ft{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted);margin:0 0 4px}
+.why ul{padding-left:1.1em;margin:4px 0;font-size:12.5px}
+.why li{margin:2px 0}
+.why .chkline{font-size:12px;margin:4px 0 0}
+.stepbar{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center}
+.stepbar .stxt{font-size:12.5px;line-height:1.35}
+.warnbox{color:var(--warn);font-size:12.5px;margin:4px 0 0}
+.warnbox:empty{display:none}
+.settings details{border-top:1px solid var(--rule);padding:6px 0}
+.settings details > summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--ink)}
+
+/* breadboard svg */
+svg.bb [data-item],svg.bb [data-info],svg.bb [data-pt]{cursor:pointer}
+svg.bb.placing [data-pt]{cursor:crosshair}
+svg.bb.placing [data-item],svg.bb.placing [data-info]{pointer-events:none}
+svg.bb.placing [data-info] [data-pt],svg.bb.placing [data-item] [data-pt]{pointer-events:auto}
+svg.bb.placing [data-pt]:hover{filter:drop-shadow(0 0 3px #ffd400)}
+svg.bb .sel{filter:drop-shadow(0 0 3px #ffd400) drop-shadow(0 0 3px #ffd400)}
+svg.bb .dim{opacity:.18}
+svg.bb text{font-family:"IBM Plex Mono",ui-monospace,monospace}
+svg.bb .zh{font-family:"Noto Sans TC",system-ui,sans-serif}
+
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr);height:auto}
+  aside.side{position:sticky;top:0;z-index:20;flex-direction:row;flex-wrap:wrap;gap:8px;align-items:center;padding:8px}
+  .side h1{margin:0;font-size:16px}
+  .side .foot,.mode-note,nav.regions a small{display:none}
+  nav.regions{flex-direction:row;flex-wrap:wrap}
+  main{overflow:visible;scroll-snap-type:none}
+  .textreg{padding:16px 16px 30px}
+  .cards{grid-template-columns:minmax(0,1fr)}
+  .simreg{grid-template-columns:minmax(0,1fr);height:auto}
+  .center{height:130vh;padding:8px}
+  .center::before{display:none}
+  .settings{border-left:0;border-top:1px solid var(--rule)}
+}
+</style>
+</head>
+<body data-mode="basic">
+<div class="app">
+<aside class="side" aria-label="導覽">
+  <div class="top"><a href="../../../">⌂ 個人首頁</a><a href="../">← ADS1299EEG-FE PDK</a></div>
+  <h1>PDK 腦波帽麵包板</h1>
+  <div class="mode" role="group" aria-label="模式切換">
+    <button type="button" data-mode="basic" aria-pressed="true">基本<small>照這頁接好</small></button>
+    <button type="button" data-mode="adv" aria-pressed="false">進階<small>換接法、常見接錯</small></button>
+  </div>
+  <p class="mode-note" data-show="basic">一步一步接好：每條線、每個跳線為什麼這樣接；插探棒看每一點的訊號。</p>
+  <p class="mode-note" data-show="adv">換電源、參考接法、電極、供電方式，或重現常見的接錯，看訊號怎麼變。</p>
+  <nav class="regions" aria-label="區域">
+    <a href="#r1"><span class="n">1</span><span>做出來的樣子<small>材料、PDK 設定、順序、安全</small></span></a>
+    <a href="#r2"><span class="n">2</span><span>麵包板實驗台<small>接線、探棒、示波器、ADS1299 輸出</small></span></a>
+    <a href="#r3"><span class="n">3</span><span>每一條線為什麼這樣接<small>31 個步驟的理由與確認方法</small></span></a>
+    <a href="#r4"><span class="n">4</span><span>量測<small>每一點該看到什麼、暫存器</small></span></a>
+    <a href="#r5"><span class="n">5</span><span>補充與紀錄<small>模型、極限、來源</small></span></a>
+  </nav>
+  <div class="foot">
+    <p style="margin:0 0 4px"><a href="../">PDK 模擬</a>（手冊第 7、8 章的測試）・<a href="../buy/">採購注意事項</a></p>
+    <p style="margin:0">點麵包板上的線看理由；按「放 CH1／CH2」再點任一個孔或針腳放探棒。滾輪放大、拖曳移動。<kbd>←</kbd> <kbd>→</kbd> 切換接線步驟。每張圖右上角 ⤢ 可全螢幕。</p>
+  </div>
+</aside>
+
+<main id="main">
+
+<!-- ======================= 1 ======================= -->
+<section class="region textreg" id="r1">
+  <h2>1 做出來的樣子</h2>
+  <p class="lede">ADS1299EEGFE-PDK（ADS1299EEG-FE 前端板疊在 MMB0 主機板上）接一頂 8 通道、耳夾參考的腦波帽：頭皮電極 Fp1、Fp2、Fz、C3、C4、Pz、O1、O2 進 CH1–CH8 的正輸入，右耳夾經 SRB1 當 8 個通道共同的參考，左耳夾接 ADS1299 的 BIAS 輸出，類比電源改成 ±2.5 V。中間用一塊麵包板轉接：10 條杜邦線從 PDK 拉到麵包板，帽子的 10 條線插在同一排，空下來的孔插探棒。下面的數字都是模擬，還沒實測。</p>
+  <div class="cards">
+    <details class="card" open><summary>一句話的接法<span class="hint">和腦波帽相同的拓撲</span></summary><div class="body">
+      <div class="calc">頭皮電極 ─ 麵包板 f 欄 ═ j 欄 ─ 杜邦線 ─ J6 偶數腳（CHn+）─ 4.99 kΩ ─ INnP
+右耳夾   ─ 麵包板 f25  ═ j25  ─ 白線 ─ JP25 第 6 腳 ─ R11 4.99 kΩ ─ REF_ELEC ─ JP8 1-2 ─ SRB1
+左耳夾   ─ a23 ─ 100 kΩ ─ f23 ═ j23 ─ 黑線 ─ JP25 第 2 腳 ─ R10 4.99 kΩ ─ BIAS_ELEC ─ JP1 1-2 ─ BIASOUT
+MISC1.SRB1 = 1 → 每個通道 = 頭皮電極 − 右耳；BIAS_SENSP = FFh → 8 個頭皮電極的平均推回左耳</div>
+      <ul class="small">
+        <li>麵包板每一排的 f–j 是同一條金屬片（═）：j 插 PDK 的線、f 插電極、g／h／i 插探棒。</li>
+        <li>不接：J6 的奇數腳（匯流排）、CHn− 腳（SRB1 取代了負輸入）、麵包板電源軌、JP25 的跳線帽。</li>
+      </ul>
+    </div></details>
+
+    <details class="card" open><summary>材料<span class="hint">都是一般實驗室有的</span></summary><div class="body">
+      <div class="tbl"><table>
+        <tr><th>東西</th><th>數量</th><th>備註</th></tr>
+        <tr><td>ADS1299EEGFE-PDK</td><td class="num">1</td><td>ADS1299EEG-FE ＋ MMB0，USB 線；TI 的 GUI 裝在筆電上</td></tr>
+        <tr><td>8 通道耳夾參考式腦波帽</td><td class="num">1</td><td>每條線末端 2.54 mm 公針；不是的話接公對公杜邦線或對應的轉接頭</td></tr>
+        <tr><td>麵包板（30 排、400 孔）</td><td class="num">1</td><td>只用到右半邊和第 23 排的左半邊</td></tr>
+        <tr><td>母對公杜邦線，10–15 cm</td><td class="num">10</td><td>棕紅橙黃綠藍紫灰（CH1–8，電阻色碼）＋白（REF）＋黑（BIAS）</td></tr>
+        <tr><td>100 kΩ 電阻（1/4 W）</td><td class="num">1</td><td>BIAS 限流，跨在 e23–f23</td></tr>
+        <tr><td>筆電（只用電池）</td><td class="num">1</td><td>拔掉充電器</td></tr>
+        <tr><td>示波器＋×10 探棒（選用）</td><td class="num">1</td><td>最好電池供電或 USB 示波器；地夾夾 TP8</td></tr>
+        <tr><td>導電膏、酒精棉片、三用電表</td><td class="num">—</td><td>電極阻抗越低、越接近越好</td></tr>
+      </table></div>
+    </div></details>
+
+    <details class="card wide" open><summary>PDK 上要改的地方<span class="hint">SLAU443B 表 1、表 3、表 9；圖 58、59、63</span></summary><div class="body">
+      <div class="tbl"><table>
+        <tr><th>位置</th><th>出廠</th><th>這次</th><th>為什麼</th></tr>
+        <tr class="go" data-go="jp2"><td>JP2（AVDD，板子右上）</td><td>2-3（+5 V）</td><td><b>1-2</b>（+2.5 V）</td><td>改 ±2.5 V 雙電源，和腦波帽一樣讓人體在 0 V 附近。方形焊墊（1 腳）在右邊。</td></tr>
+        <tr class="go" data-go="jp20"><td>JP20（AVSS，JP2 右邊）</td><td>1-2（0 V）</td><td><b>2-3</b>（−2.5 V）</td><td>和 JP2 一起改，先拔 USB；只改一個會超過晶片的電源極限或不夠電。</td></tr>
+        <tr class="go" data-go="j6caps"><td>J6（板子左緣 2 × 18）</td><td>16 個跳線帽</td><td><b>全拔</b></td><td>跳線帽把 8 個通道接到同一條匯流排；接電極時會把 8 個電極短在一起。</td></tr>
+        <tr class="go" data-go="jp25"><td>JP25（J6 下方 2 × 3）</td><td>1-2、3-4</td><td><b>全拔</b></td><td>2 腳（BIAS）、6 腳（REF）要拿來插線；5-6 會把參考接到 BIAS。</td></tr>
+        <tr class="go" data-go="jp6"><td>JP6（JP25 右邊）</td><td>1-2</td><td><b>拔掉</b></td><td>否則 U11 和 ADS1299 的 BIASOUT 同時推 BIAS_ELEC。</td></tr>
+        <tr class="go" data-go="jp1"><td>JP1（ADS1299 左上方）</td><td>不裝</td><td><b>1-2</b></td><td>讓 BIASOUT 推 BIAS_ELEC，形成 BIAS 回授。</td></tr>
+        <tr class="go" data-go="jp8"><td>JP8／JP7（JP6 下方）</td><td>1-2／1-2</td><td>不動</td><td>REF_ELEC 直接到 SRB1，最安靜的參考接法。</td></tr>
+        <tr><td>其他（JP18、JP19、JP21–24…）</td><td colspan="2">出廠</td><td>時脈用板上 2.048 MHz 振盪器、DVDD 3.3 V，不用改。</td></tr>
+      </table></div>
+      <p class="small muted">點一列跳到實驗台，看那個跳線在板子上的位置。</p>
+    </div></details>
+
+    <details class="card" open><summary>順序<span class="hint">31 步，實驗台可以一步一步看</span></summary><div class="body">
+      <ol class="small" id="steplist"></ol>
+    </div></details>
+
+    <details class="card" open><summary>安全<span class="hint">先讀再戴到頭上</span></summary><div class="body">
+      <ul class="small">
+        <li><b>EVM 不是醫療設備</b>（SLAU443B 開頭的警語）。戴在人身上時，整套東西（筆電、示波器）只用電池，不接市電、不接大地。</li>
+        <li>BIAS 串 100 kΩ：BIAS 輸出故障卡在電源軌時，流過頭部的直流最多約 24 µA，低於 IEC 60601-1 單一故障 50 µA。PDK 原本只有 R10（4.99 kΩ），故障時可到 0.5 mA。</li>
+        <li>改 JP2／JP20 前先拔 USB，兩個一起改。上電後先量 JP2、JP20 中間腳是 ±2.5 V，再戴電極。</li>
+        <li>不要把麵包板接到任何電源或地；電源軌空著。</li>
+        <li>受試者戴著時不要用插市電的示波器量（地線會把電路地接到大地），用電池或 USB 示波器。</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<!-- ======================= 2 ======================= -->
+<section class="region simreg" id="r2">
+  <div class="center">
+    <div class="pane top" id="bbpane"><div class="zoombar" role="group" aria-label="放大"><button type="button" data-z="all" aria-pressed="true">全部</button><button type="button" data-z="head">頭</button><button type="button" data-z="bb">麵包板</button><button type="button" data-z="join">接點</button><button type="button" data-z="pdk">PDK</button></div><button class="fsbtn" type="button" data-fs>⤢</button><svg class="bb" id="bb" viewBox="0 0 1500 700" preserveAspectRatio="xMidYMid meet" role="img" aria-label="麵包板、PDK 與腦波帽的接線圖"></svg><div class="hint" id="bbhint"></div></div>
+    <div class="pane bot" id="scopepane">
+      <div class="tabs" role="group" aria-label="顯示"><button type="button" data-view="scope" aria-pressed="true">示波器</button><button type="button" data-view="adc" aria-pressed="false">ADS1299 輸出（GUI）</button></div>
+      <button class="fsbtn" type="button" data-fs>⤢</button><canvas id="scope" aria-label="示波器"></canvas>
+    </div>
+  </div>
+  <div class="settings">
+    <h2>麵包板實驗台</h2>
+    <p class="sub" data-show="basic">照這頁接好的樣子。點任何一條線、跳線或元件，下面會說明為什麼這樣接。</p>
+    <p class="sub" data-show="adv">換接法或重現接錯，看探棒和 ADS1299 輸出怎麼變。</p>
+
+    <div class="grp"><div class="gt">接線步驟</div>
+      <div class="stepbar">
+        <button class="btn" type="button" id="stepPrev" aria-label="上一步">◀</button>
+        <div class="stxt" id="stepTxt"></div>
+        <button class="btn" type="button" id="stepNext" aria-label="下一步">▶</button>
+      </div>
+      <div class="btns" style="margin-top:4px"><button class="btn" type="button" id="stepZero">出廠狀態</button><button class="btn acc" type="button" id="stepAll">全部接好</button></div>
+    </div>
+
+    <div class="grp"><div class="gt">這一條為什麼這樣接</div>
+      <div class="why" id="why"></div>
+    </div>
+
+    <div class="grp" data-show="adv"><div class="gt">情境</div>
+      <div class="btns" id="presets"></div>
+      <p class="small muted" id="presetNote" style="margin:4px 0 0"></p>
+    </div>
+
+    <div class="grp"><div class="gt">探棒（×10，地夾在 TP8）</div>
+      <div class="btns"><button class="btn p1" type="button" data-place="ch1">放 CH1</button><button class="btn p2" type="button" data-place="ch2">放 CH2</button><button class="btn" type="button" id="ch2off">拿掉 CH2</button></div>
+      <div class="row"><label style="color:var(--ch1)">CH1</label><select id="selCh1" style="max-width:150px"></select></div>
+      <div class="row"><label style="color:var(--ch2)">CH2</label><select id="selCh2" style="max-width:150px"></select></div>
+      <table class="meas" id="probeMeas"></table>
+    </div>
+
+    <div class="grp"><div class="gt">示波器</div>
+      <div class="row"><label>CH1 V/div</label><select id="v1"></select></div>
+      <div class="row"><label>CH2 V/div</label><select id="v2"></select></div>
+      <div class="row"><label>時間／div</label><select id="tdiv"></select></div>
+      <div class="row"><label>耦合</label><select id="cpl"><option value="dc">DC</option><option value="ac">AC</option></select></div>
+      <div class="btns" style="margin-top:4px"><button class="btn acc" type="button" id="autoset">自動刻度</button><button class="btn" type="button" id="runstop">停止</button></div>
+      <label class="chk" data-show="adv" style="margin-top:4px"><input type="checkbox" id="ideal"> 理想示波器（無雜訊、可到 10 µV/div）</label>
+    </div>
+
+    <div class="grp"><div class="gt">受試者</div>
+      <label class="chk"><input type="checkbox" id="eyes" checked> 閉眼（O1、O2 的 alpha 變大）</label>
+      <label class="chk"><input type="checkbox" id="blinks" checked> 眨眼（Fp1、Fp2 最大）</label>
+      <label class="chk"><input type="checkbox" id="emg"> 咬牙（肌電）</label>
+    </div>
+
+    <div class="grp" data-show="adv"><div class="gt">變化</div>
+      <div class="row"><label>類比電源</label><select id="supply"><option value="bi">±2.5 V（JP2 1-2、JP20 2-3）</option><option value="uni">5 V 單電源（出廠）</option></select></div>
+      <div class="row"><label>參考</label><select id="refbuf"><option value="0">直接到 SRB1（JP8 1-2）</option><option value="1">經 U4 緩衝（JP8 2-3）</option></select></div>
+      <div class="row"><label>BIAS 限流</label><select id="biasR"><option value="100000">100 kΩ</option><option value="47000">47 kΩ</option><option value="0">不加（直接接）</option></select></div>
+      <div class="row"><label>電極</label><select id="elec"><option value="wet">濕電極（Ag/AgCl＋膏）</option><option value="dry">乾電極</option></select></div>
+      <div class="row"><label>筆電</label><select id="laptop"><option value="batt">只用電池</option><option value="charger">插著充電器</option></select></div>
+      <label class="chk"><input type="checkbox" id="scopeEarth"> 示波器插市電（地夾接大地）</label>
+      <div class="gt" style="margin-top:6px">電極有接觸</div>
+      <div class="chks" id="contacts"></div>
+    </div>
+
+    <div class="grp"><div class="gt">ADS1299 輸出（250 SPS、增益 24）</div>
+      <div class="row"><label>刻度</label><select id="adcScale"><option value="10">10 µV/格</option><option value="20">20 µV/格</option><option value="50" selected>50 µV/格</option><option value="100">100 µV/格</option><option value="500">500 µV/格</option><option value="5000">5 mV/格</option></select></div>
+      <label class="chk"><input type="checkbox" id="fHP" checked> 0.5 Hz 高通</label>
+      <label class="chk"><input type="checkbox" id="fLP" checked> 45 Hz 低通</label>
+      <label class="chk"><input type="checkbox" id="fN"> 60 Hz 陷波</label>
+      <details><summary>各通道讀數</summary><table class="meas" id="adcMeas"></table></details>
+    </div>
+
+    <div class="grp"><div class="gt">電路讀數</div>
+      <table class="meas" id="circMeas"></table>
+      <p class="warnbox" id="warn"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 3 ======================= -->
+<section class="region textreg" id="r3">
+  <h2>3 每一條線為什麼這樣接</h2>
+  <p class="lede">實驗台的 31 個步驟，照做的順序排。每一步都有理由和接好之後怎麼確認（多半用三用電表或探棒）。點一列跳到實驗台、停在那一步。</p>
+  <div class="tbl"><table id="whyTable"></table></div>
+</section>
+
+<!-- ======================= 4 ======================= -->
+<section class="region textreg" id="r4">
+  <h2>4 量測：每一點該看到什麼</h2>
+  <p class="lede">照這頁接好、受試者閉眼放鬆、筆電只用電池時，探棒在各點的預期值（模擬，濕電極）。示波器量到的主要是幾 mV 的電極直流電位和 60 Hz；腦波只有幾十 µV，要看 ADS1299 的輸出。</p>
+  <div class="cards">
+    <details class="card wide" open><summary>探棒預期值<span class="hint">對 TP8（AGND）</span></summary><div class="body">
+      <div class="tbl"><table id="expTable"></table></div>
+      <ul class="small">
+        <li>電極線上的直流是電極的半電池電位（每個電極不同，幾 mV），加上 BIAS 把人體拉到的位置；每台、每次都不一樣，只要在 ±50 mV 內就正常。</li>
+        <li>「腦波來源」：這一點的電壓裡，各電極訊號的比例。電極線上是「這個電極 − 8 個電極的平均」（BIAS 把平均壓到 0），所以單看一條線、加上示波器的雜訊，腦波看不到；ADS1299 量的是電極 − 右耳，比例剛好是 +1 和 −1。</li>
+        <li>BIAS 那一排：PDK 側（j23）和耳夾側（a23）差的就是 100 kΩ 上的壓降，正常只有零點幾到一兩 mV 的 60 Hz。</li>
+      </ul>
+    </div></details>
+    <details class="card" open><summary>為什麼示波器上看不到腦波<span class="hint">所以要用 ADS1299</span></summary><div class="body">
+      <ul class="small">
+        <li>腦波 10–50 µV；一般示波器最靈敏約 1 mV/div，8 位元、雜訊 0.1 mV 級。要看到 µV，需要增益 24 的 PGA 和 24 位元 ADC（ADS1299 增益 24 時 1 LSB = 0.022 µV、雜訊約 0.14 µVrms）。</li>
+        <li>電極線上還有幾 mV 的直流和 60 Hz 共模；ADS1299 量的是差（電極 − 右耳），共模被 −120 dB 的 CMRR 擋掉，再由 BIAS 迴路壓低。</li>
+        <li>進階模式的「理想示波器」拿掉雜訊和量化，可以看到 µV 級的腦波確實在線上，只是騎在大得多的 60 Hz 和直流上。</li>
+      </ul>
+    </div></details>
+    <details class="card" open><summary>暫存器<span class="hint">TI GUI 或自己的韌體</span></summary><div class="body">
+      <div class="tbl"><table id="regTable"></table></div>
+      <div class="calc" id="initCode" style="white-space:pre-wrap"></div>
+    </div></details>
+  </div>
+</section>
+
+<!-- ======================= 5 ======================= -->
+<section class="region textreg" id="r5">
+  <h2>5 補充與紀錄</h2>
+  <div class="cards">
+    <details class="card" open><summary>模擬怎麼做的<span class="hint">和 ADS129x 模擬同一套</span></summary><div class="body"><ul class="small">
+      <li>板上的銅（J6、JP25、各跳線的每一支腳、TP、R8 兩端）和麵包板每一條金屬片都是一個「實體點」。裝上的跳線帽、插上的杜邦線把點合併成網路，再交給 <a href="../../../circuit-sim/engine.js">circuit-sim</a> 的 MNA 解 DC、60 Hz、180 Hz 和 10 Hz 的「電極源 → 每一點」比例。所以插錯腳、跳線帽沒拔，模擬會照實反映。</li>
+      <li>電極：Randles 模型（Rs ＋ Rct ∥ Cdl，濕電極 0.5 kΩ ＋ 10 kΩ ∥ 1 µF，乾電極 5 kΩ ＋ 1 MΩ ∥ 10 nF），各自 ±20 % 阻抗差和半電池電位；導線 30 pF 對地、0.02 pF 對市電。人體對市電 2 pF、對大地 200 pF，電路地對大地 20 pF（電池筆電）。充電器用 470 pF 的 Y 電容從市電耦合到電路地。</li>
+      <li>ADS1299：<a href="../../afe.js">afe.js</a> 的輸入腳模型（20 pF、1 GΩ、200 pA）、BIAS 放大器（每個正輸入 220 kΩ 加總、R8 ∥ C20 回授、輸出限流）、雜訊（資料手冊表 4 ＋ 電路熱雜訊）、PGA 離電源 200 mV 飽和、sinc3、24 位元。U11、U4 是 OPA376 巨集模型。</li>
+      <li>示波器：×10 探棒在電路裡是 10 MΩ ∥ 15 pF 到 TP8；顯示加上約 0.04 格的雜訊和 8 位元量化（最靈敏 1 mV/div）。腦波是合成的（背景、alpha、眨眼、肌電），只做示意。</li>
+    </ul></div></details>
+    <details class="card" open><summary>極限與推測<span class="hint">實際做之前先確認</span></summary><div class="body"><ul class="small">
+      <li><span class="tag t-inf">推測</span>板上位置照 SLAU443B 圖 63（Top Assembly）描，比例和元件外形是示意；J6、JP25 的方向和 1 腳（方形焊墊）照圖。以實際絲印為準。</li>
+      <li><span class="tag t-inf">推測</span>JP2 的 1 腳 = +2.5 V 穩壓輸出、3 腳 = +5 V；JP20 的 1 腳 = AGND、3 腳 = −2.5 V。由表 3（單電源 JP2 2-3／JP20 1-2，雙電源 1-2／2-3）推回來的。上電後一定要量 ±2.5 V。</li>
+      <li><span class="tag t-inf">推測</span>R8 兩端哪一端是 BIASOUT 要看佈線；手冊的檢查只要求兩端都接近中點。</li>
+      <li>100 kΩ 限流不是 TI 手冊的設計，是這頁的建議（理由見步驟 8）。不想加的話進階模式可以比較。</li>
+      <li>沒有模擬：lead-off 偵測、電極的運動偽跡和過量雜訊、ESD、MMB0 和 USB 的數位雜訊、BIAS 迴路的時域暫態（只有頻域）。</li>
+      <li>腦波帽的導線末端是什麼接頭要看實物；不是 2.54 mm 公針的話先做轉接。</li>
+    </ul></div></details>
+    <details class="card" open><summary>資料來源<span class="hint">都是公開文件</span></summary><div class="body"><ul class="small">
+      <li>TI SLAU443B《EEG Front-End Performance Demonstration Kit》（2016）：表 1 出廠跳線、表 3 電源、表 9 參考接法、§4.6 類比輸入（J6 偶數腳、單端輸入接 36、32 … 8 腳）、§7.1 參考與 BIAS、§8.3／8.4 雜訊、§9.4 電池供電、圖 58／59 電路圖、圖 63 元件位置。</li>
+      <li>TI SBAS499C（ADS1299 資料手冊）：輸入 MUX、SRB1、BIAS 放大器、雜訊表。</li>
+      <li>IEC 60601-1：病患輔助電流（直流）正常 10 µA、單一故障 50 µA（B、BF、CF 型）。</li>
+    </ul></div></details>
+    <details class="card wide" id="history" open><summary>History／Log<span class="hint">這一頁的版本</span></summary><div class="body">
+      <div class="tbl"><table>
+        <tr><th>日期</th><th>內容</th></tr>
+        <tr><td>2026-10-14</td><td>建立：PDK ＋ 麵包板 ＋ 8 通道耳夾參考式腦波帽的完整接線（31 步，每一步附理由與確認方法）、探棒即時示波器、ADS1299 8 通道輸出、進階情境（單電源、緩衝參考、乾電極、充電器、市電示波器、7 種常見接錯）。全部是模擬，尚未實測。</td></tr>
+      </table></div>
+    </div></details>
+  </div>
+</section>
+
+</main>
+</div>
+<script src="../../../circuit-sim/engine.js"></script>
+<script src="../../afe.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
