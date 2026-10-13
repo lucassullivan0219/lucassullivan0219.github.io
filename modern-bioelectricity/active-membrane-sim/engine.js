@@ -83,7 +83,7 @@ var AM = (function(){
     r('SO.Vm', 'SO.S', 1e5, 'sor1');
     C.push([IDX['SO.S'], IDX['SO.GND'], 1e-6, 'soc']);
     D.push([IDX['SO.S'], IDX['SO.B3'], 'sod']);
-    r('SO.B3', 'SO.GND', st.so_r2, 'sor2');                 /* 3M-R2 position: TA 1 Mohm, kit 100 ohm */
+    r('SO.B3', 'SO.GND', st.so_r2, 'sor2');                 /* 3M-R2 position: TA 1 Mohm on every board */
     Q.push(['n', IDX['SO.B4'], IDX['SO.B3'], IDX['SO.GND'], M3904, 'so3904']);
     Q.push(['p', IDX['SO.C4'], IDX['SO.B4'], IDX['SO.Vm'], M4403, 'so4403']);
     r('SO.C4', 'SO.GND', 1e3, 'sor1k');

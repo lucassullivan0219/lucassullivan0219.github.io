@@ -9,8 +9,8 @@
   var MODE = 'basic', FLOW = true;
   try{ MODE = localStorage.getItem('hw2mode') === 'adv' ? 'adv' : 'basic'; FLOW = localStorage.getItem('hw2flow') !== '0'; }catch(e){}
 
-  /* the board as built (PCB), with the kit's 100 ohm in the Slow out R2 position */
-  var BASE_ST = {vplus:7.8, rpot:700, r13:1e5, rfe:1e5, qs:'pcb', so_r2:100, rprobe:1e7, ch1:'Vm', ch2:'',
+  /* the board as built (PCB), with the TA's 1 Mohm in the Slow out R2 position (every board has it now) */
+  var BASE_ST = {vplus:7.8, rpot:700, r13:1e5, rfe:1e5, qs:'pcb', so_r2:1e6, rprobe:1e7, ch1:'Vm', ch2:'',
     r13p:0, rf:0, rb:0, rs:0, rl:0, ru:0, chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true, fi_on:true, so_on:true};
 
@@ -29,32 +29,30 @@
     },
     s22:{
       def:{basic:{rpot:700, leak:true, fi_on:true, so_on:true, r13:1e5, ch2:''},
-           adv:{rpot:700, so_r2:1e6, leak:true, fi_on:true, so_on:true, ch2:''}},
-      fixed:function(m){ return m === 'basic' ? {so_r2:100} : {}; },
+           adv:{rpot:700, leak:true, fi_on:true, so_on:true, ch2:''}},
+      fixed:function(m){ return {}; },
       sch:function(st){ return {chain:0}; },
       meas:['firstAP', 'global'], scope:{v1:1, v2:0.5, t:0.05, z2:1},
       presets:[
-        ['kit', '原版電路', {so_r2:100}, '助教給的電路（同基礎目標）：R2 = 100 Ω，Slow out 不動作，按一次 FI 就鎖在約 2.4 V，要斷電重置。'],
-        ['r2m', 'R2 = 1 MΩ', {so_r2:1e6}, '助教指定的 R2（你的板子現在）：不按也每 0.1 秒左右冒一個小峰（Stimulator 漏電把 Vm 墊在 FI 門檻）。'],
+        ['kit', '原版電路', {}, '助教給的電路（同基礎目標，R2 = 1 MΩ）：不按也每 0.1 秒左右冒一個約 1.5 V 小峰（Stimulator 漏電把 Vm 墊在 FI 門檻）；按下到約 2.1 V，按住停在 0.78 V。'],
         ['true', '真正的 AP', Object.assign({rpot:0}, TRUE_AP), 'R2 = 1 MΩ 再外加 5 顆電阻（見摘要區）：靜止 1.19 V、門檻約 1.66 V、AP 5.2–5.4 V、AP 後低於靜止約 0.6 V（125 ms）、AP 後 20 ms 內不能再發；按住時連續發放。']
       ]
     },
     s23:{
       def:{basic:{chain:4, rpot:700, ch2:'AX'},
-           adv:{chain:4, rpot:0, so_r2:1e6, fi_supply:'stim', src:'stim', isrc:40e-6, ch2:'AX', fi_on:true, so_on:true}},
+           adv:{chain:4, rpot:0, fi_supply:'stim', src:'stim', isrc:40e-6, ch2:'AX', fi_on:true, so_on:true}},
       fixed:function(m, s){ return {}; },
       sch:function(st){ return {chain:st.chain}; },
       meas:['firstAP', 'signed'], scope:{v1:1, v2:0.02, t:0.1, z2:4},
-      /* basic: the circuit as given; only the V+ flying wire and the Slow out R2 differ (hw2-debug/sim/check_23.py combos) */
+      /* basic: the circuit as given, with or without the V+ flying wire (hw2-debug/sim/check_23.py combos) */
       presetsBasic:[
-        ['kit', '照實：沒飛線', {so_r2:100, fi_supply:'none'}, 'R2 = 100 Ω（套件）、FI 沒有 V+：n ≥ 1 只有被動反應，按住 1 秒平滑升到約 2.4／1.75／1.3／1.0 V（n = 1–4），沒有尖峰。n = 0 的 V+ 走疊接排針，有電。'],
-        ['wire', '飛線＋R2 = 1 MΩ', {so_r2:1e6, fi_supply:'stim'}, 'Stimulator 的 V+ 拉一條飛線到 FI.V+，R2 = 1 MΩ（助教指定）：n ≥ 1 有 AP，峰值約 2.3／2.0／1.8／1.6 V（n = 1–4），過門檻 FI 衝高、SO 拉回；沒有後過極化。另一組實測到的就是這個。n = 3、4 按住 0.3 秒以上，放開後會卡在約 0.76 V（FI 和 SO 互相撐住），要斷電重置；n = 0 不按也會自己冒小峰。'],
-        ['wire100', '飛線＋R2 = 100 Ω', {so_r2:100, fi_supply:'stim'}, 'FI 有電但 Slow out 不動作：按住時 FI 鎖住、Vm 一路升到 3.5／2.8／2.4／2.1 V（n = 1–4），放開後停在 1.5–1.9 V 回不到靜止，要斷電重置。']
+        ['kit', '照實：沒飛線', {fi_supply:'none'}, 'FI 沒有 V+：n ≥ 1 只有被動反應，按住 1 秒最高 1.68／1.36／1.12／0.92 V（n = 1–4），再被 SO 慢慢拉到約 0.75 V，沒有尖峰。n = 0 的 V+ 走疊接排針，有電。'],
+        ['wire', '有 V+ 飛線', {fi_supply:'stim'}, 'Stimulator 的 V+ 拉一條飛線到 FI.V+：n ≥ 1 有 AP，峰值約 2.3／2.0／1.8／1.6 V（n = 1–4），過門檻 FI 衝高、SO 拉回；沒有後過極化。另一組實測到的就是這個。n = 3、4 按住 0.3 秒以上，放開後會卡在約 0.76 V（FI 和 SO 互相撐住），要斷電重置；n = 0 不按也會自己冒小峰。']
       ],
       basicPreset:'wire',
       presets:[
-        ['kit', '原版電路', {so_r2:100, fi_supply:'none'}, '套件原樣：R2 = 100 Ω，FI 沒有 V+（Passive PCB 底板沒串）。n ≥ 1 只有被動反應；拉了 V+ 飛線但 R2 仍是 100 Ω 則 FI 會鎖住。'],
-        ['wire', '原版＋V+ 飛線', {so_r2:1e6, fi_supply:'stim'}, 'R2 = 1 MΩ（助教指定），Stimulator 的 V+ 拉飛線到 FI，其他照原版：n ≥ 1 有 AP（門檻、FI 衝高、SO 拉回），峰值約 2.3–1.6 V（n = 1–4）。Passive unit 的 100 kΩ 吸掉 Stimulator 的 6 µA 漏電，靜止降到 0.1–0.3 V，所以不像 #2-2 會自己冒小峰；但靜止低於 SO 能拉到的約 0.6 V，沒有後過極化（C5）。n = 3、4 按住 0.3 秒以上，放開後卡在約 0.76 V（FI 和 SO 互鎖）。'],
+        ['kit', '原版電路', {fi_supply:'none'}, '原版、沒拉飛線：FI 沒有 V+（Passive PCB 底板沒串），n ≥ 1 只有被動反應，再被 SO 慢慢往下拉。'],
+        ['wire', '原版＋V+ 飛線', {fi_supply:'stim'}, 'Stimulator 的 V+ 拉飛線到 FI，其他照原版：n ≥ 1 有 AP（門檻、FI 衝高、SO 拉回），峰值約 2.3–1.6 V（n = 1–4）。Passive unit 的 100 kΩ 吸掉 Stimulator 的 6 µA 漏電，靜止降到 0.1–0.3 V，所以不像 #2-2 會自己冒小峰；但靜止低於 SO 能拉到的約 0.6 V，沒有後過極化（C5）。n = 3、4 按住 0.3 秒以上，放開後卡在約 0.76 V（FI 和 SO 互鎖）。'],
         ['true', '真正的 AP', Object.assign({ru:560e3, fi_supply:'stim', rpot:0}, TRUE_AP), '真正的 AP 外加元件，加上每個 Passive unit 一顆 560 kΩ 接 V+、FI 拉 V+ 線：n = 0–4 靜止都是 1.19 V，都有門檻、all-or-none、後過極化。I_min = 7.6／13.4／20.9／31.0／44.8 µA；量 I_min 時把 Q_pass E–B 改成 12 kΩ。']
       ]
     }

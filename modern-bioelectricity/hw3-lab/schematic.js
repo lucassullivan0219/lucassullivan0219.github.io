@@ -206,7 +206,7 @@
     function show(sel, on){ var e = q(sel); if(e) e.style.display = on ? '' : 'none'; }
     function fmt(v){ if(v == null || isNaN(v)) return ''; return Math.abs(v) < 0.1 ? (v * 1e3).toFixed(1) + ' mV' : v.toFixed(2) + ' V'; }
     function fmtR(x){ return x >= 1e6 ? (x / 1e6) + ' MΩ' : (x / 1e3) + ' kΩ'; }
-    var VAR = {kit:'原版（R2 100 Ω）', r2m:'R2 = 1 MΩ', true:'HW2 真正的 AP'};
+    var VAR = {kit:'原版', true:'HW2 真正的 AP'};
     var api = {
       setState:function(st){
         var vA = q('[data-var="A.Vm"]'); if(vA){ vA.textContent = VAR[st.pre] || ''; vA.setAttribute('class', st.pre === 'kit' ? 'lab' : 'modt'); vA.style.fontSize = '11px'; }

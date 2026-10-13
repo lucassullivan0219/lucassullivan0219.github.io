@@ -17,34 +17,34 @@
 
   var SIMS = {
     s31:{fixed:{syn:'exc', post:'passive'},
-      def:{basic:{wA:300, ch2:'P1'}, adv:{ch2:'P1', nA:3, isiA:100}},
+      def:{basic:{wA:20, ch2:'P1'}, adv:{ch2:'P1', nA:3, isiA:100}},
       scope:{v1:1, v2:0.2, t:0.1}, isi:true,
       presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:300}, '助教的電路（同基礎目標）：Pre 是原版 active membrane（R2 100 Ω），一碰就鎖在約 2.3 V；要按住 SW A 300 ms 以上才有小的 EPSP。'],
+        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:20}, '助教的電路（同基礎目標）：Pre 是原版 active membrane，不按也每秒冒約 7 個 1.5 V 小峰，按 SW A 只到 2.1 V。突觸要 Pre 到約 6 V 才導通，所以怎麼按都沒有 EPSP。'],
         ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, wA:15}, 'Pre 換成 HW2 的真正的 AP（5.4 V）：突觸板不加東西時 Q2 幾乎不導通，S 只到 0.17 V，沒有 EPSP。'],
         ['true', '真正的突觸', TRUE_SYN, 'HW2 真正的 AP ＋ 820 kΩ 兩端並 1.5 MΩ：一個 AP 在 #1 產生約 0.85 V、#5 約 0.22 V 的 EPSP；多個 AP 會疊加。']
       ]},
     s32:{fixed:{syn:'exc', post:'active'},
-      def:{basic:{wA:300, ch2:'B.Vm', wB:10}, adv:{ch2:'B.Vm', nA:2, isiA:100, wB:5, offB:-50}},
+      def:{basic:{wA:20, ch2:'B.Vm', wB:10}, adv:{ch2:'B.Vm', nA:2, isiA:100, wB:5, offB:-50}},
       scope:{v1:1, v2:1, t:0.1}, combo:true,
       presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:300}, '助教的電路：兩塊 active membrane 都是原版，Post 被 Stimulator B 觸發一次就鎖在約 2.4 V。'],
+        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:20}, '助教的電路：兩塊 active membrane 都是原版。Pre 推不動突觸，沒有 EPSP；Post 不按也自己冒 1.5 V 小峰，按 B 只到 1.6 V，按住停在 0.78 V。'],
         ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, rpotB:0, wA:15}, '兩塊都用 HW2 真正的 AP、突觸板不加東西：EPSP 傳不到 Post。'],
         ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：一個 EPSP 讓 Post 從 1.20 V 升到 1.36 V（不到門檻），兩個 EPSP（間隔 50 ms–1.2 s）就觸發 Post AP。Stimulator B 按 7 ms 會觸發，5 ms 不會。']
       ]},
     s33:{fixed:{syn:'inh', post:'passive'},
-      def:{basic:{wA:300, ch2:'P1'}, adv:{ch2:'P1', nA:3, isiA:100}},
+      def:{basic:{wA:20, ch2:'P1'}, adv:{ch2:'P1', nA:3, isiA:100}},
       scope:{v1:1, v2:0.05, t:0.1}, isi:true,
       presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:300}, '助教的電路：按住 SW A 300 ms 才有約 −140 mV 的 IPSP。'],
+        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:20}, '助教的電路：Pre 只到 2.1 V，突觸不導通，怎麼按都沒有 IPSP。'],
         ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, wA:15}, 'Pre 用 HW2 真正的 AP：一個 AP 只有約 −20 mV。'],
         ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：一個 AP 在 #1 約 −40 mV（被 15 kΩ 和 1.5 V 電池限制），多個 AP 疊加。拔掉電池 IPSP 就消失（Post 靜止約 0 V，沒有驅動力）。']
       ]},
     s34:{fixed:{syn:'inh', post:'active'},
-      def:{basic:{wA:300, ch2:'B.Vm', wB:20}, adv:{ch2:'B.Vm', nA:1, isiA:50, wB:11.5, offB:30}},
+      def:{basic:{wA:20, ch2:'B.Vm', wB:20}, adv:{ch2:'B.Vm', nA:1, isiA:50, wB:11.5, offB:30}},
       scope:{v1:1, v2:1, t:0.1}, combo:true,
       presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:300}, '助教的電路：Post 觸發一次就鎖住，量不到「抑制 AP」和頻率變化。'],
+        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:20}, '助教的電路：沒有 IPSP；Post 靜止 0.44 V（突觸的 100 kΩ + 200 kΩ 當 leak，不再自己冒峰），按 B 10 ms 到 1.8 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.77 V，不會連續發放，量不到頻率變化。'],
         ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, rpotB:0, wA:15}, '兩塊都用 HW2 真正的 AP、突觸板不加東西。'],
         ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：Post 靜止 1.02 V（突觸的 300 kΩ 也是 leak），Stimulator B 最弱觸發 = 按 11 ms。B 按 11.5 ms 時 1 個 IPSP 就擋住 AP，按 13 ms 要 2 個。按住 SW B（可變電阻 6 kΩ）16.4 Hz，同時按住 SW A 降到 10.3 Hz；電池拔掉（跳線）只降到 14.5 Hz。']
       ]}

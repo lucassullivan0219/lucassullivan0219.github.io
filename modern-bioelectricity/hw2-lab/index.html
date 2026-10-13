@@ -180,11 +180,11 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
       <details class="card" open><summary>基礎模型＝助教給的電路<span class="hint">#2-3 另有 V+ 飛線的選項</span></summary><div class="body">
         <ul>
           <li><b>完全照 PCB 實際接法</b>（從講義 PCB 圖追線），不是講義的模擬器電路圖。</li>
-          <li><b>Slow out 的 R2 = 100 Ω</b>：PCB 標 3M，套件給的是 100 Ω（助教以為是 1 MΩ）。這是唯一和 PCB 標示不同的地方（#2-3 區域預設 1 MΩ＋V+ 飛線，見最後一項）。</li>
+          <li><b>Slow out 的 R2 = 1 MΩ</b>（助教指定，大家都已換好；PCB 標 3M，套件原本附的是 100 Ω）。這是唯一和 PCB 標示不同的地方。</li>
           <li><b>R13 = 100 kΩ</b>（PCB 標示；講義電路圖畫 1 kΩ）。</li>
           <li><b>Stimulator 的 Q<sub>sense</sub> 接在 SW 之前</b>：SW 放開時仍漏出約 6 µA。</li>
           <li>V+ = 7.8 V（9 V 電池實測）。示波器 ×10 探棒（10 MΩ）。可變電阻預設 0.7 kΩ（約 90 µA，第二、三輪的位置）。</li>
-          <li><b>#2-3</b>：Passive PCB 底板沒有串 V+，n ≥ 1 時要從 Stimulator 的 V+ 拉一條<b>飛線</b>到 FI.V+，FI 才有電。#2-3 區域預設「飛線＋R2 = 1 MΩ」（另一組實測出 AP 的接法），也可以切回「照實：沒飛線」（R2 = 100 Ω、FI 沒電）或「飛線＋R2 = 100 Ω」。</li>
+          <li><b>#2-3</b>：Passive PCB 底板沒有串 V+，n ≥ 1 時要從 Stimulator 的 V+ 拉一條<b>飛線</b>到 FI.V+，FI 才有電。#2-3 區域預設「有 V+ 飛線」（另一組實測出 AP 的接法），也可以切回「照實：沒飛線」（FI 沒電）。</li>
         </ul>
       </div></details>
 
@@ -210,33 +210,30 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
 
       <details class="card" open><summary>我認為可能有問題的地方<span class="hint">會影響基礎目標的量測</span></summary><div class="body">
         <ol>
-          <li><b>你的板子現在 R2 是 1 MΩ</b>，基礎版是 100 Ω。量基礎版前換回 100 Ω，或在報告寫清楚用哪一顆。兩者行為完全不同：100 Ω 時按一次 FI 就鎖在 2.4 V；1 MΩ 時不按也每 0.1 秒冒一個 1.6 V 小峰。</li>
-          <li><b>R2 = 100 Ω 時 Slow out 完全不作用</b>：按住 SW 升到約 4.5 V 平台，放開後 FI 鎖在約 2.4 V 下不來。每量一次都要斷電重置（拔電池或拔 FI 再插回）。</li>
-          <li><b>R13 = 100 kΩ</b>：FI 最多只送約 70 µA，「AP」和拔掉 FI 的被動反應差不多，TTX 看不太出差別。</li>
+          <li><b>#2-2 沒有穩定的靜止</b>：Stimulator 放開時漏 6 µA，把 Vm 墊在 FI 門檻，不按也每 0.1 秒左右冒一個約 1.5 V 小峰（第三輪實測 1.6 V）。按下的第一個峰約 2.1 V（實測 2.2 V），按住被 Slow out 拉在約 0.8 V（實測 0.6–1.0 V、約 40 Hz）。示波器用 Single、觸發準位 1.8 V 以上，才抓得到按下的那一個。</li>
+          <li><b>R13 = 100 kΩ</b>：FI 最多只送約 70 µA，「AP」和拔掉 FI 的被動反應差不多（模擬 2.1 vs 1.9 V），TTX 看不太出差別。</li>
           <li><b>基線不是 0</b>：Stimulator 放開時漏 6 µA，只接 Leak 時基線約 0.6–0.7 V。amplitude 一律用「波峰 − 基線」。</li>
-          <li><b>#2-3 要拉 V+ 飛線</b>：沒拉時 FI 沒有 V+，n ≥ 1 只有被動反應。拉了飛線、R2 = 1 MΩ，原版電路就有 AP：峰值約 2.3／2.0／1.8／1.6 V（n = 1–4），過門檻 FI 衝高、SO 拉回，但沒有後過極化（另一組實測就是這樣）。R2 = 100 Ω 時拉了飛線 FI 只會鎖住。下面「#2-3 看波形判斷」可以對照。</li>
-          <li><b>#2-3 n = 3、4 可能卡住</b>：飛線＋R2 = 1 MΩ 時按住 0.3 秒以上，放開後 Vm 卡在約 0.76 V（FI 和 SO 互相撐住），要斷電重置。用短按，或每次量完斷電。這是預設參數的模擬，實際板子不一定會卡。</li>
+          <li><b>#2-3 要拉 V+ 飛線</b>：沒拉時 FI 沒有 V+，n ≥ 1 只有被動反應。拉了飛線，原版電路就有 AP：峰值約 2.3／2.0／1.8／1.6 V（n = 1–4），過門檻 FI 衝高、SO 拉回，但沒有後過極化（另一組實測就是這樣）。下面「#2-3 有沒有飛線」可以對照。</li>
+          <li><b>#2-3 n = 3、4 可能卡住</b>：有飛線時按住 0.3 秒以上，放開後 Vm 卡在約 0.76 V（FI 和 SO 互相撐住），要斷電重置。用短按，或每次量完斷電。這是預設參數的模擬，實際板子不一定會卡。</li>
           <li><b>#2-3 Q3 就算有 AP 也量不到門檻</b>：模擬的 I<sub>min</sub> 多數低於可變電阻最小的約 44 µA，每按一次都會觸發。</li>
           <li><b>S+FI 那列（已解決）</b>：拔掉 Leak 重量是 <b>4.4／7.2 V</b>，和預測的 4.55／7.13 V 一樣（FI 不按就自己鎖住；按住時頂到 Stimulator 上限）。第二輪的 3.0／5.9 V 是 Leak 還插著。</li>
-          <li><b>#2-2 Q5 的反轉電位</b>：照實量的話，靜止＝基線；內向電流能把 Vm 推到的最高點（S+FI 鎖住約 4.5 V，理論上限是 V+）；外向電流能把 Vm 拉到的最低點（R2 = 100 Ω 時 Slow out 只剩 100 kΩ 串二極體，約 0.4 V）。</li>
+          <li><b>#2-2 Q5 的反轉電位</b>：照實量的話，靜止＝基線；內向電流能把 Vm 推到的最高點（S+FI 鎖住約 4.5 V，理論上限是 V+）；外向電流能把 Vm 拉到的最低點（Slow out 的極限約 0.6 V；按住時被拉在約 0.78 V）。</li>
         </ol>
       </div></details>
 
-      <details class="card" open><summary>#2-3 看波形判斷<span class="hint">少了 V+ 飛線還是 R2 不對</span></summary><div class="body">
-        <p class="small">原版電路、可變電阻 0.7 kΩ、SW 按住 1 秒。四種組合的波形都不一樣，對照你量到的就知道少了什麼。</p>
+      <details class="card" open><summary>#2-3 有沒有飛線<span class="hint">看波形判斷 FI 有沒有電</span></summary><div class="body">
+        <p class="small">原版電路、可變電阻 0.7 kΩ、SW 按住 1 秒。有沒有拉 V+ 飛線，波形不一樣。</p>
         <div class="tbl"><table>
-          <tr><th>R2</th><th>V+ 飛線</th><th>按住時 Vm（n = 1–4）</th><th>放開後</th><th>看起來像</th></tr>
-          <tr><td>1 MΩ</td><td>有</td><td>衝到 2.26／1.97／1.78／1.64 V，再被拉回約 0.8 V</td><td>n = 1、2 回到靜止；n = 3、4 卡在 0.76 V</td><td class="t-ok">AP：門檻、FI 衝高、SO 拉回（另一組）</td></tr>
-          <tr><td>1 MΩ</td><td>沒有</td><td>只到 1.68／1.36／1.12／0.92 V，慢慢降到約 0.75 V</td><td>回到靜止</td><td>被動反應＋SO 往下拉，沒有尖峰</td></tr>
-          <tr><td>100 Ω</td><td>有</td><td>一路升到 3.50／2.84／2.39／2.09 V</td><td>停在 1.5–1.9 V</td><td class="t-warn">FI 鎖住（像 #2-2 第二輪的 2.4 V）</td></tr>
-          <tr><td>100 Ω</td><td>沒有</td><td>平滑升到 2.40／1.75／1.31／0.99 V</td><td>回到靜止</td><td>純被動的 RC 曲線</td></tr>
+          <tr><th>V+ 飛線</th><th>按住時 Vm（n = 1–4）</th><th>放開後</th><th>看起來像</th></tr>
+          <tr><td>有</td><td>衝到 2.26／1.97／1.78／1.64 V，再被拉回約 0.8 V</td><td>n = 1、2 回到靜止；n = 3、4 卡在 0.76 V</td><td class="t-ok">AP：門檻、FI 衝高、SO 拉回（另一組）</td></tr>
+          <tr><td>沒有</td><td>只到 1.68／1.36／1.12／0.92 V，慢慢降到約 0.75 V</td><td>回到靜止</td><td>被動反應＋SO 往下拉，沒有尖峰</td></tr>
         </table></div>
         <p class="small muted">靜止都是 0.29／0.18／0.12／0.09 V：Passive unit 的 100 kΩ 吸掉 Stimulator 的 6 µA 漏電，所以 #2-3 不像 #2-2（n = 0）會自己冒小峰。來源：<code>hw2-debug/sim/check_23.py combos</code>。</p>
       </div></details>
 
-      <details class="card"><summary>第二輪麵包板：你量的 vs 基礎模型<span class="hint">模型就是你的電路</span></summary><div class="body">
+      <details class="card"><summary>第二輪麵包板：你量的 vs 當時的模型<span class="hint">紀錄：R2 還是 100 Ω 的時候</span></summary><div class="body">
         <div class="tbl"><table>
-          <tr><th>組合</th><th class="num">實測 靜止／按住</th><th class="num">基礎模型（R2 = 100 Ω）</th></tr>
+          <tr><th>組合</th><th class="num">實測 靜止／按住</th><th class="num">當時模型（R2 = 100 Ω）</th></tr>
           <tr><td>S</td><td class="num">7.1／7.3</td><td class="num">7.14／7.14</td></tr>
           <tr><td>S + LK</td><td class="num">0.7／7.2</td><td class="num">0.62／7.13</td></tr>
           <tr><td>S + FI（重量，拔掉 Leak）</td><td class="num t-ok">4.4／7.2</td><td class="num">4.55／7.13</td></tr>
@@ -245,7 +242,7 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
           <tr><td>S + LK + SO</td><td class="num">0.5／4.8</td><td class="num">0.46／4.72</td></tr>
           <tr><td>全接，FI 鎖住</td><td class="num">2.4／4.5</td><td class="num">2.39／4.49</td></tr>
         </table></div>
-        <p class="small muted">V；可變電阻 0.7 kΩ。第二輪 S+FI 量到 3.0／5.9 V（Leak 還插著），重量後吻合。可以在 <a href="#r3">#2-2 區域</a>勾掉板子重現。</p>
+        <p class="small muted">V；可變電阻 0.7 kΩ。第二輪 S+FI 量到 3.0／5.9 V（Leak 還插著），重量後吻合。沒有 SO 的列可以在 <a href="#r3">#2-2 區域</a>勾掉板子重現；有 SO 的三列是 R2 = 100 Ω 時量的，現在模擬都用 1 MΩ，不會一樣。</p>
       </div></details>
 
       <details class="card"><summary>量測注意事項<span class="hint">五參數、電流、示波器</span></summary><div class="body">
@@ -278,7 +275,7 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
       </details>
 
       <details class="card wide" open><summary>真正的 AP 完整電路圖<span class="hint">紫紅色＝和原版電路不同</span></summary><div class="body">
-        <p class="small">原版電路（照 PCB 實際接法）加上所有外加元件，每顆都畫在實際夾的兩個點之間。<b style="color:var(--mod)">紫紅色</b>是和原版不同的地方：SO 的 R2 換成 1 MΩ（套件是 100 Ω）、Q<sub>pass</sub> E–B 並 22 kΩ、R13 並 11 kΩ、R13 下端到 FI.E3 的 680 kΩ、V+ 到 Vm 的 330 kΩ、SO C1 並 56 kΩ；#2-3 再加每個 Passive unit 的 560 kΩ 和拉到 FI 的 V+ 線。黑色是原版就有的（#2-2 的 V+ 走疊接排針）。要看電子流動，到 <a href="#r3">#2-2</a>、<a href="#r4">#2-3</a> 區域選「真正的 AP」。</p>
+        <p class="small">原版電路（照 PCB 實際接法）加上所有外加元件，每顆都畫在實際夾的兩個點之間。<b style="color:var(--mod)">紫紅色</b>是和原版不同的地方：Q<sub>pass</sub> E–B 並 22 kΩ、R13 並 11 kΩ、R13 下端到 FI.E3 的 680 kΩ、V+ 到 Vm 的 330 kΩ、SO C1 並 56 kΩ；#2-3 再加每個 Passive unit 的 560 kΩ 和拉到 FI 的 V+ 線。黑色是原版就有的（#2-2 的 V+ 走疊接排針）。要看電子流動，到 <a href="#r3">#2-2</a>、<a href="#r4">#2-3</a> 區域選「真正的 AP」。</p>
         <div class="fsbox schbox"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><p class="small" style="margin:0"><b>#2-2</b>（n = 0）</p><svg data-trueap="0" role="img" aria-label="#2-2 真正的 AP 完整電路圖"></svg></div>
         <div class="fsbox schbox" style="margin-top:10px"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><p class="small" style="margin:0"><b>#2-3</b>（以 n = 2 為例）</p><svg data-trueap="2" role="img" aria-label="#2-3 真正的 AP 完整電路圖，n = 2"></svg></div>
       </div></details>
@@ -286,7 +283,6 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
       <details class="card" open><summary>真正的 AP 電路（只加、可拆）<span class="hint">每顆的用途</span></summary><div class="body">
         <div class="tbl"><table>
           <tr><th>加什麼</th><th>夾在哪</th><th>為什麼</th></tr>
-          <tr><td>R2 = 1 MΩ</td><td>SO 的 R2（換回助教值）</td><td>Slow out 才會動作</td></tr>
           <tr><td>22 kΩ</td><td>ST.Q ↔ ST.R（Q<sub>pass</sub> E–B）</td><td>消除 6 µA 漏電，靜止點不隨 n 改變</td></tr>
           <tr><td>11 kΩ</td><td>R13 兩端</td><td>FI 能送約 0.6 mA：快速、再生性的上升（C2）</td></tr>
           <tr><td>680 kΩ</td><td>R13 下端 → FI.E3</td><td>FI 門檻抬到約 1.66 V，高於靜止</td></tr>
@@ -340,11 +336,10 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
         <p class="small">改法就是讓每段膜都有同樣的靜止電位（神經裡每段膜的 E<sub>leak</sub> 相同，樹突不會把胞體拉低）：每個 Passive unit 加 560 kΩ 接 V+，再用 22 kΩ 消掉漏電，讓靜止不隨 n 改變。</p>
       </div></details>
 
-      <details class="card"><summary>助教電路的問題<span class="hint">原版、R2 = 1 MΩ 為什麼沒有真正的 AP</span></summary><div class="body">
+      <details class="card"><summary>助教電路的問題<span class="hint">原版（R2 = 1 MΩ）為什麼沒有真正的 AP</span></summary><div class="body">
         <ol class="small">
-          <li><b>SO 的 R2</b>：PCB 標 3M，套件給 100 Ω（助教以為 1 MΩ）。100 Ω 讓 Slow out 不動作，FI 一觸發就鎖在 2.4 V：沒有 C4。</li>
           <li><b>R13 = 100 kΩ（電路圖 1 kΩ）</b>：FI 最多約 70 µA，上升和被動充電差不多：C2 不明顯。</li>
-          <li><b>Q<sub>sense</sub> 接在 SW 前</b>：放開時漏 6.3 µA，靜止 0.53 V 剛好在 FI 門檻附近；R2 = 1 MΩ 時不按也自己冒小峰：沒有穩定的靜止，C1 不成立。</li>
+          <li><b>Q<sub>sense</sub> 接在 SW 前</b>：放開時漏 6.3 µA，靜止 0.53 V 剛好在 FI 門檻附近，不按也自己冒小峰：沒有穩定的靜止，C1 不成立。</li>
           <li><b>E<sub>leak</sub>（0 V）低於 Slow out 的極限（約 0.6 V）</b>：後過極化不可能（C5）。</li>
           <li><b>FI 門檻和 Slow out 鉗位都在約 0.6 V</b>：餘裕太小。</li>
           <li><b>#2-3</b>：Passive PCB 底板沒有串 V+，要拉飛線 FI 才有電。拉了之後原版就有 AP（1.6–2.3 V），但靜止 0.1–0.3 V 低於 Slow out 的極限，一樣沒有後過極化；n = 3、4 長按後 FI 和 SO 互鎖在 0.76 V。可變電阻最小約 44 µA，量不到 I<sub>min</sub>（5–32 µA）。</li>
@@ -425,7 +420,7 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
   </div>
   <div class="settings">
     <h2>#2-2 Active</h2>
-    <p class="sub" data-show="basic">助教給的電路：R2 = 100 Ω、R13 = 100 kΩ。CH1 = Vm。</p>
+    <p class="sub" data-show="basic">助教給的電路：R2 = 1 MΩ、R13 = 100 kΩ。CH1 = Vm。</p>
     <p class="sub" data-show="adv">自由調整。點電路圖上的紅色接點可以斷開排針。</p>
     <div class="grp" data-show="adv"><div class="gt">情境</div>
       <div class="btns" data-presets="s22"></div>
@@ -447,7 +442,6 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     <div class="grp"><div class="gt">元件</div>
       <div class="row"><label>R13（Q4）</label><select data-k="r13" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option><option value="1e4" data-show="adv">10 kΩ</option><option value="1e3" data-show="adv">1 kΩ</option></select></div>
       <div data-show="adv">
-        <div class="row"><label>SO 的 R2</label><select data-k="so_r2" data-num><option value="100">100 Ω（套件）</option><option value="1e6">1 MΩ（助教）</option><option value="3e6">3 MΩ（PCB 標）</option></select></div>
         <div class="row"><label>FI 3904 E 電阻</label><select data-k="rfe" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select></div>
         <div class="row"><label>Q_pass E–B 並</label><select data-k="qs"><option value="pcb">不加</option><option value="rx">22 kΩ（真 AP）</option><option value="rx10">10 kΩ</option><option value="sw">Q_sense 改接（對照）</option></select></div>
         <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="11e3">11 kΩ（真 AP）</option><option value="1e5">100 kΩ</option><option value="1e3">1 kΩ</option></select></div>
@@ -465,17 +459,16 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     <div class="grp"><div class="gt">自動量測（上一次按壓，第一個 AP）</div><div data-meas></div></div>
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
-        <li><b>Q2</b> 按一下（例如 100 ms）記錄一個「AP」的五參數。R2 = 100 Ω 時按住會停在約 4.5 V、放開後鎖在 2.4 V：量完按「斷電重置」。</li>
+        <li><b>Q2</b> 按一下（例如 100 ms）記錄一個「AP」的五參數（模擬約 2.1 V、按下後約 11 ms 到峰）。不按也會自己冒小峰：Single、觸發準位 1.8 V 以上。</li>
         <li><b>Q3</b> 五種可變電阻位置，每個量一次（電流用 S + 1 個 Passive unit 換算）。</li>
         <li><b>Q4</b> R13 換 50k–3M，電流固定。</li>
         <li><b>Q5</b> 基線、FI 能推到的最高點（拔 SO、FI 鎖住）、SO 能拉到的最低點。</li>
-        <li><b>Q6</b> 拔 FI（TTX）、拔 SO（TEA）各量一次。</li>
+        <li><b>Q6</b> 拔 FI（TTX）、拔 SO（TEA）各量一次。拔 FI：不再自己冒峰，按下到 1.9 V（和有 FI 的 2.1 V 差不多）；拔 SO：FI 不按就鎖在 3.0 V，按住升到 5.8 V。</li>
       </ul>
     </details>
-    <details data-show="adv"><summary>進階：三個情境</summary>
+    <details data-show="adv"><summary>進階：兩個情境</summary>
       <ul class="small">
-        <li><b>原版電路</b>：按住升到約 4.5 V，放開鎖在 2.4 V；沒有再極化。</li>
-        <li><b>R2 = 1 MΩ</b>：不按約每 130 ms 一個 1.46 V 小峰；按下的第一個峰 1.8–2.1 V（實測 2.2 V）；按住停 0.78 V。</li>
+        <li><b>原版電路</b>（R2 = 1 MΩ）：不按約每 130 ms 一個 1.46 V 小峰；按下的第一個峰 1.8–2.1 V（實測 2.2 V）；按住停 0.78 V。</li>
         <li><b>真正的 AP</b>：靜止 1.19 V、按 7.5 ms 以上觸發、AP 5.2–5.4 V（拔 FI 2.0 V）、AP 後 0.58 V 持續約 125 ms、AP 後 20 ms 內不能再發；按住時連續發放。Q4 換 R13 有效值、Q6 拔 FI／SO 都可以在這裡試。</li>
       </ul>
     </details>
@@ -490,12 +483,12 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
   </div>
   <div class="settings">
     <h2>#2-3 Passive → active</h2>
-    <p class="sub" data-show="basic">底板沒串 V+，n ≥ 1 時 FI 要拉飛線才有電。預設「飛線＋R2 = 1 MΩ」；「照實：沒飛線」只剩被動反應。CH1 = active 端 Vm。</p>
+    <p class="sub" data-show="basic">底板沒串 V+，n ≥ 1 時 FI 要拉飛線才有電。預設「有 V+ 飛線」；「照實：沒飛線」只剩被動反應。CH1 = active 端 Vm。</p>
     <p class="sub" data-show="adv">可以補 V+ 線、換電流源、套用修正。</p>
     <div class="grp"><div class="gt">Passive unit 數 n</div>
       <div class="btns" data-nseg></div>
     </div>
-    <div class="grp" data-show="basic"><div class="gt">FI 的 V+ 與 SO 的 R2</div>
+    <div class="grp" data-show="basic"><div class="gt">FI 的 V+</div>
       <div class="btns" data-presets="s23b"></div>
       <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
     </div>
@@ -505,7 +498,6 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
       <div class="row"><label>FI 的 V+</label><select data-k="fi_supply"><option value="none">沒接（照實）</option><option value="stim">從 Stimulator 拉線</option><option value="local">FI 自帶電池</option></select></div>
       <label class="chk"><input type="checkbox" data-k="fi_on"> FI（拔掉 = TTX）</label>
       <label class="chk"><input type="checkbox" data-k="so_on"> SO（拔掉 = TEA）</label>
-      <div class="row"><label>SO 的 R2</label><select data-k="so_r2" data-num><option value="100">100 Ω（套件）</option><option value="1e6">1 MΩ（助教）</option></select></div>
       <div class="row"><label>Q_pass E–B 並</label><select data-k="qs"><option value="pcb">不加</option><option value="rx">22 kΩ（真 AP）</option><option value="rx12">12 kΩ（量 I_min）</option></select></div>
       <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="11e3">11 kΩ（真 AP）</option></select></div>
       <div class="row"><label>R13 下端→FI.E3</label><select data-k="rf" data-num><option value="0">不加</option><option value="680e3">680 kΩ（真 AP）</option></select></div>
@@ -532,7 +524,7 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     <div class="grp"><div class="gt">自動量測（上一次按壓）</div><div data-meas></div></div>
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
-        <li><b>Q2</b> n = 4，按一下 SW，記錄第一個 AP 的五參數（飛線＋R2 = 1 MΩ：峰值約 1.6 V；沒飛線只有被動反應）。</li>
+        <li><b>Q2</b> n = 4，按一下 SW，記錄第一個 AP 的五參數（有飛線：峰值約 1.6 V；沒飛線只有被動反應）。</li>
         <li><b>Q3</b> 每個 n 從小電流往上加，找剛好出現 AP 的電流。模擬的 I<sub>min</sub> 是 4.7／11.7／20.5／32 µA（n = 1–4），低於可變電阻最小的約 44 µA，所以會「最小電流也觸發」；照記錄。</li>
         <li><b>Q4</b> 電流固定，n = 4…0 各按 1 秒，讀「到峰」。n = 3、4 放開後若卡在約 0.76 V，斷電重置再量下一個。</li>
         <li><b>Q5</b> n = 2，CH2 = AX（下方紅箭頭），10–50 mV/div。</li>
@@ -540,8 +532,8 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     </details>
     <details data-show="adv"><summary>進階：三個情境</summary>
       <ul class="small">
-        <li><b>原版電路</b>：套件原樣（R2 = 100 Ω、FI 沒有 V+），n ≥ 1 只有被動反應。</li>
-        <li><b>原版＋V+ 飛線</b>（R2 = 1 MΩ）：有 AP，峰值 2.26／1.97／1.78／1.64 V（n = 1–4），沒飛線（FI 沒電）只有 1.68／1.36／1.12／0.92 V；有門檻、SO 拉回，沒有後過極化。n = 3、4 長按後互鎖在 0.76 V。</li>
+        <li><b>原版電路</b>：沒拉飛線，FI 沒有 V+，n ≥ 1 只有被動反應。</li>
+        <li><b>原版＋V+ 飛線</b>：有 AP，峰值 2.26／1.97／1.78／1.64 V（n = 1–4），沒飛線（FI 沒電）只有 1.68／1.36／1.12／0.92 V；有門檻、SO 拉回，沒有後過極化。n = 3、4 長按後互鎖在 0.76 V。</li>
         <li><b>真正的 AP</b>：每個 unit 也接 560 kΩ 到 V+，所以 n = 0–4 靜止都是 1.19 V。I<sub>min</sub> = 7.6／13.4／20.9／31.0／44.8 µA；量 I<sub>min</sub> 時把「Q_pass E–B 並」改成 12 kΩ（可變電阻約 51–2.6 µA）。Delay（47 µA）= 24／46／79／136／370 ms。後過極化 0.4–0.5 V。</li>
         <li>為什麼不能直接用方案 3：見摘要區。</li>
       </ul>
@@ -571,8 +563,8 @@ Stimulator 放開：ST.R = 7.8 − 0.65 − 0.53 = 6.62 V → I_C(sense) = 6.62/
                  I_B(sense) = 0.946 mA / 150 = 6.3 µA → 接 Leak：0.63 V
 FI 自鎖：(V+ − Vm)/100k = (Vm − 0.85)/100k → Vm = (7.8 + 0.85)/2 ≈ 4.4 V（實測 4.0，模擬 4.24）
        接 Leak 與漏電：3·Vm = 7.8 + 0.85 + 0.63 → 3.1 V（10d、S+LK+FI）
-Slow out 鉗位（R2 = 3M，pot 0）：SO.B3 = 0.47 V、SO.S = 0.66 V、Vm = 0.68 V
-R2 = 100 Ω：Slow out ≈ 100 kΩ 串二極體 → 全接 FI 鎖住：0.63 + 8.65 + 0.4 = 4·Vm → 2.42 V
+Slow out 鉗位（R2 = 1M，按住）：Vm ≈ 0.78 V（模擬）
+（第二輪紀錄）R2 = 100 Ω：Slow out ≈ 100 kΩ 串二極體 → 全接 FI 鎖住：0.63 + 8.65 + 0.4 = 4·Vm → 2.42 V
 Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) ≈ 0.59 V
 真正的 AP 靜止：(7.8 − Vm)/330k = Vm/100k + Vm/156k + 0.2 µA → 1.19 V（22 kΩ 已消掉漏電）
          FI 門檻：FI.E3 = 7.8·100/780 = 1.0 V → Vm ≈ 1.7 V；SO.S = 0.36 Vm = 0.43 V（關）
@@ -583,7 +575,7 @@ Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) 
         <tr><th>位置</th><th>電路圖</th><th>PCB 實際</th></tr>
         <tr><td>FI：V+ → 2N4403 E</td><td>1 kΩ＋板上 9 V 電池</td><td>R13 = 100 kΩ，V+ 從排針來</td></tr>
         <tr><td>Stimulator Q<sub>sense</sub> 的 E</td><td>SW 之後</td><td>SW 之前（漏 6 µA）</td></tr>
-        <tr><td>Slow out R2</td><td>3 MΩ</td><td>標 3M；套件 100 Ω；助教說 1 MΩ</td></tr>
+        <tr><td>Slow out R2</td><td>3 MΩ</td><td>標 3M；現在都換成助教指定的 1 MΩ（套件原本附 100 Ω）</td></tr>
         <tr><td>Passive PCB 底板</td><td>—</td><td>只串 Intracellular（10 kΩ）與 GND（100 Ω），沒有 V+</td></tr>
         <tr><td>電源</td><td>9 V</td><td>實測 7.8 V</td></tr>
       </table></div>

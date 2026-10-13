@@ -187,7 +187,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <li>Excitatory：820 kΩ → 1N4148 → 2N3904（基極 10 nF ∥ 100 kΩ，射極 30 kΩ）→ 2N4403（射極 1 kΩ 接 V+）→ S（4.7 µF ∥ 200 kΩ）→ 1N4148 → Post。</li>
           <li>Inhibitory：輸入級相同；2N4403 的射極接 1.5 V 電池的 +、電池 − 接 S，集極 15 kΩ 到 GND；S（4.7 µF ∥ 200 kΩ）→ 100 kΩ → Post。</li>
           <li><span class="tag t-inf">推測</span>Excitatory 的 V+ 從 2×2 排針來（= Stimulator 的電池，7.8 V）。講義畫成獨立的 9 V；如果你另外接 9 V 電池，Q1 開的時候 S 會高一點，其他不變。</li>
-          <li><b>Pre／Post active membrane = HW2 的板子</b>，預設原版（SO 的 R2 = 100 Ω）。各區右側「Active membrane」可以改成 R2 = 1 MΩ 或 HW2 真正的 AP，和你現在的板子一致。</li>
+          <li><b>Pre／Post active membrane = HW2 的板子</b>，預設原版（Slow out 的 R2 = 1 MΩ，大家都已換好）。各區右側「Active membrane」可以改成 HW2 真正的 AP。</li>
           <li>Passive unit：1 µF ∥ 100 kΩ，上排 10 kΩ；細胞外照講義圖直接接 GND（HW2 的 100 Ω 影響可忽略）。Stimulator A、B 都是 HW2 的 Stimulator（放開時漏約 6 µA）。×10 探棒。</li>
         </ul>
       </div></details>
@@ -218,13 +218,13 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 
       <details class="card" open><summary>我認為可能有問題的地方<span class="hint">模擬預測，會影響基礎目標的量測</span></summary><div class="body">
         <ol>
-          <li><b>原版 Pre 的「AP」推不動突觸</b>：原版 active membrane 的 AP 只有約 2.5 V（之後鎖在 2.3 V），突觸的 Q2 要 Pre 到約 6 V 才導通。按 SW A 20 ms：沒有 EPSP／IPSP。要按住 300 ms（#1 約 +175 mV、#5 +64 mV）到 1 秒（#1 約 +450 mV）才看得到。「一個 AP 一個 EPSP」實際上會是「一次長按一個 EPSP」，照實寫。</li>
-          <li><b>R2 = 1 MΩ 的 Pre</b>（峰值約 2.1 V）：怎麼按都沒有反應。</li>
+          <li><b>原版 Pre 的「AP」推不動突觸</b>：原版 active membrane 按 SW A 只到約 2.1 V，按住則被 Slow out 拉回 0.78 V；突觸的 Q2 要 Pre 到約 6 V 才導通。所以 #3-1–#3-4 怎麼按都沒有 EPSP／IPSP（S 不到 1 mV）。照實記錄「沒有 PSP」，並附 Pre 的波形。</li>
+          <li><b>原版 Pre 會自己冒小峰</b>：Stimulator A 放開時漏約 6 µA，把 Pre 墊在 FI 門檻附近，不按也每秒約 7 個 1.5 V 小峰（HW2 第三輪量到的那個）。觸發 CH1 時準位要設在 1.8 V 以上，才不會被小峰觸發。</li>
           <li><b>HW2 真正的 AP 也不夠</b>：峰值 5.4 V 只讓 S 升到 0.17 V，沒有 EPSP（見進階目標）。</li>
-          <li><b>原版 Post（#3-2、#3-4）一觸發就鎖住</b>：被 Stimulator B 或 EPSP 觸發一次後鎖在約 2.4 V，每次都要斷電重置；也不會連續發放，#3-4 Q3 的「頻率變化」量不到。</li>
+          <li><b>原版 Post（#3-2、#3-4）</b>：不會鎖住，但也不會連續發放。#3-2 的 Post 和 Pre 一樣自己冒小峰，按 B 只到 1.6 V；#3-4 的 Post 被突觸的 100 kΩ + 200 kΩ 拉成 leak，安靜停在 0.44 V，按 B 10 ms 到 1.8 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.77 V。#3-4 Q3 的「頻率變化」量不到。</li>
           <li><b>#3-3、#3-4「拔掉 1.5 V 電池」</b>：只拔掉的話 Q1 到 S 是開路，突觸完全沒有輸出。要用一條線把電池的兩個夾點接起來，才是「改變驅動力」。模擬兩種都可以選。</li>
           <li><b>#3-3 Passive 的 Post 靜止約 0 V</b>：拔掉電池後 IPSP 的反轉電位約 0 V，和靜止差不多，所以 IPSP 消失；這本身就是答案（沒有驅動力）。</li>
-          <li><b>基線不是 0</b>：Stimulator B 放開時漏約 6 µA，#1 的基線約 0.17–0.19 V；Stimulator A 漏電讓 Pre 基線約 0.44 V。振幅一律用「波峰 − 基線」。</li>
+          <li><b>基線不是 0</b>：Stimulator B 放開時漏約 6 µA，#1 的基線約 0.17–0.19 V；Stimulator A 漏電讓 Pre 在 0.53–1.48 V 之間自己冒小峰。振幅一律用「波峰 − 基線」。</li>
           <li><b>講義的小錯</b>：#3-4 Q4 說重做「#3-4-5 and #3-4-6」，這兩題不存在，應該是 Q2、Q3；檔名寫 <code>HW02_…</code>，應該是 HW03（交之前問助教）。</li>
         </ol>
       </div></details>
@@ -251,7 +251,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 <div class="calc">Q2.B ≈ (V_pre − V_D1) × 100k / (100k + R1)        （10 nF 只決定速度）
 820 kΩ、Pre 5.4 V（HW2 真 AP）：(5.4 − 0.45) × 100/920 = 0.54 V → Q2 幾乎不導通，S 只到 0.17 V
 要 Q2.B ≈ 0.6 V：V_pre ≈ 0.6 × 920/100 + 0.45 ≈ 6 V
-原版 AP 2.5 V、R2 = 1 MΩ 2.1 V：遠低於 6 V</div>
+原版 AP 2.1 V：遠低於 6 V</div>
         <p class="small"><span class="tag t-inf">推測</span>突觸是照講義的 active membrane 設計的：講義的 FI 是 1 kΩ（PCB 是 R13 = 100 kΩ），AP 會接近 V+，就能過 6 V。PCB 版的 AP 最高 5.4 V（HW2 真 AP），差一點點，而 Q2 是指數關係，所以幾乎沒有輸出。</p>
       </div></details>
 
@@ -298,12 +298,12 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 
       <details class="card"><summary>助教電路的問題<span class="hint">原版為什麼量不出題目要的東西</span></summary><div class="body">
         <ol class="small">
-          <li><b>突觸門檻約 6 V</b>，原版 AP 只有 2.5 V（HW2 R13 = 100 kΩ 的結果），HW2 真 AP 5.4 V 也不到。</li>
-          <li><b>原版 Post 會鎖住</b>（SO 的 R2 = 100 Ω）：#3-2 觸發一次就鎖在 2.4 V，#3-4 不會連續發放。</li>
+          <li><b>突觸門檻約 6 V</b>，原版 AP 只有 2.1 V（HW2 R13 = 100 kΩ 的結果），HW2 真 AP 5.4 V 也不到。</li>
+          <li><b>原版 active membrane 沒有穩定的靜止</b>：Stimulator 漏電讓它自己冒小峰；按住時被 Slow out 拉在 0.78 V，不會連續發放，#3-4 Q3 量不到頻率變化。</li>
           <li><b>Excitatory 沒有 100 kΩ</b>（PCB 和講義電路圖不同）：S 經 D2 直接灌進 Post，EPSP 很快、很大；有 100 kΩ 時 #1 的 EPSP 小約 5 倍（0.85 → 0.18 V）、到峰晚約 100 ms。進階區可以切換。</li>
           <li><b>Inhibitory 接在 active membrane 上會變成 leak</b>：S 的 200 kΩ 經 100 kΩ 接到 Post，靜止從 1.19 降到 1.02 V，門檻變遠。</li>
           <li><b>拔電池 = 開路</b>：沒有說要接回導線，照字面做會變成「沒有突觸」，不是「改變驅動力」。</li>
-          <li><b>Stimulator 漏電</b>（HW2 的 Q<sub>sense</sub> 接在 SW 前）：#1 基線約 0.17 V，Pre 基線約 0.44 V。HW2 真 AP 的 22 kΩ 已消掉 Pre 這邊的；Post 是 Passive 時 Stimulator B 沒有修正。</li>
+          <li><b>Stimulator 漏電</b>（HW2 的 Q<sub>sense</sub> 接在 SW 前）：#1 基線約 0.17 V，Pre 自己冒小峰。HW2 真 AP 的 22 kΩ 已消掉 Pre 這邊的；Post 是 Passive 時 Stimulator B 沒有修正。</li>
         </ol>
       </div></details>
 
@@ -351,9 +351,9 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
       <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
     </div>
     <div class="grp"><div class="gt">板子</div>
-      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版（R2 100 Ω）</option><option value="r2m">R2 = 1 MΩ</option><option value="true">HW2 真正的 AP</option></select></div>
+      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
       <div data-show="adv">
-        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="r2m">R2 = 1 MΩ</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
         <div class="row"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
         <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
@@ -388,7 +388,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
       <ul class="small">
         <li><b>Q1</b> 照片標出 presynaptic（Stimulator A + active membrane）、synapse（突觸板）、postsynaptic（5 個 Passive unit）。</li>
         <li><b>Q2</b> 類似 glutamate、acetylcholine 的興奮性傳遞（見進階目標「電路和生理的對應」）。</li>
-        <li><b>Q3</b> 刺激一次，CH1 Pre、CH2 #1：五參數、延遲（右側自動量測）。原版要按住 300 ms 以上才有 EPSP。</li>
+        <li><b>Q3</b> 刺激一次，CH1 Pre、CH2 #1：五參數、延遲（右側自動量測）。原版沒有 EPSP，照實記錄。</li>
         <li><b>Q4</b> 串列 2–5 下；散佈圖：兩下、6 種以上間隔，量疊加後的峰值。</li>
         <li><b>Q5</b> CH1 改量 #1、CH2 量 #5，同一次刺激比較。</li>
       </ul>
@@ -418,10 +418,10 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
       <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
     </div>
     <div class="grp"><div class="gt">板子</div>
-      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版（R2 100 Ω）</option><option value="r2m">R2 = 1 MΩ</option><option value="true">HW2 真正的 AP</option></select></div>
+      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
       <div data-show="adv">
-        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="r2m">R2 = 1 MΩ</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="r2m">R2 = 1 MΩ</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
         <div class="row"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
         <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
@@ -461,7 +461,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
       <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button></div>
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
-        <li><b>Note</b> 先把 Stimulator B 調弱，弱到單獨按一下不會有 Post AP（可變電阻調大或按短一點）。原版 Post 一觸發就鎖住，每次量完按「斷電重置」。</li>
+        <li><b>Note</b> 先把 Stimulator B 調弱，弱到單獨按一下不會有 Post AP（可變電阻調大或按短一點）。原版 Post 會自己冒小峰，Pre 也沒有 EPSP 可以加上去，照實記錄。</li>
         <li><b>Q2</b> A 串列：從 1 下開始加，記下剛好出現 Post AP 的下數和間隔（頻率）。</li>
         <li><b>Q3</b> 組合：B 調到單獨不會觸發，再加 A；按「Post 先」做 post before pre，記下需要幾個 EPSP、多快。</li>
       </ul>
@@ -491,10 +491,10 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
       <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
     </div>
     <div class="grp"><div class="gt">板子</div>
-      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版（R2 100 Ω）</option><option value="r2m">R2 = 1 MΩ</option><option value="true">HW2 真正的 AP</option></select></div>
+      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
       <div class="row"><label>1.5 V 電池</label><select data-k="bat"><option value="on">接上</option><option value="short">拔掉，跳線接通</option><option value="open">拔掉（開路）</option></select></div>
       <div data-show="adv">
-        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="r2m">R2 = 1 MΩ</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
         <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
       </div>
@@ -556,11 +556,11 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
       <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
     </div>
     <div class="grp"><div class="gt">板子</div>
-      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版（R2 100 Ω）</option><option value="r2m">R2 = 1 MΩ</option><option value="true">HW2 真正的 AP</option></select></div>
+      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
       <div class="row"><label>1.5 V 電池（Q4）</label><select data-k="bat"><option value="on">接上</option><option value="short">拔掉，跳線接通</option><option value="open">拔掉（開路）</option></select></div>
       <div data-show="adv">
-        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="r2m">R2 = 1 MΩ</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="r2m">R2 = 1 MΩ</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
         <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
       </div>
@@ -602,7 +602,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         <li><b>Note</b> 只按 B：從短到長（或可變電阻從大到小），找剛好會觸發 Post AP 的最弱刺激。</li>
         <li><b>Q2</b> 組合「Pre 先」：A 串列 1、2、3… 下，最後一個 A 後 30 ms 按 B，記下幾個 IPSP 能擋住 AP。</li>
         <li><b>Q3</b> 勾「SW B 保持按下」讓 Post 連續發放，記頻率；再勾「SW A 保持按下」，看 Post 頻率變多少（右側「近 1 秒 AP 頻率」）。</li>
-        <li><b>Q4</b> 電池改「拔掉，跳線接通」重做 Q2、Q3；也可以試「開路」。原版 Post 會鎖住，Q3 做不出連續發放。</li>
+        <li><b>Q4</b> 電池改「拔掉，跳線接通」重做 Q2、Q3；也可以試「開路」。原版 Post 按住 B 不會連續發放，Q3 做不出頻率變化。</li>
       </ul>
     </details>
     <details data-show="adv"><summary>進階：怎麼解讀</summary>

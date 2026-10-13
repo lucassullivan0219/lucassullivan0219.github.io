@@ -14,10 +14,9 @@ var SynEngine = function(){
   var VT = 0.02585, EXPLIM = 40, GMIN = 1e-12, CPAR = 10e-12;
   var M3904 = {Is:6.7e-15, bf:200, br:0.74}, M4403 = {Is:1e-14, bf:150, br:4}, MD = {Is:2.52e-9, n:1.752};
 
-  /* membrane variants, as HW2: kit = as built (SO R2 100 ohm), r2m = SO R2 1 Mohm (TA), true = HW2 true-AP add-ons */
+  /* membrane variants, as HW2: kit = as built with the Slow out R2 = 1 Mohm (TA spec, every board now), true = HW2 true-AP add-ons */
   var MEM = {
-    kit:{so_r2:100, qs:'pcb', r13p:0, rf:0, rs:0, rb:0},
-    r2m:{so_r2:1e6, qs:'pcb', r13p:0, rf:0, rs:0, rb:0},
+    kit:{so_r2:1e6, qs:'pcb', r13p:0, rf:0, rs:0, rb:0},
     true:{so_r2:1e6, qs:'rx', r13p:11e3, rf:680e3, rs:56e3, rb:330e3}
   };
 

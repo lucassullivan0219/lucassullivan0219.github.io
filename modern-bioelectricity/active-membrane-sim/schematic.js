@@ -9,7 +9,7 @@
    s.setQsense('pcb'|'sw'|'rx'|'rx10'|'rx12'); s.setResistors(r13, rfe, soR2)
    s.setAddons(state)     state.r13p / rf / rb / rl / rs / ru: add-on resistors clipped on (0 = none), each drawn
                           as a part.  Everything that differs from the kit circuit (add-ons, Q_sense moved, pulled
-                          wires, FI battery, ideal source, R13 / Rfe != 100 kohm, R2 != 100 ohm, V+ != 7.8 V) is
+                          wires, FI battery, ideal source, R13 / Rfe != 100 kohm, R2 != 1 Mohm, V+ != 7.8 V) is
                           drawn in --mod.
    opts.chain = n         #2-3: n passive units between the Stimulator and the Leak, 10 kohm
                           apart on top, 100 ohm apart on the extracellular row (PC1.., PX2.., AX)
@@ -321,7 +321,7 @@
     diodeH(230, 740, 840, 772, 802, 'sod'); txt(787, 216, 'D1', 'lab', 'middle');
     dot(840, 230); tag('SO.B3', 'B3', 834, 272, 'end');
     out.push('<g id="gSoR2">'); resV(840, 230, 405, 290, 360, 'sor2');
-    out.push('<text id="lSoR2" class="lab" x="850" y="330">3M</text></g>');   /* TA: 1 Mohm; kit shipped 100 ohm */
+    out.push('<text id="lSoR2" class="lab" x="850" y="330">1M</text></g>');   /* PCB label 3M; every board now has the TA's 1 Mohm */
     L([[840, 230], [860, 230]]);
     bjt(880, 230, 'n', 0, false, 'qSo3904', 'so3904'); txt(908, 256, '3904', 'lab');
     L([[894, 200], [894, 170], [960, 170]]); dot(894, 170); tag('SO.B4', 'B4', 900, 160);
@@ -573,7 +573,7 @@
         if((e = svg.querySelector('#lR13'))) e.textContent = 'R13 ' + fmtR(r13);
         if((e = svg.querySelector('#lRfe'))) e.textContent = fmtR(rfe);
         if(soR2 && (e = svg.querySelector('#lSoR2'))) e.textContent = fmtR(soR2);
-        [['gR13', r13 !== 1e5], ['gRfe', rfe !== 1e5], ['gSoR2', !!soR2 && soR2 !== 100]].forEach(function(a){
+        [['gR13', r13 !== 1e5], ['gRfe', rfe !== 1e5], ['gSoR2', !!soR2 && soR2 !== 1e6]].forEach(function(a){
           var g = svg.querySelector('#' + a[0]); if(g) g.classList.toggle('mod', a[1]);
         });
       },

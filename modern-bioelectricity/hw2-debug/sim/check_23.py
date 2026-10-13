@@ -25,9 +25,9 @@ For each active-membrane state (add-ons from check_ap.py) and n = 0..4:
 
     python check_23.py              (all states, a few minutes on 4+ cores)
     python check_23.py 1            (state 1 only)
-    python check_23.py combos       (the original circuit: V+ wire to FI yes/no x Slow out R2
-                                     100 ohm/1 Mohm, SW held 1 s at pot 0.7k, n = 1-4; tells from
-                                     the bench waveform which of the two is missing)
+    python check_23.py combos       (the original circuit with and without the V+ wire to FI,
+                                     SW held 1 s at pot 0.7k, n = 1-4; tells from the bench
+                                     waveform whether FI is powered)
 """
 import os, sys
 from multiprocessing import Pool
@@ -48,7 +48,6 @@ STATES = [
     ('11k across R13 only, FI on its own battery', dict(extra=[R13_11K], fi_supply='local')),
     ('fix 1 + 2, FI on its own battery', dict(extra=[RX, R13_11K], fi_supply='local')),
     ('R2 = 1M, no V+ wire to FI', dict(fi_vplus=False)),
-    ('kit as plugged: R2 = 100 ohm, no V+ wire to FI', dict(r_so_r2=100, fi_vplus=False)),
 ]
 
 
@@ -184,8 +183,7 @@ def report(si, rows, dl):
         print(s, flush=True)
 
 
-COMBOS = [('R2 1M, V+ wire', dict(r_so_r2=1e6)), ('R2 1M, no wire', dict(r_so_r2=1e6, fi_vplus=False)),
-          ('R2 100, V+ wire', dict(r_so_r2=100)), ('R2 100, no wire', dict(r_so_r2=100, fi_vplus=False))]
+COMBOS = [('V+ wire', {}), ('no wire', dict(fi_vplus=False))]
 
 
 def combo(args):

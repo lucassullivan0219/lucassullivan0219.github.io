@@ -142,7 +142,6 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
       <h2>情境</h2>
       <div class="presets" id="presets">
         <button type="button" class="btn" data-p="pcb">目前電路（R2 = 1 MΩ）</button>
-        <button type="button" class="btn" data-p="r2bad">SO 的 R2 = 100 Ω（套件給錯）</button>
         <button type="button" class="btn" data-p="fix">修正 1：並 22 kΩ 消除漏電</button>
         <button type="button" class="btn" data-p="fixap">修正 1 + 2：R13 並 11 kΩ</button>
         <button type="button" class="btn" data-p="hyper">方案 3：過極化</button>
@@ -162,7 +161,7 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
       <div class="row"><span>R13 本身（Q4 換的那顆）</span><select id="r13"><option value="1e3">1 kΩ</option><option value="1e4">10 kΩ</option><option value="5e4">50 kΩ</option><option value="1e5" selected>100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select><span></span></div>
       <div class="row"><span>FI 3904 E 電阻</span><select id="rfe"><option value="5e4">50 kΩ</option><option value="1e5" selected>100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select><span></span></div>
       <div class="row"><span>Stimulator 漏電</span><select id="qs"><option value="pcb" selected>原樣（Q_sense 的 E 接 V+）</option><option value="rx">修正 1：Q_pass E–B 並 22 kΩ（外加）</option><option value="sw">對照：Q_sense 的 E 改接 SW 後（改線，只用來說明原因）</option></select><span></span></div>
-      <div class="row"><span>SO 的 R2</span><select id="so_r2"><option value="100">100 Ω（套件給錯的）</option><option value="1e6" selected>1 MΩ（助教指定）</option><option value="3e6">3 MΩ（PCB 標示）</option></select><span></span></div>
+      <div class="row"><span>SO 的 R2</span><select id="so_r2" disabled><option value="1e6" selected>1 MΩ（助教指定，大家都已換好）</option></select><span></span></div>
       <div class="row"><span>探棒</span><select id="probe"><option value="1e7" selected>×10（10 MΩ）</option><option value="1e6">×1（1 MΩ）</option></select><span></span></div>
     </div>
     <div>
@@ -201,14 +200,13 @@ footer{margin-top:40px;font-size:13.5px;color:var(--muted);border-top:1px solid 
   <h2>可以試試看</h2>
   <ul>
     <li><b>目前電路（R2 = 1 MΩ）</b>：剛開（或按「斷電重置」）時，Vm 每 0.13 秒左右自己冒一個約 1.5 V 的小峰，和實測（約每 0.1 秒、1.6 V）相符。按住 SW 時模型停在約 0.78 V；實測是在 0.6–1.0 V 之間 40 Hz 震盪，平均值相同。模型剛好在會不會震盪的邊緣：修正 1 之後在 R13 並 100 kΩ（= 50 kΩ）就會 30 Hz 震盪。</li>
-    <li><b>SO 的 R2 切成 100 Ω</b>，按一下 SW：FI 鎖在約 2.4 V 下不來。這就是套件給錯電阻時看到的現象。</li>
     <li><b>修正 1</b>（Stimulator 漏電選「Q_pass E–B 並 22 kΩ」）：小峰消失，Vm 靜止在 0 V；按 SW 才有反應。選「Q_sense 的 E 改接 SW 後」結果幾乎一樣，但那是改線，只用來說明漏電是原因。</li>
     <li><b>修正 1 + 2</b>（再在 R13 兩端並 11 kΩ）：按下 SW 有約 5.9 V 的 AP，按住時連續發放。時間/div 用 20–50 ms、觸發 1 V、Single 抓第一個。注意 AP 之後 Vm 不會低於 0 V。</li>
     <li><b>方案 3：過極化</b>：按一下 SW，AP 之後 Vm 掉到約 0.58 V，比靜止的 1.18 V 低，約 0.1 秒後回來。把「SO 的 C1 並」改回不加，Slow out 會把靜止點鉗在 0.7 V，AP 就出不來了。按住 SW 會一直發放（約 27 Hz，每個約 4.9 V），每個 AP 後都掉到靜止電位以下；可變電阻轉大（電流變小），頻率降到約 15 Hz。</li>
     <li><b>#2-3（前面接 Passive unit）</b>見 <a href="../passive-active-sim/">#2-3 互動模擬</a>，同一個引擎。</li>
     <li><b>斷開 SO:Vm</b>：FI 會自己（或按一下 SW 後）鎖在約 3 V，下不來（測試 9、10d）。只有「斷電重置」或斷開 FI:V+ 能讓它回來。</li>
     <li><b>斷開 FI:V+</b>，CH2 選 FI.V+：這支腳跟著 Vm 走，只比 Vm 小一點（測試 7）。</li>
-    <li><b>電路圖數值</b>（9 V、R13 = 1 kΩ、R2 = 3 MΩ）：AP 變成接近 8 V 的完整尖峰。</li>
+    <li><b>電路圖數值</b>（9 V、R13 = 1 kΩ、Q_sense 在 SW 後）：AP 變成接近 8 V 的完整尖峰。</li>
     <li>模型沒有 60 Hz 雜訊，所以浮接的腳在這裡是平的；實際示波器上會看到上下震盪。</li>
   </ul>
 </section>
@@ -298,7 +296,6 @@ var SCH = MembraneSchematic(document.getElementById('sch'), {live:true});
   /* ---- presets ---- */
   var PRESETS = {
     pcb:{note:'目前的電路：PCB 實際值、SO 的 R2 = 1 MΩ（助教指定）、所有接點都接上。不按 SW 時每 0.13 秒左右自己冒一個約 1.5 V 的小峰（實測：約每 0.1 秒、1.6 V）。原因是 Stimulator 放開時漏出的約 6 µA 把 Vm 墊在 FI 的門檻附近。'},
-    r2bad:{so_r2:'100', note:'SO 的 R2 用了套件給的 100 Ω：SO.B3 被拉到地，2N3904 永遠不導通，Slow out 只剩 100 kΩ 串一個二極體。按一下 SW，FI 就鎖在約 2.4 V 下不來（第二輪麵包板量到的現象）。'},
     fix:{qs:'rx', note:'修正 1：在 Q_pass 的 E–B 並 22 kΩ（夾在 7K-R1 下端和 7K-R2 上端，拆掉就復原）。放開時不再漏電，Vm 停在 0 V，不再自己冒小峰。代價是刺激電流少約 25 µA。R13 仍是 100 kΩ，AP 還是小：約 3 V，拔掉 FI 也有約 2 V。'},
     fixap:{qs:'rx', r13p:'11e3', note:'修正 1 + 2：再在 R13 兩端並 11 kΩ（R13 → 9.9 kΩ）。按下 SW 有約 5.9 V 的 AP，按住時約 20 Hz 連續發放（0.6–2.4 V）。有門檻、all-or-none，但 AP 後不會低於 0 V：沒有過極化。'},
     hyper:{rb:'470e3', rf:'470e3', rs:'47e3', r13p:'11e3', trig:2.5, note:'方案 3：V+ → Vm 470 kΩ、R13 下端 → FI.E3 470 kΩ、SO 的 C1 並 47 kΩ、R13 並 11 kΩ（不加 22 kΩ）。靜止 1.18 V、門檻約 2 V。按一下有約 5.3–5.7 V 的 AP，之後掉到約 0.58 V，比靜止低約 0.6 V、約 0.1 秒後回來：這就是過極化。CH2 選 SO.S 可以看到 Slow out 慢慢關掉。'},
@@ -307,7 +304,7 @@ var SCH = MembraneSchematic(document.getElementById('sch'), {live:true});
     leak:{fi_vm:false, fi_vplus:false, fi_gnd:false, so_vm:false, so_gnd:false, note:'只有 ST + LK：基線約 0.6 V（Q_sense 漏電流），按住到約 7.1 V 上限（測試 10b）。'},
     ttx:{fi_vm:false, fi_vplus:false, fi_gnd:false, note:'拔掉 FI：剩被動反應，按住時仍被 Slow out 拉回約 0.7 V。'},
     tea:{so_vm:false, so_gnd:false, note:'拔掉 SO：FI 一觸發就沒有東西把 Vm 拉回來。'},
-    sch:{vplus:9, r13:'1e3', qs:'sw', so_r2:'3e6', note:'講義電路圖的數值：9 V、R13 = 1 kΩ、Q_sense 在 SW 之後、SO 的 R2 = 3 MΩ。'}
+    sch:{vplus:9, r13:'1e3', qs:'sw', note:'講義電路圖的數值：9 V、R13 = 1 kΩ、Q_sense 在 SW 之後（SO 的 R2 照現在的板子用 1 MΩ；圖上標 3 MΩ）。'}
   };
   function applyPreset(k){
     var p = PRESETS[k];
