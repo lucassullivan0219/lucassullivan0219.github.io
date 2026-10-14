@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEEG 濾波比對</title>
+<meta name="description" content="NEEG-2 (neeg_monitor.py) 與 web-neeg 顯示濾波演算法的逐步比對，附高中數學等級的計算範例。">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../style.css">
+<style>
+h2{text-transform:none;letter-spacing:0;color:var(--fg);font-size:1.3rem}
+h3{font-size:1.05rem;margin:1.6em 0 .4em}
+table{border-collapse:collapse;width:100%;font-size:.9rem;margin:.6em 0}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--card)}
+.tw{overflow-x:auto}
+code,pre{font-family:ui-monospace,Consolas,monospace;font-size:.88rem}
+pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto;line-height:1.5}
+.note{border-left:4px solid var(--accent);background:var(--card);padding:10px 14px;border-radius:0 8px 8px 0;margin:1em 0}
+.warn{border-left-color:#d9822b}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="../../">← 回首頁</a>
+<h1>NEEG-2 與 web-neeg 濾波比對</h1>
+<p class="lead">同一個 10 Hz 小 sine：<code>neeg_monitor.py</code> 看不到，網頁版看得到。這頁把兩邊「顯示濾波」的每一步攤開來算，看差在哪。</p>
+
+<div class="note"><b>先講結論。</b>兩邊的三種模式（Off／Remove DC／BP 1–50 Hz）在<em>數學上</em>對 10 Hz 的增益都是約 1.000，也就是說，只要濾波器有正常在跑，10 Hz 小 sine 在兩邊都應該原封不動地顯示出來。
+兩邊在算法上唯一會讓 sine「消失」的差別是 <b>NEEG-2 依賴 scipy</b>：如果 <code>import scipy</code> 失敗，BP 模式會<b>不做任何濾波、直接回傳原始值</b>（<code>neeg_monitor.py</code> 第 1676 行），畫面上只剩幾萬 µV 的直流偏移和漂移，Auto Scale 會把 Y 軸撐到漂移的大小，幾十 µV 的 sine 就被壓成一條平線。網頁版的濾波是自己寫的，沒有這個依賴。詳見最後一節「怎麼確認」。</div>
+
+<h2>1. 兩邊做的事總表</h2>
+<div class="tw"><table>
+<tr><th>步驟</th><th>NEEG-2 <code>gui/neeg_monitor.py</code></th><th>web-neeg <code>neeg/pipeline/filters.js</code></th></tr>
+<tr><td>ADC → µV</td><td>µV = counts ÷ 8388607 × 2.39 × 10⁶ ÷ 24</td><td>相同公式</td></tr>
+<tr><td>取樣率</td><td>寫死 <code>FS = 125</code></td><td>由裝置格式決定（NEEG-2 = 125）</td></tr>
+<tr><td>預設模式</td><td>BP 1–50 Hz</td><td>BP 1–50 Hz</td></tr>
+<tr><td>Remove DC</td><td>每收到一批（最多 16 點），算「最近 5 秒」的平均，<b>整批扣同一個值</b></td><td>每一個點各自算「最近 5 秒」的平均再扣（滑動平均）</td></tr>
+<tr><td>BP 濾波器設計</td><td><code>scipy.signal.butter(4, [1, 50], 'band', output='sos')</code>：一次設計出 8 階帶通，拆成 4 個二階段</td><td>自己算：2 個 1 Hz 高通二階段 + 2 個 50 Hz 低通二階段（RBJ cookbook 公式），一樣是 8 階</td></tr>
+<tr><td>BP 運算</td><td><code>sosfilt</code>，每批延續上一批的狀態 <code>zi</code></td><td>每個點跑一次 transposed direct form II（和 sosfilt 內部同一種結構）</td></tr>
+<tr><td>開頭暫態處理</td><td>狀態初始化成 <code>sosfilt_zi × 第一個樣本</code></td><td>每個輸入先減掉第一個樣本 x₀</td></tr>
+<tr><td>沒有 scipy 時</td><td><b>BP 直接回傳原始值</b>（只在終端機印一行 WARN）</td><td>不適用，沒有外部依賴</td></tr>
+<tr><td>Auto Scale</td><td>中心 = 5 秒平均；全幅 = 1.2 × (最大 − 最小)，最少 20 µV</td><td>相同規則</td></tr>
+</table></div>
+
+<h2>2. Remove DC：一步一步算</h2>
+<p>概念：「直流」就是訊號的平均高度。把最近一段時間的平均值算出來、從每個點扣掉，剩下的就是上下擺動的部分。</p>
+<p>真實程式用 5 秒 = 5 × 125 = 625 個點。為了好算，這裡把視窗縮成 <b>4 個點</b>，批次大小 2。輸入是「直流 1000 µV + 小擺動」：</p>
+<div class="tw"><table>
+<tr><th>n</th><th>x[n] (µV)</th><th>web：最近 4 點平均</th><th>web 輸出 x − 平均</th><th>NEEG-2：批次</th><th>NEEG-2 扣的平均</th><th>NEEG-2 輸出</th></tr>
+<tr><td>0</td><td class="n">1000</td><td>1000 ÷ 1 = 1000</td><td class="n">0</td><td rowspan="2">第 1 批</td><td rowspan="2">(1000+1010)÷2 = 1005</td><td class="n">−5</td></tr>
+<tr><td>1</td><td class="n">1010</td><td>(1000+1010)÷2 = 1005</td><td class="n">5</td><td class="n">5</td></tr>
+<tr><td>2</td><td class="n">1000</td><td>(1000+1010+1000)÷3 = 1003.3</td><td class="n">−3.3</td><td rowspan="2">第 2 批</td><td rowspan="2">(1000+1010+1000+990)÷4 = 1000</td><td class="n">0</td></tr>
+<tr><td>3</td><td class="n">990</td><td>(1000+1010+1000+990)÷4 = 1000</td><td class="n">−10</td><td class="n">−10</td></tr>
+<tr><td>4</td><td class="n">1000</td><td>(1010+1000+990+1000)÷4 = 1000</td><td class="n">0</td><td rowspan="2">第 3 批</td><td rowspan="2">(1000+990+1000+1010)÷4 = 1000</td><td class="n">0</td></tr>
+<tr><td>5</td><td class="n">1010</td><td>(1000+990+1000+1010)÷4 = 1000</td><td class="n">10</td><td class="n">10</td></tr>
+</table></div>
+<p>視窗填滿之後（n ≥ 3）兩邊結果一樣：都是 0, ±10 的擺動。差別只在開頭不滿一個視窗時。對 10 Hz sine 來說，5 秒內剛好 50 個完整週期，平均 ≈ 直流值，所以擺動完整保留。<b>Remove DC 不會讓 10 Hz 消失。</b></p>
+
+<h2>3. BP 1–50 Hz：濾波器其實就是一行「加權相加」</h2>
+<p>一個二階段（biquad）每來一個新點 x，就用 5 個固定係數 b0, b1, b2, a1, a2 和 2 個記憶格 z1, z2 算出 y：</p>
+<pre>y  = b0·x + z1
+z1 = b1·x − a1·y + z2      ← 留給下一個點用
+z2 = b2·x − a2·y           ← 留給下下一個點用</pre>
+<p>兩邊（scipy 的 <code>sosfilt</code> 和網頁的 <code>Biquad.process</code>）都是這三行。8 階濾波器 = 4 個這種段串起來：第 1 段的 y 當第 2 段的 x，依此類推。</p>
+
+<h3>3.1 算係數（網頁版，1 Hz 高通第 1 段）</h3>
+<p>只用到 cos、sin 和四則運算：</p>
+<div class="tw"><table>
+<tr><th>量</th><th>公式</th><th>代入</th><th>結果</th></tr>
+<tr><td>角頻率 w₀</td><td>2π × fc ÷ fs</td><td>2 × 3.14159 × 1 ÷ 125</td><td class="n">0.050265</td></tr>
+<tr><td>c</td><td>cos w₀</td><td>cos 0.050265</td><td class="n">0.998737</td></tr>
+<tr><td>s</td><td>sin w₀</td><td>sin 0.050265</td><td class="n">0.050244</td></tr>
+<tr><td>Q（第 0 段）</td><td>1 ÷ (2 cos(π/8))</td><td>1 ÷ (2 × 0.923880)</td><td class="n">0.541196</td></tr>
+<tr><td>α</td><td>s ÷ (2Q)</td><td>0.050244 ÷ 1.082392</td><td class="n">0.046419</td></tr>
+<tr><td>a0</td><td>1 + α</td><td></td><td class="n">1.046419</td></tr>
+<tr><td>b0 = b2</td><td>(1 + c) ÷ 2 ÷ a0</td><td>0.999369 ÷ 1.046419</td><td class="n">0.955037</td></tr>
+<tr><td>b1</td><td>−(1 + c) ÷ a0</td><td></td><td class="n">−1.910074</td></tr>
+<tr><td>a1</td><td>−2c ÷ a0</td><td>−1.997474 ÷ 1.046419</td><td class="n">−1.908866</td></tr>
+<tr><td>a2</td><td>(1 − α) ÷ a0</td><td>0.953581 ÷ 1.046419</td><td class="n">0.911281</td></tr>
+</table></div>
+<p>第 2 段只有 Q 不同：Q = 1 ÷ (2 cos(3π/8)) = 1.306563。50 Hz 低通的兩段把 fc 換成 50，b 改成 (1−c)/2, 1−c, (1−c)/2。</p>
+<p>scipy 的 <code>butter(4,[1,50],'band')</code> 走的是另一條路（先在類比域做「低通→帶通」轉換，再雙線性轉換到數位），所以 4 組係數的數字和上面不同，但 −3 dB 點一樣在 1 Hz 和 50 Hz，通帶形狀幾乎一樣。</p>
+
+<h3>3.2 餵一個 10 Hz sine 進去，手算前 4 個點</h3>
+<p>輸入 x[n] = 20 × sin(2π × 10 × n ÷ 125) µV，記憶格一開始 z1 = z2 = 0：</p>
+<div class="tw"><table>
+<tr><th>n</th><th>x</th><th>y = b0·x + z1</th><th>新 z1 = b1·x − a1·y + z2</th><th>新 z2 = b2·x − a2·y</th></tr>
+<tr><td>0</td><td class="n">0</td><td>0 + 0 = <b>0</b></td><td class="n">0</td><td class="n">0</td></tr>
+<tr><td>1</td><td class="n">9.635</td><td>0.955037×9.635 + 0 = <b>9.202</b></td><td>−18.404 + 17.565 + 0 = −0.838</td><td>9.202 − 8.386 = 0.816</td></tr>
+<tr><td>2</td><td class="n">16.887</td><td>16.128 − 0.838 = <b>15.289</b></td><td>−32.255 + 29.185 + 0.816 = −2.254</td><td>16.128 − 13.933 = 2.195</td></tr>
+<tr><td>3</td><td class="n">19.961</td><td>19.063 − 2.254 = <b>16.810</b></td><td colspan="2">…繼續同樣的三行</td></tr>
+</table></div>
+<p>開頭幾個點輸出略小於輸入（記憶格還在「暖機」），十幾個點之後輸出就和輸入幾乎一樣大。這段高通的目的是擋掉「慢」的東西（直流、漂移），10 Hz 比 1 Hz 快很多，所以幾乎無損通過。</p>
+
+<h3>3.3 不用一點一點算：直接算 10 Hz 的增益</h3>
+<p>Butterworth 的振幅公式（N = 4）：</p>
+<pre>高通 1 Hz：|H| = 1 ÷ √(1 + (1/10)⁸)  = 1 ÷ √1.00000001 ≈ 1.0000
+低通 50 Hz：|H| = 1 ÷ √(1 + (10/50)⁸) = 1 ÷ √1.000256   ≈ 0.99987
+兩個相乘 ≈ 0.9999  →  20 µV 的 sine 出來還是 ≈ 20 µV</pre>
+<p>對照組：1 Hz 剛好在邊緣，增益 1/√2 ≈ 0.707；0.1 Hz 的漂移，增益 = 1 ÷ √(1 + 10⁸) ≈ 0.0001，被壓到萬分之一。兩邊的設計都是這個行為。</p>
+
+<h3>3.4 開頭暫態：兩種做法、同一個效果</h3>
+<p>假設訊號一開始是 50000 µV 的直流。如果記憶格從 0 開始，濾波器會以為「訊號從 0 跳到 50000」，輸出一個好幾萬 µV、要好幾秒才衰減的大突波，把 Auto Scale 撐爆。</p>
+<ul>
+<li><b>NEEG-2：</b><code>zi = sosfilt_zi(sos) × x₀</code>，等於假裝「訊號從很久以前就一直是 50000」，把記憶格預先填成那個狀態，所以不會跳。</li>
+<li><b>web-neeg：</b>每個輸入先減 x₀（50000 → 0），濾波器看到的就是從 0 開始；而高通本來就會擋掉常數，所以減一個常數不會改變之後的結果。</li>
+</ul>
+<p>兩種做法在穩態下輸出完全相同。</p>
+
+<h2>4. 那為什麼 NEEG-2 看不到？</h2>
+<p>從演算法看，兩邊對 10 Hz 小 sine 都應該顯示得出來。程式碼裡真正會造成差別的只有這條路徑：</p>
+<pre># neeg_monitor.py 第 93–100 行
+try:
+    from scipy.signal import butter, sosfilt, sosfilt_zi
+    HAVE_SCIPY = True
+except ImportError:
+    HAVE_SCIPY = False          # 只印一行 [WARN] 到終端機
+
+# 第 1676 行，BP 模式
+if not HAVE_SCIPY or self.sos_bp is None:
+    return x1, x2               # ← 原封不動回傳，什麼都沒濾</pre>
+<p>下拉選單仍然顯示「Filter: BP 1~50 Hz」，畫面上看起來像有濾波，實際上是原始訊號。用數字感受一下 Auto Scale 會發生什麼：</p>
+<div class="tw"><table>
+<tr><th></th><th>有濾波（web）</th><th>沒濾波（NEEG-2 缺 scipy）</th></tr>
+<tr><td>5 秒內的訊號</td><td>±20 µV sine</td><td>50000 µV 直流 + 每秒漂 60 µV + ±20 µV sine</td></tr>
+<tr><td>最大 − 最小</td><td>40 µV</td><td>≈ 300 + 40 = 340 µV</td></tr>
+<tr><td>Y 軸全幅 = 1.2 ×</td><td>48 µV</td><td>408 µV</td></tr>
+<tr><td>sine 佔畫面高度</td><td>40 ÷ 48 = 83%</td><td>40 ÷ 408 ≈ 10%，再小一點的 sine 就變一條線</td></tr>
+</table></div>
+<p>電極沒接人體、直接接訊號產生器時，輸入端的直流偏移和漂移可能比上表大得多，sine 佔的比例就更小。</p>
+
+<h3>怎麼確認</h3>
+<ol>
+<li>從終端機啟動 <code>python gui/neeg_monitor.py</code>，看開頭有沒有 <code>[WARN] scipy 未安裝</code>。</li>
+<li>或在同一個環境跑 <code>python -c "import scipy.signal; print(scipy.__version__)"</code>。</li>
+<li>如果確實缺 scipy：<code>conda install scipy</code>（<code>environment.yml</code> 建立的環境應該已包含）後重開。</li>
+<li>如果 scipy 有裝、BP 下仍看不到，就不是濾波演算法的問題：請比較兩邊在 <b>Filter: Off</b> 下的原始值、確認 Auto Scale 狀態與 Custom Scale 設定，並檢查訊號產生器實際振幅（µV 級需要分壓器）。</li>
+</ol>
+
+<footer>原始碼：NEEG-2 <code>gui/neeg_monitor.py</code>（make_bandpass_sos、_filter_batch、WaveCanvas.refresh）；web-neeg <a href="../pipeline/filters.js">pipeline/filters.js</a>、<a href="../ui/waveform.js">ui/waveform.js</a>。</footer>
+</main>
+</body>
+</html>
