@@ -43,6 +43,7 @@ var AM = (function(){
   }
   var R = [], C = [], D = [], Q = [];
   var t = 0, gmin = GMIN, lastH = 0;                /* lastH: last accepted step, for capacitor currents */
+  var stat = {it:0, sub:false, ok:true};            /* last step: Newton iterations, whether it fell back to 10 sub-steps */
 
   function link(ok){ return ok ? SHORT : OPEN; }
   function build(){
@@ -178,7 +179,7 @@ var AM = (function(){
       }
       /* nearly floating nodes (FI.B4 with the Fast inward off, no Leak) can keep the step above
          0.1 uV for hundreds of iterations; accept once KCL holds to 10 pA at every node */
-      if(it >= 20){ var fm = 0; for(k = 0; k < N; k++) if(Math.abs(F[k]) > fm) fm = Math.abs(F[k]); if(fm < 1e-11) return true; }
+      if(it >= 20){ var fm = 0; for(k = 0; k < N; k++) if(Math.abs(F[k]) > fm) fm = Math.abs(F[k]); if(fm < 1e-11){ stat.it = it + 1; return true; } }
       /* solve J dx = -F (Gaussian elimination, partial pivoting) */
       var W = N + 1, r, cc, p, q;
       for(r = 0; r < N; r++){ for(cc = 0; cc < N; cc++) A[r * W + cc] = J[r * N + cc]; A[r * W + N] = -F[r]; }
@@ -201,8 +202,9 @@ var AM = (function(){
       }
       var sc = mx <= 0.1 ? 1 : 0.1 / mx;
       for(r = 0; r < N; r++) V[r] += sc * dx[r];
-      if(mx < 1e-7) return true;
+      if(mx < 1e-7){ stat.it = it + 1; return true; }
     }
+    stat.it = maxit;
     return false;
   }
 
@@ -220,11 +222,11 @@ var AM = (function(){
   function powerOn(){ V.fill(0); Vprev.fill(0); t = 0; lastH = 0; }
   function step(dt){
     Vprev.set(V);
-    if(newton(dt, 80)){ t += dt; lastH = dt; return true; }
+    if(newton(dt, 80)){ t += dt; lastH = dt; stat.sub = false; stat.ok = true; return true; }
     V.set(Vprev);
     var ok = true;
     for(var k = 0; k < 10; k++){ Vprev.set(V); ok = newton(dt / 10, 400) && ok; }
-    t += dt; lastH = dt / 10;
+    t += dt; lastH = dt / 10; stat.sub = true; stat.ok = ok;
     return ok;
   }
   function v(n){ return gv(V, IDX[n]); }
@@ -247,10 +249,24 @@ var AM = (function(){
     }
     return [0, 0, 0];
   }
+  /* every element as built, for the circuit inspector: node names in engine order, value, model */
+  function nodeName(i){ return i >= 0 ? NODES[i] : ({'-1':'GND', '-2':'V+', '-3':'IS', '-4':'BAT+', '-5':'BAT-'})[i]; }
+  function branches(){
+    var o = [];
+    R.forEach(function(e){ o.push({kind:'R', name:e[3], nodes:[nodeName(e[0]), nodeName(e[1])], val:1 / e[2]}); });
+    C.forEach(function(e){ o.push({kind:'C', name:e[3], nodes:[nodeName(e[0]), nodeName(e[1])], val:e[2]}); });
+    D.forEach(function(e){ o.push({kind:'D', name:e[2], nodes:[nodeName(e[0]), nodeName(e[1])], model:MD}); });
+    Q.forEach(function(e){ o.push({kind:'Q', name:e[5], type:e[0], nodes:[nodeName(e[1]), nodeName(e[2]), nodeName(e[3])], model:e[4]}); });
+    return o;
+  }
   alloc(nodeNames());
   return {
     st:st, build:build, dc:dcSolve, powerOn:powerOn, step:step, v:v, q:qCurrents, currents:currents,
     time:function(){ return t; }, setTime:function(x){ t = x; }, nodes:function(){ return NODES; },
-    has:function(n){ return IDX[n] !== undefined; }
+    has:function(n){ return IDX[n] !== undefined; },
+    /* inspector: elements, previous-step voltage, step size, solver stats, constants and the solver's own functions */
+    branches:branches, vprev:function(n){ return gv(Vprev, IDX[n]); }, h:function(){ return lastH; }, stat:stat,
+    K:{VT:VT, EXPLIM:EXPLIM, GMIN:GMIN, SHORT:SHORT, OPEN:OPEN, CPAR:CPAR, M3904:M3904, M4403:M4403, MD:MD},
+    fn:{build:build, newton:newton, stampG:stampG, bjt:bjt, lexp:lexp, step:step, currents:currents, dcSolve:dcSolve, link:link}
   };
 })();

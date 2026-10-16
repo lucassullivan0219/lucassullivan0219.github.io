@@ -89,7 +89,42 @@
     var st = engineState(s);
     for(var k in st) AM.st[k] = st[k];
     AM.build();
+    if(INSP && inspSim === s) INSP.rerender();
   }
+
+  /* ---------------- circuit inspector (inspect.js): click a part or a wire ---------------- */
+  var INSP = window.HW2Inspect ? HW2Inspect(AM) : null, inspSim = null;
+  function nodeMap(){ var m = {}; AM.branches().forEach(function(b){ if(b.name) m[b.name] = b.nodes; }); return function(n){ return m[n] || null; }; }
+  function inspHighlight(s){ if(s.SCH) s.SCH.highlight(INSP && inspSim === s ? INSP.target() : null, nodeMap()); }
+  function svgPoint(svg, e){
+    var m = svg.getScreenCTM(); if(!m) return null;
+    var p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(m.inverse());
+  }
+  function inspectTarget(s, e, geomOnly){
+    if(!s.SCH) return null;
+    var tg = e.target.closest && e.target.closest('[data-node]');
+    if(tg && AM.has(tg.dataset.node)) return {node:tg.dataset.node};
+    var p = svgPoint(s.svg, e), h = p && s.SCH.hitAt(p.x, p.y);
+    if(!h) return null;
+    if(h.part || geomOnly) return h.part ? {part:h.part} : {wire:h.wire};
+    var n = s.SCH.netOf(h.wire, nodeMap());
+    return n ? {node:n} : null;
+  }
+  function inspectable(s){
+    s.svg.addEventListener('click', function(e){
+      if(!INSP || (MODE === 'adv' && e.target.closest('.contact'))) return;   /* advanced: contacts toggle */
+      if(active !== s) activate(s);
+      var t = inspectTarget(s, e);
+      if(!t) return;
+      inspSim = s; INSP.open(t, e.clientX, e.clientY); inspHighlight(s);
+    });
+    s.svg.addEventListener('pointermove', function(e){
+      var c = (MODE === 'adv' && e.target.closest('.contact')) || inspectTarget(s, e, true);
+      s.svg.style.cursor = c ? 'pointer' : '';
+    });
+  }
+  if(INSP) INSP.onClose(function(){ var s = inspSim; inspSim = null; if(s) inspHighlight(s); });
 
   /* ---------------- schematic ---------------- */
   function drawSchematic(s){
@@ -103,7 +138,7 @@
     }
     syncSchematic(s);
   }
-  function syncSchematic(s){
+  function syncSchematic0(s){
     if(!s.SCH) return;
     var st = engineState(s);
     st.sw = AM.st.sw && active === s;
@@ -111,6 +146,7 @@
     s.SCH.setSupply(supplyMode(s)); s.SCH.setSource(st.src); s.SCH.setBoards({lk:st.leak, fi:st.fi_on, so:st.so_on});
     s.SCH.setProbes([st.ch1, st.ch2]);
   }
+  function syncSchematic(s){ syncSchematic0(s); if(inspSim === s) inspHighlight(s); }
   function contact(s, key){
     if(key === 'sw'){ setSW(s, !AM.st.sw); return; }
     var u = s.state[MODE], cur = engineState(s)[key];
@@ -287,6 +323,7 @@
     if(active){ AM.st.sw = false; var ob = $('[data-sw]', active.el); ob.classList.remove('on'); ob.textContent = '按住 SW'; syncSchematic(active);
       if(active.SCH) active.SCH.flow(0, null); }
     active = s;
+    if(INSP && inspSim && inspSim !== s) INSP.close();
     powerOn(s);
   }
   function setSW(s, on){
@@ -436,6 +473,7 @@
     s.SCH && s.SCH.setCurrents({iStim:Is, iFi:-q4[0], iSo:q6[2]});
     s.SCH && s.SCH.setOn({qPass:-qp[0] > 2e-6, qSense:-AM.q('sense')[0] > 2e-6, qFi3904:AM.q('fi3904')[0] > 2e-6,
       qFi4403:-q4[0] > 2e-6, qSo3904:AM.q('so3904')[0] > 2e-6, qSo4403:-q6[0] > 2e-6});
+    if(INSP && inspSim === s) INSP.update();
   }
 
   /* ---------------- mode, navigation, fullscreen, mermaid ---------------- */
@@ -480,6 +518,7 @@
 
   Object.keys(SIMS).forEach(function(k){
     var s = SIMS[k];
+    inspectable(s);
     s.cv.addEventListener('pointermove', function(e){ var r = s.cv.getBoundingClientRect(); s.cursor = e.clientX - r.left; });
     s.cv.addEventListener('pointerleave', function(){ s.cursor = null; });
   });

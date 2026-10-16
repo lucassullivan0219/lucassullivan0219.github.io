@@ -22,6 +22,9 @@
    s.flow(dt, cur)        electron flow: cur = AM.currents() (null hides it).  Each drawn wire carries the
                           current KCL gives it from the branch currents; dots move against the conventional
                           current at a speed ~ |I|^0.38 (none below 20 nA).
+   s.hitAt(x, y)          what lies at SVG point (x, y): {part: branch name, d} or {wire: index, d} or null
+   s.netOf(wire, nodeOf)  engine node of drawn wire `wire`; nodeOf(name) -> the element's node names in engine order
+   s.highlight(t, nodeOf, hover)  outline a part {part}, a wire {wire} or every wire of a node {node} (null clears)
    Node codes follow hw2-debug/nodes.html: board + node, e.g. FI.B3.
 */
 (function(){
@@ -56,7 +59,13 @@
     /* electron flow */
     '.msch .ef{pointer-events:none}',
     '.msch .ef path{fill:none;stroke:var(--eflow,#e8720c);stroke-width:5;stroke-linecap:round;stroke-dasharray:0.001 16}',
-    '.msch .lge{fill:var(--eflow,#e8720c)}'
+    '.msch .lge{fill:var(--eflow,#e8720c)}',
+    /* circuit inspector */
+    '.msch .hl{pointer-events:none}',
+    '.msch .hl polyline{fill:none;stroke:var(--sel,#f2b705);stroke-width:9;stroke-linecap:round;stroke-linejoin:round;opacity:.55}',
+    '.msch .hl circle{fill:var(--sel,#f2b705);stroke:none;opacity:.35}',
+    '.msch .hl.hov polyline{stroke-width:7;opacity:.3}',
+    '.msch .hl.hov circle{opacity:.18}'
   ].join('\n');
   if(!document.getElementById('msch-css')){
     var st = document.createElement('style'); st.id = 'msch-css'; st.textContent = CSS; document.head.appendChild(st);
@@ -406,8 +415,7 @@
     /* wires -> graph (split at every endpoint or terminal lying on a wire; crossings stay apart), a spanning
        tree per electrical node rooted at a battery terminal when there is one, then the drawn pieces:
        chains of tree edges between junctions, element paths, battery paths */
-    function buildFlow(){
-      dirty = false;
+    function graph(){
       var pts = {}, segs = [], els = ELS.filter(function(e){ return shown(e.keys); }), srcs = SRCS.filter(function(s){ return shown(s.keys); });
       function add(p){ var key = pk(p); if(!pts[key]) pts[key] = p; return key; }
       WIRES.forEach(function(w){
@@ -436,6 +444,11 @@
         on.sort(function(u, v){ return u[0] - v[0]; });
         for(var i = 0; i + 1 < on.length; i++) link(on[i][1], on[i + 1][1]);
       });
+      return {pts:pts, keys:keys, adj:adj, els:els, srcs:srcs, probes:probes};
+    }
+    function buildFlow(){
+      dirty = false;
+      var g = graph(), pts = g.pts, keys = g.keys, adj = g.adj, els = g.els, srcs = g.srcs, probes = g.probes;
       var term = {}, isSrc = {};
       els.forEach(function(e){ e.TK = e.T.map(function(p){ var q = pk(p); term[q] = 1; return q; }); });
       probes.forEach(function(q){ if(q) term[q] = 1; });
@@ -511,6 +524,91 @@
       });
     }
 
+    /* ---------------- circuit inspector ---------------- */
+    function segD(p, a, b){
+      var dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy, t = l2 ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      var ex = a[0] + t * dx - p[0], ey = a[1] + t * dy - p[1];
+      return Math.sqrt(ex * ex + ey * ey);
+    }
+    function lineD(p, pts){ var d = Infinity; for(var i = 0; i + 1 < pts.length; i++) d = Math.min(d, segD(p, pts[i], pts[i + 1])); return d; }
+    /* where an element is drawn: its electron paths, or the line between its terminals (capacitors) */
+    function elPaths(e){ return e.P.length ? e.P : [e.T]; }
+    function hitAt(x, y){
+      var p = [x, y], best = null, bd = Infinity, wi = -1, wd = Infinity;
+      ELS.forEach(function(e){
+        if(!shown(e.keys)) return;
+        var d = Infinity;
+        elPaths(e).forEach(function(path){ d = Math.min(d, lineD(p, path)); });
+        if(!e.P.length) d = Math.min(d, Math.max(0, lineD(p, e.T) - 12));   /* capacitor plates are 26 wide */
+        if(e.q){ var c = e.P[0][3], dc = Math.sqrt((c[0] + 5 - x) * (c[0] + 5 - x) + (c[1] - y) * (c[1] - y)); if(dc < 22) d = Math.min(d, dc / 4); }
+        if(d < bd){ bd = d; best = e; }
+      });
+      WIRES.forEach(function(w, i){ if(!shown(w.keys)) return; var d = lineD(p, w.pts); if(d < wd){ wd = d; wi = i; } });
+      if(best && bd <= 10 && bd <= wd + 3) return {part:best.name, d:bd};
+      if(wi >= 0 && wd <= 8) return {wire:wi, d:wd};
+      return null;
+    }
+    /* drawn wires -> electrical nodes, named by the elements whose terminals they reach */
+    function nets(nodeOf){
+      var g = graph(), comp = {}, label = {}, n = 0;
+      g.keys.forEach(function(k0){
+        if(k0 in comp) return;
+        comp[k0] = n;
+        for(var q = [k0], i = 0; i < q.length; i++) g.adj[q[i]].forEach(function(w){ if(!(w in comp)){ comp[w] = n; q.push(w); } });
+        n++;
+      });
+      g.els.forEach(function(e){
+        var nn = nodeOf(e.name); if(!nn) return;
+        e.T.forEach(function(t, i){
+          var c = comp[pk(t)], nm = nn[i];
+          if(c === undefined || !nm || /^(IS|BAT[+-])$/.test(nm)) return;
+          if(!(c in label)) label[c] = nm;
+        });
+      });
+      g.srcs.forEach(function(s){
+        var cp = comp[pk(s.p)], cm = comp[pk(s.m)];
+        if(!(cm in label)) label[cm] = s.keys.length ? null : 'GND';
+        if(!(cp in label) && !s.keys.length) label[cp] = 'V+';
+      });
+      return {comp:comp, label:label};
+    }
+    function netOf(wi, nodeOf){
+      var w = WIRES[wi]; if(!w) return null;
+      var N2 = nets(nodeOf), c = N2.comp[pk(w.pts[0])];
+      return c === undefined ? null : (N2.label[c] || null);
+    }
+    var HL = null;
+    function poly(g, pts){
+      var el = document.createElementNS(NS, 'polyline');
+      el.setAttribute('points', pts.map(function(p){ return p.join(','); }).join(' '));
+      g.appendChild(el);
+    }
+    /* t = {part} | {node} | {wire}; nodeOf is needed for {node}; hover draws it lighter */
+    function highlight(t, nodeOf, hover){
+      if(!HL || HL.parentNode !== svg) HL = document.createElementNS(NS, 'g');
+      var g = HL;
+      g.setAttribute('class', 'hl' + (hover ? ' hov' : ''));
+      g.innerHTML = '';
+      if(t && t.part){
+        ELS.forEach(function(e){
+          if(e.name !== t.part || !shown(e.keys)) return;
+          elPaths(e).forEach(function(path){ poly(g, path); });
+          if(e.q){ var c = document.createElementNS(NS, 'circle'), m = e.P[0][3]; c.setAttribute('cx', m[0] + 5); c.setAttribute('cy', m[1]); c.setAttribute('r', 24); g.appendChild(c); }
+        });
+      } else if(t && t.wire !== undefined){
+        if(WIRES[t.wire]) poly(g, WIRES[t.wire].pts);
+      } else if(t && t.node){
+        var N2 = nets(nodeOf);
+        WIRES.forEach(function(w){
+          if(!shown(w.keys)) return;
+          var c = N2.comp[pk(w.pts[0])];
+          if(c !== undefined && N2.label[c] === t.node) poly(g, w.pts);
+        });
+      }
+      svg.appendChild(g);                                /* on top of the electron flow */
+    }
+
     return {
       setValues: function(fn){
         tags.forEach(function(t){
@@ -577,7 +675,8 @@
           var g = svg.querySelector('#' + a[0]); if(g) g.classList.toggle('mod', a[1]);
         });
       },
-      flow: flow
+      flow: flow,
+      hitAt: hitAt, netOf: netOf, highlight: highlight
     };
   };
 })();
