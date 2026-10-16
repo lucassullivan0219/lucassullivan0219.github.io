@@ -12,7 +12,7 @@
   /* the board as built (PCB), with the TA's 1 Mohm in the Slow out R2 position (every board has it now) */
   var BASE_ST = {vplus:7.8, rpot:700, r13:1e5, rfe:1e5, qs:'pcb', so_r2:1e6, rprobe:1e7, ch1:'Vm', ch2:'',
     r13p:0, rf:0, rb:0, rs:0, rl:0, ru:0, chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',
-    leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true, fi_on:true, so_on:true};
+    leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true, fi_on:true, so_on:true, lk2:false, leak2:true};
 
   /* the 'true AP' add-on set (hw2-debug/sim/check_trueap.py): 22k across Qpass E-B, 11k across
      R13, 680k R13 lower end -> FI.E3, 56k across SO C1, 330k V+ -> Vm (#2-3 adds 560k V+ -> each unit) */
@@ -31,8 +31,14 @@
       def:{basic:{rpot:700, leak:true, fi_on:true, so_on:true, r13:1e5, ch2:''},
            adv:{rpot:700, leak:true, fi_on:true, so_on:true, ch2:''}},
       fixed:function(m){ return {}; },
-      sch:function(st){ return {chain:0}; },
+      sch:function(st){ return {chain:0, lk2:!!st.lk2}; },
       meas:['firstAP', 'global'], scope:{v1:1, v2:0.5, t:0.05, z2:1},
+      /* basic: the circuit as given, or with a second Leak board stacked on the first */
+      presetsBasic:[
+        ['kit', '原版電路', {lk2:false}, '助教給的電路（R2 = 1 MΩ）：不按也每 0.1 秒左右冒一個約 1.5 V 小峰（Stimulator 漏電 6.3 µA × 100 kΩ 把 Vm 墊在 FI 門檻）；按下的第一個峰約 2.1 V，按住停在 0.78 V。'],
+        ['lk2', '多疊一個 LK', {lk2:true}, 'LK 上面再疊一塊 LK（同一組排針，直接接 Vm，中間沒有 10 kΩ／100 Ω）：R_leak 變 50 kΩ、C_m 變 2 µF，τ 一樣 100 ms。漏電 6.3 µA 只把 Vm 墊到 0.30 V，低於 FI 門檻，不再自己冒峰。按 10 ms 以上才觸發（按 5 ms 只到 0.5 V，和拔掉 FI 一樣）；按 10 ms 放開後 FI 繼續推，約 60 ms 後到 1.5 V（拔 FI 只有 0.7 V）。按 100 ms：峰值 2.3 V（拔 FI 1.8 V）、半高寬約 32 ms；按住只發一次，停在 0.77 V；沒有低於靜止的後過極化。']
+      ],
+      basicPreset:'kit',
       presets:[
         ['kit', '原版電路', {}, '助教給的電路（同基礎目標，R2 = 1 MΩ）：不按也每 0.1 秒左右冒一個約 1.5 V 小峰（Stimulator 漏電把 Vm 墊在 FI 門檻）；按下到約 2.1 V，按住停在 0.78 V。'],
         ['true', '真正的 AP', Object.assign({rpot:0}, TRUE_AP), 'R2 = 1 MΩ 再外加 5 顆電阻（見摘要區）：靜止 1.19 V、門檻約 1.66 V、AP 5.2–5.4 V、AP 後低於靜止約 0.6 V（125 ms）、AP 後 20 ms 內不能再發；按住時連續發放。']
@@ -214,6 +220,7 @@
     if(k === 'ch1' || k === 'ch2') clearBuf(s);
     if(active === s) applyEngine(s);
     if(k === 'fi_supply' || k === 'chain') { drawSchematic(s); if(active === s) powerOn(s); }
+    else if(k === 'lk2') drawSchematic(s);
     else syncSchematic(s);
   }
   function buildPanels(s){

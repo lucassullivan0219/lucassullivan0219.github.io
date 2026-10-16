@@ -447,12 +447,17 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     <h2>#2-2 Active</h2>
     <p class="sub" data-show="basic">助教給的電路：R2 = 1 MΩ、R13 = 100 kΩ。CH1 = Vm。</p>
     <p class="sub" data-show="adv">自由調整。點電路圖上的紅色接點可以斷開排針。</p>
+    <div class="grp" data-show="basic"><div class="gt">版本</div>
+      <div class="btns" data-presets="s22b"></div>
+      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
+    </div>
     <div class="grp" data-show="adv"><div class="gt">情境</div>
       <div class="btns" data-presets="s22"></div>
       <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
     </div>
     <div class="grp"><div class="gt">板子（拔掉 = TTX／TEA）</div>
       <label class="chk"><input type="checkbox" data-k="leak"> LK Leak</label>
+      <label class="chk" data-show="adv"><input type="checkbox" data-k="lk2"> LK2：再疊一塊 Leak</label>
       <label class="chk"><input type="checkbox" data-k="fi_on"> FI Fast inward（拔掉 = TTX）</label>
       <label class="chk"><input type="checkbox" data-k="so_on"> SO Slow out（拔掉 = TEA）</label>
     </div>
@@ -489,6 +494,7 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
         <li><b>Q4</b> R13 換 50k–3M，電流固定。</li>
         <li><b>Q5</b> 基線、FI 能推到的最高點（拔 SO、FI 鎖住）、SO 能拉到的最低點。</li>
         <li><b>Q6</b> 拔 FI（TTX）、拔 SO（TEA）各量一次。拔 FI：不再自己冒峰，按下到 1.9 V（和有 FI 的 2.1 V 差不多）；拔 SO：FI 不按就鎖在 3.0 V，按住升到 5.8 V。</li>
+        <li><b>版本「多疊一個 LK」</b>：LK 上再疊一塊 LK（只加板子、可拆）。靜止降到 0.30 V、不再自己冒峰，每按一次（10 ms 以上）只有一個 AP，Q2、Q3 比較好量。</li>
       </ul>
     </details>
     <details data-show="adv"><summary>進階：兩個情境</summary>

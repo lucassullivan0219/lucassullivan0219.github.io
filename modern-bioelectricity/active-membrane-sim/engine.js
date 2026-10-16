@@ -22,7 +22,8 @@ var AM = (function(){
     r13p:0, rf:0, rb:0, rs:0, rl:0, ru:0,           /* add-ons clipped on, 0 = not fitted; ru: V+ -> every passive unit */
     chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',   /* #2-3: passive units, source, FI battery */
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true,
-    fi_on:true, so_on:true, ch1:'Vm'                /* board plugged in at all (sim.py fi=/so=); CH1 probe node */
+    fi_on:true, so_on:true, ch1:'Vm',               /* board plugged in at all (sim.py fi=/so=); CH1 probe node */
+    lk2:false, leak2:true                           /* a second Leak board stacked on the first; its header contact */
   };
   var V, Vprev, F, J, dx, A;
   /* node list for the current st.chain; node voltages carry over by name */
@@ -30,6 +31,7 @@ var AM = (function(){
     var a = BASE.slice();
     for(var k = 1; k <= st.chain; k++){ a.push('PC' + k); if(k > 1) a.push('PX' + k); }
     if(st.chain) a.push('AX');
+    if(st.lk2) a.push('LK2.Vm');
     if(st.fi_supply === 'local') a.push('FI.BAT');
     return a;
   }
@@ -65,6 +67,10 @@ var AM = (function(){
     /* Leak */
     r('Vm', 'LK.Vm', link(st.leak), 'lk');
     C.push([IDX['LK.Vm'], IDX[ax], 1e-6, 'lkc']); r('LK.Vm', ax, 1e5, 'lkr');
+    if(st.lk2){                                     /* second Leak stacked on the header: straight onto Vm, no 10k / 100 ohm */
+      r('Vm', 'LK2.Vm', link(st.leak2), 'lk2');
+      C.push([IDX['LK2.Vm'], IDX[ax], 1e-6, 'lk2c']); r('LK2.Vm', ax, 1e5, 'lk2r');
+    }
     /* Fast inward */
     if(st.fi_on){
     r('FI.Vm', 'Vm', link(st.fi_vm), 'fivm'); r('FI.V+', st.fi_supply === 'local' ? 'FI.BAT' : 'V+', link(st.fi_vplus), 'fivp'); r('FI.GND', ax, link(st.fi_gnd), 'figd');

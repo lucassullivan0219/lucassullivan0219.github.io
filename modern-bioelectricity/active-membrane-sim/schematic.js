@@ -17,6 +17,7 @@
                           n >= 1: a pulled wire, the Passive PCBs do not carry V+), FI's own battery, or not wired
    s.setSource('stim'|'ideal')  draw the ideal current source that replaces SW
    opts.passiveOnly       #2-1: only the passive units; the Leak board is drawn as the last unit
+   opts.lk2               #2-2: a second Leak board (LK2) stacked on the first, straight onto Vm; FI and SO move right
    s.setBoards({lk, fi, so})    grey out boards that are unplugged
    s.setProbes([ch1, ch2])      scope probes, so their current leaves at the CH label
    s.flow(dt, cur)        electron flow: cur = AM.currents() (null hides it).  Each drawn wire carries the
@@ -76,8 +77,9 @@
     var live = !!(opts && opts.live), out = [];
     var n = (opts && opts.chain) || 0, DX = 130, OX = n * DX, po = !!(opts && opts.passiveOnly);
     var EX = po ? 0 : 60, G = OX + EX;                 /* the active group sits EX further right: a breadboard column */
-    var XE = po ? 430 : 1040;                          /* right end of the buses inside the active group */
-    var XA = 352 + OX, XR = 695 + G;                   /* breadboard column (V+ -> Vm, Vm -> GND); V+ wire down to FI */
+    var LX = opts && opts.lk2 && !po ? 96 : 0;          /* LK2 takes one more board width; FI and SO sit LX further right */
+    var XE = po ? 430 : 1040 + LX;                     /* right end of the buses inside the active group */
+    var XA = 352 + OX, XR = 695 + G + LX;              /* breadboard column (V+ -> Vm, Vm -> GND); V+ wire down to FI */
     function ux(k){ return 370 + (k - 1) * DX; }       /* wire x of passive unit k (like the Leak) */
 
     /* everything that carries current, in global coordinates, with the show/hide keys around it */
@@ -250,24 +252,14 @@
       out.push('</g><text class="lab" x="' + (ux(1) + 6) + '" y="44">CH1</text><g transform="translate(' + G + ',0)">');
       txt(436, 74, 'CH2', 'lab');
     } else {
-      txt(1046, 74, 'CH1', 'lab');
-      out.push('<text class="nvb" data-node="Vm" data-short="Vm =" data-bus="1" x="580" y="58" text-anchor="middle">Vm</text>');
+      txt(XE + 6, 74, 'CH1', 'lab');
+      out.push('<text class="nvb" data-node="Vm" data-short="Vm =" data-bus="1" x="' + (580 + LX) + '" y="58" text-anchor="middle">Vm</text>');
       if(n){
-        txt(1046, 459, 'CH2', 'lab');
+        txt(XE + 6, 459, 'CH2', 'lab');
         out.push('<text class="nv" data-node="AX" data-short="AX" data-mv="1" x="420" y="472"><tspan class="code">AX</tspan></text>');
         txt(505, 472, '（active 端細胞外）', 'lab');
       }
     }
-    if(!po){                                           /* FI's own battery (handout simulator) */
-      beginG('bat', 'mod', 'gBat');
-      L([[634, 362], [662, 362], [662, 390]]);
-      L([[650, 390], [674, 390]], 'sym'); L([[656, 398], [668, 398]], 'sym', ' style="stroke-width:3"');
-      L([[662, 398], [662, 455]]); dot(662, 455);
-      SRCS.push({p:gp([662, 390]), m:gp([662, 398]), keys:KEYS.slice()});
-      txt(670, 386, 'FI 自帶', 'lab'); txt(670, 412, '電池', 'lab');
-      endG();
-    }
-
     /* ---- Leak ---- */
     out.push('<g id="bLK">');
     box(332, 86, 86, 362, po ? '#' + (n + 1) : 'LK', po ? 'Passive' : 'Leak', 370, 210, true);
@@ -280,7 +272,32 @@
     dot(344, 455); dot(396, 455);
     out.push('</g>');
 
+    if(LX){
+    /* ---- LK2: a second Leak stacked on the header ---- */
+    out.push('<g id="bLK2" class="mod">');
+    box(428, 86, 86, 362, 'LK2', 'Leak', 466, 210, true);
+    L([[466, 70], [466, 76]]); dot(466, 70);
+    contactV('leak2', 'LK2:Vm', 466, 76, 112, 'lk2');
+    L([[466, 112], [466, 130]]); L([[440, 130], [492, 130]]); dot(466, 130);
+    tag('LK2.Vm', 'Vm', 466, 160, 'middle', true);
+    capV(440, 130, 455, 290, 'lk2c'); txt(466, 302, '1µF', 'lab', 'middle');
+    resV(492, 130, 455, 250, 330, 'lk2r'); txt(466, 345, '100k', 'lab', 'middle');
+    dot(440, 455); dot(492, 455);
+    out.push('</g>');
+    }
+
     if(!po){
+    out.push('<g transform="translate(' + LX + ',0)">'); GX = G + LX;
+    {                                                  /* FI's own battery (handout simulator) */
+      beginG('bat', 'mod', 'gBat');
+      L([[634, 362], [662, 362], [662, 390]]);
+      L([[650, 390], [674, 390]], 'sym'); L([[656, 398], [668, 398]], 'sym', ' style="stroke-width:3"');
+      L([[662, 398], [662, 455]]); dot(662, 455);
+      SRCS.push({p:gp([662, 390]), m:gp([662, 398]), keys:KEYS.slice()});
+      txt(670, 386, 'FI 自帶', 'lab'); txt(670, 412, '電池', 'lab');
+      endG();
+    }
+
     /* ---- Fast inward ---- */
     out.push('<g id="bFI">');
     box(428, 86, 262, 362, 'FI', 'Fast inward', 600, 439);
@@ -343,6 +360,7 @@
     contactV('so_gnd', 'SO:GND', 870, 412, 448, 'sogd'); L([[870, 405], [870, 412]]); L([[870, 448], [870, 455]]);
     tag('SO.GND', 'GND', 880, 432);
     out.push('</g>');
+    out.push('</g>'); GX = G;                          /* end of the LX shift */
     }
     out.push('</g>'); GX = 0;
 
@@ -359,7 +377,7 @@
         endG(); px0 = t[1];
       });
       beginG('fiw', n ? 'mod' : '');
-      L([[XR, 10], [XR, 362], [634 + G, 362]]);
+      L([[XR, 10], [XR, 362], [634 + G + LX, 362]]);
       txt(XR + 8, 30, n ? 'V+ 飛線到 FI（Passive 底板沒串 V+）' : 'V+（疊接排針，Stimulator → FI）', 'lab');
       endG();
       beginG('rb', 'mod');                             /* add-on: breadboard V+ row -> Vm row */
@@ -376,7 +394,7 @@
     out.push('<text class="lab" x="' + lx + '" y="' + ly + '" text-anchor="end"><tspan class="lgm">━━</tspan> 和原版電路不同' +
       (live ? '　<tspan class="lge">●</tspan> 電子（逆著電流、往電池 + 極走；越快＝電流越大）' : '') + '</text>');
 
-    svg.setAttribute('viewBox', '0 0 ' + ((po ? 480 : 1080) + G) + ' 480');
+    svg.setAttribute('viewBox', '0 0 ' + ((po ? 480 : 1080) + G + LX) + ' 480');
     svg.classList.add('msch'); if(live) svg.classList.add('live');
     svg.innerHTML = out.join('');
 
@@ -405,9 +423,9 @@
     var EF = null, FL = null, PROBES = [];
     /* where a scope probe on node `code` takes its current from (its ground clip is on the battery minus) */
     function probePt(code){
-      var m = /^(PC|PX)(\d)$/.exec(code || ''), q = function(x, y){ return [x + G, y]; };
+      var m = /^(PC|PX)(\d)$/.exec(code || ''), q = function(x, y){ return [x + G + LX, y]; };
       if(m) return m[1] === 'PC' ? [ux(+m[2]), 70] : [ux(+m[2]) - 26, 455];
-      return ({'Vm':q(XE, 70), 'AX':q(XE, 455), 'SO.S':q(740, 230), 'SO.B3':q(840, 230), 'FI.E4':q(634, 200),
+      return ({'Vm':[XE + G, 70], 'AX':[XE + G, 455], 'SO.S':q(740, 230), 'SO.B3':q(840, 230), 'FI.E4':q(634, 200),
                'FI.E3':q(534, 250), 'FI.V+':q(634, 310)})[code] || null;
     }
     function shown(keys){ for(var i = 0; i < keys.length; i++) if(VIS[keys[i]] === false) return false; return true; }
