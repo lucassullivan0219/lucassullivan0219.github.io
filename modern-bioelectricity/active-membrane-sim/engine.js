@@ -13,9 +13,6 @@
 var AM = (function(){
   var VT = 0.02585, EXPLIM = 40, GMIN = 1e-12, SHORT = 0.05, OPEN = 1e13, CPAR = 10e-12;
   var M3904 = {Is:6.7e-15, bf:200, br:0.74}, M4403 = {Is:1e-14, bf:150, br:4}, MD = {Is:2.52e-9, n:1.752};
-  /* 1N4148: 'std' the usual SPICE model; 'fit' drops ~50 mV more at uA currents (0.33 vs 0.27 V at 1 uA), which
-     reproduces the HW2 measurements of held-SW firing (round 3, stacked LK) that 'std' does not */
-  var MDS = {std:MD, fit:{Is:1.2e-9, n:1.87}};
   var BASE = ['ST.P','ST.K','ST.Q','ST.R','Vm','LK.Vm','FI.Vm','FI.V+','FI.GND','FI.B3','FI.E3','FI.B4','FI.E4',
               'SO.Vm','SO.GND','SO.S','SO.B3','SO.B4','SO.C4'];
   var NODES = [], N = 0, IDX = {};
@@ -26,8 +23,7 @@ var AM = (function(){
     chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',   /* #2-3: passive units, source, FI battery */
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true,
     fi_on:true, so_on:true, ch1:'Vm',               /* board plugged in at all (sim.py fi=/so=); CH1 probe node */
-    lk2:false, leak2:true,                          /* a second Leak board stacked on the first; its header contact */
-    diode:'std'                                     /* 1N4148 model, see MDS */
+    lk2:false, leak2:true                           /* a second Leak board stacked on the first; its header contact */
   };
   var V, Vprev, F, J, dx, A;
   /* node list for the current st.chain; node voltages carry over by name */
@@ -56,7 +52,6 @@ var AM = (function(){
     var names = nodeNames();
     if(names.join() !== NODES.join()) alloc(names);
     R = []; C = []; D = []; Q = [];
-    MD = MDS[st.diode] || MDS.std;
     function r(a, b, ohm, name){ R.push([IDX[a], IDX[b], 1 / ohm, name]); }   /* name: branch id for currents() */
     var out = st.chain ? 'PC1' : 'Vm', ax = st.chain ? 'AX' : 'GND';
     /* Stimulator */
