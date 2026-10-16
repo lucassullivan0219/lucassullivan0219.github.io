@@ -256,6 +256,26 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
         <p class="small muted">靜止都是 0.29／0.18／0.12／0.09 V：Passive unit 的 100 kΩ 吸掉 Stimulator 的 6 µA 漏電，所以 #2-3 不像 #2-2（n = 0）會自己冒小峰。來源：<code>hw2-debug/sim/check_23.py combos</code>。</p>
       </div></details>
 
+      <details class="card wide" open id="lk2meas"><summary>#2-2 多疊一個 LK：實測波形、按住連續發放<span class="hint">兩顆 1N4148 的壓降比模型高約 50 mV</span></summary><div class="body">
+        <p class="small"><b>實測（10-13，CH1 1 V/div、200 ms/div）</b>：基線約 0.34 V、峰值約 2.38 V（峰峰值 2.04 V）、約 40 ms 到峰；峰後約 40 ms 有一個約 1 V 的小峰，再慢慢回到基線。按住時同樣大小的峰一直出現。</p>
+        <div class="tbl"><table>
+          <tr><th>量什麼</th><th class="num">實測</th><th class="num">模型（標準 1N4148）</th><th class="num">模型（擬合：壓降 +50 mV）</th></tr>
+          <tr class="grp"><td colspan="4">多疊一個 LK（按 100 ms 以上）</td></tr>
+          <tr><td>基線／峰值</td><td class="num">0.34／2.38 V</td><td class="num">0.30／2.31 V</td><td class="num">0.30／2.40 V</td></tr>
+          <tr><td>峰後的小峰</td><td class="num">約 1.0 V</td><td class="num">0.82 V，之後就平</td><td class="num">1.00 V</td></tr>
+          <tr><td>按住</td><td class="num">同樣大小的峰一直出現</td><td class="num">一個峰，停 0.77 V</td><td class="num">第一個 2.4 V，之後每個 1.0 V，23 Hz</td></tr>
+          <tr class="grp"><td colspan="4">原版電路（第三輪，R2 = 1 MΩ）</td></tr>
+          <tr><td>不按的自發小峰</td><td class="num">1.6 V，約每 100 ms</td><td class="num">1.46 V，每 129 ms</td><td class="num">1.64 V，每 172 ms</td></tr>
+          <tr><td>按下的第一個峰</td><td class="num">2.2 V</td><td class="num">2.04 V</td><td class="num">2.31 V</td></tr>
+          <tr><td>按住</td><td class="num">0.6–1.0 V 振盪，約 40 Hz</td><td class="num">平的 0.78 V</td><td class="num">0.67–1.03 V 振盪，32 Hz</td></tr>
+        </table></div>
+        <p class="small"><b>小峰是什麼</b>：按壓還沒放開時，連續發放的第一個（主峰後約 50 ms）。按 80 ms 以內就放開不會有；按 100 ms 以上才有。</p>
+        <p class="small"><b>按住為什麼連續發放</b>：第一個 AP 最大（2.4 V），因為 SO.S 從 0 開始，Slow out 完全關著。之後 SO.S 還有電，Vm 一上去 Slow out 就打開，把 Vm 拉回約 0.67 V（低於 FI 門檻），FI 關掉；SO.S 放掉一點電、Stimulator 的電流把 2 µF 充回去、又過 FI 門檻，冒出一個約 1.0 V 的峰，Slow out 再拉回……每一圈的起點都一樣，所以之後的峰一樣大，約 23 Hz。這是 FI 和 SO 輪流（relaxation oscillation），不是每次都從靜止重新觸發。</p>
+        <p class="small"><b>為什麼模型（標準參數）不會</b>：標準 1N4148 參數下，FI 和 SO 能在 0.77 V 互相抵住（FI 部分導通 + Stimulator = SO + Leak），峰後的振盪會衰減，就是那個 0.82 V 的小峰之後變平。這個平衡點離 FI 門檻只有幾十 mV。兩顆 D1（FI 和 SO 各一顆）的壓降在 µA 電流時多約 50 mV（I<sub>S</sub> 2.52 → 1.2 nA、n 1.75 → 1.87：1 µA 時 0.27 → 0.33 V），平衡點就不穩，變成連續發放。只改其中一顆不夠，要兩顆一起；它們是同型號，溫度變化也一起（每顆約 −2 mV/°C）。</p>
+        <p class="small">一樣的擬合也讓 #2-3 n = 4 在 0.7 kΩ 就連續發放（n = 1–3 仍是一個 spike），符合別組的結果。在 <a href="#r3">#2-2</a>、<a href="#r4">#2-3</a> 區域把「二極體」選「擬合實測」就看得到。</p>
+        <p class="small muted">這是推論：只調了二極體這一個參數，用的是你們實測的波形來比；自發小峰的週期（172 vs 約 100 ms）還對不上，其他元件的偏差也可能有份。若要確認，可以量一顆 D1 在約 1–10 µA 時的壓降（例如 1 MΩ 串二極體接 V+，量二極體兩端），模型標準是 0.27–0.37 V，擬合是 0.33–0.44 V。</p>
+      </div></details>
+
       <details class="card wide" open id="hold23"><summary>#2-3 長按 SW：spike 後的小下降、兩種結果<span class="hint">同一個電路為何有時拉高基線、有時連續發放</span></summary><div class="body">
         <p class="small"><b>spike 後先小降再上升</b>（有飛線、n = 4、可變電阻 0.7 kΩ ≈ 90 µA）：spike 到 1.64 V 時 SO.S 已充到約 0.7 V，Slow out 的 4403 一下子拉出約 220 µA，把 Vm 拉到 0.65 V，低於 FI 的門檻，FI 的電流從 67 µA 掉到 17 µA。這時被動鏈的電容還有電（PC4 約 1.0–1.3 V），經 10 kΩ 送進 35–57 µA，SO.S 也慢慢放電（τ = 100 ms），Vm 爬回去；過了約 0.69 V，FI 又打開，衝出 0.91 V 的小凸起，最後停在 0.80 V：</p>
 <div class="calc">FI 68 µA + 被動鏈 (PC4 − Vm)/10k = 24 µA  =  SO 84 µA + Leak 8 µA   →  Vm ≈ 0.80 V</div>
@@ -271,6 +291,7 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
         <p class="small">Stimulator 的範圍是約 44–99 µA（可變電阻 10–0 kΩ），只有 n = 4 的連續發放帶落在裡面：可變電阻 ≥ 5.5 kΩ（≤ 58 µA）就連續發放，5.5 kΩ 約 14 Hz、10 kΩ 約 10 Hz，第一個 1.36–1.48 V，之後每個約 1.0–1.1 V、谷底約 0.6 V。在 <a href="#r4">#2-3 區域</a>選 n = 4、把可變電阻拉到 6 kΩ 以上再長按就看得到。</p>
         <p class="small"><b>為什麼你們第二次、其他組都變成連續發放</b>（照可能性排）：</p>
         <ol class="small">
+          <li><b>二極體壓降比模型高</b>：兩顆 1N4148 的壓降多約 50 mV 時，n = 4 在 0.7 kΩ 就連續發放（n = 1–3 仍是一個 spike）。同一個擬合也重現 #2-2 多疊一個 LK 和原版按住時的振盪，見<a href="#lk2meas">上一張卡</a>。這解釋「其他組都是連續發放」；你們自己第一次和第二次不同，比較可能是下面的可變電阻。</li>
           <li><b>可變電阻的位置變了</b>：量 Q3（找 I<sub>min</sub>）時會把可變電阻轉到小電流那邊，沒轉回 0.7 kΩ，n = 4 長按就變連續發放。先把可變電阻轉回去，或用 S + 1 個 Passive unit 重量電流（平台 ÷ 100 kΩ），高於約 60 µA 就應該回到「拉高基線」。</li>
           <li><b>FI 的 2N4403 β 不一樣</b>：模擬用 β = 150。只把 FI 那顆改成 120，n = 4 在 0.7 kΩ 就連續發放，n = 3 在 4 kΩ 以上也會；改成 100，n = 4 連 0 kΩ（最大電流）都連續發放。2N4403 的 β 規格是 100–300，而且隨溫度變，每組的板子不同，所以別組在一般設定下就連續發放並不奇怪。只改 SO 或 Stimulator 那顆的 β，結果不變。</li>
           <li><b>n 不一樣</b>：n ≤ 3 的連續發放帶在 Stimulator 的電流範圍以下，原版 β 時只會看到一個 spike＋拉高基線。</li>
@@ -393,6 +414,25 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
         </ol>
       </div></details>
 
+      <details class="card wide" open id="leak"><summary>6 µA 漏電（靜止 0.6 V）：意外還是刻意？<span class="hint">判斷：意外（PCB 走線錯），把握高但不是確定</span></summary><div class="body">
+        <p class="small">去年的 FI、SO 和今年一樣，今年重新設計的是 Stimulator：Q<sub>pass</sub> + Q<sub>sense</sub> 組成定電流源，I ≈ V<sub>EB</sub>(Q<sub>sense</sub>)／(pot + 7 kΩ)，電流不隨 Vm 改變。漏電來自 Q<sub>sense</sub> 的射極接在 SW 之前（V+），不是 SW 之後（ST.P）。</p>
+        <div class="tbl"><table>
+          <tr><th>Q<sub>sense</sub> 射極</th><th class="num">SW 放開：輸出</th><th class="num">SW 放開：耗電</th><th class="num">SW 按下：輸出（pot 0.7 kΩ）</th></tr>
+          <tr><td>SW 之後（講義電路圖）</td><td class="num">0</td><td class="num">0</td><td class="num">約 90 µA</td></tr>
+          <tr><td>SW 之前（PCB 實際）</td><td class="num">6.3 µA → Vm 0.62 V</td><td class="num">0.95 mA</td><td class="num">約 90 µA（一樣）</td></tr>
+        </table></div>
+        <p class="small"><b>認為是意外的理由</b>：</p>
+        <ol class="small">
+          <li><b>設計者自己的電路圖沒有漏電</b>：講義上 Q<sub>sense</sub> 的射極畫在 SW 之後，這也是兩顆電晶體限流電路的標準接法。PCB 把它接到旁邊的 V+，只差 SW 的一腳。</li>
+          <li><b>SW 放開時一直耗 0.95 mA</b>：Q<sub>sense</sub> 在放開時全開，電流經 7 kΩ 到地。電池焊死、沒有開關，等於 Stimulator 永遠在耗電（9 V 電池約 500 mAh，三週左右就用完）。你們量到 7.8 V 而不是 9 V 也符合這點（只是符合，不是證明）。沒有人會設計一個「關掉」時還耗 1 mA 的電流源。</li>
+          <li><b>漏電大小由 β 決定，不是設計值</b>：漏電 = I<sub>C</sub>(Q<sub>sense</sub>)／β。β 100／150／200／300 時是 9.4／6.3／4.7／3.1 µA，靜止 0.93／0.62／0.47／0.31 V；電池從 9 V 掉到 7 V，漏電也從 7.4 掉到 5.5 µA。刻意的偏壓會用一顆固定電阻（像真正的 AP 用的 V+ → Vm 330 kΩ），不會靠一個差三倍的 β。</li>
+          <li><b>它讓作業量不了</b>：#2-2 不按也自己冒小峰，Q5 的「靜止電位」沒有定義，五參數要用觸發準位去挑；#2-1 的被動鏈也多了約 0.2 V 的基線。重新設計 Stimulator 的目的是乾淨的電流源，「放開 = 0」是電流源最基本的性質。</li>
+          <li><b>PCB 和電路圖還有別的不一致</b>：R13 100 kΩ（圖 1 kΩ）、FI 沒有自己的電池、R2 的位置附的是 100 Ω（圖 3 MΩ）、Passive PCB 底板沒串 V+。表示板子沒有逐一對照電路圖檢查過，一處接錯並不意外。</li>
+        </ol>
+        <p class="small"><b>刻意的可能</b>：有人可能想讓 Vm 靜止時有一點去極化、離門檻近一點，讓弱的 FI（R13 100 kΩ）比較容易觸發。但 0.62 V 剛好落在 FI 門檻（約 0.6 V）和 Slow out 的極限（約 0.6 V）上，結果是自發放電、沒有穩定靜止，和這個目的相反；三個約 0.6 V 撞在一起比較像巧合。</p>
+        <p class="small"><b>怎麼查（不用三用電表）</b>：SW 放開時用示波器量 ST.R（Q<sub>sense</sub> 集極、7 kΩ 上端）。約 6.6 V 就表示 Q<sub>sense</sub> 正在耗 6.6／7k ≈ 0.95 mA；照講義接法應該是 0 V。也可以問助教去年的 Stimulator 和今年的 PCB 檔，看 Q<sub>sense</sub> 射極原本接哪。</p>
+      </div></details>
+
       <details class="card"><summary>加上真正的 AP 電路後要量的<span class="hint">確認夾對</span></summary><div class="body">
         <div class="tbl"><table>
           <tr><th>量</th><th>條件</th><th class="num">預期</th></tr>
@@ -483,6 +523,10 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
       <label class="chk"><input type="checkbox" data-k="fi_on"> FI Fast inward（拔掉 = TTX）</label>
       <label class="chk"><input type="checkbox" data-k="so_on"> SO Slow out（拔掉 = TEA）</label>
     </div>
+    <div class="grp"><div class="gt">二極體（兩顆 1N4148）</div>
+      <div class="row"><label>壓降</label><select data-k="diode"><option value="std">模型標準</option><option value="fit">擬合實測（+50 mV）</option></select></div>
+      <p class="small muted" style="margin:2px 0 0">「擬合實測」重現按住時的連續發放，見<a href="#lk2meas">摘要區</a>。</p>
+    </div>
     <div class="grp"><div class="gt">刺激</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
       <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
@@ -516,7 +560,7 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
         <li><b>Q4</b> R13 換 50k–3M，電流固定。</li>
         <li><b>Q5</b> 基線、FI 能推到的最高點（拔 SO、FI 鎖住）、SO 能拉到的最低點。</li>
         <li><b>Q6</b> 拔 FI（TTX）、拔 SO（TEA）各量一次。拔 FI：不再自己冒峰，按下到 1.9 V（和有 FI 的 2.1 V 差不多）；拔 SO：FI 不按就鎖在 3.0 V，按住升到 5.8 V。</li>
-        <li><b>版本「多疊一個 LK」</b>：LK 上再疊一塊 LK（只加板子、可拆）。靜止降到 0.30 V、不再自己冒峰，每按一次（10 ms 以上）只有一個 AP，Q2、Q3 比較好量。</li>
+        <li><b>版本「多疊一個 LK」</b>：LK 上再疊一塊 LK（只加板子、可拆）。靜止降到 0.30 V、不再自己冒峰；短按（10–80 ms）只有一個 AP，Q2、Q3 比較好量。按 100 ms 以上峰後會多一個約 1 V 的小峰，按住會連續發放，見<a href="#lk2meas">摘要區</a>。</li>
       </ul>
     </details>
     <details data-show="adv"><summary>進階：兩個情境</summary>
@@ -557,6 +601,10 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
       <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="330e3">330 kΩ（真 AP）</option></select></div>
       <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="56e3">56 kΩ（真 AP）</option></select></div>
       <div class="row"><label>V+ → 每個 unit</label><select data-k="ru" data-num><option value="0">不加</option><option value="560e3">560 kΩ（真 AP）</option></select></div>
+    </div>
+    <div class="grp"><div class="gt">二極體（兩顆 1N4148）</div>
+      <div class="row"><label>壓降</label><select data-k="diode"><option value="std">模型標準</option><option value="fit">擬合實測（+50 mV）</option></select></div>
+      <p class="small muted" style="margin:2px 0 0">「擬合實測」重現按住時的連續發放，見<a href="#lk2meas">摘要區</a>。</p>
     </div>
     <div class="grp"><div class="gt">刺激</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
