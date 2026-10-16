@@ -548,6 +548,19 @@
     sch.setContacts(st); sch.setQsense(st.qs); sch.setResistors(st.r13, st.rfe, st.so_r2); sch.setAddons(st); sch.setSupply('stim');
   });
 
+  /* section 0: the circuit as the PCB is wired, with a numbered ring on each place that differs from the handout */
+  $$('svg[data-diffmap]').forEach(function(svg){
+    var st = Object.assign({}, BASE_ST), sch = MembraneSchematic(svg, {chain:0}), NS = 'http://www.w3.org/2000/svg';
+    sch.setContacts(st); sch.setQsense(st.qs); sch.setResistors(st.r13, st.rfe, st.so_r2); sch.setAddons(st); sch.setSupply('stim');
+    [[1, 18, 208, 156, 24], [2, 678, 202, 34, 70], [3, 682, 300, 84, 92], [4, 884, 280, 60, 92]].forEach(function(b){
+      var g = document.createElementNS(NS, 'g');
+      g.setAttribute('class', 'badge');
+      g.innerHTML = '<rect class="ring" x="' + b[1] + '" y="' + b[2] + '" width="' + b[3] + '" height="' + b[4] + '" rx="8"/>' +
+        '<circle cx="' + b[1] + '" cy="' + b[2] + '" r="13"/><text x="' + b[1] + '" y="' + (b[2] + 5.5) + '" text-anchor="middle">' + b[0] + '</text>';
+      svg.appendChild(g);
+    });
+  });
+
   /* ---------------- start ---------------- */
   document.body.dataset.mode = MODE;
   $$('.mode button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.mode === MODE ? 'true' : 'false'); });
