@@ -256,6 +256,28 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
         <p class="small muted">靜止都是 0.29／0.18／0.12／0.09 V：Passive unit 的 100 kΩ 吸掉 Stimulator 的 6 µA 漏電，所以 #2-3 不像 #2-2（n = 0）會自己冒小峰。來源：<code>hw2-debug/sim/check_23.py combos</code>。</p>
       </div></details>
 
+      <details class="card wide" open id="hold23"><summary>#2-3 長按 SW：spike 後的小下降、兩種結果<span class="hint">同一個電路為何有時拉高基線、有時連續發放</span></summary><div class="body">
+        <p class="small"><b>spike 後先小降再上升</b>（有飛線、n = 4、可變電阻 0.7 kΩ ≈ 90 µA）：spike 到 1.64 V 時 SO.S 已充到約 0.7 V，Slow out 的 4403 一下子拉出約 220 µA，把 Vm 拉到 0.65 V，低於 FI 的門檻，FI 的電流從 67 µA 掉到 17 µA。這時被動鏈的電容還有電（PC4 約 1.0–1.3 V），經 10 kΩ 送進 35–57 µA，SO.S 也慢慢放電（τ = 100 ms），Vm 爬回去；過了約 0.69 V，FI 又打開，衝出 0.91 V 的小凸起，最後停在 0.80 V：</p>
+<div class="calc">FI 68 µA + 被動鏈 (PC4 − Vm)/10k = 24 µA  =  SO 84 µA + Leak 8 µA   →  Vm ≈ 0.80 V</div>
+        <p class="small">所以長按時的「基線」不是被動的平台，而是 FI 和 SO 互相抵住的平衡點；那一下下降再上升，是繞著這個平衡點的<b>阻尼振盪</b>（0.65 → 0.91 → 0.77 → 0.80 V，約 50 ms 一圈）。</p>
+        <p class="small"><b>兩種結果</b>：振盪會衰減（一個 spike，之後拉高基線）還是越來越大（連續發放），看刺激電流落在哪。模擬（理想電流源，Stimulator 的 6 µA 漏電另計，按住 1.5 秒）：</p>
+        <div class="tbl"><table>
+          <tr><th>n</th><th class="num">沒有 spike</th><th class="num">連續發放</th><th class="num">一個 spike＋拉高基線</th></tr>
+          <tr><td>1</td><td class="num">&lt; 7 µA</td><td class="num">7–19 µA</td><td class="num">≥ 22 µA</td></tr>
+          <tr><td>2</td><td class="num">&lt; 13 µA</td><td class="num">13–19 µA</td><td class="num">≥ 22 µA</td></tr>
+          <tr><td>3</td><td class="num">&lt; 22 µA</td><td class="num">22–31 µA</td><td class="num">≥ 34 µA</td></tr>
+          <tr><td>4</td><td class="num">&lt; 34 µA</td><td class="num">34–52 µA</td><td class="num">≥ 55 µA</td></tr>
+        </table></div>
+        <p class="small">Stimulator 的範圍是約 44–99 µA（可變電阻 10–0 kΩ），只有 n = 4 的連續發放帶落在裡面：可變電阻 ≥ 5.5 kΩ（≤ 58 µA）就連續發放，5.5 kΩ 約 14 Hz、10 kΩ 約 10 Hz，第一個 1.36–1.48 V，之後每個約 1.0–1.1 V、谷底約 0.6 V。在 <a href="#r4">#2-3 區域</a>選 n = 4、把可變電阻拉到 6 kΩ 以上再長按就看得到。</p>
+        <p class="small"><b>為什麼你們第二次、其他組都變成連續發放</b>（照可能性排）：</p>
+        <ol class="small">
+          <li><b>可變電阻的位置變了</b>：量 Q3（找 I<sub>min</sub>）時會把可變電阻轉到小電流那邊，沒轉回 0.7 kΩ，n = 4 長按就變連續發放。先把可變電阻轉回去，或用 S + 1 個 Passive unit 重量電流（平台 ÷ 100 kΩ），高於約 60 µA 就應該回到「拉高基線」。</li>
+          <li><b>FI 的 2N4403 β 不一樣</b>：模擬用 β = 150。只把 FI 那顆改成 120，n = 4 在 0.7 kΩ 就連續發放，n = 3 在 4 kΩ 以上也會；改成 100，n = 4 連 0 kΩ（最大電流）都連續發放。2N4403 的 β 規格是 100–300，而且隨溫度變，每組的板子不同，所以別組在一般設定下就連續發放並不奇怪。只改 SO 或 Stimulator 那顆的 β，結果不變。</li>
+          <li><b>n 不一樣</b>：n ≤ 3 的連續發放帶在 Stimulator 的電流範圍以下，原版 β 時只會看到一個 spike＋拉高基線。</li>
+        </ol>
+        <p class="small muted">排除的：電池電壓（V+ 7.8 → 6.2 V 結果不變，Stimulator 的電流只看 V<sub>EB</sub>／(pot + 7 kΩ)）；上一次按壓留下的電荷（n = 4、0.7 kΩ 長按放開後卡在 0.76 V，再長按仍是拉高基線；連續發放的設定下第一、第二次長按都一樣）；SO 的 C1、Passive unit 的 1 µF ±20 %、二極體參數（都不會讓 n = 1–4 變成連續發放）。生理上兩種都有：電流適中時重複發放（rate coding），電流太大時 depolarization block；這個電路剛好在兩者的交界附近。</p>
+      </div></details>
+
       <details class="card"><summary>第二輪麵包板：你量的 vs 當時的模型<span class="hint">紀錄：R2 還是 100 Ω 的時候</span></summary><div class="body">
         <div class="tbl"><table>
           <tr><th>組合</th><th class="num">實測 靜止／按住</th><th class="num">當時模型（R2 = 100 Ω）</th></tr>
@@ -558,6 +580,7 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
         <li><b>Q2</b> n = 4，按一下 SW，記錄第一個 AP 的五參數（有飛線：峰值約 1.6 V；沒飛線只有被動反應）。</li>
         <li><b>Q3</b> 每個 n 從小電流往上加，找剛好出現 AP 的電流。模擬的 I<sub>min</sub> 是 4.7／11.7／20.5／32 µA（n = 1–4），低於可變電阻最小的約 44 µA，所以會「最小電流也觸發」；照記錄。</li>
         <li><b>Q4</b> 電流固定，n = 4…0 各按 1 秒，讀「到峰」。n = 3、4 放開後若卡在約 0.76 V，斷電重置再量下一個。</li>
+        <li><b>長按</b>：n = 4 時 spike 後先降到約 0.65 V、再停在 0.80 V（FI 和 SO 抵住）；可變電阻 ≥ 5.5 kΩ 或 FI 的 4403 β 偏低時會變成連續發放。見<a href="#hold23">摘要區的說明</a>。</li>
         <li><b>Q5</b> n = 2，CH2 = AX（下方紅箭頭），10–50 mV/div。</li>
       </ul>
     </details>
