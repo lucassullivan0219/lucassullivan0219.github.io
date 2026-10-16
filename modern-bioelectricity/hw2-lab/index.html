@@ -133,7 +133,7 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
 .small{font-size:12.5px} .muted{color:var(--muted)}
 
 /* ---------- 0 電路圖與 PCB 的差別 ---------- */
-.r0-one{font-size:18px;font-weight:700;line-height:1.5;margin:4px 0 10px;max-width:60em}
+.r0-one{font-size:15px;font-weight:500;line-height:1.55;margin:2px 0 10px;max-width:60em;color:var(--muted)}
 .r0-big{margin:0 0 10px;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:6px}
 .r0-big figcaption{font-size:12.5px;color:var(--muted);margin:4px 2px 0}
 .r0-ov{display:block;width:100%;height:auto;border-radius:4px}
@@ -237,7 +237,7 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
 <!-- ======================= 0 電路圖與 PCB 的差別 ======================= -->
 <section class="region textreg" id="r0">
   <h2>0 電路圖與 PCB 的差別</h2>
-  <p class="r0-one">PCB 有 3 處接得和講義電路圖不同：照 PCB 做，膜沒有靜止電位，也做不出 AP。</p>
+  <p class="r0-one">底圖：講義的 #2-3 電路圖。<span class="k-p">紅色</span>＝PCB 實際的接法。<b>點紅色標記</b>看這個差別造成什麼問題。</p>
   <figure class="r0-big">
     <svg class="r0-ov" viewBox="0 0 1185 432" role="group" aria-label="講義 #2-3 電路圖，紅色標出 PCB 實際的接法">
       <rect x="0" y="0" width="1185" height="432" fill="#fff"/>
@@ -279,7 +279,6 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
         <g class="badge"><circle cx="922" cy="282" r="13"/><text x="922" y="287.5">3</text></g>
       </g>
     </svg>
-    <figcaption>底圖：講義的 #2-3 電路圖。<span class="k-p">紅色</span>＝PCB 實際的接法。<b>點紅色標記</b>看這個差別造成什麼問題。</figcaption>
   </figure>
 
   <details class="card r0-more"><summary>數字對照：照電路圖 vs 照 PCB vs 實測<span class="hint">模擬與我們組的量測</span></summary><div class="body">

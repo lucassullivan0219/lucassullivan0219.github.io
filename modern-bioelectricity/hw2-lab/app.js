@@ -490,20 +490,32 @@
     $$('.mode button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false'); });
     Object.keys(SIMS).forEach(function(k){ var s = SIMS[k]; syncControls(s); drawSchematic(s); });
     if(active){ var a = active; active = null; activate(a); }
+    queueNav();                                        /* region heights change with the mode */
   }
   $$('.mode button').forEach(function(b){ b.addEventListener('click', function(){ setMode(b.dataset.mode); }); });
 
-  var navLinks = $$('nav.regions a');
+  /* sims start when half their region is on screen (they are one screen tall) */
   var io = new IntersectionObserver(function(entries){
     entries.forEach(function(e){
-      if(e.isIntersecting && e.intersectionRatio >= 0.5){
-        navLinks.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id); });
-        var key = e.target.dataset.sim;
-        if(key){ var s = SIMS[key]; activate(s); sizeCanvas(s); }
-      }
+      if(e.isIntersecting && e.intersectionRatio >= 0.5){ var s = SIMS[e.target.dataset.sim]; activate(s); sizeCanvas(s); }
     });
   }, {root:$('#main'), threshold:[0.5]});
-  $$('.region').forEach(function(r){ io.observe(r); });
+  $$('.region[data-sim]').forEach(function(r){ io.observe(r); });
+  /* sidebar: the region crossing the upper third of the screen.  A ratio threshold misses text regions
+     taller than two screens, which never get half on screen. */
+  var navLinks = $$('nav.regions a'), regions = $$('.region'), navOn = null;
+  function syncNav(){
+    var cut = window.innerHeight * 0.33, cur = regions[0];
+    regions.forEach(function(r){ if(r.offsetParent !== null && r.getBoundingClientRect().top <= cut) cur = r; });
+    if(cur === navOn) return;
+    navOn = cur;
+    navLinks.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href') === '#' + cur.id); });
+  }
+  function queueNav(){ syncNav(); }                 /* scroll events come once a frame; six rects are cheap */
+  $('#main').addEventListener('scroll', queueNav, {passive:true});
+  window.addEventListener('scroll', queueNav, {passive:true});        /* phones: the page itself scrolls */
+  window.addEventListener('resize', queueNav);
+  syncNav();
 
   $$('[data-fs]').forEach(function(b){
     b.addEventListener('click', function(){
