@@ -134,38 +134,41 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
 
 /* ---------- 0 電路圖與 PCB 的差別 ---------- */
 .r0-one{font-size:18px;font-weight:700;line-height:1.5;margin:4px 0 10px;max-width:60em}
-.r0-map{margin:0 0 10px;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:6px 8px}
-.r0-map figcaption{font-size:12px;color:var(--muted);margin-top:2px}
-.r0-map .badge circle{fill:var(--warn)}
-.r0-map .badge text{fill:#fff;font-weight:700;font-size:16px;font-family:"IBM Plex Mono",monospace}
-.r0-map .badge .ring{fill:none;stroke:var(--warn);stroke-width:2.5;stroke-dasharray:5 3}
+.r0-big{margin:0 0 10px;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:6px}
+.r0-big figcaption{font-size:12.5px;color:var(--muted);margin:4px 2px 0}
+.r0-ov{display:block;width:100%;height:auto;border-radius:4px}
+.r0-ov .hit{fill:transparent}
+.r0-ov .hitline{fill:none;stroke:transparent;stroke-width:16}
+.r0-ov .pw{fill:none;stroke:#D6281C;stroke-width:3.5;stroke-linejoin:round;stroke-linecap:round}
+.r0-ov .dash{stroke-dasharray:8 6}
+.r0-ov .x{fill:none;stroke:#D6281C;stroke-width:3.5;stroke-linecap:round}
+.r0-ov .pd{fill:#D6281C}
+.r0-ov .pl{fill:#D6281C;font:700 13px "Noto Sans TC",system-ui,sans-serif}
+.r0-ov .badge circle{fill:#D6281C;stroke:#fff;stroke-width:2}
+.r0-ov .badge text{fill:#fff;font:700 15px "IBM Plex Mono",monospace;text-anchor:middle}
+.r0-ov .hot{cursor:pointer;outline:none}
+.r0-ov .hot .ink,.r0-ov .hot .badge{transition:filter .15s}
+.r0-ov .hot:hover .ink,.r0-ov .hot:focus-visible .ink,.r0-ov .hot:hover .badge,.r0-ov .hot:focus-visible .badge{filter:drop-shadow(0 0 3px #ff5a3c) drop-shadow(0 0 8px #ff8a3c)}
+.r0-ov .hot:hover .pw,.r0-ov .hot:hover .x,.r0-ov .hot:focus-visible .pw,.r0-ov .hot:focus-visible .x{stroke-width:5}
+.r0-ov .hot:hover .hit,.r0-ov .hot:focus-visible .hit{fill:rgba(255,90,60,.08)}
+.k-p{color:var(--warn);font-weight:700}
 .r0-more{margin:0 0 12px}
 .score table td{white-space:normal}
-.diffs{display:grid;grid-template-columns:1fr;gap:12px}
-.diff{background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--warn);border-radius:8px;padding:10px 14px}
-.diff .dh{display:flex;gap:10px;align-items:flex-start;line-height:1.45}
-.diff .dh b{font-size:15.5px}
-.diff .no{flex:none;font-family:"IBM Plex Mono",monospace;font-weight:700;color:var(--surface);background:var(--warn);border-radius:999px;width:1.8em;height:1.8em;display:inline-flex;align-items:center;justify-content:center}
-.dg3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0}
-.dg3 figure{margin:0;background:var(--tint);border-radius:6px;padding:4px 6px 2px;display:flex;flex-direction:column;justify-content:space-between}
-.dg3 figcaption{font-size:11.5px;color:var(--muted);text-align:center;font-weight:700}
-.dg3 svg,.dg3 img{display:block;width:100%;height:auto}
-.dg3 .ph{flex:1;min-height:110px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:12px;border:1.5px dashed var(--rule);border-radius:5px;margin:2px 0 4px}
-.dg3 .w{stroke:var(--ink);stroke-width:1.6;fill:none;stroke-linejoin:round}
-.dg3 .s{stroke:var(--sch);stroke-width:2.8;fill:none;stroke-linejoin:round}
-.dg3 .p{stroke:var(--warn);stroke-width:2.8;fill:none;stroke-linejoin:round}
-.dg3 .dk{fill:var(--ink)} .dg3 .sd{fill:var(--sch)} .dg3 .pd{fill:var(--warn)}
-.dg3 .bx{fill:none;stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 3}
-.dg3 .t{fill:var(--muted);font-size:11px}
-.dg3 .st{fill:var(--sch);font-size:11px;font-weight:700}
-.dg3 .pt{fill:var(--warn);font-size:11px;font-weight:700}
-.k-s{color:var(--sch)} .k-p{color:var(--warn)}
-details.more{border-top:1px dashed var(--rule);margin-top:4px;padding-top:4px}
-details.more > summary{cursor:pointer;font-size:12.5px;color:var(--link)}
-.eff{margin:4px 0;padding-left:1.2em;font-size:13px}
-.eff li{margin:3px 0}
-.ev{font-size:12px;color:var(--muted);margin:4px 0 0}
-@media (max-width:760px){.dg3{grid-template-columns:1fr}}
+.r0dlg{width:min(900px,calc(100vw - 16px));max-height:88vh;padding:0;border:1.5px solid var(--warn);border-radius:10px;background:var(--surface);color:var(--ink)}
+.r0dlg::backdrop{background:rgba(0,0,0,.45)}
+.r0dlg-h{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--rule)}
+.r0dlg-x{border:0;background:transparent;color:var(--ink);font-size:17px;cursor:pointer}
+.r0dlg-b{padding:2px 16px 14px}
+.r0dlg h3{font-size:16px;line-height:1.5;margin:10px 0}
+.r0dlg h4{font-size:12.5px;color:var(--accent);margin:12px 0 2px}
+.r0dlg ul{padding-left:1.2em;font-size:13.5px;margin:4px 0}
+.r0dlg li{margin:4px 0}
+.r0dlg .ev{font-size:12.5px;color:var(--muted);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:6px}
+.r0imgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.r0imgs figure{margin:0;background:#fff;border:1px solid var(--rule);border-radius:6px;padding:4px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
+.r0imgs img{display:block;max-width:100%;max-height:50vh;height:auto}
+.r0imgs figcaption{font-size:12px;color:#5F6B72;font-weight:700;margin-top:2px}
+@media (max-width:640px){.r0imgs{grid-template-columns:1fr}}
 /* ---------- circuit inspector (inspect.js) ---------- */
 .insp{position:fixed;left:24px;top:80px;z-index:80;width:min(470px,calc(100vw - 16px));max-height:min(80vh,760px);display:flex;flex-direction:column;
   background:var(--surface);color:var(--ink);border:1.5px solid var(--accent);border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.28);font-size:13px}
@@ -216,7 +219,7 @@ details.more > summary{cursor:pointer;font-size:12.5px;color:var(--link)}
   <p class="mode-note" data-show="basic">完整測試助教給的電路、完成每一題，測出什麼就寫什麼。</p>
   <p class="mode-note" data-show="adv">做出真正能模擬 AP 的電路，具體計算、解釋助教電路的問題。</p>
   <nav class="regions" aria-label="區域">
-    <a href="#r0"><span class="n">0</span><span>電路圖與 PCB 的差別<small>4 處不同，一張圖看完</small></span></a>
+    <a href="#r0"><span class="n">0</span><span>電路圖與 PCB 的差別<small>3 處不同，一張圖看完</small></span></a>
     <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small data-show="basic">模型定義、題目清單、可能的問題</small><small data-show="adv">電路的問題、改法、AP 判定</small></span></a>
     <a href="#r2"><span class="n">2</span><span>#2-1 Passive<small>5 個 Passive unit</small></span></a>
     <a href="#r3"><span class="n">3</span><span>#2-2 Active<small>Stimulator + LK + FI + SO</small></span></a>
@@ -234,128 +237,117 @@ details.more > summary{cursor:pointer;font-size:12.5px;color:var(--link)}
 <!-- ======================= 0 電路圖與 PCB 的差別 ======================= -->
 <section class="region textreg" id="r0">
   <h2>0 電路圖與 PCB 的差別</h2>
-  <p class="r0-one">PCB 有 3 處接得和講義電路圖不同，零件包有 1 顆給錯：照 PCB 做，膜沒有靜止電位，也做不出 AP。</p>
-  <figure class="r0-map">
-    <div class="schbox"><svg data-diffmap role="img" aria-label="照 PCB 實際接法的完整電路，標出 4 處和電路圖不同的位置"></svg></div>
-    <figcaption>照 PCB 實際接法的電路，紅色編號＝和講義電路圖不同的地方（點下面的卡片看細節）。</figcaption>
+  <p class="r0-one">PCB 有 3 處接得和講義電路圖不同：照 PCB 做，膜沒有靜止電位，也做不出 AP。</p>
+  <figure class="r0-big">
+    <svg class="r0-ov" viewBox="0 0 1185 432" role="group" aria-label="講義 #2-3 電路圖，紅色標出 PCB 實際的接法">
+      <rect x="0" y="0" width="1185" height="432" fill="#fff"/>
+      <image href="img/sch23.png" x="0" y="0" width="1185" height="377"/>
+
+      <g class="hot" data-d="1" tabindex="0" role="button" aria-label="差別 1：Q_sense 的射極">
+        <rect class="hit" x="12" y="150" width="128" height="116"/>
+        <g class="ink">
+          <path class="x" d="M56,161 L68,175 M68,161 L56,175"/>
+          <polyline class="pw" points="100,168 100,240 30,240"/><circle class="pd" cx="100" cy="168" r="4"/><circle class="pd" cx="30" cy="240" r="4.5"/>
+          <text class="pl" x="40" y="262">PCB：E 接 V+</text>
+        </g>
+        <g class="badge"><circle cx="128" cy="236" r="13"/><text x="128" y="241.5">1</text></g>
+      </g>
+
+      <g class="hot" data-d="2" tabindex="0" role="button" aria-label="差別 2：R13">
+        <rect class="hit" x="866" y="150" width="76" height="76"/>
+        <g class="ink">
+          <polyline class="pw" points="883,168 883,171 890,174 876,179 890,184 876,189 890,194 883,197 883,200"/>
+          <line class="x" x1="890" y1="184" x2="917" y2="184"/>
+          <text class="pl" x="889" y="218">100 kΩ</text>
+        </g>
+        <g class="badge"><circle cx="930" cy="160" r="13"/><text x="930" y="165.5">2</text></g>
+      </g>
+
+      <g class="hot" data-d="3" tabindex="0" role="button" aria-label="差別 3：FI 的電源">
+        <rect class="hit" x="836" y="232" width="100" height="66"/>
+        <path class="hitline" d="M30,262 L8,262 L8,404 L945,404 L945,226 L883,226"/>
+        <g class="ink">
+          <path class="x" d="M870,244 L896,270 M896,244 L870,270"/>
+          <text class="pl" x="836" y="292">沒有電池</text>
+          <path class="pw" d="M30,262 L8,262 L8,404 L330,404"/>
+          <path class="pw dash" d="M352,404 L945,404 L945,345 A8,8 0 0 0 945,329 L945,226 L883,226"/>
+          <circle class="pd" cx="30" cy="262" r="4"/><circle class="pd" cx="883" cy="226" r="4"/>
+          <path class="x" d="M334,397 L348,411 M348,397 L334,411"/>
+          <text class="pl" x="16" y="396">PCB：FI 的 V+ 從 Stimulator 走排針</text>
+          <text class="pl" x="358" y="424">Passive 底板沒有 V+ 線：#2-3 夾了 Passive 就斷</text>
+        </g>
+        <g class="badge"><circle cx="922" cy="282" r="13"/><text x="922" y="287.5">3</text></g>
+      </g>
+    </svg>
+    <figcaption>底圖：講義的 #2-3 電路圖。<span class="k-p">紅色</span>＝PCB 實際的接法。<b>點紅色標記</b>看這個差別造成什麼問題。</figcaption>
   </figure>
 
   <details class="card r0-more"><summary>數字對照：照電路圖 vs 照 PCB vs 實測<span class="hint">模擬與我們組的量測</span></summary><div class="body">
     <div class="tbl score"><table>
-      <tr><th></th><th class="num">照電路圖</th><th class="num">照 PCB（R2 = 1 MΩ）</th><th class="num">實測（PCB）</th></tr>
+      <tr><th></th><th class="num">照電路圖</th><th class="num">照 PCB</th><th class="num">實測（PCB）</th></tr>
       <tr><td>SW 放開時的 Vm</td><td class="num t-ok">0 V，穩定</td><td class="num t-warn">0.53 V，每 129 ms 自發一個 1.46 V 小峰</td><td class="num t-warn">0.6 V，約每 100 ms 一個 1.6 V 小峰</td></tr>
       <tr><td>#2-2 按 100 ms 的峰值</td><td class="num t-ok">8.36 V</td><td class="num t-warn">2.05 V</td><td class="num">約 2.2 V</td></tr>
-      <tr><td>同上，拔掉 FI（TTX）</td><td class="num">2.80 V</td><td class="num t-warn">1.94 V（和有 FI 幾乎一樣）</td><td class="num">—</td></tr>
-      <tr><td>#2-3 n = 2，按 300 ms 的峰值</td><td class="num t-ok">8.19 V（拔 FI 1.45 V）</td><td class="num t-warn">1.36 V（拔 FI 1.43 V：FI 沒電）</td><td class="num">—</td></tr>
+      <tr><td>同上，拔掉 FI（TTX）</td><td class="num">2.89 V</td><td class="num t-warn">1.94 V（和有 FI 幾乎一樣）</td><td class="num">—</td></tr>
+      <tr><td>#2-3 n = 2，按 300 ms 的峰值</td><td class="num t-ok">8.21 V（拔 FI 1.51 V）</td><td class="num t-warn">1.36 V（拔 FI 1.43 V：FI 沒電）</td><td class="num">—</td></tr>
     </table></div>
-    <p class="small muted">「照電路圖」：Q<sub>sense</sub> 射極在 SW 之後、R13 = 1 kΩ、FI 自帶 9 V 電池、R2 = 3 MΩ、電池 9 V。「照 PCB」：從講義的 PCB 佈線圖逐焊墊追線得到的接法（<a href="../hw2-debug/#s2">netlist</a>）、電池實測 7.8 V。可變電阻 0.7 kΩ（約 90 µA）。模擬用 <a href="../active-membrane-sim/engine.js">engine.js</a>（和 Python 的 <a href="../hw2-debug/sim/">sim.py</a> 同一個模型）；實測是我們組第二、三輪的量測。紀錄：<a href="../log/#MB-010">MB-010</a>。</p>
+    <p class="small muted">「照電路圖」：Q<sub>sense</sub> 射極在 SW 之後、R13 = 1 kΩ、FI 自帶 9 V 電池、電池 9 V。「照 PCB」：從講義的 PCB 佈線圖逐焊墊追線得到的接法（<a href="../hw2-debug/#s2">netlist</a>）、電池實測 7.8 V。兩邊的 Slow out R2 都用 1 MΩ，可變電阻 0.7 kΩ（約 90 µA）。模擬用 <a href="../active-membrane-sim/engine.js">engine.js</a>（和 Python 的 <a href="../hw2-debug/sim/">sim.py</a> 同一個模型）；實測是我們組第二、三輪的量測。紀錄：<a href="../log/#MB-015">MB-014</a>。</p>
   </div></details>
 
-  <div class="diffs">
-
-    <div class="diff">
-      <div class="dh"><span class="no">1</span><b>Q<sub>sense</sub> 的射極接到 SW 之前：SW 放開還漏 6 µA，膜不停自己放電。</b></div>
-      <div class="dg3">
-        <figure class="orig"><div class="ph">講義電路圖<br>裁切待補</div><figcaption>講義電路圖</figcaption></figure>
-        <figure class="orig"><div class="ph">講義 PCB<br>裁切待補</div><figcaption>講義 PCB</figcaption></figure>
-        <figure><svg viewBox="0 0 250 120" role="img" aria-label="示意圖：電路圖的射極接 SW 之後，PCB 的射極接 V+">
-          <text x="6" y="24" class="t">V+</text><polyline class="w" points="22,30 48,30"/><circle class="dk" cx="48" cy="30" r="2.5"/><circle class="dk" cx="78" cy="30" r="2.5"/><polyline class="w" points="48,30 74,20"/><text x="54" y="16" class="t">SW</text>
-          <polyline class="w" points="78,30 112,30 116,24 122,36 128,24 134,36 140,24 146,36 150,30 200,30"/><text x="114" y="16" class="t">pot+7k</text>
-          <circle class="w" cx="160" cy="88" r="14"/><text x="160" y="92" class="t" text-anchor="middle">Q<tspan font-size="8">s</tspan></text>
-          <polyline class="w" points="174,88 200,88 200,30"/><text x="178" y="82" class="t">B</text>
-          <polyline class="s" points="96,30 96,82 146,82"/><circle class="sd" cx="96" cy="30" r="3"/>
-          <polyline class="p" points="34,30 34,94 146,94"/><circle class="pd" cx="34" cy="30" r="3"/>
-          <text x="100" y="60" class="st">電路圖</text><text x="40" y="110" class="pt">PCB：E 接 V+</text>
-        </svg><figcaption>示意圖 <span class="k-s">━ 電路圖</span> <span class="k-p">━ PCB</span></figcaption></figure>
-      </div>
-      <details class="more"><summary>造成的問題與證據</summary>
-        <ul class="eff">
-          <li><b>SW 放開仍輸出 6.3 µA</b>（= Q<sub>sense</sub> 的基極電流 I<sub>C</sub>/β）。大小由 β 決定：β 100–300 時 9.4–3.1 µA，不是設計值。</li>
-          <li>Vm 被墊到 0.53–0.62 V，正好在 FI 門檻：<b>不按也自己放電，沒有靜止電位</b>。#2-2 Q5（靜止電位）沒有定義，Q2、Q3 的五參數要靠觸發準位去挑。#2-1 的被動鏈也多了約 0.2 V 基線。</li>
-          <li><b>SW 放開時 Q<sub>sense</sub> 全開、一直耗 0.95 mA</b>（6.6 V 落在 7 kΩ 上）。電池焊在板上、沒有開關。</li>
-        </ul>
-        <p class="ev">實測證據：只接 S + LK、SW 放開，Vm = 0.7 V（電路圖應為 0）；第三輪不按 SW 約每 100 ms 一個 1.6 V 小峰。是意外還是刻意：見進階模式摘要區「6 µA 漏電」。</p>
-      </details>
-    </div>
-
-    <div class="diff">
-      <div class="dh"><span class="no">2</span><b>R13 是 100 kΩ 而不是 1 kΩ：FI 只能送 70 µA，「AP」和拔掉 FI 一樣高。</b></div>
-      <div class="dg3">
-        <figure class="orig"><div class="ph">講義電路圖<br>裁切待補</div><figcaption>講義電路圖</figcaption></figure>
-        <figure class="orig"><div class="ph">講義 PCB<br>裁切待補</div><figcaption>講義 PCB</figcaption></figure>
-        <figure><svg viewBox="0 0 250 120" role="img" aria-label="示意圖：R13 電路圖 1 kΩ，PCB 100 kΩ">
-          <text x="62" y="16" class="t">V+</text><polyline class="w" points="90,10 90,22 98,26 82,32 98,38 82,44 98,50 82,56 90,60 90,70"/>
-          <text x="106" y="30" class="st">電路圖 1 kΩ</text><text x="106" y="50" class="pt">PCB 100 kΩ</text>
-          <circle class="w" cx="90" cy="86" r="14"/><text x="90" y="90" class="t" text-anchor="middle">4403</text><polyline class="w" points="90,100 90,110 130,110"/><text x="136" y="114" class="t">Vm</text>
-          <text x="118" y="80" class="st">I<tspan font-size="8">FI</tspan> 上限 6.8 mA</text><text x="118" y="96" class="pt">I<tspan font-size="8">FI</tspan> 上限 70 µA</text>
-        </svg><figcaption>示意圖 <span class="k-s">━ 電路圖</span> <span class="k-p">━ PCB</span></figcaption></figure>
-      </div>
-      <details class="more"><summary>造成的問題與證據</summary>
-        <ul class="eff">
-          <li><b>內向電流最多約 70 µA</b>，和 Stimulator 的 90 µA 同一個量級（設計約 6.8 mA）。FI 推不出再生性的上升。</li>
-          <li><b>「AP」和拔掉 FI 的被動反應一樣高</b>：2.05 vs 1.94 V。#2-2 Q6 的 TTX 看不出差別；Q4（換 50 k–3 M）是在一個本來就沒有 AP 的電路上比較。</li>
-        </ul>
-        <p class="ev">實測證據：FI 自鎖時 FI.E4 = 4.0 V。R13 = 1 kΩ 時應在 7.77 V，100 kΩ 才會是 4 V。</p>
-      </details>
-    </div>
-
-    <div class="diff">
-      <div class="dh"><span class="no">3</span><b>FI 沒有自己的電池、Passive 底板又沒串 V+：#2-3 夾了 Passive 之後 FI 完全沒電。</b></div>
-      <div class="dg3">
-        <figure class="orig"><div class="ph">講義電路圖<br>裁切待補</div><figcaption>講義電路圖</figcaption></figure>
-        <figure class="orig"><div class="ph">講義 PCB<br>裁切待補</div><figcaption>講義 PCB</figcaption></figure>
-        <figure><svg viewBox="0 0 250 120" role="img" aria-label="示意圖：電路圖的 FI 自帶電池；PCB 的 V+ 過不了 Passive 底板">
-          <rect class="bx" x="6" y="22" width="40" height="72" rx="4"/><text x="26" y="16" class="t" text-anchor="middle">ST</text>
-          <rect class="bx" x="70" y="22" width="40" height="72" rx="4"/><text x="90" y="16" class="t" text-anchor="middle">#1</text>
-          <rect class="bx" x="134" y="22" width="40" height="72" rx="4"/><text x="154" y="16" class="t" text-anchor="middle">#2</text>
-          <rect class="bx" x="198" y="22" width="46" height="72" rx="4"/><text x="221" y="16" class="t" text-anchor="middle">FI</text>
-          <polyline class="w" points="46,36 70,36"/><polyline class="w" points="110,36 134,36"/><polyline class="w" points="174,36 198,36"/>
-          <polyline class="w" points="46,84 70,84"/><polyline class="w" points="110,84 134,84"/><polyline class="w" points="174,84 198,84"/>
-          <polyline class="s" points="214,52 228,52"/><polyline class="s" points="217,58 225,58" style="stroke-width:3.4"/><text x="221" y="72" class="st" text-anchor="middle">9 V</text>
-          <polyline class="p" points="46,60 70,60"/><text x="78" y="64" class="pt">✕</text><polyline class="p" points="174,60 198,60" style="stroke-dasharray:3 3"/>
-          <text x="6" y="112" class="pt">PCB：V+ 到 #1 就斷</text><text x="150" y="112" class="st">電路圖：FI 自帶</text>
-        </svg><figcaption>示意圖 <span class="k-s">━ 電路圖</span> <span class="k-p">━ PCB</span></figcaption></figure>
-      </div>
-      <details class="more"><summary>造成的問題與證據</summary>
-        <ul class="eff">
-          <li>#2-2（Stimulator 直接疊 FI）的 V+ 從排針來，可以動。</li>
-          <li><b>#2-3 n ≥ 1：FI 完全沒有電源</b>，只剩被動反應（n = 2 按 300 ms：1.36 V，拔 FI 1.43 V）。學生得自己從 Stimulator 拉一條 V+ 飛線到 FI 才有 AP。</li>
-        </ul>
-        <p class="ev">PCB 佈線圖：Passive 板的底板排針只連細胞內（經 10 kΩ）與 GND（經 100 Ω）兩排，V+ 那一腳沒有銅箔。</p>
-      </details>
-    </div>
-
-    <div class="diff">
-      <div class="dh"><span class="no">4</span><b>零件包的 R2 給了 100 Ω（電路圖、絲印都是 3 MΩ）：Slow out 完全失效，FI 一觸發就鎖住。</b></div>
-      <div class="dg3">
-        <figure class="orig"><div class="ph">講義電路圖<br>裁切待補</div><figcaption>講義電路圖</figcaption></figure>
-        <figure class="orig"><div class="ph">講義 PCB<br>裁切待補</div><figcaption>講義 PCB</figcaption></figure>
-        <figure><svg viewBox="0 0 250 120" role="img" aria-label="示意圖：R2 電路圖 3 MΩ，零件包 100 Ω">
-          <text x="6" y="34" class="t">SO.S</text><polyline class="w" points="36,30 60,30"/><polygon class="w" points="60,22 60,38 76,30"/><polyline class="w" points="76,22 76,38"/><polyline class="w" points="76,30 150,30"/>
-          <text x="98" y="22" class="t">B3</text><polyline class="w" points="120,30 120,42 128,46 112,52 128,58 112,64 128,70 112,76 120,80 120,100"/><text x="110" y="114" class="t">GND</text>
-          <text x="156" y="34" class="t">→ 3904 基極</text>
-          <text x="136" y="58" class="st">電路圖 3 MΩ</text><text x="136" y="76" class="pt">零件包 100 Ω</text>
-          <text x="136" y="94" class="pt">→ 3904 不導通</text>
-        </svg><figcaption>示意圖 <span class="k-s">━ 電路圖</span> <span class="k-p">━ 零件包</span></figcaption></figure>
-      </div>
-      <details class="more"><summary>造成的問題與證據</summary>
-        <ul class="eff">
-          <li><b>Slow out 完全失效</b>：100 Ω 把 SO.B3 拉到地。FI 一觸發就鎖住下不來，沒有再極化。</li>
-          <li>各組換成助教指定的 1 MΩ 之後 Slow out 才正常（但仍不是電路圖的 3 MΩ）。</li>
-        </ul>
-        <p class="ev">實測證據：第二輪四塊全接，FI 鎖在 2.4 V（按住 4.5 V）；模擬 R2 = 100 Ω 是 2.39／4.49 V。</p>
-      </details>
-    </div>
-  </div>
-
-  <details class="card r0-more" style="margin-top:12px"><summary>怎麼改<span class="hint">下一屆的板子</span></summary><div class="body">
+  <details class="card r0-more"><summary>怎麼改<span class="hint">下一屆的板子</span></summary><div class="body">
     <ol class="small" style="margin:0">
-      <li>Q<sub>sense</sub> 射極改接 SW 之後（ST.P），只差一條走線。現有的板子：在 Q<sub>pass</sub> E–B 並 22 kΩ 也能消除漏電。</li>
+      <li>Q<sub>sense</sub> 射極改接 SW 之後，只差一條走線。現有的板子：在 Q<sub>pass</sub> E–B 並 22 kΩ 也能消除漏電。</li>
       <li>R13 改成電路圖的 1 kΩ。</li>
       <li>Passive 底板把 V+ 那一腳串過去，或 FI 板照電路圖放電池座。</li>
-      <li>零件包的 R2 給 3 MΩ（或統一用助教的 1 MΩ，並更新絲印與電路圖）。</li>
     </ol>
   </div></details>
+
+  <dialog class="r0dlg" id="r0dlg" aria-labelledby="r0dlg-t">
+    <div class="r0dlg-h"><b id="r0dlg-t"></b><button type="button" class="r0dlg-x" aria-label="關閉">✕</button></div>
+    <div class="r0dlg-b"></div>
+  </dialog>
+
+  <template id="r0d-1">
+    <h3>1　Q<sub>sense</sub> 的射極：電路圖接在 SW 之後，PCB 接在 SW 之前（電池正極）</h3>
+    <div class="r0imgs">
+      <figure><img src="img/d1-sch.png" alt="講義電路圖：Q_sense 射極接在 SW 之後"><figcaption>講義電路圖</figcaption></figure>
+      <figure><img src="img/d1-pcb.png" alt="講義 PCB：Q_sense 射極和電池正極在同一條走線"><figcaption>講義 PCB（Stimulator）</figcaption></figure>
+    </div>
+    <h4>造成的問題</h4>
+    <ul>
+      <li><b>SW 放開仍輸出 6.3 µA</b>：放開時 Q<sub>sense</sub> 的 E–B 仍順偏，它的基極電流經 Q<sub>pass</sub> 流進 Vm。大小 = I<sub>C</sub>/β，β 100–300 時 9.4–3.1 µA，不是設計值。</li>
+      <li><b>沒有靜止電位</b>：Vm 被墊到 0.53–0.62 V，正好在 FI 門檻，不按 SW 也自己放電。#2-2 Q5（靜止電位）沒有定義，Q2、Q3 的五參數要靠觸發準位去挑；#2-1 的被動鏈也多了約 0.2 V 基線。</li>
+      <li><b>關著也耗電 0.95 mA</b>：放開時 Q<sub>sense</sub> 全開，6.6 V 落在 7 kΩ 上。電池焊在板上、沒有開關。</li>
+    </ul>
+    <p class="ev">實測證據：只接 Stimulator + LK、SW 放開，Vm = 0.7 V（照電路圖應為 0）；第三輪不按 SW 約每 100 ms 一個 1.6 V 小峰。是意外還是刻意：見進階模式摘要區「6 µA 漏電」。</p>
+  </template>
+
+  <template id="r0d-2">
+    <h3>2　R13：電路圖 1 kΩ，PCB 100 kΩ</h3>
+    <div class="r0imgs">
+      <figure><img src="img/d2-sch.png" alt="講義電路圖：2N4403 射極電阻 1 kΩ"><figcaption>講義電路圖</figcaption></figure>
+      <figure><img src="img/d2-pcb.png" alt="講義 PCB：100K-R13"><figcaption>講義 PCB（Fast inward）</figcaption></figure>
+    </div>
+    <h4>造成的問題</h4>
+    <ul>
+      <li><b>內向電流最多約 70 µA</b>（設計約 6.8 mA），和 Stimulator 的 90 µA 同一個量級，FI 推不出再生性的上升。</li>
+      <li><b>「AP」和拔掉 FI 一樣高</b>：2.05 vs 1.94 V（照電路圖 8.36 vs 2.89 V）。#2-2 Q6 的 TTX 看不出差別；Q4（換 50 k–3 M）是在一個本來就沒有 AP 的電路上比較。</li>
+    </ul>
+    <p class="ev">實測證據：FI 自鎖時 FI.E4 = 4.0 V。R13 = 1 kΩ 時應在 7.77 V，100 kΩ 才會是 4 V。</p>
+  </template>
+
+  <template id="r0d-3">
+    <h3>3　FI 的電源：電路圖 FI 自帶 9 V 電池；PCB 沒有電池，V+ 走排針，而 Passive 底板沒串 V+</h3>
+    <div class="r0imgs">
+      <figure><img src="img/d3-sch.png" alt="講義電路圖：FI 自帶 9 V 電池"><figcaption>講義電路圖</figcaption></figure>
+      <figure><img src="img/d3-pcb.png" alt="講義 PCB：FI 的 R13 接到排針的 V+ 腳；Passive 底板的 V+ 腳沒有走線"><figcaption>講義 PCB（Fast inward、Passive 底板）</figcaption></figure>
+    </div>
+    <h4>造成的問題</h4>
+    <ul>
+      <li>#2-2（Stimulator 直接疊 FI）：V+ 從排針來，可以動。</li>
+      <li><b>#2-3 n ≥ 1：FI 完全沒有電源</b>，只剩被動反應：n = 2 按 300 ms 是 1.36 V，拔掉 FI 也是 1.43 V（照電路圖 8.21 vs 1.51 V）。學生得自己從 Stimulator 拉一條 V+ 飛線到 FI 才有 AP。</li>
+    </ul>
+    <p class="ev">PCB 佈線圖：Passive 底板每個 2×2 排針只有 GND 那一腳（經 100 Ω）有走線，V+ 那一腳（左上）沒有。</p>
+  </template>
 </section>
 
 <!-- ======================= 1 摘要 ======================= -->

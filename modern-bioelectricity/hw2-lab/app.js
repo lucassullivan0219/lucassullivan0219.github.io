@@ -548,18 +548,23 @@
     sch.setContacts(st); sch.setQsense(st.qs); sch.setResistors(st.r13, st.rfe, st.so_r2); sch.setAddons(st); sch.setSupply('stim');
   });
 
-  /* section 0: the circuit as the PCB is wired, with a numbered ring on each place that differs from the handout */
-  $$('svg[data-diffmap]').forEach(function(svg){
-    var st = Object.assign({}, BASE_ST), sch = MembraneSchematic(svg, {chain:0}), NS = 'http://www.w3.org/2000/svg';
-    sch.setContacts(st); sch.setQsense(st.qs); sch.setResistors(st.r13, st.rfe, st.so_r2); sch.setAddons(st); sch.setSupply('stim');
-    [[1, 18, 208, 156, 24], [2, 678, 202, 34, 70], [3, 682, 300, 84, 92], [4, 884, 280, 60, 92]].forEach(function(b){
-      var g = document.createElementNS(NS, 'g');
-      g.setAttribute('class', 'badge');
-      g.innerHTML = '<rect class="ring" x="' + b[1] + '" y="' + b[2] + '" width="' + b[3] + '" height="' + b[4] + '" rx="8"/>' +
-        '<circle cx="' + b[1] + '" cy="' + b[2] + '" r="13"/><text x="' + b[1] + '" y="' + (b[2] + 5.5) + '" text-anchor="middle">' + b[0] + '</text>';
-      svg.appendChild(g);
-    });
+  /* section 0: click a red mark on the handout schematic -> a window on what that difference breaks */
+  var dlg = $('#r0dlg');
+  function openDiff(n){
+    var t = $('#r0d-' + n); if(!dlg || !t) return;
+    $('#r0dlg-t').textContent = '差別 ' + n + '／3';
+    var b = $('.r0dlg-b', dlg); b.innerHTML = ''; b.appendChild(t.content.cloneNode(true));
+    if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+    dlg.scrollTop = 0;
+  }
+  $$('#r0 .hot').forEach(function(g){
+    g.addEventListener('click', function(){ openDiff(g.dataset.d); });
+    g.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openDiff(g.dataset.d); } });
   });
+  if(dlg){
+    $('.r0dlg-x', dlg).addEventListener('click', function(){ dlg.close(); });
+    dlg.addEventListener('click', function(e){ if(e.target === dlg) dlg.close(); });   /* backdrop */
+  }
 
   /* ---------------- start ---------------- */
   document.body.dataset.mode = MODE;
