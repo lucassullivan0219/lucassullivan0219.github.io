@@ -23,7 +23,8 @@ var AM = (function(){
     chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',   /* #2-3: passive units, source, FI battery */
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true,
     fi_on:true, so_on:true, ch1:'Vm',               /* board plugged in at all (sim.py fi=/so=); CH1 probe node */
-    lk2:false, leak2:true                           /* a second Leak board stacked on the first; its header contact */
+    lk2:false, leak2:true,                          /* a second Leak board stacked on the first; its header contact */
+    stdiode:false                                   /* breadboard: 1N4148 from Q_pass collector to the output (blocks the C-B clamp) */
   };
   var V, Vprev, F, J, dx, A;
   /* node list for the current st.chain; node voltages carry over by name */
@@ -32,6 +33,7 @@ var AM = (function(){
     for(var k = 1; k <= st.chain; k++){ a.push('PC' + k); if(k > 1) a.push('PX' + k); }
     if(st.chain) a.push('AX');
     if(st.lk2) a.push('LK2.Vm');
+    if(st.stdiode) a.push('ST.C');
     if(st.fi_supply === 'local') a.push('FI.BAT');
     return a;
   }
@@ -58,7 +60,10 @@ var AM = (function(){
     r('V+', 'ST.P', link(st.sw && st.src !== 'ideal'), 'sw');
     r('ST.P', 'ST.K', Math.max(st.rpot, 1), 'pot');
     r('ST.K', 'ST.Q', 7e3, 'r7a');
-    Q.push(['p', IDX[out], IDX['ST.R'], IDX['ST.Q'], M4403, 'pass']);
+    /* with SW released ST.R sits near 0 V, so Q_pass's collector-base junction would clamp Vm at ~0.6 V;
+       the breadboard designs put a 1N4148 in series with the output */
+    Q.push(['p', IDX[st.stdiode ? 'ST.C' : out], IDX['ST.R'], IDX['ST.Q'], M4403, 'pass']);
+    if(st.stdiode) D.push([IDX['ST.C'], IDX[out], 'std']);
     Q.push(['p', IDX['ST.R'], IDX['ST.Q'], st.qs === 'sw' ? IDX['ST.P'] : IDX['V+'], M4403, 'sense']);
     if(st.qs === 'rx') r('ST.Q', 'ST.R', 22e3, 'rx');      /* fix: 22 kohm across Qpass E-B */
     if(st.qs === 'rx10') r('ST.Q', 'ST.R', 10e3, 'rx');    /* 10 kohm there: pot range ~41-0.3 uA */

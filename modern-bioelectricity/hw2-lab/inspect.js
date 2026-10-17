@@ -18,6 +18,7 @@
     sense:['Q_sense 2N4403', 'Stimulator', '基極接 ST.Q：pot + 7 kΩ 上的壓降到約 0.65 V 就導通、把 Q_pass 關小，所以電流 ≈ V_EB／(pot + 7 kΩ)。射極接在 SW 之前，放開時還漏電。'],
     rx:['Q_pass E–B 外加電阻', '外加', '把 Q_sense 漏出的基極電流旁路掉，放開時 Q_pass 不再漏電。'],
     is:['理想電流源', '外加（模擬用）', '取代 SW：從固定節點 IS（10⁹ × I 伏特）經 1 GΩ 送出電流。'],
+    std:['輸出二極體 1N4148', 'Stimulator（麵包板版）', 'Q_pass 集極 → 輸出。SW 放開時 Q_pass 的基極在 0 V，沒有這顆時 Vm 一超過約 0.6 V 就經集極–基極被吸走。'],
     lk:['LK 排針接點', 'Leak', 'Vm ↔ LK.Vm。'],
     lkc:['LK 1 µF', 'Leak', '膜電容 C_m。'],
     lkr:['LK 100 kΩ', 'Leak', '漏電阻 R_leak（E_leak = 0 V）。'],

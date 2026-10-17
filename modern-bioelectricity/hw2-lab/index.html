@@ -16,16 +16,19 @@
   --bg:#EDF2EA; --accent:#2F6B3A; --tint:rgba(47,107,58,.08); --side:clamp(190px,16.6vw,270px);
 }
 body[data-mode="adv"]{--bg:#F4EAE0; --accent:#A4471F; --tint:rgba(164,71,31,.09)}
+body[data-mode="adv2"]{--bg:#E4EDF4; --accent:#1E5E8C; --tint:rgba(30,94,140,.09)}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){--surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0; --rule:#2C3533;
     --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --vmbus:#3987e5; --qon:rgba(57,135,229,.22); --mod:#F07CC4; --eflow:#FFAA45; --sch:#6FA8F5;
     --bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
   :root:not([data-theme="light"]) body[data-mode="adv"]{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
+  :root:not([data-theme="light"]) body[data-mode="adv2"]{--bg:#0F171D; --accent:#72B6E4; --tint:rgba(114,182,228,.09)}
 }
 :root[data-theme="dark"]{--surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0; --rule:#2C3533;
   --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --vmbus:#3987e5; --qon:rgba(57,135,229,.22); --mod:#F07CC4; --eflow:#FFAA45; --sch:#6FA8F5;
   --bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
 :root[data-theme="dark"] body[data-mode="adv"]{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
+:root[data-theme="dark"] body[data-mode="adv2"]{--bg:#0F171D; --accent:#72B6E4; --tint:rgba(114,182,228,.09)}
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--ink);font-family:"Noto Sans TC",system-ui,"Microsoft JhengHei",sans-serif;font-size:14.5px;line-height:1.65;transition:background .25s}
@@ -33,7 +36,7 @@ a{color:var(--link)}
 button,select,input{font:inherit}
 code,.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-size:.93em}
 :focus-visible{outline:3px solid var(--link);outline-offset:2px}
-body[data-mode="basic"] [data-show="adv"],body[data-mode="adv"] [data-show="basic"]{display:none!important}
+body[data-mode="basic"] [data-show]:not([data-show~="basic"]),body[data-mode="adv"] [data-show]:not([data-show~="adv"]),body[data-mode="adv2"] [data-show]:not([data-show~="adv2"]){display:none!important}
 
 /* ---------- layout: sidebar | main ---------- */
 .app{display:grid;grid-template-columns:var(--side) minmax(0,1fr);height:100vh}
@@ -41,7 +44,7 @@ aside.side{background:var(--surface);border-right:1px solid var(--rule);display:
 .side .top{display:flex;gap:10px;font-size:13px;margin-bottom:6px}
 .side .top a{color:var(--muted);text-decoration:none}
 .side h1{font-size:19px;font-weight:900;margin:2px 0 10px;line-height:1.3}
-.mode{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--accent);border-radius:10px;overflow:hidden;margin-bottom:6px}
+.mode{display:grid;grid-template-columns:1fr 1fr 1fr;border:2px solid var(--accent);border-radius:10px;overflow:hidden;margin-bottom:6px}
 .mode button{border:0;background:transparent;color:var(--ink);padding:7px 4px;cursor:pointer;line-height:1.25;font-weight:700}
 .mode button small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
 .mode button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
@@ -169,6 +172,40 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
 .r0imgs img{display:block;max-width:100%;max-height:50vh;height:auto}
 .r0imgs figcaption{font-size:12px;color:#5F6B72;font-weight:700;margin-top:2px}
 @media (max-width:640px){.r0imgs{grid-template-columns:1fr}}
+/* ---------- 進階目標 2：方案與麵包板 ---------- */
+.sch3{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin:8px 0 12px}
+.sch3 .card{padding:10px 14px}
+.sch3 h3{font-size:15.5px;margin:0 0 4px}
+.sch3 .one{margin:0 0 6px;font-size:13.5px}
+.sch3 .tag{margin-bottom:4px}
+.bb-ctl{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;margin:0 0 10px}
+.bb-ctl .grp2{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.bb-ctl .gl{font-size:12px;font-weight:700;color:var(--accent)}
+.bb-ctl label.cnt{display:inline-flex;align-items:center;gap:4px;font-size:13px}
+.bb-ctl input[type=number]{width:3.4em}
+.bb-fig{margin:0 0 10px;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:6px}
+.bb-scroll{overflow-x:auto}
+.bb-scroll svg{display:block;height:auto;min-width:100%}
+.bb-fig figcaption{font-size:12.5px;margin:4px 2px 0}
+.bb-ok{color:var(--req);font-weight:700} .bb-err{color:var(--warn);font-weight:700}
+svg .bb-mod{font:700 11px "Noto Sans TC",sans-serif;fill:#5a4f3b}
+svg .bb-rail{font:700 10px "IBM Plex Mono",monospace}
+svg .bb-num{font:9px "IBM Plex Mono",monospace;fill:#9a907d}
+svg .bb-lab{font:8.5px "IBM Plex Mono",monospace;fill:#333}
+svg .bb-q{font:700 7px "IBM Plex Mono",monospace;fill:#fff}
+svg .bb-pin{font:700 7px "IBM Plex Mono",monospace;fill:#555}
+svg .bb-ctext{font:6px "IBM Plex Mono",monospace;fill:#fff}
+svg .bb-bat{font:700 8px "IBM Plex Mono",monospace;fill:#fff}
+svg .bb-probe{font:700 9px "IBM Plex Mono",monospace;fill:#555}
+svg .bb-part{cursor:help}
+svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
+.bom td.num{white-space:nowrap}
+.bom td.refs{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted)}
+.bbmods{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:10px}
+.bbmods figure{margin:0;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:6px}
+.bbmods figcaption{font-size:12px;color:var(--muted);font-weight:700;margin:2px}
+.bbmods svg{display:block;width:100%;height:auto}
+
 /* ---------- circuit inspector (inspect.js) ---------- */
 .insp{position:fixed;left:24px;top:80px;z-index:80;width:min(470px,calc(100vw - 16px));max-height:min(80vh,760px);display:flex;flex-direction:column;
   background:var(--surface);color:var(--ink);border:1.5px solid var(--accent);border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.28);font-size:13px}
@@ -215,12 +252,15 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
   <div class="mode" role="group" aria-label="目標切換">
     <button type="button" data-mode="basic" aria-pressed="true">基礎目標<small>照助教的電路</small></button>
     <button type="button" data-mode="adv" aria-pressed="false">進階目標<small>做出真正的 AP</small></button>
+    <button type="button" data-mode="adv2" aria-pressed="false">進階目標 2<small>麵包板重做</small></button>
   </div>
   <p class="mode-note" data-show="basic">完整測試助教給的電路、完成每一題，測出什麼就寫什麼。</p>
   <p class="mode-note" data-show="adv">做出真正能模擬 AP 的電路，具體計算、解釋助教電路的問題。</p>
+  <p class="mode-note" data-show="adv2">不用 PCB，在麵包板上照電路圖重插並修正；每塊板的插法與零件表。</p>
   <nav class="regions" aria-label="區域">
     <a href="#r0"><span class="n">0</span><span>電路圖與 PCB 的差別<small>3 處不同，一張圖看完</small></span></a>
-    <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small data-show="basic">模型定義、題目清單、可能的問題</small><small data-show="adv">電路的問題、改法、AP 判定</small></span></a>
+    <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small data-show="basic">模型定義、題目清單、可能的問題</small><small data-show="adv">電路的問題、改法、AP 判定</small><small data-show="adv2">方案 A／B／C</small></span></a>
+    <a href="#rb" data-show="adv2"><span class="n">B</span><span>麵包板插法與 BOM<small>每塊板怎麼插、要買什麼</small></span></a>
     <a href="#r2"><span class="n">2</span><span>#2-1 Passive<small>5 個 Passive unit</small></span></a>
     <a href="#r3"><span class="n">3</span><span>#2-2 Active<small>Stimulator + LK + FI + SO</small></span></a>
     <a href="#r4"><span class="n">4</span><span>#2-3 Passive → active<small>0–4 個 unit + active</small></span></a>
@@ -578,6 +618,116 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
       </div></details>
     </div>
   </div>
+  <div data-show="adv2">
+    <h2>1 摘要：麵包板重做（進階目標 2）</h2>
+    <p class="lede">不用 PCB，在麵包板上照講義電路圖重插，順手修掉電路圖本身藏著的兩個問題；FI、SO、LK 的零件都不換。插法和零件表在 <a href="#rb">B 麵包板插法與 BOM</a>，即時模擬在 #2-1 到 #2-3 區域選「方案」。</p>
+
+    <div class="tbl"><table>
+      <tr><th></th><th>方案 A：照電路圖＋1 顆二極體</th><th>方案 B：真正的 AP（建議）</th><th>方案 C：最精簡刺激器</th></tr>
+      <tr><td>改了什麼</td><td>Q<sub>sense</sub> 照電路圖接在 SW 之後；FI 不用自己的電池，接同一條 9 V；Stimulator 輸出串 1N4148</td><td>A＋R13 改 2.2 kΩ＋3 顆電阻（#2-3 每個 Passive unit 再 1 顆）</td><td>B，但 Stimulator 換成按鈕＋82 kΩ＋可變電阻</td></tr>
+      <tr><td>比電路圖多幾顆</td><td class="num">1</td><td class="num">4（#2-3 另加 n）</td><td class="num">少 5 顆</td></tr>
+      <tr><td>靜止</td><td class="num">0 V，穩定</td><td class="num">1.19 V，穩定</td><td class="num">1.19 V</td></tr>
+      <tr><td>AP（拔 FI）</td><td class="num">8.73 V（2.89 V）</td><td class="num">8.03 V（3.19 V）</td><td class="num">8.04 V（3.30 V）</td></tr>
+      <tr><td>後過極化</td><td class="num t-warn">沒有</td><td class="num t-ok">0.58 V，低於靜止 0.6 V、約 140 ms</td><td class="num t-ok">同 B</td></tr>
+      <tr><td>按住 SW</td><td class="num">約 12 Hz 連續發放</td><td class="num">約 30 Hz 連續發放</td><td class="num">約 31 Hz</td></tr>
+      <tr><td>隨機元件參數</td><td class="num t-warn">3／20 組長按放開後繼續自己放電</td><td class="num t-ok">30／30 組正常</td><td class="num">—</td></tr>
+      <tr><td>適合</td><td>想完全照電路圖</td><td>交作業、量 AP 五參數與 #2-3</td><td>只是示範；量時間常數會錯</td></tr>
+    </table></div>
+    <p class="small muted">模擬：9 V、可變電阻 0.7 kΩ、R2 = 1 MΩ、按 100 ms。紀錄 <a href="../log/#MB-020">MB-020</a>。</p>
+
+    <div class="cards">
+      <details class="card" open><summary>電路圖本身的兩個問題<span class="hint">換成麵包板才看得到</span></summary><div class="body">
+        <ol class="small">
+          <li><b>SW 放開時 Q<sub>pass</sub> 把 Vm 鉗在 0.6 V</b>：照電路圖，放開後 Q<sub>pass</sub> 的基極經 7 kΩ 落到 0 V，Vm 一超過約 0.6 V，Q<sub>pass</sub> 的集極–基極就順偏導通、把電流吸走。靜止電位抬不上去（加偏壓也只到 0.72 V），按完才發的 AP 也被削掉（7.72 vs 8.36 V）。PCB 版沒這個問題，是因為漏電把基極撐高了。<b>改法</b>：Stimulator 輸出串一顆 1N4148，只讓電流往外。</li>
+          <li><b>R13 = 1 kΩ 時 FI 比 SO 強</b>：FI 可以送約 7 mA，SO 的 4403 經 1 kΩ 只能吸 Vm／1 kΩ，Vm 低於約 4 V 時 SO 拉不回來。方案 B 用 1 kΩ 時，20 組隨機參數有 1 組在 AP 後卡在 3.7 V；換 2.2 kΩ（FI 仍有約 3 mA）後 30 組都正常。</li>
+        </ol>
+      </div></details>
+
+      <details class="card"><summary>三個方案都有的修正<span class="hint">麵包板本來就這樣接</span></summary><div class="body">
+        <ul class="small">
+          <li><b>Q<sub>sense</sub> 射極接在 SW 之後</b>（照電路圖）：放開時輸出 0、不耗電。</li>
+          <li><b>一顆 9 V 電池、一條 V+ 軌</b>：FI 不用自己的電池；#2-3 夾了 Passive unit 也有電。</li>
+          <li><b>可變電阻用 100 kΩ</b>：刺激電流約 11–100 µA（10 kΩ 只到約 44 µA），方案 B 的 I<sub>min</sub>（13–72 µA）都量得到。</li>
+          <li><b>7 kΩ 用 6.8 kΩ</b>（E12），電流大約 3 %。<b>Slow out 的 R2 用 1 MΩ</b>：3 MΩ 時按住只有一個 AP，不會連續發放。</li>
+        </ul>
+      </div></details>
+
+      <details class="card"><summary>方案 B 的 4 顆<span class="hint">每顆的用途</span></summary><div class="body">
+        <div class="tbl"><table>
+          <tr><th>零件</th><th>接在</th><th>用途</th></tr>
+          <tr><td>R13 2.2 kΩ</td><td>取代 1 kΩ</td><td>FI 約 3 mA，SO 拉得回來，不會互鎖</td></tr>
+          <tr><td>390 kΩ</td><td>V+ → Vm</td><td>靜止 1.19 V，高於 SO 能拉到的約 0.6 V，才有後過極化</td></tr>
+          <tr><td>680 kΩ</td><td>V+ → FI.E3</td><td>FI 門檻抬到靜止之上</td></tr>
+          <tr><td>56 kΩ</td><td>SO C1 兩端</td><td>SO.S = 0.36 Vm，靜止時 SO 關著</td></tr>
+          <tr><td>680 kΩ × n</td><td>V+ → 每個 Passive unit</td><td>#2-3：每段膜靜止都約 1.18 V</td></tr>
+        </table></div>
+        <div class="tbl"><table>
+          <tr><th>#2-3（方案 B）</th><th class="num">n = 0</th><th class="num">1</th><th class="num">2</th><th class="num">3</th><th class="num">4</th></tr>
+          <tr><td>靜止（V）</td><td class="num">1.19</td><td class="num">1.18</td><td class="num">1.18</td><td class="num">1.18</td><td class="num">1.18</td></tr>
+          <tr><td>I<sub>min</sub>（µA）</td><td class="num">13.3</td><td class="num">22.7</td><td class="num">34.4</td><td class="num">50.7</td><td class="num">72.3</td></tr>
+          <tr><td>AP 峰值（V）</td><td class="num">8.03</td><td class="num">7.35</td><td class="num">7.19</td><td class="num">7.06</td><td class="num">6.89</td></tr>
+          <tr><td>delay（ms，0.7 kΩ）</td><td class="num">15</td><td class="num">31</td><td class="num">54</td><td class="num">90</td><td class="num">156</td></tr>
+        </table></div>
+        <p class="small muted">按 8 ms 以上觸發；dV/dt 2550 V/s；半高寬 7.2 ms；短按後降到 0.58 V、約 136 ms 回到靜止；電池掉到 7.8 V 時靜止 1.03 V、AP 7.1 V、後過極化 0.46 V（109 ms），仍正常。#2-3 的峰值、delay 是按 300 ms（0.7 kΩ）量的。</p>
+      </div></details>
+
+      <details class="card"><summary>方案 C 為什麼只適合示範<span class="hint">刺激器不是電流源</span></summary><div class="body">
+        <p class="small">按鈕＋82 kΩ＋可變電阻直接從 9 V 接到 Vm，零件從 7 顆變 2–3 顆，AP 和方案 B 幾乎一樣。但按下時這顆電阻等於和膜並聯：被動部分的時間常數從 100 kΩ × 1 µF = 100 ms 變成 (100 kΩ ∥ 82 kΩ) × 1 µF ≈ 45 ms，#2-1 和五參數的 rise τ、decay τ 都會量錯；刺激電流也隨 Vm 改變（(9 − Vm)／R）。老師把 Stimulator 改成電流源，就是為了避免這些。</p>
+      </div></details>
+
+      <details class="card"><summary>試過但不採用<span class="hint">Leak 接參考電壓</span></summary><div class="body">
+        <p class="small">把 Leak 的 100 kΩ 改接到一條約 2.0 V 的參考軌（E<sub>leak</sub> ≠ 0），#2-2 的結果和方案 B 一樣；但 #2-3 的 Passive unit 也接同一條軌時，被動段靜止在 2.0 V、active 端在 1.19 V，n 越多靜止越高（n = 4 時 1.64 V），每段膜的靜止不一致，所以不用。</p>
+      </div></details>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= B 麵包板插法與 BOM ======================= -->
+<section class="region textreg" id="rb" data-show="adv2">
+  <h2>B 麵包板插法與 BOM</h2>
+  <p class="lede">勾選要做的板子，麵包板圖和零件表一起變。滑鼠停在零件上看每支腳插哪一孔、在哪個節點。</p>
+  <div class="bb-ctl" id="bbCtl">
+    <div class="grp2"><span class="gl">方案</span>
+      <label class="chk"><input type="radio" name="bbScheme" value="A"> A</label>
+      <label class="chk"><input type="radio" name="bbScheme" value="B" checked> B（建議）</label>
+    </div>
+    <div class="grp2"><span class="gl">板子</span>
+      <label class="cnt">ST <input type="number" data-bb="st" min="0" max="1" value="1"></label>
+      <label class="cnt">Passive unit <input type="number" data-bb="pu" min="0" max="5" value="0"></label>
+      <label class="cnt">LK <input type="number" data-bb="lk" min="0" max="3" value="1"></label>
+      <label class="cnt">FI <input type="number" data-bb="fi" min="0" max="1" value="1"></label>
+      <label class="cnt">SO <input type="number" data-bb="so" min="0" max="1" value="1"></label>
+    </div>
+    <div class="grp2"><span class="gl">常用</span>
+      <button class="btn" type="button" data-bbp="1,0,0,0,0">只有 ST</button>
+      <button class="btn" type="button" data-bbp="1,4,1,0,0">#2-1</button>
+      <button class="btn" type="button" data-bbp="1,0,1,1,1">#2-2</button>
+      <button class="btn" type="button" data-bbp="1,0,2,1,1">#2-2 兩塊 LK</button>
+      <button class="btn" type="button" data-bbp="1,4,1,1,1">#2-3 n = 4</button>
+    </div>
+  </div>
+  <figure class="bb-fig">
+    <div class="bb-scroll"><svg id="bbAsm" role="img" aria-label="麵包板插法"></svg></div>
+    <figcaption id="bbStatus"></figcaption>
+  </figure>
+
+  <h3 style="font-size:15px;margin:14px 0 4px">零件表（BOM）<button class="btn" type="button" id="bbCopy" style="margin-left:8px;font-size:12px">複製成表格</button></h3>
+  <div class="tbl"><table class="bom" id="bbBom"></table></div>
+
+  <div class="cards" style="margin-top:12px">
+    <details class="card"><summary>怎麼看這張圖<span class="hint">軌、列、方向</span></summary><div class="body"><ul class="small">
+      <li><b>四條軌</b>：上面兩條 <span style="color:#d7263d;font-weight:700">+9V</span>、<b>GND</b>（電池）；下面兩條 <span style="color:#f28c28;font-weight:700">Vm</span>（膜，所有 active 板都插在這條）、<span style="color:#2b6cb0;font-weight:700">X</span>（active 端的細胞外；沒有 Passive unit 時在最右邊跳線接 GND）。</li>
+      <li><b>每一列（直的一排 5 孔）是同一個節點</b>：a–e 一組、f–j 一組，中間的溝不通。</li>
+      <li><b>電晶體</b>：平面（印字那面）朝下（朝 j 排），三支腳由左到右是 E、B、C。</li>
+      <li><b>二極體</b>：黑色色環那端是陰極，圖上色環的位置就是插的方向。</li>
+      <li><b>可變電阻</b>只用兩支腳（一端＋中間），標「空」的那支不接。</li>
+      <li><b>跳線顏色</b>：紅＝V+、黑＝GND、橘＝Vm、藍＝X、綠＝板子內部的節點。</li>
+      <li>示波器：CH1 夾 Vm 軌，地線夾 GND 軌；#2-3 的 CH2 夾 X 軌。</li>
+    </ul></div></details>
+    <details class="card"><summary>每塊板單獨的插法<span class="hint">ST、Passive unit、LK、FI、SO</span></summary><div class="body">
+      <div class="bbmods" id="bbMods"></div>
+    </div></details>
+  </div>
 </section>
 
 <!-- ======================= 2 #2-1 ======================= -->
@@ -589,10 +739,11 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
   <div class="settings">
     <h2>#2-1 Passive</h2>
     <p class="sub">Stimulator → 5 個 Passive unit（1 µF ∥ 100 kΩ，隔 10 kΩ）。CH1 = 第 1 個，CH2 = 最後一個（或中間）。</p>
+    <p class="sub" data-show="adv2">麵包板版的 Stimulator：Q<sub>sense</sub> 在 SW 之後（不漏電）、輸出串 1N4148、9 V、100 kΩ 可變電阻。</p>
     <div class="grp"><div class="gt">刺激</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
-      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
-      <div data-show="adv">
+      <div class="row full" data-show="basic adv"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div><div class="row full" data-show="adv2"><input type="range" data-k="rpot" min="0" max="100" step="0.5" data-scale="1000"></div>
+      <div data-show="adv adv2">
         <div class="row"><label>來源</label><select data-k="src"><option value="stim">Stimulator</option><option value="ideal">理想電流源</option></select></div>
         <div class="row"><label>理想電流（µA）</label><input type="number" data-k="isrc" min="0" max="300" step="1" data-scale="1e-6" style="width:5.5em"></div>
         <div class="row"><label>Stimulator 漏電</label><select data-k="qs"><option value="pcb">原樣</option><option value="rx">並 22 kΩ</option></select></div>
@@ -600,13 +751,13 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
       </div>
       <div class="gt" style="margin-top:6px">脈衝長度（題目要五種）</div>
       <div class="btns" data-pulses="0.01,0.05,0.1,0.2,0.5"></div>
-      <div class="row" data-show="adv"><label>自訂（ms）</label><span><input type="number" data-pulse-ms value="300" min="1" max="5000" style="width:5em"> <button class="btn" type="button" data-pulse-go>按</button></span></div>
+      <div class="row" data-show="adv adv2"><label>自訂（ms）</label><span><input type="number" data-pulse-ms value="300" min="1" max="5000" style="width:5em"> <button class="btn" type="button" data-pulse-go>按</button></span></div>
       <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
       <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
     </div>
     <div class="grp"><div class="gt">示波器</div>
       <div class="row" data-show="basic"><label>CH2 量</label><select data-k="ch2"><option value="Vm">第 5 個（最後）</option><option value="PC3">第 3 個（中間）</option></select></div>
-      <div data-show="adv">
+      <div data-show="adv adv2">
         <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="pc"></select></div>
         <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="pc"></select></div>
       </div>
@@ -641,6 +792,11 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     <h2>#2-2 Active</h2>
     <p class="sub" data-show="basic">助教給的電路：R2 = 1 MΩ、R13 = 100 kΩ。CH1 = Vm。</p>
     <p class="sub" data-show="adv">自由調整。點電路圖上的紅色接點可以斷開排針。</p>
+    <p class="sub" data-show="adv2">麵包板重做：選方案 A 或 B。紫紅色＝和 PCB 版不同的地方。</p>
+    <div class="grp" data-show="adv2"><div class="gt">方案</div>
+      <div class="btns" data-presets="s22c"></div>
+      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
+    </div>
     <div class="grp" data-show="basic"><div class="gt">版本</div>
       <div class="btns" data-presets="s22b"></div>
       <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
@@ -651,21 +807,22 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     </div>
     <div class="grp"><div class="gt">板子（拔掉 = TTX／TEA）</div>
       <label class="chk"><input type="checkbox" data-k="leak"> LK Leak</label>
-      <label class="chk" data-show="adv"><input type="checkbox" data-k="lk2"> LK2：再疊一塊 Leak</label>
+      <label class="chk" data-show="adv adv2"><input type="checkbox" data-k="lk2"> LK2：再疊一塊 Leak</label>
       <label class="chk"><input type="checkbox" data-k="fi_on"> FI Fast inward（拔掉 = TTX）</label>
       <label class="chk"><input type="checkbox" data-k="so_on"> SO Slow out（拔掉 = TEA）</label>
     </div>
     <div class="grp"><div class="gt">刺激</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
-      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
+      <div class="row full" data-show="basic adv"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div><div class="row full" data-show="adv2"><input type="range" data-k="rpot" min="0" max="100" step="0.5" data-scale="1000"></div>
       <div class="btns" data-pulses="0.02,0.1,1"></div>
       <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
       <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
       <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button>
     </div>
     <div class="grp"><div class="gt">元件</div>
-      <div class="row"><label>R13（Q4）</label><select data-k="r13" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option><option value="1e4" data-show="adv">10 kΩ</option><option value="1e3" data-show="adv">1 kΩ</option></select></div>
-      <div data-show="adv">
+      <div class="row"><label>R13（Q4）</label><select data-k="r13" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option><option value="1e4" data-show="adv adv2">10 kΩ</option><option value="2.2e3" data-show="adv adv2">2.2 kΩ</option><option value="1e3" data-show="adv adv2">1 kΩ</option></select></div>
+      <label class="chk" data-show="adv2"><input type="checkbox" data-k="stdiode"> Stimulator 輸出串 1N4148</label>
+      <div data-show="adv adv2">
         <div class="row"><label>FI 3904 E 電阻</label><select data-k="rfe" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select></div>
         <div class="row"><label>Q_pass E–B 並</label><select data-k="qs"><option value="pcb">不加</option><option value="rx">22 kΩ（真 AP）</option><option value="rx10">10 kΩ</option><option value="sw">Q_sense 改接（對照）</option></select></div>
         <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="11e3">11 kΩ（真 AP）</option><option value="1e5">100 kΩ</option><option value="1e3">1 kΩ</option></select></div>
@@ -677,7 +834,7 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
       </div>
     </div>
     <div class="grp"><div class="gt">示波器</div>
-      <div class="row"><label>CH2 量</label><select data-k="ch2"><option value="">關</option><option value="SO.S">SO.S</option><option value="FI.E4">FI.E4</option><option value="FI.E3" data-show="adv">FI.E3</option><option value="SO.B3" data-show="adv">SO.B3</option><option value="FI.V+" data-show="adv">FI.V+</option></select></div>
+      <div class="row"><label>CH2 量</label><select data-k="ch2"><option value="">關</option><option value="SO.S">SO.S</option><option value="FI.E4">FI.E4</option><option value="FI.E3" data-show="adv adv2">FI.E3</option><option value="SO.B3" data-show="adv adv2">SO.B3</option><option value="FI.V+" data-show="adv adv2">FI.V+</option></select></div>
       <div data-scope></div>
     </div>
     <div class="grp"><div class="gt">自動量測（上一次按壓，第一個 AP）</div><div data-meas></div></div>
@@ -710,11 +867,16 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     <h2>#2-3 Passive → active</h2>
     <p class="sub" data-show="basic">底板沒串 V+，n ≥ 1 時 FI 要拉飛線才有電。預設「有 V+ 飛線」；「照實：沒飛線」只剩被動反應。CH1 = active 端 Vm。</p>
     <p class="sub" data-show="adv">可以補 V+ 線、換電流源、套用修正。</p>
+    <p class="sub" data-show="adv2">麵包板重做：V+ 在軌上，FI 一定有電。選方案 A 或 B。</p>
     <div class="grp"><div class="gt">Passive unit 數 n</div>
       <div class="btns" data-nseg></div>
     </div>
     <div class="grp" data-show="basic"><div class="gt">FI 的 V+</div>
       <div class="btns" data-presets="s23b"></div>
+      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
+    </div>
+    <div class="grp" data-show="adv2"><div class="gt">方案</div>
+      <div class="btns" data-presets="s23c"></div>
       <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
     </div>
     <div class="grp" data-show="adv"><div class="gt">情境</div>
@@ -732,8 +894,8 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     </div>
     <div class="grp"><div class="gt">刺激</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
-      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
-      <div data-show="adv">
+      <div class="row full" data-show="basic adv"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div><div class="row full" data-show="adv2"><input type="range" data-k="rpot" min="0" max="100" step="0.5" data-scale="1000"></div>
+      <div data-show="adv adv2">
         <div class="row"><label>來源</label><select data-k="src"><option value="stim">Stimulator</option><option value="ideal">理想電流源</option></select></div>
         <div class="row"><label>理想電流（µA）</label><input type="number" data-k="isrc" min="0" max="300" step="0.5" data-scale="1e-6" style="width:5.5em"></div>
       </div>
@@ -867,6 +1029,7 @@ flowchart LR
 <script src="../active-membrane-sim/engine.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
 <script src="inspect.js"></script>
+<script src="breadboard.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

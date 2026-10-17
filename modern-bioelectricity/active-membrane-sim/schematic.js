@@ -7,7 +7,8 @@
    s.setOn({qPass: true, ...})        highlight conducting transistors
    s.setContacts(state)   state.sw / leak / fi_vm / fi_vplus / fi_gnd / so_vm / so_gnd
    s.setQsense('pcb'|'sw'|'rx'|'rx10'|'rx12'); s.setResistors(r13, rfe, soR2)
-   s.setAddons(state)     state.r13p / rf / rb / rl / rs / ru: add-on resistors clipped on (0 = none), each drawn
+   s.setAddons(state)     state.r13p / rf / rb / rl / rs / ru: add-on resistors clipped on (0 = none), each drawn;
+                          state.stdiode: the breadboard designs' 1N4148 at the Stimulator output;
                           as a part.  Everything that differs from the kit circuit (add-ons, Q_sense moved, pulled
                           wires, FI battery, ideal source, R13 / Rfe != 100 kohm, R2 != 1 Mohm, V+ != 7.8 V) is
                           drawn in --mod.
@@ -84,7 +85,7 @@
 
     /* everything that carries current, in global coordinates, with the show/hide keys around it */
     var WIRES = [], ELS = [], SRCS = [], KEYS = [], GX = 0;
-    var VIS = {qspcb:true, qssw:false, rx:false, isrc:false, bat:false, fiw:!n,
+    var VIS = {qspcb:true, qssw:false, rx:false, isrc:false, bat:false, fiw:!n, stdiode:false, stwire:true,
                rb:false, rl:false, r13p:false, rf:false, rs:false, ru:false};
     function gp(p){ return [p[0] + GX, p[1]]; }
     function beginG(key, cls, id){
@@ -223,7 +224,11 @@
     dot(196, 110); tag('ST.Q', 'Q', 200, 96);
     L([[196, 110], [200, 110]]);
     bjt(230, 124, 'p', -90, true, 'qPass', 'pass'); txt(242, 160, 'Q_pass', 'lab');
-    L([[260, 110], [276, 110], [276, 70]]);
+    L([[260, 110], [276, 110]]);
+    beginG('stwire'); L([[276, 110], [276, 70]]); endG();
+    beginG('stdiode', 'mod');                          /* breadboard: 1N4148 in series with the output */
+    diodeV(276, 110, 70, 102, 84, 'std'); txt(288, 96, '1N4148', 'lab');
+    endG();
     cur('iStim', 272, 62, 'end');
     L([[230, 144], [230, 220]]);
     L([[196, 110], [196, 186]]);
@@ -395,7 +400,7 @@
       (live ? '　<tspan class="lge">●</tspan> 電子（逆著電流、往電池 + 極走；越快＝電流越大）' : '') + '</text>');
 
     svg.setAttribute('viewBox', '0 0 ' + ((po ? 480 : 1080) + G + LX) + ' 480');
-    svg.classList.add('msch'); if(live) svg.classList.add('live');
+    svg.classList.add('msch'); svg.classList.toggle('live', live);
     svg.innerHTML = out.join('');
 
     var tags = Array.prototype.slice.call(svg.querySelectorAll('[data-node]'));
@@ -666,6 +671,7 @@
           setKey(key, st[key]);
           svg.querySelectorAll('[data-v="' + key + '"]').forEach(function(t){ t.textContent = st[key] ? fmtS(st[key]) : ''; });
         });
+        setKey('stdiode', st.stdiode); setKey('stwire', !st.stdiode);
         railVis(true);
         var bm = svg.querySelector('#gBatM');
         if(bm && st.vplus !== undefined) bm.classList.toggle('mod', Math.abs(st.vplus - 7.8) > 1e-6);
