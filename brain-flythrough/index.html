@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Brain Fly-Through · Lucas Sullivan</title>
+<meta name="description" content="Fly through a see-through 3D brain with Minecraft-style controls: lobes, functional areas, deep structures, and the 10-20 EEG electrodes Fp1, Fp2, Fz, C3, C4, Pz, O1, O2 with ear-clip and mastoid references.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=VT323&family=Press+Start+2P&display=swap">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="game.css">
+<style>
+.about{max-width:860px}
+.about details{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:10px 0;padding:0 16px}
+.about details > summary{cursor:pointer;padding:12px 0;font-weight:600}
+.about details[open] > summary{border-bottom:1px solid var(--line);margin-bottom:10px}
+.about details > :last-child{margin-bottom:14px}
+.about table{border-collapse:collapse;width:100%;font-size:.9rem}
+.about th,.about td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.about th{color:var(--muted);font-weight:500}
+.about .tw{overflow-x:auto}
+.about kbd{font-family:"IBM Plex Mono",monospace;font-size:.82em;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--card)}
+.about .dot{display:inline-block;width:.8em;height:.8em;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.about ol li,.about ul li{margin:4px 0}
+.about .note{color:var(--muted);font-size:.9rem}
+.about .rl{columns:2 240px;column-gap:24px;padding-left:0;list-style:none}
+.about .rl li{break-inside:avoid}
+.about code{font-family:"IBM Plex Mono",monospace;font-size:.88em}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+</head>
+<body>
+<div id="game" class="game">
+  <canvas id="view" aria-label="3D view of the brain"></canvas>
+
+  <div id="hud" class="hud" hidden>
+    <canvas id="compass" width="260" height="26" aria-hidden="true"></canvas>
+    <div id="where" class="where"><div id="inside"></div><br><div id="coords"></div></div>
+    <pre id="debug" class="debug" hidden></pre>
+    <div class="crosshair" aria-hidden="true"></div>
+    <div id="target" class="target"></div>
+    <div id="toast" class="toast"></div>
+    <div id="itemname" class="itemname"></div>
+    <div id="hotbar" class="hotbar"></div>
+    <aside id="card" class="card" hidden></aside>
+  </div>
+
+  <div id="chatbox" class="chatbox">
+    <div id="chatlog" class="chatlog" aria-live="polite"></div>
+    <form id="chatform" class="chatform" hidden autocomplete="off"><input id="chatin" spellcheck="false" maxlength="140" aria-label="Chat command"></form>
+  </div>
+
+  <div id="touch" class="touch" hidden>
+    <div id="stick" class="stick"><div id="knob" class="knob"></div></div>
+    <div class="tbtns"><button data-hold="up" aria-label="Fly up">▲</button><button data-hold="down" aria-label="Fly down">▼</button><button data-tog="sprint">Fast</button></div>
+    <div class="tmenu"><button data-act="inv" aria-label="Inventory">E</button><button data-act="chat" aria-label="Commands">/</button><button data-act="pause" aria-label="Menu">II</button></div>
+  </div>
+
+  <section id="s-title" class="screen title">
+    <a class="mc-back" href="../">← Lucas Sullivan</a>
+    <h1 class="logo">BRAIN<br>FLY-THROUGH</h1>
+    <p class="splash" id="splash"></p>
+    <div id="loading" class="loading"><p id="loadmsg">Generating brain…</p><div class="bar"><i id="loadbar"></i></div></div>
+    <div id="titlebtns" class="btns" hidden>
+      <button class="mc primary" id="b-play">Fly in</button>
+      <div class="row"><button class="mc" data-open="s-controls">Controls…</button><button class="mc" data-open="s-options">Options…</button></div>
+      <a class="mc" href="#about">About this model ↓</a>
+    </div>
+    <p class="fine">Procedural brain in MNI millimetres · 10-20 electrodes · see-through, fly anywhere</p>
+  </section>
+
+  <section id="s-pause" class="screen" hidden>
+    <h2>Game Menu</h2>
+    <div class="btns">
+      <button class="mc primary" id="b-resume">Back to brain</button>
+      <div class="row"><button class="mc" data-open="s-options">Options…</button><button class="mc" data-open="s-controls">Controls…</button></div>
+      <div class="row"><button class="mc" id="b-restore">Restore regions</button><button class="mc" id="b-respawn">Respawn</button></div>
+      <a class="mc" href="#about">About this model ↓</a>
+    </div>
+  </section>
+
+  <section id="s-options" class="screen" hidden>
+    <h2>Options</h2>
+    <div class="opts" id="opts"></div>
+    <div class="btns"><button class="mc" data-back>Done</button></div>
+  </section>
+
+  <section id="s-controls" class="screen" hidden>
+    <h2>Controls</h2>
+    <div class="keys" id="keys"></div>
+    <div class="btns"><button class="mc" data-back>Done</button></div>
+  </section>
+
+  <section id="s-inv" class="screen inv" hidden>
+    <div class="invpanel">
+      <div class="invhead"><span>Brain regions</span><input id="invq" type="search" placeholder="Search…" aria-label="Search regions"></div>
+      <div id="invbody" class="invbody"></div>
+      <p class="invhint">Click: show / hide · Shift-click: show only this · Right-click: fly there · E or Esc: close</p>
+    </div>
+  </section>
+  <div id="tip" class="tip" hidden></div>
+</div>
+
+<main id="about" class="about">
+  <a class="back" href="../">← Lucas Sullivan</a>
+  <h1>Brain Fly-Through</h1>
+  <p class="lead">Fly through a see-through brain with Minecraft-style controls and see where each region sits under the 10-20 EEG electrodes.</p>
+  <p>Click <b>Fly in</b>, move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>, rise with <kbd>Space</kbd>, sink with <kbd>Shift</kbd>, look with the mouse. <kbd>1</kbd>–<kbd>9</kbd> switch views; <kbd>E</kbd> lists every region.</p>
+
+  <details>
+    <summary>Controls</summary>
+    <p>The keys follow Minecraft's defaults for creative flight, and like spectator mode you pass through everything.</p>
+    <div class="tw"><table id="ctable"></table></div>
+    <p class="note">Sprint is a double tap of <kbd>W</kbd>, not <kbd>Ctrl</kbd>: in a browser, <kbd>Ctrl</kbd>+<kbd>W</kbd> closes the tab. Keys are read by their position on the keyboard (<code>KeyboardEvent.code</code>), so on an AZERTY keyboard the same physical keys (Z Q S D) move you.</p>
+    <p class="note">On a phone or tablet: the left stick moves, dragging on the right looks around, ▲ ▼ fly up and down, a tap shows what is under the crosshair, and a long press hides it.</p>
+  </details>
+
+  <details>
+    <summary>Chat commands</summary>
+    <p>Press <kbd>T</kbd> or <kbd>/</kbd>, type a command, press <kbd>Enter</kbd>. <kbd>Tab</kbd> completes names.</p>
+    <div class="tw"><table>
+      <tr><th>Command</th><th>What it does</th></tr>
+      <tr><td><code>/tp C3</code>, <code>/tp thalamus</code>, <code>/tp -40 -20 50</code></td><td>Fly to an electrode, a region, or MNI coordinates (mm).</td></tr>
+      <tr><td><code>/hide frontal</code>, <code>/show all</code>, <code>/only hippocampus</code></td><td>Hide, show, or show only regions. Group names work: <code>cortex</code>, <code>deep</code>, <code>hindbrain</code>, <code>left</code>, <code>right</code>, <code>scalp</code>, <code>electrodes</code>.</td></tr>
+      <tr><td><code>/view 5</code></td><td>Same as pressing a hotbar number.</td></tr>
+      <tr><td><code>/opacity 0.5</code>, <code>/speed 40</code>, <code>/fov 80</code></td><td>Surface opacity, flying speed (mm/s), field of view (degrees).</td></tr>
+      <tr><td><code>/render blocks</code>, <code>/color areas</code></td><td>Block or smooth surfaces; colour by lobes or by functional areas.</td></tr>
+      <tr><td><code>/where</code>, <code>/link</code></td><td>Where you are; a link that reopens this exact view (position, view, colours).</td></tr>
+      <tr><td><code>/electrodes</code>, <code>/list</code>, <code>/help</code></td><td>The electrode table, every region name, all commands.</td></tr>
+    </table></div>
+  </details>
+
+  <details>
+    <summary>Electrodes and references</summary>
+    <p>Eight active electrodes from the 10-20 system, plus the two usual reference choices: ear clips on the earlobes (A1, A2) and electrodes on the mastoid bones behind the ears (M1, M2).</p>
+    <div class="tw"><table id="etable"><tr><td>Loading…</td></tr></table></div>
+    <p class="note">Positions are the standard 10-20 coordinates on the MNI template head (FieldTrip <code>standard_1020.elc</code>, from Oostenveld &amp; Praamstra 2001). In that file A1/A2 sit 5 mm behind and 20 mm below the preauricular points, and M1/M2 25 mm behind and 20 mm below. "Under it" is found in this model by stepping from the electrode toward the middle of the brain until the first brain region; published studies that do this on real MRIs (Okamoto 2004, Koessler 2009) find the projected point varies between people by about 5–8 mm.</p>
+    <details>
+      <summary>Ear clip or mastoid?</summary>
+      <p>In this template both sites are about equally far from the brain (earlobe 44 mm to the bottom of the temporal lobe, mastoid 45 mm to the cerebellum), so neither is electrically silent. They differ mainly in how they attach.</p>
+      <ul>
+        <li><b>Ear clip (A1/A2)</b> pinches the earlobe, which hangs on soft tissue. It is quick to attach but moves with the ear. ACNS Guideline 3 notes that A1/A2 leads are often contaminated with artifact, and recommends a midline reference such as Cz instead of the ears when temporal-lobe epilepsy is suspected, because the ears pick up temporal activity.</li>
+        <li><b>Mastoid (M1/M2)</b> is stuck on the bone behind the ear, so contact is steady. Its nearest brain tissue is the cerebellum. Placed too low, it can pick up the pulse.</li>
+        <li>ACNS Guideline 3 allows mastoid leads to replace A1/A2 in referential montages, labelled M1/M2. Linked ears or linked mastoids average the two sides so neither hemisphere is favoured.</li>
+        <li>No point on the body has zero potential, so every reference adds something to every channel. Write down which one you used.</li>
+      </ul>
+      <p class="note">Fly to A1 or M1 (<code>/tp A1</code>) and follow the dashed line: for the references it goes to the nearest brain point, not straight inward.</p>
+    </details>
+  </details>
+
+  <details>
+    <summary>Regions in the model</summary>
+    <p id="rsum">The model has cortical lobes, functional areas inside them, deep structures, the brainstem and the cerebellum.</p>
+    <div id="rlist"></div>
+  </details>
+
+  <details>
+    <summary>How the model is built</summary>
+    <ul>
+      <li><b>Coordinates.</b> Everything is in MNI millimetres (x right, y front, z up; the origin is near the anterior commissure), the same frame as the electrode file, so electrodes and brain line up without any fitting. <kbd>F3</kbd> shows your position in this frame.</li>
+      <li><b>Shapes as code.</b> Each region is a signed distance function: a formula that says how far a point is from the surface. The cerebrum is a blend of two ellipsoids per hemisphere (main body and temporal lobe), cut by a floor, a 3 mm longitudinal fissure, a 5 mm lateral fissure down to the insula, and a central sulcus groove. Gyri are narrow grooves along the zero lines of 3D simplex noise.</li>
+      <li><b>Lobes and areas.</b> Lobes are split along the central sulcus, the lateral fissure and the parieto-occipital line; the central sulcus position is fitted to MNI coordinates of the motor hand knob and face area. Functional areas are bands inside the lobes (for example M1 is the 11 mm strip in front of the central sulcus).</li>
+      <li><b>Deep structures.</b> Thalamus, basal ganglia, hippocampus, amygdala, ventricles, corpus callosum, brainstem and cerebellum are ellipsoids and tubes placed at atlas positions (AAL / MNI templates).</li>
+      <li><b>Meshes.</b> The page samples the distance functions on a 0.8–1.4 mm grid and builds smooth surfaces with surface nets, or block surfaces (<kbd>B</kbd>) by drawing every exposed voxel face. Surfaces are drawn see-through, brighter at the edges, so shapes stay readable from inside.</li>
+      <li><b>Scalp.</b> A smooth surface through the 10-10 electrode positions of the same file, with simple ears (for the ear clips) and a nose so you can tell front from back.</li>
+      <li><b>Code.</b> <a href="js/anatomy.js">anatomy.js</a> (shapes, regions, electrodes), <a href="js/mesh.js">mesh.js</a> (meshing), <a href="js/main.js">main.js</a> (game). Rendering uses three.js r160.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>Limitations</summary>
+    <ul>
+      <li>Shapes are simplified on purpose. Gyri are not the real named gyri, and the two hemispheres are mirror images apart from the noise.</li>
+      <li>Region borders are approximate (a few millimetres to a centimetre). Use it for where things are relative to each other, not for targeting.</li>
+      <li>Skull, meninges, CSF outside the ventricles, blood vessels and white-matter tracts are not drawn.</li>
+      <li>The electrode coordinates are for a template head. On a real person they move with head size and cap placement.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>References</summary>
+    <ol>
+      <li>Oostenveld R, Praamstra P (2001). The five percent electrode system for high-resolution EEG and ERP measurements. <i>Clin Neurophysiol</i> 112(4):713–719. <a href="https://pubmed.ncbi.nlm.nih.gov/11275545/">PubMed</a></li>
+      <li>FieldTrip template electrode file <code>standard_1020.elc</code> (MNI coordinates, mm). <a href="https://github.com/fieldtrip/fieldtrip/blob/master/template/electrode/standard_1020.elc">GitHub</a> · <a href="https://www.fieldtriptoolbox.org/template/electrode/">documentation</a></li>
+      <li>Jasper HH (1958). The ten-twenty electrode system of the International Federation. <i>Electroencephalogr Clin Neurophysiol</i> 10:371–375. Overview: <a href="https://en.wikipedia.org/wiki/10%E2%80%9320_system_(EEG)">10–20 system</a></li>
+      <li>Acharya JN et al. (2016). ACNS Guideline 2: Guidelines for standard electrode position nomenclature. <i>J Clin Neurophysiol</i> 33(4):308–311. <a href="https://www.acns.org/UserFiles/file/EEGGuideline2Electrodenomenclature_final_v1.pdf">PDF</a></li>
+      <li>Acharya JN et al. (2016). ACNS Guideline 3: A proposal for standard montages to be used in clinical EEG. <i>J Clin Neurophysiol</i> 33(4):312–316. <a href="https://acns.org/UserFiles/file/EEGGuideline3Montage_final20160323revclean_v1.pdf">PDF</a></li>
+      <li>Okamoto M et al. (2004). Three-dimensional probabilistic anatomical cranio-cerebral correlation via the international 10–20 system oriented for transcranial functional brain mapping. <i>NeuroImage</i> 21(1):99–111. <a href="https://pubmed.ncbi.nlm.nih.gov/14741647/">PubMed</a></li>
+      <li>Koessler L et al. (2009). Automated cortical projection of EEG sensors: anatomical correlation via the international 10–10 system. <i>NeuroImage</i> 46(1):64–72. <a href="https://pubmed.ncbi.nlm.nih.gov/19233295/">PubMed</a></li>
+      <li>Mazziotta J et al. (2001). A probabilistic atlas and reference system for the human brain: International Consortium for Brain Mapping (ICBM). <i>Phil Trans R Soc B</i> 356:1293–1322. <a href="https://doi.org/10.1098/rstb.2001.0915">doi</a></li>
+      <li>Tzourio-Mazoyer N et al. (2002). Automated anatomical labeling of activations in SPM using a macroscopic anatomical parcellation of the MNI MRI single-subject brain. <i>NeuroImage</i> 15(1):273–289. <a href="https://doi.org/10.1006/nimg.2001.0978">doi</a></li>
+      <li>Human Brain and Cognition Lab, Michigan State University. EEG manual (mastoid placement and pulse artifact). <a href="https://edwp.educ.msu.edu/wp-content/uploads/sites/29/2020/06/HBCL_EEGManual.pdf">PDF</a></li>
+      <li>Course slides, 2016 week 3, Chapter 49 "Nervous Systems" (Campbell Biology): the list of regions (lobes, limbic system, basal ganglia, brainstem, cerebellum, motor and sensory cortex, auditory cortex). Not published here.</li>
+      <li>Gibson SFF (1998). Constrained elastic surface nets: generating smooth surfaces from binary segmented data. <i>MICCAI 1998</i>, LNCS 1496:888–898. <a href="https://doi.org/10.1007/BFb0056277">doi</a></li>
+      <li>Quilez I. Distance functions and smooth minimum. <a href="https://iquilezles.org/articles/distfunctions/">distfunctions</a> · <a href="https://iquilezles.org/articles/smin/">smin</a></li>
+      <li>Gustavson S (2005). Simplex noise demystified. Linköping University (public-domain reference code used for the gyri).</li>
+      <li>Minecraft Wiki: <a href="https://minecraft.wiki/w/Controls">Controls</a> · <a href="https://minecraft.wiki/w/Spectator">Spectator</a> · <a href="https://minecraft-archive.fandom.com/wiki/Flight">Flight</a> (key bindings, creative flight, fly-through spectator view).</li>
+      <li>Mowinckel AM, Vidal-Piñeiro D (2020). Visualization of brain statistics with R packages ggseg and ggseg3d. <i>Adv Methods Pract Psychol Sci</i> 3(4):466–483 (glass-brain overlay). <a href="https://rdrr.io/cran/ggseg3d/man/ggseg3d.html">ggseg3d</a></li>
+      <li>Brain Hack 2015 three.js atlas viewer that fades other regions when one is selected. <a href="https://riojournal.com/article_preview.php?id=12358">RIO Journal</a></li>
+      <li>Neuron Safari, a Minecraft world for learning neuroscience. <a href="https://www.gla.ac.uk/events/sciencefestival/community/communityprojects/headline_993909_en.html">Glasgow Science Festival</a></li>
+      <li>three.js r160 (<a href="https://threejs.org/">threejs.org</a>) and the Pointer Lock API (<a href="https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API">MDN</a>); physical key codes: <a href="https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code">KeyboardEvent.code</a>.</li>
+      <li>ISO 9241-110:2020, Ergonomics of human-system interaction, Part 110: Interaction principles. <a href="https://www.iso.org/standard/75258.html">iso.org</a> (used for the interface: conforms to user expectations, self-descriptive, controllable, robust against use errors).</li>
+      <li>ISO 15489-1:2016 Records management; ISO 9001:2015 clause 7.5 Documented information; ISO 8601-1:2019 dates; ISO/IEC/IEEE 42010:2022 decision rationale (used for the work log). <a href="https://www.iso.org/standard/62542.html">15489-1</a> · <a href="https://www.iso.org/standard/62085.html">9001</a> · <a href="https://www.iso.org/standard/70907.html">8601-1</a> · <a href="https://www.iso.org/standard/74393.html">42010</a></li>
+    </ol>
+  </details>
+
+  <p><a href="log/">Work log</a>: every instruction, decision and test for this page.</p>
+  <footer>© 2026 Lucas Sullivan</footer>
+</main>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

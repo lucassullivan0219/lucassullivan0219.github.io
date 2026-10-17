@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Work log · Brain Fly-Through</title>
+<meta name="description" content="Every instruction, decision, change and test for the Brain Fly-Through 3D model, one line each, click for details.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../../style.css">
+<style>
+body{font-family:"IBM Plex Sans","Noto Sans TC",system-ui,sans-serif}
+main{max-width:960px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 16px}
+.bar input{flex:1 1 220px;font:inherit;font-size:.95rem;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg)}
+.chip{font:inherit;font-size:.85rem;padding:4px 11px;border:1.5px solid var(--line);border-radius:999px;background:var(--card);color:var(--fg);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.count{color:var(--muted);font-size:.85rem}
+details.e{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:8px 0}
+details.e > summary{list-style:none;cursor:pointer;padding:10px 14px;display:grid;grid-template-columns:auto auto 1fr auto;gap:4px 12px;align-items:baseline}
+details.e > summary::-webkit-details-marker{display:none}
+.id{font-family:"IBM Plex Mono",monospace;font-weight:500}
+.d{color:var(--muted);font-size:.85rem;white-space:nowrap}
+.ty{font-size:.78rem;font-weight:600;padding:0 8px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap}
+.t-Instruction{color:#2f6fed}.t-Change{color:#2f8a4a}.t-Test{color:#a86b00}.t-Analysis{color:#7a3e8f}.t-Decision{color:#0f7c86}.t-Correction{color:#b5432f}.t-Withdrawal,.t-Index{color:#8a8a84}.t-Research{color:#6b5bd6}
+@media(prefers-color-scheme:dark){.t-Instruction{color:#7aa2ff}.t-Change{color:#7fc08a}.t-Test{color:#e0b64f}.t-Analysis{color:#c99bdb}.t-Decision{color:#5fc4cc}.t-Correction{color:#e8826f}.t-Research{color:#a99bf2}}
+.one{grid-column:3}
+.st{color:var(--muted);font-size:.8rem;white-space:nowrap}
+.body{padding:0 16px 12px;border-top:1px solid var(--line);font-size:.93rem}
+.body ul{padding-left:1.2em;margin:8px 0}
+.body li{margin:3px 0}
+.body blockquote{margin:6px 0;padding:4px 10px;border-left:3px solid var(--accent);color:var(--fg);background:rgba(127,127,127,.07);white-space:pre-wrap}
+.body code{font-family:"IBM Plex Mono",monospace;font-size:.88em}
+.body img{max-width:100%;border:1px solid var(--line);border-radius:8px;margin:6px 0}
+.tags{color:var(--muted);font-size:.8rem}
+.err{color:#b5432f}
+@media(max-width:640px){details.e > summary{grid-template-columns:auto 1fr auto}.d{grid-column:1/-1;order:-1}.one{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../">← Brain Fly-Through</a>
+  <h1>Work log</h1>
+  <p class="lead">Every instruction, decision, change and test for the 3D brain model, one line each; click a line for the details. Old entries are never edited; mistakes get a new Correction entry. Rules: <a href="README.md">README</a>. Raw file: <a href="INDEX.md">INDEX.md</a>.</p>
+  <div class="bar">
+    <input type="search" id="q" placeholder="Search: ID, keyword, number, commit…" aria-label="Search the log">
+    <span id="types"></span>
+    <span class="count" id="count"></span>
+  </div>
+  <div id="list"><p class="count">Loading…</p></div>
+  <footer>© 2026 Lucas Sullivan</footer>
+</main>
+<script>
+(function(){
+  'use strict';
+  var $ = function(s){ return document.querySelector(s); };
+  function esc(s){ return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function inline(s){
+    return esc(s).replace(/`([^`]+)`/g, function(m, c){
+        return /^media\/[\w.-]+\.(webp|png|jpe?g)$/.test(c) ? '<a href="' + c + '"><code>' + c + '</code></a>' : '<code>' + c + '</code>';
+      }).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+      .replace(/\b(BF-\d{3,})\b/g, '<a href="#$1">$1</a>');
+  }
+  /* the small markdown subset the log uses: "- " lists (nested by indent) and "> " quotes */
+  function md(text){
+    var out = [], depth = 0, quote = [];
+    function flushQuote(){ if(quote.length){ out.push('<blockquote>' + quote.map(inline).join('\n') + '</blockquote>'); quote = []; } }
+    text.split('\n').forEach(function(line){
+      var q = /^\s*>\s?(.*)$/.exec(line);
+      if(q){ quote.push(q[1]); return; }
+      flushQuote();
+      var m = /^(\s*)- (.*)$/.exec(line);
+      if(m){
+        var d = Math.floor(m[1].length / 2) + 1;
+        while(depth < d){ out.push('<ul>'); depth++; }
+        while(depth > d){ out.push('</ul>'); depth--; }
+        out.push('<li>' + inline(m[2]));
+        return;
+      }
+      if(line.trim()){ while(depth){ out.push('</ul>'); depth--; } out.push('<p>' + inline(line) + '</p>'); }
+    });
+    flushQuote();
+    while(depth){ out.push('</ul>'); depth--; }
+    return out.join('');
+  }
+  function cells(line){ return line.split('|').slice(1, -1).map(function(c){ return c.trim(); }); }
+
+  fetch('INDEX.md', {cache:'no-cache'}).then(function(r){ return r.text(); }).then(function(idx){
+    var rows = idx.split('\n').filter(function(l){ return /^\|\s*BF-\d+/.test(l); }).map(cells);
+    var months = {};
+    rows.forEach(function(c){ months[c[1].slice(0, 7)] = 1; });
+    return Promise.all(Object.keys(months).map(function(m){
+      return fetch(m + '.md', {cache:'no-cache'}).then(function(r){ return r.ok ? r.text() : ''; });
+    })).then(function(texts){
+      var full = {};
+      texts.join('\n').split(/^## /m).forEach(function(chunk){
+        var h = /^(BF-\d+)[^\n]*\n([\s\S]*)$/.exec(chunk);
+        if(h) full[h[1]] = h[2];
+      });
+      render(rows.map(function(c){ return {id:c[0], date:c[1], type:c[2], one:c[3], tags:c[4], status:c[5], body:full[c[0]] || ''}; }).reverse());
+    });
+  }).catch(function(e){ $('#list').innerHTML = '<p class="err">Could not read the log: ' + esc(e) + '</p>'; });
+
+  function render(entries){
+    var types = [];
+    entries.forEach(function(e){ if(types.indexOf(e.type) < 0) types.push(e.type); });
+    var on = {};
+    $('#types').innerHTML = types.map(function(t){ return '<button class="chip" type="button" aria-pressed="false" data-t="' + esc(t) + '">' + esc(t) + '</button>'; }).join(' ');
+    $('#list').innerHTML = entries.map(function(e){
+      return '<details class="e" id="' + e.id + '" data-t="' + esc(e.type) + '"><summary><span class="id">' + e.id + '</span><span class="ty t-' + esc(e.type) + '">' + esc(e.type) + '</span>' +
+        '<span class="one">' + inline(e.one) + '</span><span class="st">' + esc(e.status) + '</span><span class="d">' + esc(e.date) + '</span></summary>' +
+        '<div class="body">' + md(e.body) + '<p class="tags">Tags: ' + esc(e.tags) + '</p></div></details>';
+    }).join('');
+    var els = Array.prototype.slice.call(document.querySelectorAll('details.e'));
+    function filter(){
+      var q = $('#q').value.trim().toLowerCase(), any = Object.keys(on).some(function(k){ return on[k]; }), n = 0;
+      els.forEach(function(el, i){
+        var e = entries[i], hit = (!any || on[e.type]) && (!q || (e.id + ' ' + e.one + ' ' + e.tags + ' ' + e.body).toLowerCase().indexOf(q) >= 0);
+        el.hidden = !hit; if(hit) n++;
+      });
+      $('#count').textContent = n + ' / ' + entries.length + ' entries';
+    }
+    $('#q').addEventListener('input', filter);
+    Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(b){
+      b.addEventListener('click', function(){ on[b.dataset.t] = !on[b.dataset.t]; b.setAttribute('aria-pressed', on[b.dataset.t] ? 'true' : 'false'); filter(); });
+    });
+    filter();
+    if(location.hash){ var t = document.getElementById(location.hash.slice(1)); if(t){ t.open = true; t.scrollIntoView(); } }
+    window.addEventListener('hashchange', function(){ var t = document.getElementById(location.hash.slice(1)); if(t){ t.open = true; } });
+  }
+})();
+</script>
+</body>
+</html>

@@ -169,6 +169,30 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
 .r0imgs img{display:block;max-width:100%;max-height:50vh;height:auto}
 .r0imgs figcaption{font-size:12px;color:#5F6B72;font-weight:700;margin-top:2px}
 @media (max-width:640px){.r0imgs{grid-template-columns:1fr}}
+/* ---------- 麵包板 Stimulator（stimulator.js） ---------- */
+.bb-scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:4px}
+.bb-scroll svg{display:block;width:100%;height:auto}
+.bb-ok{color:var(--req);font-weight:700} .bb-err{color:var(--warn);font-weight:700}
+.bom td{vertical-align:top}
+details.more{border-top:1px dashed var(--rule);margin-top:6px;padding-top:4px}
+details.more > summary{cursor:pointer;font-size:12.5px;color:var(--link)}
+svg .bb-mod{font:700 11px "Noto Sans TC",sans-serif;fill:#5a4f3b}
+svg .bb-rail{font:700 10px "IBM Plex Mono",monospace}
+svg .bb-num{font:9px "IBM Plex Mono",monospace;fill:#9a907d}
+svg .bb-lab{font:8.5px "IBM Plex Mono","Noto Sans TC",monospace;fill:#333}
+svg .bb-q{font:700 7px "IBM Plex Mono",monospace;fill:#fff}
+svg .bb-pin{font:700 7px "IBM Plex Mono",monospace;fill:#555}
+svg .bb-ctext{font:6px "IBM Plex Mono",monospace;fill:#fff}
+svg .bb-bat{font:700 8px "IBM Plex Mono",monospace;fill:#fff}
+svg .bb-probe{font:700 9px "Noto Sans TC",sans-serif;fill:#555}
+svg .bb-ic{font:700 7.5px "IBM Plex Mono",monospace;fill:#fff}
+svg .bb-icp{font:6px "IBM Plex Mono",monospace;fill:#bbb}
+svg .bb-pcb{font:700 10px "Noto Sans TC",sans-serif;fill:#e9e2c8}
+svg .bb-pcbt{font:700 9.5px "IBM Plex Mono",monospace;fill:#fff}
+svg .bb-pcbs{font:8px "Noto Sans TC",sans-serif;fill:#c9c1a5}
+svg .bb-part{cursor:help}
+svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
+
 /* ---------- circuit inspector (inspect.js) ---------- */
 .insp{position:fixed;left:24px;top:80px;z-index:80;width:min(470px,calc(100vw - 16px));max-height:min(80vh,760px);display:flex;flex-direction:column;
   background:var(--surface);color:var(--ink);border:1.5px solid var(--accent);border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.28);font-size:13px}
@@ -458,8 +482,57 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
 
   <div data-show="adv">
     <h2>1 摘要：真正的 AP（進階目標）</h2>
-    <p class="lede">先照文獻定義 AP，再設計一組只加、可拆的電阻，讓 #2-2 和 #2-3 每個應該有 AP 的情境都符合定義。所有數字都是模擬（<code>check_trueap.py</code>），還沒實測。</p>
+    <p class="lede">Stimulator 改用麵包板重插（不漏電、可以精準控制按多久），其他板子照舊用 PCB，再夾 4 顆可拆的電阻做出符合文獻定義的 AP。所有數字都是模擬（和即時模擬同一個引擎，紀錄 <a href="../log/#MB-025">MB-025</a>），還沒實測。</p>
     <div class="cards">
+      <details class="card wide" open id="bbst"><summary>麵包板 Stimulator：用哪一顆、怎麼精準控制按多久<span class="hint">建議 555 單擊；零件百年電子光復店（清大）都有貨</span></summary><div class="body">
+        <p class="small">只有 Stimulator 改插麵包板，LK、FI、SO、Passive unit 照舊用 PCB。電流源照講義電路圖接：Q<sub>sense</sub> 的射極在開關之後，放開時不漏電。輸出串一顆 1N4148：開關放開時 Q<sub>pass</sub> 的基極在 0 V，少了這顆，Vm 一超過約 0.6 V 就會從 Q<sub>pass</sub> 的集極–基極被吸走（靜止電位抬不上去，按完才發的 AP 也被削掉）。用一顆新的 9 V 電池，三條杜邦線接到 PCB 疊接排針。</p>
+        <div class="tbl"><table>
+          <tr><th>開關</th><th>按多久由誰決定</th><th>精準度</th><th>多的零件</th><th>適合</th></tr>
+          <tr><td>A 手按</td><td>手</td><td>約 50–300 ms，每次差幾十 ms</td><td>無</td><td>只要觸發一次</td></tr>
+          <tr><td><b>B 555 單擊（建議）</b></td><td>按一下送出 1.1·R·C 長的脈衝，按多久都一樣；1 MΩ 微調 → 11 ms–1.1 s（C 換 0.1 µF：1.1–110 ms）</td><td>每次重複差 &lt; 1 %；確切長度在示波器 CH2 讀</td><td>ICM7555＋1 MΩ 微調＋3 電阻＋3 電容</td><td>#2-1 五種長度、#2-2 Q2–Q3、#2-3</td></tr>
+          <tr><td>C Arduino Nano</td><td>程式設定，可以連發兩下量不反應期</td><td>µs 級</td><td>Nano（副廠 NT$248）＋2N3904＋2N4403＋3 電阻；要寫程式、接 USB</td><td>想自動化</td></tr>
+          <tr><td>D 示波器的訊號產生器</td><td>MSO5074 若有 GEN 選配：Pulse 0 → 5 V</td><td>µs 級</td><td>同 C 的兩顆電晶體開關</td><td>實驗室有就用</td></tr>
+        </table></div>
+        <p class="small">模擬區按「按 xx ms」或「自訂」就等於 555 送出一次那麼長的脈衝。</p>
+
+        <div data-stim="555" style="margin-top:8px">
+          <p class="small" style="margin:0 0 2px"><b>B：555 單擊版</b>（按鈕只負責觸發；按住不放也只送一個脈衝）</p>
+          <div class="bb-scroll"><svg role="img" aria-label="麵包板 Stimulator（555 單擊）插法"></svg></div>
+          <p class="small bb-status"></p>
+          <div class="tbl"><table class="bom"></table></div>
+        </div>
+        <details class="more"><summary>脈衝長度對照、換成固定長度</summary>
+          <p class="small">t = 1.1 × (10 kΩ + 微調) × C。C = 1 µF 時：微調 0 → 11 ms、90 kΩ → 110 ms、900 kΩ → 1.0 s。想要固定幾段長度，把微調換成固定電阻（1 %）：10 ms → 9.1 kΩ、20 ms → 18 kΩ、50 ms → 47 kΩ（52 ms）、100 ms → 91 kΩ、500 ms → 470 kΩ（517 ms）、1 s → 910 kΩ（不要再串 10 kΩ）。薄膜電容 ±5 %，所以每段都在示波器上量一次記下來。</p>
+          <p class="small">ICM7555 是 CMOS 版，輸出高電位就是 9 V；買不到可用 NE555P，輸出高電位約 7.3 V，電流源照樣工作（輸出上限低約 1.7 V，不影響 AP）。</p>
+        </details>
+        <details class="more"><summary>A：手按版插法</summary>
+          <div data-stim="manual">
+            <div class="bb-scroll"><svg role="img" aria-label="麵包板 Stimulator（手按）插法"></svg></div>
+            <p class="small bb-status"></p>
+            <div class="tbl"><table class="bom"></table></div>
+          </div>
+        </details>
+        <details class="more"><summary>C：Arduino 版怎麼接</summary>
+          <p class="small">Nano 的 D9 → 10 kΩ → 2N3904 基極；3904 射極接 GND、集極 → 10 kΩ → 2N4403 基極；4403 射極接 +9V、集極接 ST.P（取代開關）；4403 基極再接 100 kΩ 到 +9V。按鈕接 D2 和 GND。Nano 用 USB 供電，GND 和麵包板 GND 接在一起。序列埠輸入毫秒數就改長度：</p>
+<div class="calc">const int BTN = 2, OUT = 9;  unsigned long T = 100;   // ms
+void setup(){ pinMode(BTN, INPUT_PULLUP); pinMode(OUT, OUTPUT); Serial.begin(9600); }
+void loop(){
+  if(Serial.available()){ long t = Serial.parseInt(); if(t > 0) T = t; }
+  if(digitalRead(BTN) == LOW){ digitalWrite(OUT, HIGH); delay(T); digitalWrite(OUT, LOW);
+    while(digitalRead(BTN) == LOW); delay(50); }
+}</div>
+        </details>
+        <details class="more"><summary>接到 PCB 疊接排針、先量什麼</summary>
+          <ol class="small">
+            <li>把 PCB 的 Stimulator 從疊接拿掉：它的 Q<sub>sense</sub> 接在 SW 之前，留著會一直漏 6 µA 進 Vm。</li>
+            <li>三條杜邦線（公對母）：<b>Vm</b> → 疊接最上面那塊板的 Intracellular 排針（2 腳，任一腳）；<b>V+</b> → 2×2 排針中和方形焊墊對角的那一腳；<b>GND</b> → 和方形焊墊同一排的那一腳。</li>
+            <li>#2-3：FI 的 V+ 另拉一條到麵包板的 +9V 軌（Passive 底板沒串 V+）。</li>
+            <li>只接 LK、開關放開：Vm 應該是 0 V（原版 PCB 是 0.6–0.7 V）。555 版：CH2 夾 555 輸出（腳 3），平時 0 V，按一下看到一個方波，長度就是刺激時間。</li>
+          </ol>
+        </details>
+        <p class="small muted">庫存與價格：2026-10-17 從百年電子網站讀到的庫存量與光復店貨架位置（光復店＝新竹市光復路二段 170 號，清大旁）。網站的庫存量可能是全部門市合計，去之前可打 03-5729570 確認。紀錄 <a href="../log/#MB-024">MB-024</a>。</p>
+      </div></details>
+
       <details class="card" open><summary>AP 的定義（文獻）<span class="hint">換成這個電路的判準</span></summary><div class="body">
         <p class="small">Barnett &amp; Larkman（2007）把 AP 描述成膜電位短暫反轉、分三個主要階段：去極化、再極化、慢慢恢復的後過極化；Na⁺ 通道的招募是再生性的，所以一過門檻就是完整的 AP（all-or-nothing），去極化會越過 0 mV 但停在 E<sub>Na</sub> 之前；Na⁺ 通道失活造成絕對不反應期，K⁺ 通道關得慢造成後過極化與相對不反應期。Purves 等人的教科書（第 2–3 章）也用門檻、自我增強的 Na⁺ 通透度上升、較慢的 K⁺ 通透度上升來描述 AP；這個電路的 FI／Slow out 就對應 Hodgkin &amp; Huxley（1952）模型裡的 Na⁺／K⁺ 電流。</p>
         <div class="tbl"><table>
@@ -475,51 +548,51 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
       </details>
 
       <details class="card wide" open><summary>真正的 AP 完整電路圖<span class="hint">紫紅色＝和原版電路不同</span></summary><div class="body">
-        <p class="small">原版電路（照 PCB 實際接法）加上所有外加元件，每顆都畫在實際夾的兩個點之間。<b style="color:var(--mod)">紫紅色</b>是和原版不同的地方：Q<sub>pass</sub> E–B 並 22 kΩ、R13 並 11 kΩ、R13 下端到 FI.E3 的 680 kΩ、V+ 到 Vm 的 330 kΩ、SO C1 並 56 kΩ；#2-3 再加每個 Passive unit 的 560 kΩ 和拉到 FI 的 V+ 線。黑色是原版就有的（#2-2 的 V+ 走疊接排針）。要看電子流動，到 <a href="#r3">#2-2</a>、<a href="#r4">#2-3</a> 區域選「真正的 AP」。</p>
+        <p class="small">原版電路（照 PCB 實際接法）換上麵包板 Stimulator、加上所有外加元件，每顆都畫在實際夾的兩個點之間。<b style="color:var(--mod)">紫紅色</b>是和原版不同的地方：Stimulator 的 Q<sub>sense</sub> 改接在開關之後、輸出串 1N4148，R13 並 11 kΩ、R13 下端到 FI.E3 的 680 kΩ、V+ 到 Vm 的 390 kΩ、SO C1 並 56 kΩ；#2-3 再加每個 Passive unit 的 680 kΩ 和拉到 FI 的 V+ 線。要看電子流動，到 <a href="#r3">#2-2</a>、<a href="#r4">#2-3</a> 區域選「真正的 AP」。</p>
         <div class="fsbox schbox"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><p class="small" style="margin:0"><b>#2-2</b>（n = 0）</p><svg data-trueap="0" role="img" aria-label="#2-2 真正的 AP 完整電路圖"></svg></div>
         <div class="fsbox schbox" style="margin-top:10px"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><p class="small" style="margin:0"><b>#2-3</b>（以 n = 2 為例）</p><svg data-trueap="2" role="img" aria-label="#2-3 真正的 AP 完整電路圖，n = 2"></svg></div>
       </div></details>
 
-      <details class="card" open><summary>真正的 AP 電路（只加、可拆）<span class="hint">每顆的用途</span></summary><div class="body">
+      <details class="card" open><summary>真正的 AP 電路（麵包板 ST＋只加、可拆）<span class="hint">每顆的用途</span></summary><div class="body">
         <div class="tbl"><table>
           <tr><th>加什麼</th><th>夾在哪</th><th>為什麼</th></tr>
-          <tr><td>22 kΩ</td><td>ST.Q ↔ ST.R（Q<sub>pass</sub> E–B）</td><td>消除 6 µA 漏電，靜止點不隨 n 改變</td></tr>
+          <tr><td>麵包板 ST</td><td>取代 PCB 的 Stimulator</td><td>不漏電（靜止點不隨 n 改變）、輸出二極體讓靜止能抬到 1.19 V、可精準控制按多久</td></tr>
           <tr><td>11 kΩ</td><td>R13 兩端</td><td>FI 能送約 0.6 mA：快速、再生性的上升（C2）</td></tr>
-          <tr><td>680 kΩ</td><td>R13 下端 → FI.E3</td><td>FI 門檻抬到約 1.66 V，高於靜止</td></tr>
-          <tr><td>330 kΩ</td><td>V+ → Vm</td><td>靜止抬到 1.19 V，高於 Slow out 能拉到的約 0.6 V（才有 C5）</td></tr>
+          <tr><td>680 kΩ</td><td>R13 下端 → FI.E3</td><td>FI 門檻抬到約 1.85 V，高於靜止</td></tr>
+          <tr><td>390 kΩ</td><td>V+ → Vm</td><td>靜止抬到 1.19 V，高於 Slow out 能拉到的約 0.6 V（才有 C5）</td></tr>
           <tr><td>56 kΩ</td><td>SO 的 C1 兩腳</td><td>SO.S = 0.36 Vm：靜止時 Slow out 關著，AP 時打開</td></tr>
-          <tr><td>560 kΩ × n</td><td>V+ → 每個 Passive unit（#2-3）</td><td>每段膜的靜止都是 1.19 V，被動鏈不會把 active 端拉低</td></tr>
-          <tr><td>V+ 線</td><td>Stimulator V+ → FI.V+（#2-3）</td><td>Passive PCB 底板沒串 V+</td></tr>
+          <tr><td>680 kΩ × n</td><td>V+ → 每個 Passive unit（#2-3）</td><td>每段膜的靜止都是 1.19 V，被動鏈不會把 active 端拉低</td></tr>
+          <tr><td>V+ 線</td><td>麵包板 +9V → FI.V+（#2-3）</td><td>Passive PCB 底板沒串 V+</td></tr>
         </table></div>
-<div class="calc">靜止：(7.8 − Vm)/330k = Vm/100k + Vm/156k + 約 0.2 µA → Vm ≈ 1.19 V
-FI 門檻：FI.E3 = 7.8 × 100/780 = 1.0 V → Vm ≈ 1.0 + 0.5 + 0.2 ≈ 1.7 V（模擬 1.66 V）
-Slow out：SO.S = 1.19 × 56/156 = 0.43 V（要約 0.62 V 才開）→ 靜止時關著
+<div class="calc">靜止：(9 − Vm)/390k = Vm/100k + Vm/156k → Vm ≈ 1.2 V（模擬 1.19 V）
+FI 門檻：FI.E3 = 9 × 100/780 = 1.15 V → Vm ≈ 1.15 + 0.5 + 0.2 ≈ 1.85 V
+Slow out：SO.S = 1.19 × 56/156 = 0.43 V（要約 0.62 V 才開）→ 靜止時關著（模擬 0.42 V）
 AP 後最低：Vm ≈ SO.B4 + V_EB ≈ 0.05 + 0.54 = 0.59 V → 後過極化 ≈ 0.6 V
-Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜止時沒有電流</div>
-        <p class="small">#2-3 量 Q3 的 I<sub>min</sub> 時，把 22 kΩ 換成 12 kΩ：可變電阻 0–10 kΩ 變成約 51–2.6 µA，涵蓋 n = 0–4 的 I<sub>min</sub>（7.6–44.8 µA）。12 kΩ 一樣消除漏電，靜止不變。</p>
+Passive unit：9 × 100/(100 + 680) = 1.15 V ≈ active 端 → 被動鏈靜止時幾乎沒有電流</div>
+        <p class="small">#2-3 量 Q3 的 I<sub>min</sub>：麵包板 ST 用 100 kΩ 可變電阻，電流約 13.5–100 µA，涵蓋 n = 0–4 的 I<sub>min</sub>（12.8–69.4 µA；n = 0 剛好在下限）。</p>
         <p class="small muted">試過 47 kΩ：n = 4、長按後，8 組隨機參數中有 3 組 FI 和 Slow out 互相抵住，鎖在約 2.9 V；改 56 kΩ 後全部正常。</p>
       </div></details>
 
       <details class="card wide" open><summary>驗證：每個應該有 AP 的情境<span class="hint">C1–C6</span></summary><div class="body">
         <div class="tbl"><table>
           <tr><th>情境</th><th class="num">靜止</th><th>C1 門檻</th><th>C2 峰值（拔 FI）／dV/dt</th><th>C5 後過極化</th><th>C6</th></tr>
-          <tr><td>#2-2 Q2</td><td class="num">1.19</td><td>按 7.5 ms，1.66 V</td><td>5.2–5.4（2.0）／601 vs 72 V/s</td><td class="t-ok">0.61 V、125 ms</td><td class="t-ok">AP 後 20 ms 內不能再發，40 ms 起恢復</td></tr>
-          <tr><td>#2-3 n = 1</td><td class="num">1.19</td><td>按 17.5 ms，1.66 V</td><td>4.5–4.6（1.8）／569 vs 27</td><td class="t-ok">0.48 V</td><td class="t-part">第二個 AP 變小（3.9 V）</td></tr>
-          <tr><td>#2-3 n = 2</td><td class="num">1.19</td><td>按 33 ms，1.66 V</td><td>4.4（1.7）／619 vs 14</td><td class="t-ok">0.49 V</td><td class="t-part">同上（4.1 V）</td></tr>
-          <tr><td>#2-3 n = 3</td><td class="num">1.19</td><td>按 59 ms，1.68 V</td><td>4.3（1.7）／689 vs 8</td><td class="t-ok">0.50 V</td><td class="t-part">同上（4.2 V）</td></tr>
-          <tr><td>#2-3 n = 4</td><td class="num">1.20</td><td>按 106 ms，1.67 V</td><td>4.2–4.3（1.7）／689 vs 5</td><td class="t-ok">0.49 V</td><td class="t-part">被動鏈延遲 &gt; 100 ms，第二個刺激到的時候已恢復</td></tr>
+          <tr><td>#2-2 Q2</td><td class="num">1.19</td><td>按 8 ms</td><td>5.65–6.02（3.18）／706 vs 91 V/s</td><td class="t-ok">0.58 V，低於靜止 0.61 V、134 ms</td><td class="t-ok">AP 後 60 ms 內不能再發，70 ms 起可以</td></tr>
+          <tr><td>#2-3 n = 1</td><td class="num">1.18</td><td>按 20 ms</td><td>4.91–5.12（2.63）／709 vs 37</td><td class="t-ok">0.70 V</td><td class="t-part">AP 後 30 ms 再按：第二個 4.60 V</td></tr>
+          <tr><td>#2-3 n = 2</td><td class="num">1.18</td><td>按 40 ms</td><td>4.82–4.89（2.29）／788 vs 20</td><td class="t-ok">0.70 V</td><td class="t-part">同上（4.56 V）</td></tr>
+          <tr><td>#2-3 n = 3</td><td class="num">1.18</td><td>按 60 ms</td><td>4.63–4.75（2.08）／850 vs 12</td><td class="t-ok">0.69 V</td><td class="t-part">同上（4.58 V）</td></tr>
+          <tr><td>#2-3 n = 4</td><td class="num">1.18</td><td>按 120 ms</td><td>4.59–4.60（1.92）／877 vs 7</td><td class="t-ok">0.71 V</td><td class="t-part">同上（4.50 V）</td></tr>
         </table></div>
-        <p class="small">C3：峰值 4.2–5.4 V，遠高於門檻、低於 V+ 7.8 V。C4：半高寬 12–15 ms，Slow out 拉回。#2-3 的後過極化在剛過門檻的按壓下只持續約 12 ms（電容還有電的被動鏈把 active 端充回來），按 300 ms 時是 130–200 ms。不反應期是 active membrane 的性質，#2-3 用的是同一塊，所以以 #2-2 的量測為準。</p>
+        <p class="small">#2-3 用最大電流（約 100 µA）。C3：峰值 4.6–6.0 V，遠高於門檻、低於 V+ 9 V。C4：#2-2 半高寬約 10 ms，Slow out 拉回。不反應期是 active membrane 的性質，#2-3 用的是同一塊，以 #2-2 的量測為準。</p>
         <div class="tbl"><table>
           <tr><th>其他題目</th><th>結果</th></tr>
-          <tr><td>#2-2 Q3 五種電流（72／48／34／26／19 µA）</td><td>峰值 5.44／5.31／5.21／5.13／5.05 V，到峰 20→47 ms，半高寬都約 11.6 ms：all-or-none</td></tr>
-          <tr><td>#2-2 Q4 R13（有效值）10k → 3M</td><td>峰值 5.43 → 2.80 V、dV/dt 597 → 72 V/s（= 被動）：FI 越弱 AP 越小越慢，820k 以上已不是 AP</td></tr>
-          <tr><td>#2-2 Q6 TTX（拔 FI）</td><td>只剩被動反應（2.9 V），沒有 AP</td></tr>
-          <tr><td>#2-2 Q6 TEA（拔 SO）</td><td>沒有再極化：拔掉後 56 kΩ 也跟著拔掉，靜止升到門檻以上，FI 自己鎖在 6.6 V</td></tr>
-          <tr><td>#2-3 Q3 I<sub>min</sub>（n = 0–4）</td><td>7.6／13.4／20.9／31.0／44.8 µA</td></tr>
-          <tr><td>#2-3 Q4 delay（47 µA）</td><td>24／46／79／136／370 ms</td></tr>
-          <tr><td>#2-3 Q5 CH2（n = 2，FI 拉 V+ 線）</td><td>CH1 4.44 V；CH2 單相 +118 mV，比 CH1 波峰晚 5 ms（主要是 FI 的電流經細胞外 100 Ω）</td></tr>
-          <tr><td>隨機參數（16 組，n = 0 與 4）</td><td>全部安靜、會觸發、後過極化 0.40–0.61 V、長按 1 秒放開後回到靜止</td></tr>
+          <tr><td>#2-2 Q3 五種電流（101／62／46／32／21 µA）</td><td>峰值 6.06／5.84／5.72／5.56／5.35 V，到峰 18→57 ms：大小幾乎不變（all-or-none）</td></tr>
+          <tr><td>#2-2 Q4 R13（有效值）10k → 3M</td><td>峰值 6.00 → 3.09 V、dV/dt 704 → 91 V/s（= 被動）：FI 越弱 AP 越小越慢，300k 以上已不是 AP</td></tr>
+          <tr><td>#2-2 Q6 TTX（拔 FI）</td><td>只剩被動反應（3.18 V），沒有 AP</td></tr>
+          <tr><td>#2-2 Q6 TEA（拔 SO）</td><td>沒有再極化：拔掉後 56 kΩ 也跟著拔掉，靜止升到門檻以上，FI 自己鎖在 7.6 V</td></tr>
+          <tr><td>#2-3 Q3 I<sub>min</sub>（n = 0–4）</td><td>12.8／22.1／33.2／48.4／69.4 µA</td></tr>
+          <tr><td>#2-3 Q4 delay（75 µA，略高於 n = 4 的 I<sub>min</sub>）</td><td>20／40／66／111／334 ms</td></tr>
+          <tr><td>#2-3 Q5 CH2（n = 2，FI 拉 V+ 線）</td><td>CH1 4.86 V；CH2 單相 +146 mV，比 CH1 波峰晚 4 ms（主要是 FI 的電流經細胞外 100 Ω）</td></tr>
+          <tr><td>隨機參數（8 組 × n = 0 與 4）</td><td>全部安靜、會觸發、後過極化 0.56–0.75 V、長按 1.5 秒放開後回到靜止</td></tr>
         </table></div>
       </div></details>
 
@@ -533,7 +606,7 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
         </ol>
 <div class="calc">n = 1 手算：unit：6.3 µA + (Vm − P)/10k = P/100k
         active：(7.8 − Vm)/470k = Vm/100k + Vm/147k + (Vm − P)/10k → Vm = 0.80 V（模擬 0.79 V）</div>
-        <p class="small">改法就是讓每段膜都有同樣的靜止電位（神經裡每段膜的 E<sub>leak</sub> 相同，樹突不會把胞體拉低）：每個 Passive unit 加 560 kΩ 接 V+，再用 22 kΩ 消掉漏電，讓靜止不隨 n 改變。</p>
+        <p class="small">改法就是讓每段膜都有同樣的靜止電位（神經裡每段膜的 E<sub>leak</sub> 相同，樹突不會把胞體拉低）：每個 Passive unit 加 680 kΩ 接 V+，Stimulator 換成不漏電的麵包板版消掉漏電，讓靜止不隨 n 改變。</p>
       </div></details>
 
       <details class="card"><summary>助教電路的問題<span class="hint">原版（R2 = 1 MΩ）為什麼沒有真正的 AP</span></summary><div class="body">
@@ -569,11 +642,11 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
         <div class="tbl"><table>
           <tr><th>量</th><th>條件</th><th class="num">預期</th></tr>
           <tr><td>Vm</td><td>SW 放開</td><td class="num">1.19 V，平的</td></tr>
-          <tr><td>FI.E3</td><td>SW 放開</td><td class="num">約 1.0 V</td></tr>
-          <tr><td>SO.S</td><td>SW 放開</td><td class="num">約 0.43 V</td></tr>
-          <tr><td>ST.Q − ST.R</td><td>SW 放開</td><td class="num">0.15 V（22 kΩ）</td></tr>
-          <tr><td>Vm 峰值／AP 後最低</td><td>按一下（10 ms 以上）</td><td class="num">5.2–5.4 V／0.58 V</td></tr>
-          <tr><td>#2-3 各 PC 節點</td><td>SW 放開</td><td class="num">都約 1.19 V</td></tr>
+          <tr><td>FI.E3</td><td>SW 放開</td><td class="num">約 1.15 V</td></tr>
+          <tr><td>SO.S</td><td>SW 放開</td><td class="num">約 0.42 V</td></tr>
+          <tr><td>ST.R（Q<sub>pass</sub> 基極）</td><td>SW 放開</td><td class="num">0 V</td></tr>
+          <tr><td>Vm 峰值／AP 後最低</td><td>按一下（10 ms 以上）</td><td class="num">5.7–6.0 V／0.58 V</td></tr>
+          <tr><td>#2-3 各 PC 節點</td><td>SW 放開</td><td class="num">都約 1.15–1.18 V</td></tr>
         </table></div>
       </div></details>
     </div>
@@ -591,7 +664,7 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     <p class="sub">Stimulator → 5 個 Passive unit（1 µF ∥ 100 kΩ，隔 10 kΩ）。CH1 = 第 1 個，CH2 = 最後一個（或中間）。</p>
     <div class="grp"><div class="gt">刺激</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
-      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
+      <div class="row full" data-show="basic"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div><div class="row full" data-show="adv"><input type="range" data-k="rpot" min="0" max="100" step="0.5" data-scale="1000"></div>
       <div data-show="adv">
         <div class="row"><label>來源</label><select data-k="src"><option value="stim">Stimulator</option><option value="ideal">理想電流源</option></select></div>
         <div class="row"><label>理想電流（µA）</label><input type="number" data-k="isrc" min="0" max="300" step="1" data-scale="1e-6" style="width:5.5em"></div>
@@ -640,7 +713,7 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
   <div class="settings">
     <h2>#2-2 Active</h2>
     <p class="sub" data-show="basic">助教給的電路：R2 = 1 MΩ、R13 = 100 kΩ。CH1 = Vm。</p>
-    <p class="sub" data-show="adv">自由調整。點電路圖上的紅色接點可以斷開排針。</p>
+    <p class="sub" data-show="adv">Stimulator 是麵包板版（可變電阻 0–100 kΩ），「原版電路」情境才是 PCB 版。點電路圖上的紅色接點可以斷開排針。</p>
     <div class="grp" data-show="basic"><div class="gt">版本</div>
       <div class="btns" data-presets="s22b"></div>
       <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
@@ -657,7 +730,7 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     </div>
     <div class="grp"><div class="gt">刺激</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
-      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
+      <div class="row full" data-show="basic"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div><div class="row full" data-show="adv"><input type="range" data-k="rpot" min="0" max="100" step="0.5" data-scale="1000"></div>
       <div class="btns" data-pulses="0.02,0.1,1"></div>
       <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
       <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
@@ -732,7 +805,7 @@ Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜�
     </div>
     <div class="grp"><div class="gt">刺激</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
-      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
+      <div class="row full" data-show="basic"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div><div class="row full" data-show="adv"><input type="range" data-k="rpot" min="0" max="100" step="0.5" data-scale="1000"></div>
       <div data-show="adv">
         <div class="row"><label>來源</label><select data-k="src"><option value="stim">Stimulator</option><option value="ideal">理想電流源</option></select></div>
         <div class="row"><label>理想電流（µA）</label><input type="number" data-k="isrc" min="0" max="300" step="0.5" data-scale="1e-6" style="width:5.5em"></div>
@@ -867,6 +940,7 @@ flowchart LR
 <script src="../active-membrane-sim/engine.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
 <script src="inspect.js"></script>
+<script src="stimulator.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
