@@ -87,7 +87,6 @@ tr.grp td{background:var(--tint);font-weight:700}
 .fsbox .fsbtn{position:absolute;top:6px;right:6px;z-index:3}
 .fsbox.fs{position:fixed;inset:0;z-index:50;overflow:auto;padding:40px 16px 16px;border-radius:0}
 .fsbtn{font-size:12px;padding:2px 9px;border:1.5px solid var(--rule);border-radius:999px;background:var(--surface);color:var(--ink);cursor:pointer}
-pre.mermaid{margin:0;min-width:900px;background:transparent}
 .schbox{overflow-x:auto;padding-top:4px}
 .schbox svg{display:block;width:100%;min-width:900px;height:auto}
 .fsbox.fs.schbox svg{min-width:0}
@@ -193,6 +192,21 @@ svg .bb-pcbs{font:8px "Noto Sans TC",sans-serif;fill:#c9c1a5}
 svg .bb-part{cursor:help}
 svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
 
+/* ---------- 1 摘要：卡片排成磚，點開看內容（不用捲動就看得到全部） ---------- */
+#r1 .cards{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+#r1 .card,#r1 .card.wide{grid-column:auto}
+#r1 .card > .body{display:none}
+#r1 .card > summary{display:block;padding:9px 12px 10px;min-height:58px;border-radius:8px;transition:background .12s}
+#r1 .card > summary::before{content:none}
+#r1 .card > summary .hint{display:block;margin:2px 0 0;text-align:left;font-size:12px;line-height:1.4}
+#r1 .card:hover{border-color:var(--accent)}
+#r1 .card > summary:hover{background:var(--tint)}
+#r1 .lede{margin-bottom:10px}
+.tdlg .body{padding:0}
+.tdlg .body p,.tdlg .body li{max-width:72em}
+.tdlg .body ul,.tdlg .body ol{padding-left:1.25em;margin:6px 0}
+.tdlg .body li{margin:3px 0}
+
 /* ---------- circuit inspector (inspect.js) ---------- */
 .insp{position:fixed;left:24px;top:80px;z-index:80;width:min(470px,calc(100vw - 16px));max-height:min(80vh,760px);display:flex;flex-direction:column;
   background:var(--surface);color:var(--ink);border:1.5px solid var(--accent);border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.28);font-size:13px}
@@ -248,10 +262,9 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
     <a href="#r2"><span class="n">2</span><span>#2-1 Passive<small>5 個 Passive unit</small></span></a>
     <a href="#r3"><span class="n">3</span><span>#2-2 Active<small>Stimulator + LK + FI + SO</small></span></a>
     <a href="#r4"><span class="n">4</span><span>#2-3 Passive → active<small>0–4 個 unit + active</small></span></a>
-    <a href="#r5"><span class="n">5</span><span>補充與紀錄<small>定義、手算、時間線、History</small></span></a>
   </nav>
   <div class="foot">
-    <p style="margin:0 0 4px"><a href="../log/">工作紀錄（log）</a>・<a href="#history">History（舊頁面）</a></p>
+    <p style="margin:0 0 4px"><a href="../log/">工作紀錄（log、時間線、舊頁面）</a></p>
     <p style="margin:0">空白鍵 = 按住目前區域的 SW。每張圖右上角 ⤢ 可全螢幕。點電路圖上的元件或導線：跳出它的公式、引擎程式碼和即時數值。</p>
   </div>
 </aside>
@@ -477,6 +490,18 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
           <li>每按一次至少隔 1 秒，讓電容放電。圖要標格子大小和量測點。</li>
         </ul>
       </div></details>
+
+      <details class="card"><summary>繳交規定（#2-0）<span class="hint">英文、檔名、字型</span></summary><div class="body"><ul>
+      <li>全英文；Times New Roman 12；檔名 <code>HW02_學號_姓名.pdf</code>；不可抄襲。</li>
+      <li>圖片要標註；示波器截圖標格子大小；標出量測點或範圍。</li>
+      <li>#2-0：組員合照、組員名單。</li>
+    </ul></div></details>
+      <details class="card"><summary>節點與接點速查<span class="hint">回報量測時用</span></summary><div class="body"><ul>
+      <li>格式「板.節點」：ST Stimulator、LK Leak、FI Fast inward、SO Slow out。單寫 Vm = Stimulator 輸出（CH1）。</li>
+      <li>FI.V+ = R13 下端（應為 7.8 V）；FI.E4 = R13 上端；SO.S = SO 的 C1 上腳；SO.B3 = SO 的 D1「−」端。</li>
+      <li>電壓都對 GND（Stimulator 電源「−」）量；兩點相減用 MATH CH1 − CH2。</li>
+      <li>完整表：<a href="../hw2-debug/nodes.html">節點命名（舊頁）</a>。</li>
+    </ul></div></details>
     </div>
   </div>
 
@@ -649,6 +674,23 @@ Passive unit：9 × 100/(100 + 680) = 1.15 V ≈ active 端 → 被動鏈靜止�
           <tr><td>#2-3 各 PC 節點</td><td>SW 放開</td><td class="num">都約 1.15–1.18 V</td></tr>
         </table></div>
       </div></details>
+
+      <details class="card"><summary>手算重點（PCB 原版）<span class="hint">Stimulator 漏電、FI 自鎖、Slow out 極限</span></summary><div class="body">
+<div class="calc">Stimulator 按住：I ≈ 0.65 V / (pot + 7 kΩ) + 6 µA = 44–99 µA；輸出上限 ≈ 7.8 − 0.65 − 0.05 = 7.1 V
+Stimulator 放開：ST.R = 7.8 − 0.65 − 0.53 = 6.62 V → I_C(sense) = 6.62/7k = 0.946 mA
+                 I_B(sense) = 0.946 mA / 150 = 6.3 µA → 接 Leak：0.63 V
+FI 自鎖：(V+ − Vm)/100k = (Vm − 0.85)/100k → Vm = (7.8 + 0.85)/2 ≈ 4.4 V（實測 4.0，模擬 4.24）
+       接 Leak 與漏電：3·Vm = 7.8 + 0.85 + 0.63 → 3.1 V（10d、S+LK+FI）
+Slow out 鉗位（R2 = 1M，按住）：Vm ≈ 0.78 V（模擬）
+（第二輪紀錄）R2 = 100 Ω：Slow out ≈ 100 kΩ 串二極體 → 全接 FI 鎖住：0.63 + 8.65 + 0.4 = 4·Vm → 2.42 V
+Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) ≈ 0.59 V</div>
+    </div></details>
+      <details class="card"><summary>模擬方法<span class="hint">和 Python 版相同</span></summary><div class="body"><ul>
+      <li>修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton、Ebers–Moll 電晶體與二極體模型；DC 不收斂時 gmin stepping。</li>
+      <li>10-12 起每個節點加 10 pF 雜散電容（×10 探棒約 10–15 pF）：拔掉 Leak 時 Vm 節點沒有電容，FI 自鎖在數值上沒有唯一解（S+FI 會卡住）。時間常數約 1 µs，波形幾乎不變（重跑所有檢查，差 ≤ 0.07 V；R2 = 1 MΩ 時「按下的第一個峰」看落在小峰的哪個階段，1.75–2.06 V）。另外 Newton 在 20 次迭代後、各節點 KCL 誤差 &lt; 10 pA 也算收斂。</li>
+      <li>參數：2N3904 I<sub>S</sub> 6.7 fA、β 200；2N4403 I<sub>S</sub> 10 fA、β 150；1N4148 I<sub>S</sub> 2.52 nA、n 1.752。</li>
+      <li>網頁引擎 <a href="../active-membrane-sim/engine.js">engine.js</a>、電路圖 <a href="../active-membrane-sim/schematic.js">schematic.js</a>；Python 在 <a href="../hw2-debug/sim/">hw2-debug/sim/</a>（<code>check_ap.py</code>、<code>check_23.py</code> 等）。</li>
+    </ul></div></details>
     </div>
   </div>
 </section>
@@ -840,105 +882,11 @@ Passive unit：9 × 100/(100 + 680) = 1.15 V ≈ active 端 → 被動鏈靜止�
   </div>
 </section>
 
-<!-- ======================= 5 補充 ======================= -->
-<section class="region textreg" id="r5">
-  <h2>5 補充與紀錄</h2>
-  <div class="cards">
-    <details class="card" data-show="basic"><summary>繳交規定（#2-0）<span class="hint">英文、檔名、字型</span></summary><div class="body"><ul>
-      <li>全英文；Times New Roman 12；檔名 <code>HW02_學號_姓名.pdf</code>；不可抄襲。</li>
-      <li>圖片要標註；示波器截圖標格子大小；標出量測點或範圍。</li>
-      <li>#2-0：組員合照、組員名單。</li>
-    </ul></div></details>
-    <details class="card" data-show="basic"><summary>節點與接點速查<span class="hint">回報量測時用</span></summary><div class="body"><ul>
-      <li>格式「板.節點」：ST Stimulator、LK Leak、FI Fast inward、SO Slow out。單寫 Vm = Stimulator 輸出（CH1）。</li>
-      <li>FI.V+ = R13 下端（應為 7.8 V）；FI.E4 = R13 上端；SO.S = SO 的 C1 上腳；SO.B3 = SO 的 D1「−」端。</li>
-      <li>電壓都對 GND（Stimulator 電源「−」）量；兩點相減用 MATH CH1 − CH2。</li>
-      <li>完整表：<a href="../hw2-debug/nodes.html">節點命名（舊頁）</a>。</li>
-    </ul></div></details>
-
-    <details class="card" data-show="adv"><summary>手算重點<span class="hint">Stimulator、FI、Slow out、過極化</span></summary><div class="body">
-<div class="calc">Stimulator 按住：I ≈ 0.65 V / (pot + 7 kΩ) + 6 µA = 44–99 µA；輸出上限 ≈ 7.8 − 0.65 − 0.05 = 7.1 V
-Stimulator 放開：ST.R = 7.8 − 0.65 − 0.53 = 6.62 V → I_C(sense) = 6.62/7k = 0.946 mA
-                 I_B(sense) = 0.946 mA / 150 = 6.3 µA → 接 Leak：0.63 V
-FI 自鎖：(V+ − Vm)/100k = (Vm − 0.85)/100k → Vm = (7.8 + 0.85)/2 ≈ 4.4 V（實測 4.0，模擬 4.24）
-       接 Leak 與漏電：3·Vm = 7.8 + 0.85 + 0.63 → 3.1 V（10d、S+LK+FI）
-Slow out 鉗位（R2 = 1M，按住）：Vm ≈ 0.78 V（模擬）
-（第二輪紀錄）R2 = 100 Ω：Slow out ≈ 100 kΩ 串二極體 → 全接 FI 鎖住：0.63 + 8.65 + 0.4 = 4·Vm → 2.42 V
-Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) ≈ 0.59 V
-真正的 AP 靜止：(7.8 − Vm)/330k = Vm/100k + Vm/156k + 0.2 µA → 1.19 V（22 kΩ 已消掉漏電）
-         FI 門檻：FI.E3 = 7.8·100/780 = 1.0 V → Vm ≈ 1.7 V；SO.S = 0.36 Vm = 0.43 V（關）
-         過極化 ≈ 1.19 − 0.59 = 0.6 V；每個 Passive unit：7.8·100/660 = 1.18 V</div>
-    </div></details>
-    <details class="card" data-show="adv"><summary>PCB 和講義電路圖的差異<span class="hint">追線結果</span></summary><div class="body">
-      <div class="tbl"><table>
-        <tr><th>位置</th><th>電路圖</th><th>PCB 實際</th></tr>
-        <tr><td>FI：V+ → 2N4403 E</td><td>1 kΩ＋板上 9 V 電池</td><td>R13 = 100 kΩ，V+ 從排針來</td></tr>
-        <tr><td>Stimulator Q<sub>sense</sub> 的 E</td><td>SW 之後</td><td>SW 之前（漏 6 µA）</td></tr>
-        <tr><td>Slow out R2</td><td>3 MΩ</td><td>標 3M；現在都換成助教指定的 1 MΩ（套件原本附 100 Ω）</td></tr>
-        <tr><td>Passive PCB 底板</td><td>—</td><td>只串 Intracellular（10 kΩ）與 GND（100 Ω），沒有 V+</td></tr>
-        <tr><td>電源</td><td>9 V</td><td>實測 7.8 V</td></tr>
-      </table></div>
-      <p class="small">TO-92 方形焊墊 = E；2×2 排針：和方形焊墊同一排 = GND，對角 = V+。</p>
-    </div></details>
-    <details class="card" data-show="adv"><summary>模擬方法<span class="hint">和 Python 版相同</span></summary><div class="body"><ul>
-      <li>修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton、Ebers–Moll 電晶體與二極體模型；DC 不收斂時 gmin stepping。</li>
-      <li>10-12 起每個節點加 10 pF 雜散電容（×10 探棒約 10–15 pF）：拔掉 Leak 時 Vm 節點沒有電容，FI 自鎖在數值上沒有唯一解（S+FI 會卡住）。時間常數約 1 µs，波形幾乎不變（重跑所有檢查，差 ≤ 0.07 V；R2 = 1 MΩ 時「按下的第一個峰」看落在小峰的哪個階段，1.75–2.06 V）。另外 Newton 在 20 次迭代後、各節點 KCL 誤差 &lt; 10 pA 也算收斂。</li>
-      <li>參數：2N3904 I<sub>S</sub> 6.7 fA、β 200；2N4403 I<sub>S</sub> 10 fA、β 150；1N4148 I<sub>S</sub> 2.52 nA、n 1.752。</li>
-      <li>網頁引擎 <a href="../active-membrane-sim/engine.js">engine.js</a>、電路圖 <a href="../active-membrane-sim/schematic.js">schematic.js</a>；Python 在 <a href="../hw2-debug/sim/">hw2-debug/sim/</a>（<code>check_ap.py</code>、<code>check_23.py</code> 等）。</li>
-    </ul></div></details>
-
-    <details class="card wide" data-mm><summary>時間線：從第一輪到現在<span class="hint">測試、假設、驗證、錯誤</span></summary><div class="body">
-      <div class="fsbox"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><div class="mmwrap"><pre class="mermaid">
-flowchart LR
-  P0["hw2 講解頁初版<br/>照模擬器電路圖"]:::page --> R1["第一輪：堆疊排針<br/>測試 1–10d"]:::test
-  R1 --> A1["PCB 追線：R13 100k、<br/>Q_sense 在 SW 前（漏 6 µA）"]:::page
-  A1 --> V1["FI 板是好的 ✓<br/>FI:V+ 沒接上 ✓"]:::ver
-  A1 --> E1["錯：Slow out 只是沒接上<br/>錯：測試 9 解讀<br/>錯：DC 沒 gmin"]:::err
-  R1 -.-> U1["排針接觸不良"]:::user
-  V1 --> R2["第二輪：麵包板<br/>7 種組合"]:::test
-  R2 --> H1["Slow out 壞了：<br/>四個故障假設"]:::hyp --> V2["SO.B3 拉到地 ✓<br/>6 值差 ≤ 0.1 V"]:::ver
-  R2 -.-> U2["S+FI 列對不上<br/>（Leak 還插著？）"]:::user
-  V2 --> U3["你發現 R2 = 100 Ω<br/>（助教以為 1 MΩ）"]:::user
-  U3 --> R3["第三輪：R2 = 1 MΩ<br/>自發小峰 1.6 V／100 ms"]:::test
-  R3 --> V3["漏電把 Vm 墊在門檻 ✓<br/>模擬 1.46 V／128 ms"]:::ver
-  V3 --> F1["修正：外加 22k、11k、1M<br/>方案 3 過極化"]:::page
-  F1 -.-> E2["錯：先建議割線、拔腳"]:::err
-  F1 --> S3["2-3 模擬：底板沒串 V+<br/>CH2 被 FI 電流主導"]:::ver
-  S3 --> NOW["現在：重整網站<br/>基礎目標開始量測"]:::now
-  classDef page fill:#E3ECF7,stroke:#1F5FA8,color:#0F2A4A
-  classDef test fill:#FBEFD2,stroke:#8A6100,color:#3D2B00
-  classDef hyp fill:#F3E1F7,stroke:#7A3E8F,color:#3B1745
-  classDef ver fill:#DCEFD9,stroke:#2F5D3A,color:#16301C
-  classDef err fill:#FBE3DE,stroke:#A33A2B,color:#4A120A
-  classDef user fill:#FDE7CF,stroke:#C26A12,color:#4A2A05
-  classDef now fill:#1E262C,stroke:#1E262C,color:#FFFFFF
-</pre></div></div>
-      <p class="small muted">完整版（49 個節點、錯誤清單、假設驗證表）在 <a href="../hw2-status/">HW2 現況整理（舊頁）</a>。2026-10-16 之後的每一步在 <a href="../log/">工作紀錄（log）</a>。</p>
-    </div></details>
-
-    <details class="card wide" id="history" open><summary>History／Log：舊頁面<span class="hint">新介面建立前的內容，保留不再更新</span></summary><div class="body">
-      <div class="tbl"><table>
-        <tr><th>頁面</th><th>內容</th><th>最後更新</th></tr>
-        <tr><td><a href="../log/"><b>工作紀錄（log）</b></a></td><td>2026-10-16 起每個指令、更動、測試結果，一筆一行、可搜尋；之後的紀錄都在這裡</td><td>持續更新</td></tr>
-        <tr><td><a href="../hw2-status/">HW2 現況整理</a></td><td>分頁清單、測試與回報、完整時間線、錯誤清單、假設驗證表、題目進度</td><td>10-12 <code>1e56826</code></td></tr>
-        <tr><td><a href="../hw2/">HW2 實驗講解</a></td><td>三個實驗的操作指引、五參數定義、量電流方法、示波器設定、預期趨勢、題目對應、常見問題</td><td>10-12</td></tr>
-        <tr><td><a href="../hw2-debug/">HW2 #2-2 除錯分析</a></td><td>三輪量測、PCB 追線、手算、模擬方法與對照、AP 判定、過極化、修正與量測對照表</td><td>10-12</td></tr>
-        <tr><td><a href="../hw2-debug/nodes.html">節點命名</a></td><td>每個節點的焊墊位置與預期電壓、外加元件夾點、接點表</td><td>10-09</td></tr>
-        <tr><td><a href="../active-membrane-sim/">#2-2 互動模擬（舊）</a></td><td>舊版 #2-2 單頁模擬</td><td>10-12</td></tr>
-        <tr><td><a href="../passive-active-sim/">#2-3 互動模擬（舊）</a></td><td>舊版 #2-3 單頁模擬與結果表</td><td>10-12</td></tr>
-        <tr><td><a href="../hw2-debug/sim/">Python 模擬程式</a></td><td>sim.py 與所有 check_*.py</td><td>10-12</td></tr>
-      </table></div>
-      <p class="small muted">舊頁的數字是 10 pF 雜散電容加入前算的，和現在差 ≤ 0.07 V（R2 = 1 MΩ 按下的第一個峰除外，見補充區「模擬方法」）。</p>
-      <p class="small muted">git：878d56f（除錯頁）→ 16b0e49（節點命名）→ 1b24c64（講解頁改照 PCB）→ 51aca21（第二輪）→ 22a8396（R2 故障）→ 61d2ea1（外加修正、AP 判定）→ 057f4c7（#2-3）→ 36844c3（完整電路圖、leak）→ 1e56826（現況整理）。</p>
-    </div></details>
-  </div>
-</section>
 
 </main>
 </div>
 <script src="../active-membrane-sim/schematic.js"></script>
 <script src="../active-membrane-sim/engine.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
 <script src="inspect.js"></script>
 <script src="stimulator.js"></script>
 <script src="app.js"></script>

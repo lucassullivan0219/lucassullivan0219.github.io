@@ -34,6 +34,15 @@ details.e > summary::-webkit-details-marker{display:none}
 .body code{font-family:"IBM Plex Mono",monospace;font-size:.88em}
 .tags{color:var(--muted);font-size:.8rem}
 .err{color:#b5432f}
+details.old > summary{display:flex;gap:10px;font-weight:600}
+details.old > summary .hint{color:var(--muted);font-weight:400;font-size:.85rem;margin-left:auto}
+details.old .body{padding:6px 16px 12px}
+details.old .mmwrap{overflow-x:auto}
+details.old .fsbtn{display:none}
+details.old table{border-collapse:collapse;width:100%;font-size:.9rem}
+details.old th,details.old td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+details.old .tbl{overflow-x:auto}
+.small{font-size:.85rem}.muted{color:var(--muted)}
 @media(max-width:640px){details.e > summary{grid-template-columns:auto 1fr auto}.d{grid-column:1/-1;order:-1}.one{grid-column:1/-1}}
 </style>
 </head>
@@ -48,8 +57,53 @@ details.e > summary::-webkit-details-marker{display:none}
     <span class="count" id="count"></span>
   </div>
   <div id="list"><p class="count">載入中…</p></div>
+  <h2 id="old">2026-10-16 以前</h2>
+  <p class="lead">log 開始之前的紀錄：時間線和舊頁面，保留不再更新。</p>
+  <details class="e old" data-mm><summary>時間線：從第一輪到現在<span class="hint">測試、假設、驗證、錯誤</span></summary><div class="body">
+      <div class="fsbox"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><div class="mmwrap"><pre class="mermaid">
+flowchart LR
+  P0["hw2 講解頁初版<br/>照模擬器電路圖"]:::page --> R1["第一輪：堆疊排針<br/>測試 1–10d"]:::test
+  R1 --> A1["PCB 追線：R13 100k、<br/>Q_sense 在 SW 前（漏 6 µA）"]:::page
+  A1 --> V1["FI 板是好的 ✓<br/>FI:V+ 沒接上 ✓"]:::ver
+  A1 --> E1["錯：Slow out 只是沒接上<br/>錯：測試 9 解讀<br/>錯：DC 沒 gmin"]:::err
+  R1 -.-> U1["排針接觸不良"]:::user
+  V1 --> R2["第二輪：麵包板<br/>7 種組合"]:::test
+  R2 --> H1["Slow out 壞了：<br/>四個故障假設"]:::hyp --> V2["SO.B3 拉到地 ✓<br/>6 值差 ≤ 0.1 V"]:::ver
+  R2 -.-> U2["S+FI 列對不上<br/>（Leak 還插著？）"]:::user
+  V2 --> U3["你發現 R2 = 100 Ω<br/>（助教以為 1 MΩ）"]:::user
+  U3 --> R3["第三輪：R2 = 1 MΩ<br/>自發小峰 1.6 V／100 ms"]:::test
+  R3 --> V3["漏電把 Vm 墊在門檻 ✓<br/>模擬 1.46 V／128 ms"]:::ver
+  V3 --> F1["修正：外加 22k、11k、1M<br/>方案 3 過極化"]:::page
+  F1 -.-> E2["錯：先建議割線、拔腳"]:::err
+  F1 --> S3["2-3 模擬：底板沒串 V+<br/>CH2 被 FI 電流主導"]:::ver
+  S3 --> NOW["現在：重整網站<br/>基礎目標開始量測"]:::now
+  classDef page fill:#E3ECF7,stroke:#1F5FA8,color:#0F2A4A
+  classDef test fill:#FBEFD2,stroke:#8A6100,color:#3D2B00
+  classDef hyp fill:#F3E1F7,stroke:#7A3E8F,color:#3B1745
+  classDef ver fill:#DCEFD9,stroke:#2F5D3A,color:#16301C
+  classDef err fill:#FBE3DE,stroke:#A33A2B,color:#4A120A
+  classDef user fill:#FDE7CF,stroke:#C26A12,color:#4A2A05
+  classDef now fill:#1E262C,stroke:#1E262C,color:#FFFFFF
+</pre></div></div>
+      <p class="small muted">完整版（49 個節點、錯誤清單、假設驗證表）在 <a href="../hw2-status/">HW2 現況整理（舊頁）</a>。2026-10-16 之後的每一步在上面的紀錄。</p>
+    </div></details>
+  <details class="e old"><summary>History／Log：舊頁面<span class="hint">新介面建立前的內容，保留不再更新</span></summary><div class="body">
+      <div class="tbl"><table>
+        <tr><th>頁面</th><th>內容</th><th>最後更新</th></tr>
+                <tr><td><a href="../hw2-status/">HW2 現況整理</a></td><td>分頁清單、測試與回報、完整時間線、錯誤清單、假設驗證表、題目進度</td><td>10-12 <code>1e56826</code></td></tr>
+        <tr><td><a href="../hw2/">HW2 實驗講解</a></td><td>三個實驗的操作指引、五參數定義、量電流方法、示波器設定、預期趨勢、題目對應、常見問題</td><td>10-12</td></tr>
+        <tr><td><a href="../hw2-debug/">HW2 #2-2 除錯分析</a></td><td>三輪量測、PCB 追線、手算、模擬方法與對照、AP 判定、過極化、修正與量測對照表</td><td>10-12</td></tr>
+        <tr><td><a href="../hw2-debug/nodes.html">節點命名</a></td><td>每個節點的焊墊位置與預期電壓、外加元件夾點、接點表</td><td>10-09</td></tr>
+        <tr><td><a href="../active-membrane-sim/">#2-2 互動模擬（舊）</a></td><td>舊版 #2-2 單頁模擬</td><td>10-12</td></tr>
+        <tr><td><a href="../passive-active-sim/">#2-3 互動模擬（舊）</a></td><td>舊版 #2-3 單頁模擬與結果表</td><td>10-12</td></tr>
+        <tr><td><a href="../hw2-debug/sim/">Python 模擬程式</a></td><td>sim.py 與所有 check_*.py</td><td>10-12</td></tr>
+      </table></div>
+      <p class="small muted">舊頁的數字是 10 pF 雜散電容加入前算的，和現在差 ≤ 0.07 V（R2 = 1 MΩ 按下的第一個峰除外，見 HW2 實驗台進階摘要的「模擬方法」）。</p>
+      <p class="small muted">git：878d56f（除錯頁）→ 16b0e49（節點命名）→ 1b24c64（講解頁改照 PCB）→ 51aca21（第二輪）→ 22a8396（R2 故障）→ 61d2ea1（外加修正、AP 判定）→ 057f4c7（#2-3）→ 36844c3（完整電路圖、leak）→ 1e56826（現況整理）。</p>
+    </div></details>
   <footer>© 2026 Lucas Sullivan</footer>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
 <script>
 (function(){
   'use strict';
@@ -110,7 +164,7 @@ details.e > summary::-webkit-details-marker{display:none}
         '<span class="one">' + inline(e.one) + '</span><span class="st">' + esc(e.status) + '</span><span class="d">' + esc(e.date) + '</span></summary>' +
         '<div class="body">' + md(e.body) + '<p class="tags">標籤：' + esc(e.tags) + '</p></div></details>';
     }).join('');
-    var els = Array.prototype.slice.call(document.querySelectorAll('details.e'));
+    var els = Array.prototype.slice.call(document.querySelectorAll('#list details.e'));
     function filter(){
       var q = $('#q').value.trim().toLowerCase(), any = Object.keys(on).some(function(k){ return on[k]; }), n = 0;
       els.forEach(function(el, i){
@@ -126,6 +180,13 @@ details.e > summary::-webkit-details-marker{display:none}
     filter();
     if(location.hash){ var t = document.getElementById(location.hash.slice(1)); if(t){ t.open = true; t.scrollIntoView(); } }
     window.addEventListener('hashchange', function(){ var t = document.getElementById(location.hash.slice(1)); if(t){ t.open = true; } });
+  }
+  /* the old timeline: draw the mermaid chart the first time it is opened */
+  var mm = document.querySelector('details[data-mm]');
+  if(mm && window.mermaid){
+    var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    mermaid.initialize({startOnLoad:false, theme:dark ? 'dark' : 'neutral', securityLevel:'loose', flowchart:{useMaxWidth:false}});
+    mm.addEventListener('toggle', function(){ var pre = mm.querySelector('pre.mermaid'); if(mm.open && pre && !pre.dataset.done){ pre.dataset.done = '1'; mermaid.run({nodes:[pre]}); } });
   }
 })();
 </script>

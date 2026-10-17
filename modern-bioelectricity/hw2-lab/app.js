@@ -493,7 +493,7 @@
     if(INSP && inspSim === s) INSP.update();
   }
 
-  /* ---------------- mode, navigation, fullscreen, mermaid ---------------- */
+  /* ---------------- mode, navigation, fullscreen ---------------- */
   function setMode(m){
     MODE = m; document.body.dataset.mode = m;
     try{ localStorage.setItem('hw2mode', m); }catch(e){}
@@ -552,16 +552,6 @@
     s.cv.addEventListener('pointerleave', function(){ s.cursor = null; });
   });
 
-  if(window.mermaid){
-    var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    mermaid.initialize({startOnLoad:false, theme:dark ? 'dark' : 'neutral', securityLevel:'loose', flowchart:{useMaxWidth:false}});
-    $$('details[data-mm]').forEach(function(d){
-      d.addEventListener('toggle', function(){
-        var pre = $('pre.mermaid', d);
-        if(d.open && pre && !pre.dataset.done){ pre.dataset.done = '1'; mermaid.run({nodes:[pre]}); }
-      });
-    });
-  }
 
   /* static full drawings of the true-AP circuit (summary, advanced) */
   $$('svg[data-trueap]').forEach(function(svg){
@@ -587,6 +577,48 @@
     $('.r0dlg-x', dlg).addEventListener('click', function(){ dlg.close(); });
     dlg.addEventListener('click', function(e){ if(e.target === dlg) dlg.close(); });   /* backdrop */
   }
+
+
+  /* 1 摘要: every card is a tile; clicking one opens it in a window, so the whole list fits on one screen.
+     The card's body moves into the window and back, so drawings already rendered inside it are kept. */
+  var tdlg = document.createElement('dialog'), tileOpen = null;
+  tdlg.className = 'r0dlg tdlg';
+  tdlg.innerHTML = '<div class="r0dlg-h"><b></b><button type="button" class="r0dlg-x" aria-label="關閉">✕</button></div><div class="r0dlg-b"></div>';
+  document.body.appendChild(tdlg);
+  /* put the body back right away (the dialog's close event can arrive late, or not at all in a page that isn't painting) */
+  function closeTile(){
+    if(tileOpen){ tileOpen.d.appendChild(tileOpen.body); tileOpen = null; }
+    if(tdlg.open) tdlg.close();
+  }
+  function openTile(d){
+    closeTile();
+    var sum = d.querySelector('summary').cloneNode(true), hint = sum.querySelector('.hint'), body = d.querySelector(':scope > .body');
+    if(hint) hint.remove();
+    $('b', tdlg).textContent = sum.textContent.trim();
+    $('.r0dlg-b', tdlg).appendChild(body);
+    tileOpen = {d:d, body:body};
+    if(tdlg.showModal) tdlg.showModal(); else tdlg.setAttribute('open', '');
+    tdlg.scrollTop = 0;
+  }
+  tdlg.addEventListener('close', closeTile);
+  tdlg.addEventListener('cancel', function(e){ e.preventDefault(); closeTile(); });   /* Esc */
+  $('.r0dlg-x', tdlg).addEventListener('click', closeTile);
+  tdlg.addEventListener('click', function(e){ if(e.target === tdlg) closeTile(); });
+  $$('#r1 details.card').forEach(function(d){
+    d.open = false;
+    d.querySelector('summary').addEventListener('click', function(e){ e.preventDefault(); openTile(d); });
+  });
+  /* links to a card (e.g. #hold23, #leak, #bbst) open it */
+  function openFromHash(id){
+    var d = id && document.getElementById(id);
+    if(d && d.matches('#r1 details.card')){ openTile(d); return true; }
+    return false;
+  }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if(a && !a.closest('nav') && openFromHash(a.getAttribute('href').slice(1))) e.preventDefault();
+  });
+  if(location.hash) openFromHash(location.hash.slice(1));
 
   /* ---------------- start ---------------- */
   document.body.dataset.mode = MODE;
