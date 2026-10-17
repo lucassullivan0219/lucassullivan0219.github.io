@@ -7,8 +7,8 @@
   var $$ = function(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var DT = 2e-4;
   var MODE = 'basic', FLOW = true;
-  try{ MODE = ({adv:'adv', adv2:'adv2'})[localStorage.getItem('hw2mode')] || 'basic'; FLOW = localStorage.getItem('hw2flow') !== '0'; }catch(e){}
-  /* a data-show block lists the modes it belongs to, e.g. "adv adv2" */
+  try{ MODE = localStorage.getItem('hw2mode') === 'adv' ? 'adv' : 'basic'; FLOW = localStorage.getItem('hw2flow') !== '0'; }catch(e){}
+  /* a data-show block lists the modes it belongs to, e.g. "basic adv" */
   function inMode(blk, m){ return blk.dataset.show.split(' ').indexOf(m) >= 0; }
 
   /* the board as built (PCB), with the TA's 1 Mohm in the Slow out R2 position (every board has it now) */
@@ -21,32 +21,19 @@
      R13, 680k R13 lower end -> FI.E3, 56k across SO C1, 330k V+ -> Vm (#2-3 adds 560k V+ -> each unit) */
   var TRUE_AP = {so_r2:1e6, qs:'rx', r13p:11e3, rf:680e3, rs:56e3, rb:330e3};
 
-  /* 進階目標 2, rebuilt on a breadboard (numbers in log MB-020): Q_sense emitter after SW as drawn, FI on the shared
-     rail, a 1N4148 in series with the Stimulator output, 9 V, 100 kohm pot.  A = the handout schematic plus those
-     fixes; B = A with R13 2.2 kohm and three bias resistors (+680 kohm V+ -> each passive unit). */
-  var BB = {qs:'sw', stdiode:true, vplus:9, so_r2:1e6, fi_supply:'stim', r13p:0, rf:0, rb:0, rs:0, ru:0, rl:0};
-  var BB_A = Object.assign({}, BB, {r13:1e3});
-  var BB_B = Object.assign({}, BB, {r13:2.2e3, rb:390e3, rf:680e3, rs:56e3});
 
   /* ---------------- simulation regions ---------------- */
   var SIMS = {
     s21:{
       def:{basic:{rpot:700, ch2:'Vm'},
-           adv:{rpot:700, src:'stim', isrc:50e-6, qs:'pcb', vplus:7.8, ch1:'PC1', ch2:'Vm'},
-           adv2:Object.assign({rpot:700, src:'stim', isrc:50e-6, ch1:'PC1', ch2:'Vm'}, BB)},
+           adv:{rpot:700, src:'stim', isrc:50e-6, qs:'pcb', vplus:7.8, ch1:'PC1', ch2:'Vm'}},
       fixed:function(m, s){ var f = {chain:4, fi_on:false, so_on:false}; if(m === 'basic') f.ch1 = 'PC1'; return f; },
       sch:function(st){ return {chain:4, passiveOnly:true}; },
       meas:['global', 'global'], scope:{v1:0.5, v2:0.5, t:0.1, z2:1}
     },
     s22:{
       def:{basic:{rpot:700, leak:true, fi_on:true, so_on:true, r13:1e5, ch2:''},
-           adv:{rpot:700, leak:true, fi_on:true, so_on:true, ch2:''},
-           adv2:Object.assign({rpot:700, leak:true, fi_on:true, so_on:true, ch2:''}, BB_B)},
-      presetsAdv2:[
-        ['A', '方案 A', BB_A, '照講義電路圖接（Q_sense 在 SW 之後、R13 = 1 kΩ、FI 用同一條 9 V），再加輸出二極體：靜止 0 V、不自發；按 8 ms 以上觸發，AP 8.7 V（拔 FI 2.9 V）；按住約 12 Hz 連續發放。沒有後過極化；部分元件組合長按放開後會繼續自己放電。'],
-        ['B', '方案 B', BB_B, 'A 再把 R13 換 2.2 kΩ、加 390 kΩ V+→Vm、680 kΩ V+→FI.E3、56 kΩ 並 SO C1：靜止 1.19 V；按 8 ms 以上觸發，AP 8.0 V（拔 FI 3.2 V）、半高寬 7 ms；短按後降到 0.58 V（低於靜止 0.6 V），約 136 ms 回到靜止；按住約 30 Hz；隨機元件參數 30 組都正常。']
-      ],
-      adv2Preset:'B',
+           adv:{rpot:700, leak:true, fi_on:true, so_on:true, ch2:''}},
       fixed:function(m){ return {}; },
       sch:function(st){ return {chain:0, lk2:!!st.lk2}; },
       meas:['firstAP', 'global'], scope:{v1:1, v2:0.5, t:0.05, z2:1},
@@ -63,13 +50,7 @@
     },
     s23:{
       def:{basic:{chain:4, rpot:700, ch2:'AX'},
-           adv:{chain:4, rpot:0, fi_supply:'stim', src:'stim', isrc:40e-6, ch2:'AX', fi_on:true, so_on:true},
-           adv2:Object.assign({chain:4, rpot:700, src:'stim', isrc:40e-6, ch2:'AX', fi_on:true, so_on:true}, BB_B, {ru:680e3})},
-      presetsAdv2:[
-        ['A', '方案 A', BB_A, '照電路圖＋輸出二極體，V+ 用同一條軌：n = 0–4 靜止 0 V，都有 AP（8.2–8.7 V），I_min = 6.6／12.8／20.4／29.7／42.3 µA。沒有後過極化。'],
-        ['B', '方案 B', Object.assign({}, BB_B, {ru:680e3}), 'B 再加每個 Passive unit 一顆 680 kΩ 接 V+：n = 0–4 靜止 1.18–1.19 V，AP 6.9–8.0 V（按 300 ms）；I_min = 13.3／22.7／34.4／50.7／72.3 µA，100 kΩ 可變電阻（約 11–100 µA）都量得到；delay（0.7 kΩ）= 15／31／54／90／156 ms。']
-      ],
-      adv2Preset:'B',
+           adv:{chain:4, rpot:0, fi_supply:'stim', src:'stim', isrc:40e-6, ch2:'AX', fi_on:true, so_on:true}},
       fixed:function(m, s){ return {}; },
       sch:function(st){ return {chain:st.chain}; },
       meas:['firstAP', 'signed'], scope:{v1:1, v2:0.02, t:0.1, z2:4},
@@ -89,9 +70,8 @@
   Object.keys(SIMS).forEach(function(k){
     var s = SIMS[k];
     s.id = k; s.el = $('[data-sim="' + k + '"]'); s.svg = $('svg.sch', s.el); s.cv = $('canvas', s.el);
-    s.state = {basic:Object.assign({}, s.def.basic), adv:Object.assign({}, s.def.adv), adv2:Object.assign({}, s.def.adv2 || s.def.adv)};
+    s.state = {basic:Object.assign({}, s.def.basic), adv:Object.assign({}, s.def.adv)};
     if(s.presets){ var tp = s.presets[s.presets.length - 1]; Object.assign(s.state.adv, tp[2], {_preset:tp[0], _note:tp[3]}); }
-    if(s.presetsAdv2){ var ap = s.presetsAdv2.filter(function(p){ return p[0] === s.adv2Preset; })[0]; Object.assign(s.state.adv2, ap[2], {_preset:ap[0], _note:ap[3]}); }
     if(s.presetsBasic){ var bp = s.presetsBasic.filter(function(p){ return p[0] === s.basicPreset; })[0]; Object.assign(s.state.basic, bp[2], {_preset:bp[0], _note:bp[3]}); }
     s.sc = {v1:s.scope.v1, v2:s.scope.v2, t:s.scope.t, z1:1, z2:s.scope.z2, mode:'roll', tsrc:'ch1', lvl:1.0,
             trig:'idle', t0:0, prev:0, frozen:null};
@@ -276,7 +256,7 @@
     });
     /* presets */
     $$('[data-presets]', panel).forEach(function(box){
-      var m = boxMode(box), list = m === 'basic' ? s.presetsBasic : m === 'adv2' ? s.presetsAdv2 : s.presets;
+      var m = boxMode(box), list = m === 'basic' ? s.presetsBasic : s.presets;
       box.innerHTML = list.map(function(p){ return '<button class="btn" type="button" data-p="' + p[0] + '">' + p[1] + '</button>'; }).join('');
       $$('button', box).forEach(function(b){ b.addEventListener('click', function(){
         var p = list.filter(function(x){ return x[0] === b.dataset.p; })[0];
@@ -294,7 +274,7 @@
         '<div class="row"><label>時間/div</label><select data-sc="t">' + [0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5].map(function(v){ return '<option value="' + v + '">' + (v * 1e3) + ' ms</option>'; }).join('') + '</select></div>' +
         '<div class="btns" style="margin:4px 0"><button class="btn" type="button" data-scmode="roll">Roll</button><button class="btn" type="button" data-scmode="single">Single</button><button class="btn" type="button" data-arm>重新擷取</button></div>' +
         '<div class="row"><label>速度</label><select data-sc="speed"><option value="1">1×</option><option value="0.25">¼×</option><option value="0.05">1/20×</option><option value="0.01">1/100×</option><option value="0">暫停</option></select></div>' +
-        '<div data-show="adv adv2"><div class="row"><label>觸發</label><select data-sc="tsrc"><option value="ch1">CH1 上升</option><option value="sw">按下 SW</option></select></div>' +
+        '<div data-show="adv"><div class="row"><label>觸發</label><select data-sc="tsrc"><option value="ch1">CH1 上升</option><option value="sw">按下 SW</option></select></div>' +
         '<div class="row"><label>觸發準位（V）</label><input type="number" step="0.1" data-sc="lvl" style="width:5em"></div>' +
         '<div class="row"><label>CH2 零點</label><select data-sc="z2"><option value="1">底部</option><option value="4">中間</option></select></div></div>' +
         '<p class="small muted" data-trigstate style="margin:2px 0 0"></p>';
