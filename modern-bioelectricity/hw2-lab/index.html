@@ -254,11 +254,11 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
     <button type="button" data-mode="basic" aria-pressed="true">基礎目標<small>照助教的電路</small></button>
     <button type="button" data-mode="adv" aria-pressed="false">進階目標<small>做出真正的 AP</small></button>
   </div>
-  <p class="mode-note" data-show="basic">完整測試助教給的電路、完成每一題，測出什麼就寫什麼。</p>
+  <p class="mode-note" data-show="basic">完整測試助教給的電路，並和我們組的量測對照。</p>
   <p class="mode-note" data-show="adv">做出真正能模擬 AP 的電路，具體計算、解釋助教電路的問題。</p>
   <nav class="regions" aria-label="區域">
     <a href="#r0"><span class="n">0</span><span>電路圖與 PCB 的差別<small>3 處不同，一張圖看完</small></span></a>
-    <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small data-show="basic">模型定義、題目清單、可能的問題</small><small data-show="adv">電路的問題、改法、AP 判定</small></span></a>
+    <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small data-show="basic">模型定義、可能的問題</small><small data-show="adv">電路的問題、改法、AP 判定</small></span></a>
     <a href="#r2"><span class="n">2</span><span>#2-1 Passive<small>5 個 Passive unit</small></span></a>
     <a href="#r3"><span class="n">3</span><span>#2-2 Active<small>Stimulator + LK + FI + SO</small></span></a>
     <a href="#r4"><span class="n">4</span><span>#2-3 Passive → active<small>0–4 個 unit + active</small></span></a>
@@ -323,7 +323,7 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
       <tr><th></th><th class="num">照電路圖</th><th class="num">照 PCB</th><th class="num">實測（PCB）</th></tr>
       <tr><td>SW 放開時的 Vm</td><td class="num t-ok">0 V，穩定</td><td class="num t-warn">0.53 V，每 129 ms 自發一個 1.46 V 小峰</td><td class="num t-warn">0.6 V，約每 100 ms 一個 1.6 V 小峰</td></tr>
       <tr><td>#2-2 按 100 ms 的峰值</td><td class="num t-ok">8.36 V</td><td class="num t-warn">2.05 V</td><td class="num">約 2.2 V</td></tr>
-      <tr><td>同上，拔掉 FI（TTX）</td><td class="num">2.89 V</td><td class="num t-warn">1.94 V（和有 FI 幾乎一樣）</td><td class="num">—</td></tr>
+      <tr><td>同上，拔掉 FI（TTX）</td><td class="num">2.89 V</td><td class="num t-warn">1.94 V（和有 FI 幾乎一樣）</td><td class="num">1.84 V（10-13，95 µA；同條件有 FI 2.31 V）</td></tr>
       <tr><td>#2-3 n = 2，按 300 ms 的峰值</td><td class="num t-ok">8.21 V（拔 FI 1.51 V）</td><td class="num t-warn">1.36 V（拔 FI 1.43 V：FI 沒電）</td><td class="num">—</td></tr>
     </table></div>
     <p class="small muted">「照電路圖」：Q<sub>sense</sub> 射極在 SW 之後、R13 = 1 kΩ、FI 自帶 9 V 電池、電池 9 V。「照 PCB」：從講義的 PCB 佈線圖逐焊墊追線得到的接法（<a href="../hw2-debug/#s2">netlist</a>）、電池實測 7.8 V。兩邊的 Slow out R2 都用 1 MΩ，可變電阻 0.7 kΩ（約 90 µA）。模擬用 <a href="../active-membrane-sim/engine.js">engine.js</a>（和 Python 的 <a href="../hw2-debug/sim/">sim.py</a> 同一個模型）；實測是我們組第二、三輪的量測。紀錄：<a href="../log/#MB-015">MB-014</a>。</p>
@@ -366,7 +366,7 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
     <h4>造成的問題</h4>
     <ul>
       <li><b>內向電流最多約 70 µA</b>（設計約 6.8 mA），和 Stimulator 的 90 µA 同一個量級，FI 推不出再生性的上升。</li>
-      <li><b>「AP」和拔掉 FI 一樣高</b>：2.05 vs 1.94 V（照電路圖 8.36 vs 2.89 V）。#2-2 Q6 的 TTX 看不出差別；Q4（換 50 k–3 M）是在一個本來就沒有 AP 的電路上比較。</li>
+      <li><b>「AP」和拔掉 FI 一樣高</b>：2.05 vs 1.94 V（照電路圖 8.36 vs 2.89 V）。模擬中 #2-2 Q6 的 TTX 看不出差別，但我們組實測差別比較明顯：有 FI 2.31 V、拔掉 1.84 V（95 µA，峰值低 25 %），原因未確定；Q4（換 50 k–3 M）是在一個本來就沒有 AP 的電路上比較。</li>
     </ul>
     <p class="ev">實測證據：FI 自鎖時 FI.E4 = 4.0 V。R13 = 1 kΩ 時應在 7.77 V，100 kΩ 才會是 4 V。</p>
   </template>
@@ -390,7 +390,7 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
 <section class="region textreg" id="r1">
   <div data-show="basic">
     <h2>1 摘要與注意事項（基礎目標）</h2>
-    <p class="lede">照助教給的電路量完每一題。模擬也照實體 PCB 建，唯一的差別寫在下面第一張卡。</p>
+    <p class="lede">照助教給的電路模擬，並和我們組的量測對照。模擬照實體 PCB 建，唯一的差別寫在下面第一張卡。</p>
     <div class="cards">
       <details class="card" open><summary>基礎模型＝助教給的電路<span class="hint">#2-3 另有 V+ 飛線的選項</span></summary><div class="body">
         <ul>
@@ -403,30 +403,10 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
         </ul>
       </div></details>
 
-      <details class="card" open><summary>作業題目與狀態<span class="hint">點題號跳到對應區域</span></summary><div class="body">
-        <div class="tbl"><table>
-          <tr><th>題目</th><th>要交</th><th>狀態</th></tr>
-          <tr class="grp"><td colspan="3">#2-0：合照、組員名單</td></tr>
-          <tr class="grp"><td colspan="3"><a href="#r2">#2-1 Passive</a></td></tr>
-          <tr><td>Q1–Q3</td><td>照片；五參數；五種刺激時間的 4 張圖（第一 vs 最後）</td><td class="t-ok">已量，和模擬相同</td></tr>
-          <tr><td>Q4–Q5</td><td>差異原因、生理意義</td><td class="t-part">要寫</td></tr>
-          <tr class="grp"><td colspan="3"><a href="#r3">#2-2 Active</a></td></tr>
-          <tr><td>Q1–Q2</td><td>照片；一個 AP 的五參數</td><td class="t-warn">未量</td></tr>
-          <tr><td>Q3</td><td>五種電流 vs 峰值、半高寬、rise τ、decay τ</td><td class="t-warn">未量</td></tr>
-          <tr><td>Q4</td><td>電阻 50k–3M 的四張圖</td><td class="t-warn">未量</td></tr>
-          <tr><td>Q5</td><td>靜止電位、內向／外向電流的反轉電位</td><td class="t-part">有線索</td></tr>
-          <tr><td>Q6</td><td>TTX（拔 FI）、TEA（拔 SO）</td><td class="t-part">第二輪有組合數值</td></tr>
-          <tr><td>Q7</td><td>生理意義</td><td class="t-part">要寫</td></tr>
-          <tr class="grp"><td colspan="3"><a href="#r4">#2-3 Passive → active</a></td></tr>
-          <tr><td>Q1–Q5</td><td>照片；AP 五參數；n vs I<sub>min</sub>；n vs delay；intra vs extra</td><td class="t-warn">未量</td></tr>
-          <tr><td>Q6</td><td>生理意義</td><td class="t-part">要寫</td></tr>
-        </table></div>
-      </div></details>
-
       <details class="card" open><summary>我認為可能有問題的地方<span class="hint">會影響基礎目標的量測</span></summary><div class="body">
         <ol>
           <li><b>#2-2 沒有穩定的靜止</b>：Stimulator 放開時漏 6 µA，把 Vm 墊在 FI 門檻，不按也每 0.1 秒左右冒一個約 1.5 V 小峰（第三輪實測 1.6 V）。按下的第一個峰約 2.1 V（實測 2.2 V），按住被 Slow out 拉在約 0.8 V（實測 0.6–1.0 V、約 40 Hz）。示波器用 Single、觸發準位 1.8 V 以上，才抓得到按下的那一個。</li>
-          <li><b>R13 = 100 kΩ</b>：FI 最多只送約 70 µA，「AP」和拔掉 FI 的被動反應差不多（模擬 2.1 vs 1.9 V），TTX 看不太出差別。</li>
+          <li><b>R13 = 100 kΩ</b>：FI 最多只送約 70 µA，「AP」和拔掉 FI 的被動反應差不多（模擬 2.1 vs 1.9 V），TTX 看不太出差別。實測（10-13，95 µA）差別比模擬大：2.31 vs 1.84 V；換 R13 50 k → 3 M 峰值 2.27 → 1.05 V（從基線算）。原因未確定。</li>
           <li><b>基線不是 0</b>：Stimulator 放開時漏 6 µA，只接 Leak 時基線約 0.6–0.7 V。amplitude 一律用「波峰 − 基線」。</li>
           <li><b>#2-3 要拉 V+ 飛線</b>：沒拉時 FI 沒有 V+，n ≥ 1 只有被動反應。拉了飛線，原版電路就有 AP：峰值約 2.3／2.0／1.8／1.6 V（n = 1–4），過門檻 FI 衝高、SO 拉回，但沒有後過極化（另一組實測就是這樣）。下面「#2-3 有沒有飛線」可以對照。</li>
           <li><b>#2-3 n = 3、4 可能卡住</b>：有飛線時按住 0.3 秒以上，放開後 Vm 卡在約 0.76 V（FI 和 SO 互相撐住），要斷電重置。用短按，或每次量完斷電。這是預設參數的模擬，實際板子不一定會卡。</li>
@@ -461,7 +441,7 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
         <p class="small">Stimulator 的範圍是約 44–99 µA（可變電阻 10–0 kΩ），只有 n = 4 的連續發放帶落在裡面：可變電阻 ≥ 5.5 kΩ（≤ 58 µA）就連續發放，5.5 kΩ 約 14 Hz、10 kΩ 約 10 Hz，第一個 1.36–1.48 V，之後每個約 1.0–1.1 V、谷底約 0.6 V。在 <a href="#r4">#2-3 區域</a>選 n = 4、把可變電阻拉到 6 kΩ 以上再長按就看得到。</p>
         <p class="small"><b>為什麼你們第二次、其他組都變成連續發放</b>（照可能性排）：</p>
         <ol class="small">
-          <li><b>可變電阻的位置變了</b>：量 Q3（找 I<sub>min</sub>）時會把可變電阻轉到小電流那邊，沒轉回 0.7 kΩ，n = 4 長按就變連續發放。先把可變電阻轉回去，或用 S + 1 個 Passive unit 重量電流（平台 ÷ 100 kΩ），高於約 60 µA 就應該回到「拉高基線」。</li>
+          <li><b>可變電阻的位置變了</b>：量 Q3（找 I<sub>min</sub>）時會把可變電阻轉到小電流那邊，沒轉回 0.7 kΩ，n = 4 長按就變連續發放。先把可變電阻轉回去，或用 S + 1 個 Passive unit 重量電流（平台 ÷ 100 kΩ；超過約 65 µA 平台會被削平、讀不準），高於約 60 µA 就應該回到「拉高基線」。</li>
           <li><b>FI 的 2N4403 β 不一樣</b>：模擬用 β = 150。只把 FI 那顆改成 120，n = 4 在 0.7 kΩ 就連續發放，n = 3 在 4 kΩ 以上也會；改成 100，n = 4 連 0 kΩ（最大電流）都連續發放。2N4403 的 β 規格是 100–300，而且隨溫度變，每組的板子不同，所以別組在一般設定下就連續發放並不奇怪。只改 SO 或 Stimulator 那顆的 β，結果不變。</li>
           <li><b>n 不一樣</b>：n ≤ 3 的連續發放帶在 Stimulator 的電流範圍以下，原版 β 時只會看到一個 spike＋拉高基線。</li>
         </ol>
@@ -485,17 +465,12 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
       <details class="card"><summary>量測注意事項<span class="hint">五參數、電流、示波器</span></summary><div class="body">
         <ul>
           <li><b>五參數</b>：stimulation current、peak amplitude（波峰 − 基線）、half-width（50 % 高度的寬度）、rise τ（刺激開始到 63 % 振幅）、decay τ（波峰到剩 37 %）。講義的 “decade” 理解成 decay。模擬區右側會自動算。</li>
-          <li><b>量電流（沒有三用電表）</b>：只接 Stimulator + 1 個 Passive unit，按住 SW 超過 0.5 秒，平台電壓 ÷ 100 kΩ。量好就不要再轉可變電阻。</li>
+          <li><b>量電流（沒有三用電表）</b>：只接 Stimulator + 1 個 Passive unit，按住 SW 超過 0.5 秒，平台電壓 ÷ 100 kΩ。量好就不要再轉可變電阻。<b>只在平台低於約 6.5 V（電流 ≲ 65 µA）時準</b>：Stimulator 的輸出上限約 7.1 V，電流更大時平台被削平，算出來（或電表讀到）的是削平後的電流，偏低。我們組 10-13 只接 1 個 unit：平台 6.97 V、電表 0.07 mA，上升 τ 75 ms、到 95 % 150 ms；用削頂反推設定電流約 83 µA，同一個模型預測到 95 % 是 157 ms。</li>
           <li><b>示波器</b>：#2-1 0.2–0.5 V/div、100–200 ms/div；#2-2 1 V/div、10–50 ms/div；#2-3 CH2 細胞外 10–50 mV/div。上升緣觸發、Single。</li>
-          <li>每按一次至少隔 1 秒，讓電容放電。圖要標格子大小和量測點。</li>
+          <li>每按一次至少隔 1 秒，讓電容放電。</li>
         </ul>
       </div></details>
 
-      <details class="card"><summary>繳交規定（#2-0）<span class="hint">英文、檔名、字型</span></summary><div class="body"><ul>
-      <li>全英文；Times New Roman 12；檔名 <code>HW02_學號_姓名.pdf</code>；不可抄襲。</li>
-      <li>圖片要標註；示波器截圖標格子大小；標出量測點或範圍。</li>
-      <li>#2-0：組員合照、組員名單。</li>
-    </ul></div></details>
       <details class="card"><summary>節點與接點速查<span class="hint">回報量測時用</span></summary><div class="body"><ul>
       <li>格式「板.節點」：ST Stimulator、LK Leak、FI Fast inward、SO Slow out。單寫 Vm = Stimulator 輸出（CH1）。</li>
       <li>FI.V+ = R13 下端（應為 7.8 V）；FI.E4 = R13 上端；SO.S = SO 的 C1 上腳；SO.B3 = SO 的 D1「−」端。</li>
@@ -677,6 +652,8 @@ Passive unit：9 × 100/(100 + 680) = 1.15 V ≈ active 端 → 被動鏈靜止�
 
       <details class="card"><summary>手算重點（PCB 原版）<span class="hint">Stimulator 漏電、FI 自鎖、Slow out 極限</span></summary><div class="body">
 <div class="calc">Stimulator 按住：I ≈ 0.65 V / (pot + 7 kΩ) + 6 µA = 44–99 µA；輸出上限 ≈ 7.8 − 0.65 − 0.05 = 7.1 V
+  只接 1 個 Passive unit（實測 10-13）：平台 6.97 V 卡在上限 → 削頂：0.632·6.47 = A∞(1 − e^(−75/100)) → A∞ = 7.75 V
+  → 設定電流 ≈ 78 + 5 = 83 µA；到 95 %：−100·ln(1 − 0.95·6.47/7.75) = 157 ms（實測 150 ms）
 Stimulator 放開：ST.R = 7.8 − 0.65 − 0.53 = 6.62 V → I_C(sense) = 6.62/7k = 0.946 mA
                  I_B(sense) = 0.946 mA / 150 = 6.3 µA → 接 Leak：0.63 V
 FI 自鎖：(V+ − Vm)/100k = (Vm − 0.85)/100k → Vm = (7.8 + 0.85)/2 ≈ 4.4 V（實測 4.0，模擬 4.24）
@@ -799,10 +776,10 @@ Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) 
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
         <li><b>Q2</b> 按一下（例如 100 ms）記錄一個「AP」的五參數（模擬約 2.1 V、按下後約 11 ms 到峰）。不按也會自己冒小峰：Single、觸發準位 1.8 V 以上。</li>
-        <li><b>Q3</b> 五種可變電阻位置，每個量一次（電流用 S + 1 個 Passive unit 換算）。</li>
+        <li><b>Q3</b> 五種可變電阻位置，每個量一次（電流用 S + 1 個 Passive unit 換算；平台要低於約 6.5 V，見摘要「量測注意事項」）。</li>
         <li><b>Q4</b> R13 換 50k–3M，電流固定。</li>
         <li><b>Q5</b> 基線、FI 能推到的最高點（拔 SO、FI 鎖住）、SO 能拉到的最低點。</li>
-        <li><b>Q6</b> 拔 FI（TTX）、拔 SO（TEA）各量一次。拔 FI：不再自己冒峰，按下到 1.9 V（和有 FI 的 2.1 V 差不多）；拔 SO：FI 不按就鎖在 3.0 V，按住升到 5.8 V。</li>
+        <li><b>Q6</b> 拔 FI（TTX）、拔 SO（TEA）各量一次。拔 FI：不再自己冒峰，按下到 1.9 V（和有 FI 的 2.1 V 差不多）；拔 SO：FI 不按就鎖在 3.0 V，按住升到 5.8 V。我們組實測（95 µA）：拔 FI 1.84 V（有 FI 2.31 V）；拔 SO 靜止 2.68 V、按下最高 4.60 V（按壓長度沒記錄）。</li>
         <li><b>版本「多疊一個 LK」</b>：LK 上再疊一塊 LK（只加板子、可拆）。靜止降到 0.30 V、不再自己冒峰，每按一次（10 ms 以上）只有一個 AP，Q2、Q3 比較好量。</li>
       </ul>
     </details>
