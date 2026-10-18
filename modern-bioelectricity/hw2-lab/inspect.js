@@ -48,8 +48,8 @@
     rs:['SO C1 外加並聯電阻', '外加', 'SO.S 只到 Vm 的一部分：靜止時 Slow out 關著（真正的 AP 用 56 kΩ）。'],
     rb:['V+ → Vm 外加電阻', '外加', '把靜止電位抬高（真正的 AP 用 330 kΩ）。'],
     rl:['Vm → GND 外加電阻', '外加', '多一條 leak。'],
-    p1:['示波器 CH1 探棒', '示波器', '×10 探棒＝10 MΩ 到 GND。'],
-    p2:['示波器 CH2 探棒', '示波器', '×10 探棒＝10 MΩ 到 GND。']
+    p1:['示波器 CH1 探棒', '示波器', '×1 探棒＝示波器輸入 1 MΩ 到 GND（我們組用 ×1）。'],
+    p2:['示波器 CH2 探棒', '示波器', '×1 探棒＝示波器輸入 1 MΩ 到 GND（我們組用 ×1）。']
   };
   function partInfo(name){
     if(PART[name]) return PART[name];
@@ -303,7 +303,7 @@
       else eqs.push('KCL：Σ<sub>k</sub> I<sub>k</sub>(V) + C<sub>par</sub>·dV/dt + g<sub>min</sub>·' + vn(n) + ' = 0（每個元件的電流見下表）',
         'Newton–Raphson：J·ΔV = −F，ΔV 每步最多 0.1 V；|ΔV| < 0.1 µV 或每個節點 |F| < 10 pA 就收斂',
         '上一步：' + L(function(){ return 'Newton ' + AM.stat.it + ' 次迭代' + (AM.stat.sub ? '（切成 10 個子步）' : '') + '，Δt = ' + si(AM.h(), 's'); }),
-        'g<sub>min</sub> = ' + si(K.GMIN, 'S') + '、C<sub>par</sub> = ' + si(K.CPAR, 'F') + '（×10 探棒與配線）接在每個節點到 GND');
+        'g<sub>min</sub> = ' + si(K.GMIN, 'S') + '、C<sub>par</sub> = ' + si(K.CPAR, 'F') + '（配線）接在每個節點到 GND');
       return '<p class="insp-d">' + esc(nodeInfo(n)) + '</p>' +
         sec('即時數值', table(rows)) +
         sec('KCL：接在這個節點的元件', kcl) +

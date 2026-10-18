@@ -18,7 +18,7 @@ var AM = (function(){
   var NODES = [], N = 0, IDX = {};
 
   var st = {
-    vplus:7.8, sw:false, rpot:0, r13:1e5, rfe:1e5, qs:'pcb', so_r2:1e6, rprobe:1e7, ch2:'',
+    vplus:7.8, sw:false, rpot:0, r13:1e5, rfe:1e5, qs:'pcb', so_r2:1e6, rprobe:1e6, ch2:'',
     r13p:0, rf:0, rb:0, rs:0, rl:0, ru:0,           /* add-ons clipped on, 0 = not fitted; ru: V+ -> every passive unit */
     chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',   /* #2-3: passive units, source, FI battery */
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true,
@@ -165,7 +165,7 @@ var AM = (function(){
       var k, e;
       for(k = 0; k < R.length; k++){ e = R[k]; stampG(e[0], e[1], e[2], 0); }
       for(k = 0; k < N; k++) stampG(k, -1, gmin, 0);
-      /* 10 pF stray capacitance from every node to GND (x10 probe ~10-15 pF, wiring): without it a
+      /* 10 pF stray capacitance from every node to GND (wiring; the x1 probe's ~100 pF sits only on the probed node, negligible next to 1 uF): without it a
          node with no capacitor (Vm with the Leak unplugged) has no dynamics and a latch has no
          unique step solution; tau = 10 pF x 100 kohm = 1 us, far below the 0.2 ms step */
       if(dt){ var gp = CPAR / dt; for(k = 0; k < N; k++) stampG(k, -1, gp, -gp * Vprev[k]); }

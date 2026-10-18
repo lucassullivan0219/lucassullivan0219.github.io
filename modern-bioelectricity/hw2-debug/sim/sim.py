@@ -47,7 +47,7 @@ B3/E3 = 2N3904 base/emitter node, B4/E4/C4 = 2N4403 base/emitter/collector node.
                between FI.V+ and its extracellular node, as in the handout's simulator
                (modelled as a Norton source: 1 ohm in parallel with vplus/1 ohm amps,
                made from two fixed nodes at +-vplus*1e9 V through 1 Gohm).
-  Scope probe  10 Mohm from the probed node to GND (x10 probe)
+  Scope probe  1 Mohm from the probed node to GND (x1 probe, as used in the lab; was 10 Mohm before 10-18)
   Add-ons      extra=[(node_a, node_b, ohm), ...]: resistors clipped onto existing
                component legs (nothing on the PCBs is cut or removed), e.g.
                ('ST.Q', 'ST.R', 22e3) = 22 kohm across Qpass E-B,
@@ -124,7 +124,7 @@ class Circuit:
     def __init__(self, vplus=7.8, sw=False, rpot=5e3, r13=100e3, r_fi_e=100e3,
                  stim=True, leak=True, fi=True, so=True, lk_vm=True,
                  fi_vm=True, fi_vplus=True, fi_gnd=True, so_vm=True, so_gnd=True,
-                 qsense_on_switched=False, rleak=100e3, probe='Vm', rprobe=10e6,
+                 qsense_on_switched=False, rleak=100e3, probe='Vm', rprobe=1e6,
                  r_so_r2=3e6, r_so_r3=1e3, extra=(), chain=0, fi_supply='stim', models=None):
         m = {k: dict(v) for k, v in DEFAULT_MODELS.items()}
         for k, v in (models or {}).items():

@@ -57,7 +57,7 @@ python make_figures.py
 | Slow out 的 R2 | `sim.py` 預設 3 MΩ（PCB 標示，第一、二輪分析用的值）；現在每塊板子都換成助教指定的 1 MΩ，作業題目（`check_23.py`、`check_ap.py`、`check_trueap.py`）都用 `Circuit(r_so_r2=1e6)`。100 Ω（套件原本附的）只出現在重現第二、三輪的 `check_breadboard.py`、`check_r2.py` |
 | 外加元件 | `Circuit(extra=[('ST.Q', 'ST.R', 22e3), ...])`：夾在既有元件腳上的電阻（不割線、不改線）。常用的幾顆定義在 `check_ap.py` 開頭 |
 | #2-3 被動鏈 | `Circuit(chain=n)`：Stimulator → n 個 1 µF ∥ 100 kΩ（各隔 10 kΩ，細胞外各隔 100 Ω）→ active membrane。`fi_supply='local'` 讓 FI 自帶電池（講義模擬器） |
-| 示波器探棒 | 10 MΩ（×10） |
+| 示波器探棒 | 1 MΩ（×1，實驗用的；10-18 以前是 10 MΩ） |
 | 雜散電容 | 每個節點 10 pF 到 GND（只在暫態；10-12 加入，讓拔掉 Leak 時的 FI 自鎖有唯一解，其他結果差 ≤ 0.07 V） |
 | 電源 | V+ = 7.8 V（實測） |
 

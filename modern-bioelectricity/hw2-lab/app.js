@@ -12,7 +12,7 @@
   function inMode(blk, m){ return blk.dataset.show.split(' ').indexOf(m) >= 0; }
 
   /* the board as built (PCB), with the TA's 1 Mohm in the Slow out R2 position (every board has it now) */
-  var BASE_ST = {vplus:7.8, rpot:700, r13:1e5, rfe:1e5, qs:'pcb', so_r2:1e6, rprobe:1e7, ch1:'Vm', ch2:'',
+  var BASE_ST = {vplus:7.8, rpot:700, r13:1e5, rfe:1e5, qs:'pcb', so_r2:1e6, rprobe:1e6, ch1:'Vm', ch2:'',
     r13p:0, rf:0, rb:0, rs:0, rl:0, ru:0, chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true, fi_on:true, so_on:true, lk2:false, leak2:true,
     stdiode:false};
@@ -33,14 +33,14 @@
            adv:Object.assign({rpot:700, src:'stim', isrc:50e-6, ch1:'PC1', ch2:'Vm'}, BB_ST)},
       fixed:function(m, s){ var f = {chain:4, fi_on:false, so_on:false}; if(m === 'basic') f.ch1 = 'PC1'; return f; },
       sch:function(st){ return {chain:4, passiveOnly:true}; },
-      meas:['global', 'global'], scope:{v1:0.5, v2:0.5, t:0.1, z2:1}
+      meas:['global', 'global'], scope:{v1:0.5, v2:0.5, t:0.5, z2:1}
     },
     s22:{
       def:{basic:{rpot:700, leak:true, fi_on:true, so_on:true, r13:1e5, ch2:''},
            adv:{rpot:700, leak:true, fi_on:true, so_on:true, ch2:''}},
       fixed:function(m){ return {}; },
       sch:function(st){ return {chain:0, lk2:!!st.lk2}; },
-      meas:['firstAP', 'global'], scope:{v1:1, v2:0.5, t:0.05, z2:1},
+      meas:['firstAP', 'global'], scope:{v1:1, v2:0.5, t:0.5, z2:1},
       /* basic: the circuit as given, or with a second Leak board stacked on the first */
       presetsBasic:[
         ['kit', '原版電路', {lk2:false}, '助教給的電路（R2 = 1 MΩ）：不按也每 0.1 秒左右冒一個約 1.5 V 小峰（Stimulator 漏電 6.3 µA × 100 kΩ 把 Vm 墊在 FI 門檻）；按下的第一個峰約 2.1 V，按住停在 0.78 V。'],
@@ -58,7 +58,7 @@
            adv:{chain:4, rpot:0, fi_supply:'stim', src:'stim', isrc:40e-6, ch2:'AX', fi_on:true, so_on:true}},
       fixed:function(m, s){ return {}; },
       sch:function(st){ return {chain:st.chain}; },
-      meas:['firstAP', 'signed'], scope:{v1:1, v2:0.02, t:0.1, z2:4},
+      meas:['firstAP', 'signed'], scope:{v1:1, v2:0.02, t:0.5, z2:4},
       /* basic: the circuit as given, with or without the V+ flying wire (hw2-debug/sim/check_23.py combos) */
       presetsBasic:[
         ['kit', '照實：沒飛線', {fi_supply:'none'}, 'FI 沒有 V+：n ≥ 1 只有被動反應，按住 1 秒最高 1.68／1.36／1.12／0.92 V（n = 1–4），再被 SO 慢慢拉到約 0.75 V，沒有尖峰。n = 0 的 V+ 走疊接排針，有電。'],

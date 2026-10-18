@@ -352,7 +352,7 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
     <ul>
       <li><b>SW 放開仍輸出 6.3 µA</b>：放開時 Q<sub>sense</sub> 的 E–B 仍順偏，它的基極電流經 Q<sub>pass</sub> 流進 Vm。大小 = I<sub>C</sub>/β，β 100–300 時 9.4–3.1 µA，不是設計值。</li>
       <li><b>沒有靜止電位</b>：Vm 被墊到 0.53–0.62 V，正好在 FI 門檻，不按 SW 也自己放電。#2-2 Q5（靜止電位）沒有定義，Q2、Q3 的五參數要靠觸發準位去挑；#2-1 的被動鏈也多了約 0.2 V 基線。</li>
-      <li><b>關著也耗電 0.95 mA</b>：放開時 Q<sub>sense</sub> 全開，6.6 V 落在 7 kΩ 上。電池焊在板上、沒有開關。</li>
+      <li><b>關著也耗電 0.95 mA</b>：放開時 Q<sub>sense</sub> 全開，6.6 V 落在 7 kΩ 上。電池用扣子接在板上、沒有開關，扣著就一直耗電。</li>
     </ul>
     <p class="ev">實測證據：只接 Stimulator + LK、SW 放開，Vm = 0.7 V（照電路圖應為 0）；第三輪不按 SW 約每 100 ms 一個 1.6 V 小峰。是意外還是刻意：見進階模式摘要區「6 µA 漏電」。</p>
   </template>
@@ -398,7 +398,7 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
           <li><b>Slow out 的 R2 = 1 MΩ</b>（助教指定，大家都已換好；PCB 標 3M，套件原本附的是 100 Ω）。這是唯一和 PCB 標示不同的地方。</li>
           <li><b>R13 = 100 kΩ</b>（PCB 標示；講義電路圖畫 1 kΩ）。</li>
           <li><b>Stimulator 的 Q<sub>sense</sub> 接在 SW 之前</b>：SW 放開時仍漏出約 6 µA。</li>
-          <li>V+ = 7.8 V（9 V 電池實測）。示波器 ×10 探棒（10 MΩ）。可變電阻預設 0.7 kΩ（約 90 µA，第二、三輪的位置）。</li>
+          <li>V+ = 7.8 V（9 V 電池實測）。示波器 <b>×1 探棒</b>（示波器輸入 1 MΩ，和 100 kΩ 並聯會多約 10 % 的 leak；10-18 更正，之前寫 ×10／10 MΩ。頁面上 10-18 以前算的數字用 10 MΩ，換成 1 MΩ 後主要數字差 ≤ 0.1 V）。可變電阻預設 0.7 kΩ（約 90 µA，第二、三輪的位置）。</li>
           <li><b>#2-3</b>：Passive PCB 底板沒有串 V+，n ≥ 1 時要從 Stimulator 的 V+ 拉一條<b>飛線</b>到 FI.V+，FI 才有電。#2-3 區域預設「有 V+ 飛線」（另一組實測出 AP 的接法），也可以切回「照實：沒飛線」（FI 沒電）。</li>
         </ul>
       </div></details>
@@ -629,7 +629,7 @@ Passive unit：9 × 100/(100 + 680) = 1.15 V ≈ active 端 → 被動鏈靜止�
         <p class="small"><b>認為是意外的理由</b>：</p>
         <ol class="small">
           <li><b>設計者自己的電路圖沒有漏電</b>：講義上 Q<sub>sense</sub> 的射極畫在 SW 之後，這也是兩顆電晶體限流電路的標準接法。PCB 把它接到旁邊的 V+，只差 SW 的一腳。</li>
-          <li><b>SW 放開時一直耗 0.95 mA</b>：Q<sub>sense</sub> 在放開時全開，電流經 7 kΩ 到地。電池焊死、沒有開關，等於 Stimulator 永遠在耗電（9 V 電池約 500 mAh，三週左右就用完）。你們量到 7.8 V 而不是 9 V 也符合這點（只是符合，不是證明）。沒有人會設計一個「關掉」時還耗 1 mA 的電流源。</li>
+          <li><b>SW 放開時一直耗 0.95 mA</b>：Q<sub>sense</sub> 在放開時全開，電流經 7 kΩ 到地。電池扣著、沒有開關，只要沒拔電池 Stimulator 就一直在耗電（9 V 電池約 500 mAh，三週左右就用完）。你們量到 7.8 V 而不是 9 V 也符合這點（只是符合，不是證明）。沒有人會設計一個「關掉」時還耗 1 mA 的電流源。</li>
           <li><b>漏電大小由 β 決定，不是設計值</b>：漏電 = I<sub>C</sub>(Q<sub>sense</sub>)／β。β 100／150／200／300 時是 9.4／6.3／4.7／3.1 µA，靜止 0.93／0.62／0.47／0.31 V；電池從 9 V 掉到 7 V，漏電也從 7.4 掉到 5.5 µA。刻意的偏壓會用一顆固定電阻（像真正的 AP 用的 V+ → Vm 330 kΩ），不會靠一個差三倍的 β。</li>
           <li><b>它讓作業量不了</b>：#2-2 不按也自己冒小峰，Q5 的「靜止電位」沒有定義，五參數要用觸發準位去挑；#2-1 的被動鏈也多了約 0.2 V 的基線。重新設計 Stimulator 的目的是乾淨的電流源，「放開 = 0」是電流源最基本的性質。</li>
           <li><b>PCB 和電路圖還有別的不一致</b>：R13 100 kΩ（圖 1 kΩ）、FI 沒有自己的電池、R2 的位置附的是 100 Ω（圖 3 MΩ）、Passive PCB 底板沒串 V+。表示板子沒有逐一對照電路圖檢查過，一處接錯並不意外。</li>
@@ -664,7 +664,7 @@ Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) 
     </div></details>
       <details class="card"><summary>模擬方法<span class="hint">和 Python 版相同</span></summary><div class="body"><ul>
       <li>修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton、Ebers–Moll 電晶體與二極體模型；DC 不收斂時 gmin stepping。</li>
-      <li>10-12 起每個節點加 10 pF 雜散電容（×10 探棒約 10–15 pF）：拔掉 Leak 時 Vm 節點沒有電容，FI 自鎖在數值上沒有唯一解（S+FI 會卡住）。時間常數約 1 µs，波形幾乎不變（重跑所有檢查，差 ≤ 0.07 V；R2 = 1 MΩ 時「按下的第一個峰」看落在小峰的哪個階段，1.75–2.06 V）。另外 Newton 在 20 次迭代後、各節點 KCL 誤差 &lt; 10 pA 也算收斂。</li>
+      <li>10-12 起每個節點加 10 pF 雜散電容（配線；×1 探棒約 100 pF 只接在量測點，和 1 µF 比可忽略）：拔掉 Leak 時 Vm 節點沒有電容，FI 自鎖在數值上沒有唯一解（S+FI 會卡住）。時間常數約 1 µs，波形幾乎不變（重跑所有檢查，差 ≤ 0.07 V；R2 = 1 MΩ 時「按下的第一個峰」看落在小峰的哪個階段，1.75–2.06 V）。另外 Newton 在 20 次迭代後、各節點 KCL 誤差 &lt; 10 pA 也算收斂。</li>
       <li>參數：2N3904 I<sub>S</sub> 6.7 fA、β 200；2N4403 I<sub>S</sub> 10 fA、β 150；1N4148 I<sub>S</sub> 2.52 nA、n 1.752。</li>
       <li>網頁引擎 <a href="../active-membrane-sim/engine.js">engine.js</a>、電路圖 <a href="../active-membrane-sim/schematic.js">schematic.js</a>；Python 在 <a href="../hw2-debug/sim/">hw2-debug/sim/</a>（<code>check_ap.py</code>、<code>check_23.py</code> 等）。</li>
     </ul></div></details>
