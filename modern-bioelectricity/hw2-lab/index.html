@@ -323,10 +323,10 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
       <tr><th></th><th class="num">照電路圖</th><th class="num">照 PCB</th><th class="num">實測（PCB）</th></tr>
       <tr><td>SW 放開時的 Vm</td><td class="num t-ok">0 V，穩定</td><td class="num t-warn">0.53 V，每 129 ms 自發一個 1.46 V 小峰</td><td class="num t-warn">0.6 V，約每 100 ms 一個 1.6 V 小峰</td></tr>
       <tr><td>#2-2 按 100 ms 的峰值</td><td class="num t-ok">8.36 V</td><td class="num t-warn">2.05 V</td><td class="num">約 2.2 V</td></tr>
-      <tr><td>同上，拔掉 FI（TTX）</td><td class="num">2.89 V</td><td class="num t-warn">1.94 V（和有 FI 幾乎一樣）</td><td class="num">1.84 V（10-13，95 µA；同條件有 FI 2.31 V）</td></tr>
+      <tr><td>同上，拔掉 FI（TTX）</td><td class="num">2.89 V</td><td class="num t-warn">1.94 V（和有 FI 幾乎一樣）</td><td class="num">1.84 V（10-13 我們組的板子，記錄 95 µA；有 FI 2.31 V；兩次設定可能不同）</td></tr>
       <tr><td>#2-3 n = 2，按 300 ms 的峰值</td><td class="num t-ok">8.21 V（拔 FI 1.51 V）</td><td class="num t-warn">1.36 V（拔 FI 1.43 V：FI 沒電）</td><td class="num">—</td></tr>
     </table></div>
-    <p class="small muted">「照電路圖」：Q<sub>sense</sub> 射極在 SW 之後、R13 = 1 kΩ、FI 自帶 9 V 電池、電池 9 V。「照 PCB」：從講義的 PCB 佈線圖逐焊墊追線得到的接法（<a href="../hw2-debug/#s2">netlist</a>）、電池實測 7.8 V。兩邊的 Slow out R2 都用 1 MΩ，可變電阻 0.7 kΩ（約 90 µA）。模擬用 <a href="../active-membrane-sim/engine.js">engine.js</a>（和 Python 的 <a href="../hw2-debug/sim/">sim.py</a> 同一個模型）；實測是我們組第二、三輪的量測。紀錄：<a href="../log/#MB-015">MB-014</a>。</p>
+    <p class="small muted">「照電路圖」：Q<sub>sense</sub> 射極在 SW 之後、R13 = 1 kΩ、FI 自帶 9 V 電池、電池 9 V。「照 PCB」：從講義的 PCB 佈線圖逐焊墊追線得到的接法（<a href="../hw2-debug/#s2">netlist</a>）、電池實測 7.8 V。兩邊的 Slow out R2 都用 1 MΩ，可變電阻 0.7 kΩ（約 90 µA）。模擬用 <a href="../active-membrane-sim/engine.js">engine.js</a>（和 Python 的 <a href="../hw2-debug/sim/">sim.py</a> 同一個模型）；實測是我們組第二、三輪的量測，用的是<b>別組的板子</b>（10-13 的截圖是我們組的板子，電池沒量）。紀錄：<a href="../log/#MB-015">MB-014</a>。</p>
   </div></details>
 
   <details class="card r0-more"><summary>怎麼改<span class="hint">下一屆的板子</span></summary><div class="body">
@@ -398,7 +398,7 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
           <li><b>Slow out 的 R2 = 1 MΩ</b>（助教指定，大家都已換好；PCB 標 3M，套件原本附的是 100 Ω）。這是唯一和 PCB 標示不同的地方。</li>
           <li><b>R13 = 100 kΩ</b>（PCB 標示；講義電路圖畫 1 kΩ）。</li>
           <li><b>Stimulator 的 Q<sub>sense</sub> 接在 SW 之前</b>：SW 放開時仍漏出約 6 µA。</li>
-          <li>V+ = 7.8 V（9 V 電池實測）。示波器 <b>×1 探棒</b>（示波器輸入 1 MΩ，和 100 kΩ 並聯會多約 10 % 的 leak；10-18 更正，之前寫 ×10／10 MΩ。頁面上 10-18 以前算的數字用 10 MΩ，換成 1 MΩ 後主要數字差 ≤ 0.1 V）。可變電阻預設 0.7 kΩ（約 90 µA，第二、三輪的位置）。</li>
+          <li>V+ = 7.8 V（<b>別組板子</b>的 9 V 電池實測；我們組 10-13 那塊板子的電池沒量）。示波器 <b>×1 探棒</b>（示波器輸入 1 MΩ，和 100 kΩ 並聯會多約 10 % 的 leak；10-18 更正，之前寫 ×10／10 MΩ。頁面上 10-18 以前算的數字用 10 MΩ，換成 1 MΩ 後主要數字差 ≤ 0.1 V）。可變電阻預設 0.7 kΩ（約 90 µA，第二、三輪的位置）。</li>
           <li><b>#2-3</b>：Passive PCB 底板沒有串 V+，n ≥ 1 時要從 Stimulator 的 V+ 拉一條<b>飛線</b>到 FI.V+，FI 才有電。#2-3 區域預設「有 V+ 飛線」（另一組實測出 AP 的接法），也可以切回「照實：沒飛線」（FI 沒電）。</li>
         </ul>
       </div></details>
@@ -410,7 +410,7 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
           <li><b>基線不是 0</b>：Stimulator 放開時漏 6 µA，只接 Leak 時基線約 0.6–0.7 V。amplitude 一律用「波峰 − 基線」。</li>
           <li><b>#2-3 要拉 V+ 飛線</b>：沒拉時 FI 沒有 V+，n ≥ 1 只有被動反應。拉了飛線，原版電路就有 AP：峰值約 2.3／2.0／1.8／1.6 V（n = 1–4），過門檻 FI 衝高、SO 拉回，但沒有後過極化（另一組實測就是這樣）。下面「#2-3 有沒有飛線」可以對照。</li>
           <li><b>#2-3 n = 3、4 可能卡住</b>：有飛線時按住 0.3 秒以上，放開後 Vm 卡在約 0.76 V（FI 和 SO 互相撐住），要斷電重置。用短按，或每次量完斷電。這是預設參數的模擬，實際板子不一定會卡。</li>
-          <li><b>#2-3 Q3 就算有 AP 也量不到門檻</b>：模擬的 I<sub>min</sub> 多數低於可變電阻最小的約 44 µA，每按一次都會觸發。</li>
+          <li><b>#2-3 Q3 就算有 AP 也量不到門檻</b>：模擬的 I<sub>min</sub> 多數低於可變電阻最小的約 44 µA，每按一次都會觸發。但我們組的板子記到比 44 µA 低的電流（#2-2 Q3 15.6 µA、#2-3 Q3 27–36 µA），那塊的電位器阻值沒量，可能大於 10 kΩ；44 µA 只是照絲印 10 kΩ 手算的下限。</li>
           <li><b>S+FI 那列（已解決）</b>：拔掉 Leak 重量是 <b>4.4／7.2 V</b>，和預測的 4.55／7.13 V 一樣（FI 不按就自己鎖住；按住時頂到 Stimulator 上限）。第二輪的 3.0／5.9 V 是 Leak 還插著。</li>
           <li><b>#2-2 Q5 的反轉電位</b>：照實量的話，靜止＝基線；內向電流能把 Vm 推到的最高點（S+FI 鎖住約 4.5 V，理論上限是 V+）；外向電流能把 Vm 拉到的最低點（Slow out 的極限約 0.6 V；按住時被拉在約 0.78 V）。</li>
         </ol>
@@ -842,7 +842,7 @@ Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) 
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
         <li><b>Q2</b> n = 4，按一下 SW，記錄第一個 AP 的五參數（有飛線：峰值約 1.6 V；沒飛線只有被動反應）。</li>
-        <li><b>Q3</b> 每個 n 從小電流往上加，找剛好出現 AP 的電流。模擬的 I<sub>min</sub> 是 4.7／11.7／20.5／32 µA（n = 1–4），低於可變電阻最小的約 44 µA，所以會「最小電流也觸發」；照記錄。</li>
+        <li><b>Q3</b> 每個 n 從小電流往上加，找剛好出現 AP 的電流。模擬的 I<sub>min</sub> 是 4.7／11.7／20.5／32 µA（n = 1–4），低於可變電阻最小的約 44 µA（照絲印 10 kΩ 手算），所以會「最小電流也觸發」；照記錄。我們組的板子記到 27.26／32.32／36.16／33.15 µA：n = 4 和模擬吻合，n = 1–3 偏高（原因未知，可能是那時轉不到更低）。</li>
         <li><b>Q4</b> 電流固定，n = 4…0 各按 1 秒，讀「到峰」。n = 3、4 放開後若卡在約 0.76 V，斷電重置再量下一個。</li>
         <li><b>長按</b>：n = 4 時 spike 後先降到約 0.65 V、再停在 0.80 V（FI 和 SO 抵住）；可變電阻 ≥ 5.5 kΩ 或 FI 的 4403 β 偏低時會變成連續發放。見<a href="#hold23">摘要區的說明</a>。</li>
         <li><b>Q5</b> n = 2，CH2 = AX（下方紅箭頭），10–50 mV/div。</li>
