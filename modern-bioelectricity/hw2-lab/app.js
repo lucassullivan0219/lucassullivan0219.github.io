@@ -212,6 +212,7 @@
       setCtl(el, u[el.dataset.k] !== undefined ? u[el.dataset.k] : st[el.dataset.k]);
     });
     $$('[data-out="rpot"]', s.el).forEach(function(o){ o.textContent = ((u.rpot || 0) / 1e3).toFixed(1) + ' kΩ'; });
+    $$('[data-out="vplus"]', s.el).forEach(function(o){ o.textContent = (+st.vplus).toFixed(1) + ' V'; });
     $$('[data-nseg] button', s.el).forEach(function(b){ b.setAttribute('aria-pressed', +b.dataset.n === (u.chain || 0) ? 'true' : 'false'); });
     $$('[data-presets] button', s.el).forEach(function(b){ if(boxMode(b) === MODE) b.setAttribute('aria-pressed', b.dataset.p === u._preset ? 'true' : 'false'); });
     $$('[data-preset-note]', s.el).forEach(function(pn){ if(boxMode(pn) === MODE) pn.textContent = u._note || ''; });
@@ -227,6 +228,7 @@
     var k = el.dataset.k, u = s.state[MODE];
     u[k] = ctlValue(el);
     if(k === 'rpot') $$('[data-out="rpot"]', s.el).forEach(function(o){ o.textContent = (u.rpot / 1e3).toFixed(1) + ' kΩ'; });
+    if(k === 'vplus') $$('[data-out="vplus"]', s.el).forEach(function(o){ o.textContent = u.vplus.toFixed(1) + ' V'; });
     if(k === 'ch1' || k === 'ch2') clearBuf(s);
     if(active === s) applyEngine(s);
     if(k === 'fi_supply' || k === 'chain') { drawSchematic(s); if(active === s) powerOn(s); }

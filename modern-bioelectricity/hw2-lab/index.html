@@ -682,13 +682,14 @@ Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) 
     <h2>#2-1 Passive</h2>
     <p class="sub">Stimulator → 5 個 Passive unit（1 µF ∥ 100 kΩ，隔 10 kΩ）。CH1 = 第 1 個，CH2 = 最後一個（或中間）。</p>
     <div class="grp"><div class="gt">刺激</div>
+      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
       <div class="row full" data-show="basic"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div><div class="row full" data-show="adv"><input type="range" data-k="rpot" min="0" max="100" step="0.5" data-scale="1000"></div>
       <div data-show="adv">
         <div class="row"><label>來源</label><select data-k="src"><option value="stim">Stimulator</option><option value="ideal">理想電流源</option></select></div>
         <div class="row"><label>理想電流（µA）</label><input type="number" data-k="isrc" min="0" max="300" step="1" data-scale="1e-6" style="width:5.5em"></div>
         <div class="row"><label>Stimulator 漏電</label><select data-k="qs"><option value="pcb">原樣</option><option value="rx">並 22 kΩ</option></select></div>
-        <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
       </div>
       <div class="gt" style="margin-top:6px">脈衝長度（題目要五種）</div>
       <div class="btns" data-pulses="0.01,0.05,0.1,0.2,0.5"></div>
@@ -748,6 +749,8 @@ Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) 
       <label class="chk"><input type="checkbox" data-k="so_on"> SO Slow out（拔掉 = TEA）</label>
     </div>
     <div class="grp"><div class="gt">刺激</div>
+      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
       <div class="row full" data-show="basic"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div><div class="row full" data-show="adv"><input type="range" data-k="rpot" min="0" max="100" step="0.5" data-scale="1000"></div>
       <div class="btns" data-pulses="0.02,0.1,1"></div>
@@ -765,7 +768,6 @@ Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) 
         <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="330e3">330 kΩ（真 AP）</option><option value="470e3">470 kΩ</option></select></div>
         <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="56e3">56 kΩ（真 AP）</option><option value="47e3">47 kΩ</option></select></div>
         <div class="row"><label>Vm → GND（多加 leak）</label><select data-k="rl" data-num><option value="0">不加</option><option value="1e6">1 MΩ</option><option value="220e3">220 kΩ</option><option value="47e3">47 kΩ</option></select></div>
-        <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
       </div>
     </div>
     <div class="grp"><div class="gt">示波器</div>
@@ -823,6 +825,8 @@ Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) 
       <div class="row"><label>V+ → 每個 unit</label><select data-k="ru" data-num><option value="0">不加</option><option value="560e3">560 kΩ（真 AP）</option></select></div>
     </div>
     <div class="grp"><div class="gt">刺激</div>
+      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
       <div class="row full" data-show="basic"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div><div class="row full" data-show="adv"><input type="range" data-k="rpot" min="0" max="100" step="0.5" data-scale="1000"></div>
       <div data-show="adv">
