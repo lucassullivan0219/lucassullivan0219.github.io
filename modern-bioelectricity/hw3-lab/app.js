@@ -9,7 +9,7 @@
   var MODE = 'basic';
   try{ MODE = localStorage.getItem('hw3mode') === 'adv' ? 'adv' : 'basic'; }catch(e){}
 
-  var BASE = {vplus:7.0, rpotA:700, rpotB:700, pre:'kit', postMem:'kit', mem:'kit', r1p:0, r6:0, bat:'on',
+  var BASE = {vplus:7.0, vsyn:0, rpotA:700, rpotB:700, pre:'kit', postMem:'kit', mem:'kit', r1p:0, r6:0, bat:'on',
     wA:20, nA:3, isiA:100, wB:10, offB:-50, ch1:'A.Vm', ch2:'P1'};
   /* the 'true synapse' set: HW2 true-AP add-ons on both membranes, 1.5 Mohm across the synapse's 820k */
   var TRUE_SYN = {pre:'true', postMem:'true', r1p:1.5e6, rpotA:0, rpotB:0, wA:15};
@@ -64,7 +64,7 @@
   /* effective engine state for a region in the current mode */
   function engineState(s){
     var u = s.state[MODE], st = Object.assign({}, BASE, u, s.fixed);
-    if(MODE === 'basic'){ st.pre = st.postMem = u.mem; st.r1p = 0; st.r6 = 0; }
+    if(MODE === 'basic'){ st.pre = st.postMem = u.mem; st.r1p = 0; }
     if(st.post === 'passive' && st.ch2 === 'B.Vm') st.ch2 = 'P1';
     if(st.post === 'active' && /^P/.test(st.ch2)) st.ch2 = 'B.Vm';
     if(st.post === 'active' && /^P/.test(st.ch1)) st.ch1 = 'A.Vm';
@@ -72,7 +72,7 @@
   }
   function applyEngine(s){
     var st = engineState(s), E = s.E;
-    ['vplus', 'pre', 'postMem', 'r1p', 'r6', 'bat', 'syn', 'post', 'rpotA', 'rpotB', 'ch1', 'ch2'].forEach(function(k){ E.st[k] = st[k]; });
+    ['vplus', 'vsyn', 'pre', 'postMem', 'r1p', 'r6', 'bat', 'syn', 'post', 'rpotA', 'rpotB', 'ch1', 'ch2'].forEach(function(k){ E.st[k] = st[k]; });
     E.st.swA = s.hold.A || s.on.A; E.st.swB = s.hold.B || s.on.B;
     E.build();
   }
@@ -194,7 +194,7 @@
     if(k === 'ch1' || k === 'ch2') clearBuf(s);
     var tl = $('[data-train-label]', s.el); if(tl) tl.textContent = trainText(u);
     if(active === s) applyEngine(s);
-    if(k === 'mem' || k === 'pre' || k === 'postMem' || k === 'r1p' || k === 'bat' || k === 'r6' || k === 'vplus'){ u._preset = null; u._note = ''; syncControls(s); if(active === s) powerOn(s); }
+    if(k === 'mem' || k === 'pre' || k === 'postMem' || k === 'r1p' || k === 'bat' || k === 'r6' || k === 'vplus' || k === 'vsyn'){ u._preset = null; u._note = ''; syncControls(s); if(active === s) powerOn(s); }
     syncSchematic(s);
   }
   function buildPanels(s){
@@ -497,7 +497,7 @@
     if(btn.disabled) return;
     var node = /^(P\d|SY\.S)$/.test(st.ch2) ? st.ch2 : 'P1', w = u.wA / 1e3;
     var list = ISIS.filter(function(x){ return x / 1e3 > w + 0.02; });
-    var E = SynEngine(); ['vplus', 'pre', 'postMem', 'r1p', 'r6', 'bat', 'syn', 'post', 'rpotA', 'rpotB'].forEach(function(k){ E.st[k] = st[k]; });
+    var E = SynEngine(); ['vplus', 'vsyn', 'pre', 'postMem', 'r1p', 'r6', 'bat', 'syn', 'post', 'rpotA', 'rpotB'].forEach(function(k){ E.st[k] = st[k]; });
     E.st.ch1 = 'A.Vm'; E.st.ch2 = node; E.st.swA = false; E.st.swB = false; E.build(); E.powerOn(); E.settle(2.0);
     var snap = E.snapshot(), pts = [], one = null;
     function run(isi){
@@ -566,6 +566,24 @@
     if(active){ var a = active; active = null; activate(a); }
   }
   $$('.mode button').forEach(function(b){ b.addEventListener('click', function(){ setMode(b.dataset.mode); }); });
+
+  /* section 0: click a red mark on the handout schematic -> a window on what that difference breaks (as HW2) */
+  var dlg = $('#r0dlg');
+  function openDiff(n){
+    var t = $('#r0d-' + n); if(!dlg || !t) return;
+    $('#r0dlg-t').textContent = '差別 ' + n + '／2';
+    var b = $('.r0dlg-b', dlg); b.innerHTML = ''; b.appendChild(t.content.cloneNode(true));
+    if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+    dlg.scrollTop = 0;
+  }
+  $$('#r0 .hot').forEach(function(g){
+    g.addEventListener('click', function(){ openDiff(g.dataset.d); });
+    g.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openDiff(g.dataset.d); } });
+  });
+  if(dlg){
+    $('.r0dlg-x', dlg).addEventListener('click', function(){ dlg.close(); });
+    dlg.addEventListener('click', function(e){ if(e.target === dlg) dlg.close(); });   /* backdrop */
+  }
 
   var navLinks = $$('nav.regions a');
   var io = new IntersectionObserver(function(entries){

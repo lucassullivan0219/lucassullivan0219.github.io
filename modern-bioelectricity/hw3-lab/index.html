@@ -149,6 +149,43 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
 .isiplot{display:block;width:100%;height:210px}
 .fsbox.fs .isiplot{height:calc(100vh - 80px)}
 kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--surface)}
+/* ---------- 0 電路圖與 PCB 的差別（同 HW2） ---------- */
+.r0-one{font-size:15px;font-weight:500;line-height:1.55;margin:2px 0 10px;max-width:60em;color:var(--muted)}
+.r0-big{margin:0 0 10px;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:6px;overflow-x:auto}
+.r0-big figcaption{font-size:12.5px;color:var(--muted);margin:4px 2px 0}
+.r0-ov{display:block;width:100%;min-width:640px;height:auto;border-radius:4px}
+.r0-ov .hit{fill:transparent}
+.r0-ov .hitline{fill:none;stroke:transparent;stroke-width:16}
+.r0-ov .pw{fill:none;stroke:#D6281C;stroke-width:3.5;stroke-linejoin:round;stroke-linecap:round}
+.r0-ov .dash{stroke-dasharray:8 6}
+.r0-ov .x{fill:none;stroke:#D6281C;stroke-width:3.5;stroke-linecap:round}
+.r0-ov .pd{fill:#D6281C}
+.r0-ov .pl{fill:#D6281C;font:700 13px "Noto Sans TC",system-ui,sans-serif}
+.r0-ov .badge circle{fill:#D6281C;stroke:#fff;stroke-width:2}
+.r0-ov .badge text{fill:#fff;font:700 15px "IBM Plex Mono",monospace;text-anchor:middle}
+.r0-ov .hot{cursor:pointer;outline:none}
+.r0-ov .hot .ink,.r0-ov .hot .badge{transition:filter .15s}
+.r0-ov .hot:hover .ink,.r0-ov .hot:focus-visible .ink,.r0-ov .hot:hover .badge,.r0-ov .hot:focus-visible .badge{filter:drop-shadow(0 0 3px #ff5a3c) drop-shadow(0 0 8px #ff8a3c)}
+.r0-ov .hot:hover .pw,.r0-ov .hot:hover .x,.r0-ov .hot:focus-visible .pw,.r0-ov .hot:focus-visible .x{stroke-width:5}
+.r0-ov .hot:hover .hit,.r0-ov .hot:focus-visible .hit{fill:rgba(255,90,60,.08)}
+.k-p{color:var(--warn);font-weight:700}
+.r0-more{margin:0 0 12px}
+.score table td{white-space:normal}
+.r0dlg{width:min(900px,calc(100vw - 16px));max-height:88vh;padding:0;border:1.5px solid var(--warn);border-radius:10px;background:var(--surface);color:var(--ink)}
+.r0dlg::backdrop{background:rgba(0,0,0,.45)}
+.r0dlg-h{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--rule)}
+.r0dlg-x{border:0;background:transparent;color:var(--ink);font-size:17px;cursor:pointer}
+.r0dlg-b{padding:2px 16px 14px}
+.r0dlg h3{font-size:16px;line-height:1.5;margin:10px 0}
+.r0dlg h4{font-size:12.5px;color:var(--accent);margin:12px 0 2px}
+.r0dlg ul{padding-left:1.2em;font-size:13.5px;margin:4px 0}
+.r0dlg li{margin:4px 0}
+.r0dlg .ev{font-size:12.5px;color:var(--muted);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:6px}
+.r0imgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.r0imgs figure{margin:0;background:#fff;border:1px solid var(--rule);border-radius:6px;padding:4px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
+.r0imgs img{display:block;max-width:100%;max-height:50vh;height:auto}
+.r0imgs figcaption{font-size:12px;color:#5F6B72;font-weight:700;margin-top:2px}
+@media (max-width:640px){.r0imgs{grid-template-columns:1fr}}
 </style>
 </head>
 <body data-mode="basic">
@@ -163,6 +200,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
   <p class="mode-note" data-show="basic">完整測試助教給的電路、完成每一題，測出什麼就寫什麼。</p>
   <p class="mode-note" data-show="adv">讓一個 AP 就有 EPSP／IPSP、能疊加、能觸發或抑制 Post AP，並解釋助教電路的問題。</p>
   <nav class="regions" aria-label="區域">
+    <a href="#r0"><span class="n">0</span><span>電路圖與 PCB 的差別<small>excitatory 突觸板 2 處</small></span></a>
     <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small data-show="basic">模型定義、可能的問題</small><small data-show="adv">電路的問題、改法、驗證</small></span></a>
     <a href="#r2"><span class="n">2</span><span>#3-1 Excitatory → passive<small>EPSP、疊加、ISI、#1 vs #5</small></span></a>
     <a href="#r3"><span class="n">3</span><span>#3-2 Excitatory → active<small>多個 EPSP 觸發 Post AP</small></span></a>
@@ -177,6 +215,97 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 </aside>
 
 <main id="main">
+
+<!-- ======================= 0 電路圖與 PCB 的差別 ======================= -->
+<section class="region textreg" id="r0">
+  <h2>0 電路圖與 PCB 的差別</h2>
+  <p class="r0-one">底圖：講義的 #3-1 電路圖。<span class="k-p">紅色</span>＝PCB 實際的接法。<b>點紅色標記</b>看這個差別造成什麼問題。兩處都在 excitatory 突觸板上（#3-1、#3-2 用同一塊）；inhibitory 突觸板和電路圖一致。基礎目標的 #3-1、#3-2 可以切換這兩處。</p>
+  <figure class="r0-big">
+    <svg class="r0-ov" viewBox="0 0 1345 340" role="group" aria-label="講義 #3-1 電路圖，紅色標出 PCB 實際的接法">
+      <rect x="0" y="0" width="1345" height="340" fill="#fff"/>
+      <image href="img/sch31.png" x="0" y="0" width="1345" height="307"/>
+
+      <g class="hot" data-d="1" tabindex="0" role="button" aria-label="差別 1：D2 後面的 100 kΩ">
+        <rect class="hit" x="560" y="30" width="125" height="96"/>
+        <g class="ink">
+          <path class="x" d="M602,58 L640,84 M640,58 L602,84"/>
+          <polyline class="pw" points="586,71 688,71"/><circle class="pd" cx="586" cy="71" r="4"/><circle class="pd" cx="688" cy="71" r="4.5"/>
+          <text class="pl" x="566" y="118">PCB：D2 直接接 #1</text>
+        </g>
+        <g class="badge"><circle cx="668" cy="40" r="13"/><text x="668" y="45.5">1</text></g>
+      </g>
+
+      <g class="hot" data-d="2" tabindex="0" role="button" aria-label="差別 2：Q1 的電源">
+        <rect class="hit" x="418" y="196" width="76" height="70"/>
+        <path class="hitline" d="M445,206 L405,206 L405,306 L75,306 L75,216"/>
+        <g class="ink">
+          <path class="x" d="M430,212 L460,248 M460,212 L430,248"/>
+          <path class="pw dash" d="M445,206 L405,206 L405,306 L75,306 L75,216"/>
+          <circle class="pd" cx="445" cy="206" r="4"/><circle class="pd" cx="75" cy="216" r="4.5"/>
+          <text class="pl" x="88" y="328">PCB：沒有 9 V 電池；1 kΩ 經排針接 Stimulator A 的電池（V+）</text>
+        </g>
+        <g class="badge"><circle cx="482" cy="210" r="13"/><text x="482" y="215.5">2</text></g>
+      </g>
+    </svg>
+    <figcaption>Pre／Post 的 active membrane、Stimulator、Passive unit 都是 HW2 的板子，它們的電路圖與 PCB 差別（Q<sub>sense</sub> 接在 SW 前、R13 = 100 kΩ、FI 的電源）見 <a href="../hw2-lab/#r0">HW2 實驗台 0</a>。</figcaption>
+  </figure>
+
+  <details class="card r0-more" open><summary>數字對照：照電路圖 vs 照 PCB<span class="hint">模擬，V+ 7.0 V，Pre 按 15–20 ms</span></summary><div class="body">
+    <div class="tbl score"><table>
+      <tr><th></th><th class="num">照電路圖（100 kΩ、9 V）</th><th class="num">照 PCB（直接、排針 V+）</th></tr>
+      <tr><td>#3-1 原版 active membrane（基礎目標）：#1 的 EPSP</td><td class="num">0 mV</td><td class="num">0 mV</td></tr>
+      <tr><td>#3-1 HW2 真正的 AP、突觸不加東西：#1 的 EPSP</td><td class="num">0 mV（S 0.09 V）</td><td class="num">0 mV（S 0.09 V）</td></tr>
+      <tr><td>#3-1 真正的突觸（820 kΩ 並 1.5 MΩ）：#1／#5 的 EPSP</td><td class="num t-warn">159／68 mV，#1 比 AP 晚 102 ms 到峰</td><td class="num t-ok">760／200 mV，#1 晚 5 ms</td></tr>
+      <tr><td>#3-2 真正的突觸：觸發 Post AP 要幾個 EPSP（間隔 50／100／500 ms）</td><td class="num t-warn">4／3／8 個也不夠</td><td class="num t-ok">2／2／2</td></tr>
+    </table></div>
+    <p class="small muted">原版 membrane 推不動突觸（Pre 只到約 2.4 V，Q2 要約 6 V），所以兩處差別在基礎目標看不出來；突觸打開之後，差別 1 讓 EPSP 小約 5 倍、慢約 100 ms。差別 2 在所有情況下都沒有影響：S 最多只到約 2.2 V（並 1 MΩ），離電池電壓很遠。兩欄的 active membrane 都是 PCB 版。模擬用本頁的 engine.js（×1 探棒）。</p>
+  </div></details>
+
+  <details class="card r0-more"><summary>和電路圖一樣的地方<span class="hint">inhibitory 突觸板、1.5 V 電池</span></summary><div class="body">
+    <ul class="small" style="margin:0">
+      <li><b>Inhibitory 突觸板</b>：820 kΩ → 1N4148 → 2N3904（基極 10 nF ∥ 100 kΩ，射極 30 kΩ）→ 2N4403（集極 15 kΩ 到 GND）；S = 4.7 µF ∥ 200 kΩ；S → 100 kΩ（100K-R5）→ Post。和講義電路圖相同。</li>
+      <li><b>1.5 V 電池</b>：板上沒有電池座。Q1 射極接左下 2×2 排針的方形焊墊，S 接方形焊墊同一列的另一支；電池夾在這兩支之間（+ 接 Q1 射極、− 接 S），和電路圖的接法一樣。</li>
+      <li><b>Excitatory 其他元件</b>：820 kΩ、D1、10 nF ∥ 100 kΩ、30 kΩ、1 kΩ、4.7 µF ∥ 200 kΩ 都和電路圖相同。</li>
+    </ul>
+    <p class="small muted">追線方法和 HW2 一樣：放大講義的 PCB 圖，從每個焊墊沿銅箔追到另一端；紅色是正面、藍色是背面；TO-92 方形焊墊是射極。排針腳位沿用 HW2（<a href="../hw2-debug/#s2">netlist</a>）。</p>
+  </div></details>
+
+  <dialog class="r0dlg" id="r0dlg" aria-labelledby="r0dlg-t">
+    <div class="r0dlg-h"><b id="r0dlg-t"></b><button type="button" class="r0dlg-x" aria-label="關閉">✕</button></div>
+    <div class="r0dlg-b"></div>
+  </dialog>
+
+  <template id="r0d-1">
+    <h3>1　D2 後面：電路圖有 100 kΩ，PCB 直接接 Post</h3>
+    <div class="r0imgs">
+      <figure><img src="img/d1-sch.png" alt="講義電路圖：D2 後面串 100 kΩ 再到 #1"><figcaption>講義電路圖</figcaption></figure>
+      <figure><img src="img/d1-pcb.png" alt="講義 PCB：D2 負極一條走線直接到 PostSynapse 排針"><figcaption>講義 PCB（Excitatory synapse）</figcaption></figure>
+    </div>
+    <h4>造成的問題</h4>
+    <ul>
+      <li><b>原版 membrane 看不出來</b>：Pre 只到約 2.4 V，突觸的 Q2 沒打開，S 是 0，有沒有 100 kΩ 都一樣沒有 EPSP。</li>
+      <li><b>突觸打開後，EPSP 大約 5 倍、快約 100 ms</b>：真正的突觸（820 kΩ 並 1.5 MΩ）一個 AP，#1 是 760 mV、比 AP 晚 5 ms 到峰；有 100 kΩ 時是 159 mV、晚 102 ms。#5 是 200 vs 68 mV。</li>
+      <li><b>#3-2 比較容易觸發</b>：觸發 Post AP 要 2 個 EPSP（間隔 50–500 ms 都是）；有 100 kΩ 時要 3–4 個，間隔 500 ms 時 8 個也不夠。</li>
+      <li>沒有 100 kΩ，S 經 D2 直接灌進 #1，#1 的上升幾乎跟著 S；有 100 kΩ 時要經 100 kΩ × 1 µF 慢慢充。</li>
+    </ul>
+    <p class="ev">PCB 佈線圖：1N4148PF-D2 的負極（−）一條紅色走線直通右上 PostSynapse 的 Intracellular 排針，中間沒有電阻。Inhibitory 板的 100K-R5 有畫在 PCB 上。</p>
+  </template>
+
+  <template id="r0d-2">
+    <h3>2　Q1 的電源：電路圖是獨立的 9 V 電池，PCB 沒有電池，1 kΩ 接排針的 V+</h3>
+    <div class="r0imgs">
+      <figure><img src="img/d2-sch.png" alt="講義電路圖：Q1 射極經 1 kΩ 接 9 V 電池"><figcaption>講義電路圖</figcaption></figure>
+      <figure><img src="img/d2-pcb.png" alt="講義 PCB：1K-R4 下端走線到左下排針方形焊墊對角那支"><figcaption>講義 PCB（Excitatory synapse）</figcaption></figure>
+    </div>
+    <h4>造成的問題</h4>
+    <ul>
+      <li><b>電壓是 Stimulator A 的電池</b>：V+ 經 Pre 那一疊板子的排針送到突觸板。本頁預設 7.0 V（HW2 推估，沒量過）；HW2 別組的板子量到 7.8 V。電路圖是 9 V。</li>
+      <li><b>模擬中看不出差別</b>：S 的上限從約 9 V 變成約 V+，但 S 最多只到約 2.2 V（820 kΩ 並 1 MΩ），Q1 的電流由 Q2 決定，不是由電池決定。只有 S 接近電池電壓時才會有影響。</li>
+      <li>突觸板和 Stimulator A 共用一顆電池，突觸 Q1 的電流也從這顆電池出。</li>
+    </ul>
+    <p class="ev">PCB 佈線圖：1K-R4 下端走紅線到左下 2×2 排針、方形焊墊對角那支（HW2 追出來是 V+）。板上沒有電池座。</p>
+  </template>
+</section>
 
 <!-- ======================= 1 摘要 ======================= -->
 <section class="region textreg" id="r1">
@@ -333,6 +462,8 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     </div>
     <div class="grp"><div class="gt">板子</div>
       <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
+      <div class="row" data-show="basic"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
+      <div class="row"><label>突觸 Q1 電源</label><select data-k="vsyn" data-num><option value="0">排針 V+（PCB）</option><option value="9">獨立 9 V（講義圖）</option></select></div>
       <div data-show="adv">
         <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
@@ -401,6 +532,8 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     </div>
     <div class="grp"><div class="gt">板子</div>
       <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
+      <div class="row" data-show="basic"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
+      <div class="row"><label>突觸 Q1 電源</label><select data-k="vsyn" data-num><option value="0">排針 V+（PCB）</option><option value="9">獨立 9 V（講義圖）</option></select></div>
       <div data-show="adv">
         <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
@@ -637,6 +770,7 @@ S 的放電：τ ≈ 4.7 µF × 200 kΩ ≈ 0.94 s；Post（Passive）τ = 1 µF
         <tr><th>日期</th><th>內容</th></tr>
         <tr><td>10-13</td><td>建立 HW3 實驗台：四個電路的即時模擬、基礎／進階目標、真正的突觸（820 kΩ 並 1.5 MΩ）、ISI 散佈圖。全部是模擬，尚未實測。</td></tr>
         <tr><td>10-21</td><td>探棒改 ×1（1 MΩ）。拿掉作業題目與狀態表和答案性質的句子。電池 V+ 改成兩個目標都有 0–12 V 滑桿，預設 7.0 V（從 HW2 #2-2 推的估計，沒量過）；頁面上的模擬數字照 7.0 V 重算。7.0 V 時原版 Pre、Post 不會自己冒小峰，7.8 V 時會。加上削頂、電池來源、可變電阻照絲印的說明。</td></tr>
+        <tr><td>10-21</td><td>新增「0 電路圖與 PCB 的差別」：excitatory 突觸板 2 處（D2 後面沒有 100 kΩ；Q1 沒有獨立 9 V，用排針的 V+），點紅色標記看截圖和影響。基礎目標 #3-1、#3-2 可以切換這兩處。Inhibitory 突觸板和電路圖一致。</td></tr>
       </table></div>
       <p class="small muted">HW2 的紀錄在 <a href="../hw2-lab/#history">HW2 實驗台 History</a>。</p>
     </div></details>
@@ -645,8 +779,8 @@ S 的放電：τ ≈ 4.7 µF × 200 kΩ ≈ 0.94 s；Post（Passive）τ = 1 µF
 
 </main>
 </div>
-<script src="engine.js"></script>
-<script src="schematic.js"></script>
-<script src="app.js"></script>
+<script src="engine.js?v=20261021b"></script>
+<script src="schematic.js?v=20261021b"></script>
+<script src="app.js?v=20261021b"></script>
 </body>
 </html>

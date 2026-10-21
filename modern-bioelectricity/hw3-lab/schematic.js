@@ -366,8 +366,8 @@
         var b = q('[data-mod="bat"]');
         if(b){ show('[data-mod="bat"]', st.bat !== 'short'); b.setAttribute('class', st.bat === 'open' ? 'ghost' : ''); show('[data-mod="batshort"]', st.bat === 'short');
           q('[data-vbat]').textContent = st.bat === 'on' ? (st.vbat || 1.5) + ' V' : st.bat === 'open' ? '拔掉（開路）' : '拔掉'; q('[data-vbat]').setAttribute('class', st.bat === 'on' ? 'lab' : 'modt'); }
-        var vp = q('[data-vplus]'), v78 = Math.abs((st.vplus || 7.8) - 7.8) < 1e-6;
-        if(vp){ vp.textContent = 'V+（排針，同 Stimulator A 電池）'; vp.setAttribute('class', v78 ? 'lab' : 'modt'); }
+        var vp = q('[data-vplus]'), v78 = Math.abs((st.vplus || 7.0) - 7.0) < 1e-6 && !st.vsyn;   /* default: 7.0 V from the header */
+        if(vp){ vp.textContent = st.vsyn ? '獨立 ' + st.vsyn + ' V 電池（講義圖）' : 'V+（排針，同 Stimulator A 電池）'; vp.setAttribute('class', v78 ? 'lab' : 'modt'); }
         qa('[data-bat]').forEach(function(e){ e.setAttribute('class', v78 ? '' : 'mod'); });
         [['SA', st.rpotA], ['SB', st.rpotB]].forEach(function(p){
           var e = q('[data-pot="' + p[0] + '"]'); if(e && p[1] != null) e.textContent = 'pot ' + (p[1] >= 1e3 ? (p[1] / 1e3).toFixed(1) + 'k' : Math.round(p[1]) + 'Ω');

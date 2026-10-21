@@ -5,7 +5,7 @@
    then drives SW A / SW B on a schedule.  AP counting is app.js's: rising through 2 V, re-armed below 1.5 V. */
 var HW3CHK = (function(){
   var DT = 2e-4, THR = 2.0, REARM = 1.5;
-  var BASE = {vplus:7.0, pre:'kit', postMem:'kit', r1p:0, r6:0, bat:'on', rpotA:700, rpotB:700, syn:'exc', post:'passive', ch1:'A.Vm', ch2:'P1'};
+  var BASE = {vplus:7.0, vsyn:0, pre:'kit', postMem:'kit', r1p:0, r6:0, bat:'on', rpotA:700, rpotB:700, syn:'exc', post:'passive', ch1:'A.Vm', ch2:'P1'};
   var TRUE = {pre:'true', postMem:'true', r1p:1.5e6, rpotA:0, rpotB:0};
   var CIRC = {s31:{syn:'exc', post:'passive', ch2:'P1'}, s32:{syn:'exc', post:'active', ch2:'B.Vm'},
               s33:{syn:'inh', post:'passive', ch2:'P1'}, s34:{syn:'inh', post:'active', ch2:'B.Vm'}};
