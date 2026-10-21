@@ -80,13 +80,66 @@
   /* ---------------- schematic ---------------- */
   function drawSchematic(s){
     s.SCH = SynSchematic(s.svg, s.fixed);
+    s.vb0 = s.svg.getAttribute('viewBox').split(' ').map(Number);
+    zoomable(s);
     syncSchematic(s);
   }
   function syncSchematic(s){
     if(!s.SCH) return;
     var st = engineState(s);
-    st.swA = s.hold.A || s.on.A; st.swB = s.hold.B || s.on.B;
+    st.swA = s.hold.A || s.on.A; st.swB = s.hold.B || s.on.B; st.MEM = s.E.MEM;
     s.SCH.setState(st); s.SCH.setProbes([st.ch1, st.ch2]);
+  }
+  /* the full schematic is large: Ctrl + wheel (or pinch) or the +/- buttons zoom, drag pans, double-click fits */
+  function zoomable(s){
+    var svg = s.svg, pane = svg.parentNode, vb = s.vb0.slice(), drag = null;
+    function apply(){
+      var w0 = s.vb0[2], h0 = s.vb0[3];
+      vb[2] = Math.min(w0, Math.max(w0 / 8, vb[2])); vb[3] = vb[2] * h0 / w0;
+      vb[0] = Math.max(-w0 * 0.1, Math.min(w0 * 1.1 - vb[2], vb[0])); vb[1] = Math.max(-h0 * 0.1, Math.min(h0 * 1.1 - vb[3], vb[1]));
+      if(vb[2] >= w0 - 1e-6){ vb[0] = s.vb0[0]; vb[1] = s.vb0[1]; }
+      svg.setAttribute('viewBox', vb.join(' '));
+      svg.style.cursor = vb[2] < w0 - 1e-6 ? 'grab' : '';
+    }
+    /* SVG point under client (cx, cy), with preserveAspectRatio xMidYMid meet */
+    function pt(cx, cy){
+      var r = svg.getBoundingClientRect(), k = Math.min(r.width / vb[2], r.height / vb[3]);
+      return [vb[0] + (cx - r.left - (r.width - vb[2] * k) / 2) / k, vb[1] + (cy - r.top - (r.height - vb[3] * k) / 2) / k, k];
+    }
+    function zoom(f, cx, cy){
+      var r = svg.getBoundingClientRect();
+      if(cx == null){ cx = r.left + r.width / 2; cy = r.top + r.height / 2; }
+      var p = pt(cx, cy), w = vb[2], h = vb[3];
+      vb[2] = w / f; vb[3] = h / f;
+      var w0 = s.vb0[2]; vb[2] = Math.min(w0, Math.max(w0 / 8, vb[2])); vb[3] = vb[2] * s.vb0[3] / w0;
+      vb[0] = p[0] - (p[0] - vb[0]) * vb[2] / w; vb[1] = p[1] - (p[1] - vb[1]) * vb[3] / h;
+      apply();
+    }
+    svg.addEventListener('wheel', function(e){
+      if(!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault(); zoom(Math.exp(-e.deltaY * 0.002), e.clientX, e.clientY);
+    }, {passive:false});
+    svg.addEventListener('pointerdown', function(e){
+      if(vb[2] >= s.vb0[2] - 1e-6) return;
+      drag = {x:e.clientX, y:e.clientY, vx:vb[0], vy:vb[1], k:pt(e.clientX, e.clientY)[2]};
+      svg.setPointerCapture(e.pointerId); svg.style.cursor = 'grabbing';
+    });
+    svg.addEventListener('pointermove', function(e){
+      if(!drag) return;
+      vb[0] = drag.vx - (e.clientX - drag.x) / drag.k; vb[1] = drag.vy - (e.clientY - drag.y) / drag.k; apply();
+    });
+    function up(){ if(drag){ drag = null; apply(); } }
+    svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+    svg.addEventListener('dblclick', function(){ vb = s.vb0.slice(); apply(); });
+    var bar = document.createElement('div');
+    bar.className = 'zbar';
+    bar.innerHTML = '<button type="button" class="fsbtn" data-z="in" aria-label="放大電路圖">＋</button><button type="button" class="fsbtn" data-z="out" aria-label="縮小電路圖">－</button><button type="button" class="fsbtn" data-z="fit" aria-label="整張電路圖">整張</button>' +
+      '<span class="zhint">Ctrl＋滾輪縮放・拖曳平移・雙擊回到整張</span>';
+    bar.addEventListener('click', function(e){
+      var z = e.target.dataset && e.target.dataset.z; if(!z) return;
+      if(z === 'fit'){ vb = s.vb0.slice(); apply(); } else zoom(z === 'in' ? 1.5 : 1 / 1.5);
+    });
+    pane.appendChild(bar);
   }
 
   /* ---------------- controls ---------------- */
@@ -432,7 +485,7 @@
     if(s.SCH){
       s.SCH.setValues(function(code){ return E.has(code) ? E.v(code) : null; });
       s.SCH.setCurrents({A:-E.q('SA.pass')[0], B:-E.q('SB.pass')[0]});
-      s.SCH.setOn({q1:Math.abs(E.q('sy.q1')[0]) > 2e-6, q2:E.q('sy.q2')[0] > 2e-6});
+      s.SCH.setOn(function(tag){ return Math.abs(E.q(tag)[0]) > 2e-6; });
     }
   }
 
