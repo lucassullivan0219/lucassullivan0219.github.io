@@ -31,7 +31,7 @@ var SynEngine = function(){
     r1p:0,                   /* add-on across the synapse's 820k input resistor (0 = none) */
     r6:0,                    /* excitatory: resistor between D2 and the post cell; PCB = 0 (straight trace), handout 100k */
     stimA:true, stimB:true,  /* Stimulator B plugged in */
-    rprobe:1e7, ch1:'A.Vm', ch2:'P1'
+    rprobe:1e6, ch1:'A.Vm', ch2:'P1'
   };
 
   var NODES = [], N = 0, IDX = {}, V, Vprev, F, J, dx, A;
