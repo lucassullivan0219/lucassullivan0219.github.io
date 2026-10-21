@@ -6,8 +6,8 @@
   var $ = function(s, r){ return (r || document).querySelector(s); };
   var $$ = function(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var DT = 2e-4, NEWREC = 1.5;             /* a stimulus more than 1.5 s after the last one starts a new record */
-  var MODE = 'basic';
-  try{ MODE = localStorage.getItem('hw3mode') === 'adv' ? 'adv' : 'basic'; }catch(e){}
+  var MODE = 'basic', FLOW = true;
+  try{ MODE = localStorage.getItem('hw3mode') === 'adv' ? 'adv' : 'basic'; FLOW = localStorage.getItem('hw3flow') !== '0'; }catch(e){}
 
   var BASE = {vplus:7.0, vsyn:0, rpotA:700, rpotB:700, pre:'kit', postMem:'kit', mem:'kit', r1p:0, r6:0, bat:'on',
     wA:20, nA:3, isiA:100, wB:10, offB:-50, ch1:'A.Vm', ch2:'P1'};
@@ -20,7 +20,8 @@
       def:{basic:{wA:20, ch2:'P1'}, adv:{ch2:'P1', nA:3, isiA:100}},
       scope:{v1:1, v2:0.2, t:0.1}, isi:true,
       presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:20}, '助教的電路（同基礎目標）：Pre 是原版 active membrane：V+ 7.0 V 時安靜停在 0.45 V（7.8 V 時每秒自己冒約 6 個 1.5 V 小峰），按 SW A 只到約 2.4 V。突觸要 Pre 到約 6 V 才導通，所以怎麼按都沒有 EPSP。'],
+        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:20}, '助教的電路（同基礎目標）：Pre 是原版 active membrane：V+ 7.0 V 時安靜停在 0.45 V（7.8 V 時每秒自己冒約 6 個 1.5 V 小峰），按 SW A 只到約 2.4 V。820 kΩ : 100 kΩ 分壓再扣 D1，Q2 基極只到約 0.2 V（要約 0.55 V 才導通），所以怎麼按都沒有 EPSP。2026-10-21 我們的板子實測一樣：Pre AP 約 1.9 V、Q2 基極約 0.17 V。'],
+        ['kit100', '原版＋並 100 kΩ', {pre:'kit', postMem:'kit', r1p:1e5, rpotA:700, wA:20}, '我們 2026-10-21 的改法：Pre 不改，只在 820 kΩ 兩端並 100 kΩ（合起來約 89 kΩ）。實測 Q2 基極約 0.93 V、EPSP 約 6.5 V（已經頂到天花板＝飽和，兩個 EPSP 疊不高）。想看疊加可改兩顆 100 kΩ 串聯（200 kΩ）。'],
         ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, wA:15}, 'Pre 換成 HW2 的真正的 AP（約 4.8 V）：突觸板不加東西時 Q2 幾乎不導通，S 只到 0.09 V，沒有 EPSP。'],
         ['true', '真正的突觸', TRUE_SYN, 'HW2 真正的 AP ＋ 820 kΩ 兩端並 1.5 MΩ：一個 AP 在 #1 產生約 0.76 V、#5 約 0.20 V 的 EPSP；多個 AP 會疊加。']
       ]},
@@ -64,7 +65,7 @@
   /* effective engine state for a region in the current mode */
   function engineState(s){
     var u = s.state[MODE], st = Object.assign({}, BASE, u, s.fixed);
-    if(MODE === 'basic'){ st.pre = st.postMem = u.mem; st.r1p = 0; }
+    if(MODE === 'basic'){ st.pre = st.postMem = u.mem; st.r1p = u.r1p || 0; }
     if(st.post === 'passive' && st.ch2 === 'B.Vm') st.ch2 = 'P1';
     if(st.post === 'active' && /^P/.test(st.ch2)) st.ch2 = 'B.Vm';
     if(st.post === 'active' && /^P/.test(st.ch1)) st.ch1 = 'A.Vm';
@@ -75,6 +76,52 @@
     ['vplus', 'vsyn', 'pre', 'postMem', 'r1p', 'r6', 'bat', 'syn', 'post', 'rpotA', 'rpotB', 'ch1', 'ch2'].forEach(function(k){ E.st[k] = st[k]; });
     E.st.swA = s.hold.A || s.on.A; E.st.swB = s.hold.B || s.on.B;
     E.build();
+    if(INSP && inspSim === s) INSP.rerender();
+  }
+
+  /* ---------------- circuit inspector (inspect.js, as HW2): click a part or a wire ---------------- */
+  var INSP = window.HW3Inspect ? HW3Inspect(function(){ return inspSim ? inspSim.E : null; }) : null, inspSim = null;
+  function nodeMap(s){ var m = {}; s.E.branches().forEach(function(b){ if(b.name) m[b.name] = b.nodes; }); return function(n){ return m[n] || null; }; }
+  function inspHighlight(s){ if(s.SCH) s.SCH.highlight(INSP && inspSim === s ? INSP.target() : null, nodeMap(s)); }
+  function svgPoint(svg, e){
+    var m = svg.getScreenCTM(); if(!m) return null;
+    var p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(m.inverse());
+  }
+  function inspectTarget(s, e, geomOnly){
+    if(!s.SCH) return null;
+    var tg = e.target.closest && e.target.closest('[data-node]');
+    if(tg && s.E.has(tg.getAttribute('data-node'))) return {node:tg.getAttribute('data-node')};
+    var p = svgPoint(s.svg, e), h = p && s.SCH.hitAt(p.x, p.y);
+    if(!h) return null;
+    if(h.part || geomOnly) return h.part ? {part:h.part} : {wire:h.wire};
+    var n = s.SCH.netOf(h.wire, nodeMap(s));
+    return n ? {node:n} : null;
+  }
+  function inspectable(s){
+    s.svg.addEventListener('click', function(e){
+      if(!INSP || s.dragged) return;
+      if(active !== s) activate(s);
+      var t = inspectTarget(s, e);
+      if(!t) return;
+      inspSim = s; INSP.open(t, e.clientX, e.clientY); inspHighlight(s);
+    });
+    s.svg.addEventListener('pointermove', function(e){
+      if(s.panning) return;
+      var t = inspectTarget(s, e, true);
+      s.svg.style.cursor = t ? 'pointer' : (s.zoomed ? 'grab' : '');
+      if(s.SCH && (!INSP || inspSim !== s || !INSP.target())) s.SCH.highlight(t, nodeMap(s), true);
+    });
+    s.svg.addEventListener('pointerleave', function(){ if(s.SCH && (!INSP || inspSim !== s || !INSP.target())) s.SCH.highlight(null); });
+  }
+  if(INSP) INSP.onClose(function(){ var s = inspSim; inspSim = null; if(s) inspHighlight(s); });
+
+  /* electron flow on / off (shared by all regions) */
+  function setFlow(on){
+    FLOW = !!on;
+    try{ localStorage.setItem('hw3flow', FLOW ? '1' : '0'); }catch(e){}
+    $$('[data-flow]').forEach(function(c){ c.checked = FLOW; });
+    if(!FLOW) Object.keys(SIMS).forEach(function(k){ var s = SIMS[k]; if(s.SCH) s.SCH.flow(0, null); });
   }
 
   /* ---------------- schematic ---------------- */
@@ -82,6 +129,7 @@
     s.SCH = SynSchematic(s.svg, s.fixed);
     s.vb0 = s.svg.getAttribute('viewBox').split(' ').map(Number);
     zoomable(s);
+    inspectable(s);
     syncSchematic(s);
   }
   function syncSchematic(s){
@@ -99,7 +147,8 @@
       vb[0] = Math.max(-w0 * 0.1, Math.min(w0 * 1.1 - vb[2], vb[0])); vb[1] = Math.max(-h0 * 0.1, Math.min(h0 * 1.1 - vb[3], vb[1]));
       if(vb[2] >= w0 - 1e-6){ vb[0] = s.vb0[0]; vb[1] = s.vb0[1]; }
       svg.setAttribute('viewBox', vb.join(' '));
-      svg.style.cursor = vb[2] < w0 - 1e-6 ? 'grab' : '';
+      s.zoomed = vb[2] < w0 - 1e-6;
+      svg.style.cursor = s.zoomed ? 'grab' : '';
     }
     /* SVG point under client (cx, cy), with preserveAspectRatio xMidYMid meet */
     function pt(cx, cy){
@@ -119,16 +168,21 @@
       if(!e.ctrlKey && !e.metaKey) return;
       e.preventDefault(); zoom(Math.exp(-e.deltaY * 0.002), e.clientX, e.clientY);
     }, {passive:false});
+    /* a drag that moved more than 4 px pans and is not a click (the inspector ignores it) */
     svg.addEventListener('pointerdown', function(e){
+      s.dragged = false;
       if(vb[2] >= s.vb0[2] - 1e-6) return;
-      drag = {x:e.clientX, y:e.clientY, vx:vb[0], vy:vb[1], k:pt(e.clientX, e.clientY)[2]};
-      svg.setPointerCapture(e.pointerId); svg.style.cursor = 'grabbing';
+      drag = {x:e.clientX, y:e.clientY, vx:vb[0], vy:vb[1], k:pt(e.clientX, e.clientY)[2], id:e.pointerId, cap:false};
     });
     svg.addEventListener('pointermove', function(e){
       if(!drag) return;
+      if(!drag.cap){
+        if(Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 5) return;
+        drag.cap = true; s.dragged = s.panning = true; svg.setPointerCapture(drag.id); svg.style.cursor = 'grabbing';
+      }
       vb[0] = drag.vx - (e.clientX - drag.x) / drag.k; vb[1] = drag.vy - (e.clientY - drag.y) / drag.k; apply();
     });
-    function up(){ if(drag){ drag = null; apply(); } }
+    function up(){ if(drag){ drag = null; s.panning = false; apply(); } }
     svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
     svg.addEventListener('dblclick', function(){ vb = s.vb0.slice(); apply(); });
     var bar = document.createElement('div');
@@ -199,6 +253,16 @@
   }
   function buildPanels(s){
     var panel = $('.settings', s.el);
+    /* schematic: electron flow on / off and how to inspect (shared by all regions, as HW2) */
+    var fg = document.createElement('div');
+    fg.className = 'grp';
+    fg.innerHTML = '<div class="gt">電路圖</div><label class="chk"><input type="checkbox" data-flow> 顯示電子流動</label>' +
+      '<p class="small muted" style="margin:2px 0 0">橘點＝電子：逆著電流方向、往電池＋極走，越快＝電流越大（20 nA 以下不畫）。AP 只有十幾 ms，把示波器的「速度」調到 1/20× 才看得到 AP 期間的電子。' +
+      '點元件看它的方程式和即時數值，點導線（net）看接在上面的每個元件的電流（KCL）。紫紅色＝和原版電路不同的地方。</p>';
+    var h2 = $('h2', panel), sub = $$('p.sub', panel);
+    (sub.length ? sub[sub.length - 1] : h2).insertAdjacentElement('afterend', fg);
+    var cb = $('[data-flow]', fg); cb.checked = FLOW;
+    cb.addEventListener('change', function(){ setFlow(cb.checked); });
     /* pulse buttons */
     $$('[data-pulses]', panel).forEach(function(box){
       var who = box.dataset.who;
@@ -290,7 +354,7 @@
   }
   function activate(s){
     if(active === s) return;
-    if(active){ var o = active; o.ev = []; o.on = {A:false, B:false}; o.hold = {A:false, B:false}; swButtons(o); syncSchematic(o); }
+    if(active){ var o = active; o.ev = []; o.on = {A:false, B:false}; o.hold = {A:false, B:false}; swButtons(o); syncSchematic(o); if(o.SCH) o.SCH.flow(0, null); }
     active = s;
     powerOn(s);
   }
@@ -381,6 +445,7 @@
       var n = Math.floor(carry / DT); carry -= n * DT;
       for(var k = 0; k < n; k++){ runEvents(s); s.E.step(DT); sample(s); }
       drawScope(s);
+      if(s.SCH && FLOW) s.SCH.flow(real, s.E.currents());   /* real time: the dots keep moving when paused or slowed */
       if(now - lastUI > 100){ updateUI(s); lastUI = now; }
     }
     requestAnimationFrame(frame);
@@ -488,6 +553,7 @@
       s.SCH.setCurrents({A:-E.q('SA.pass')[0], B:-E.q('SB.pass')[0]});
       s.SCH.setOn(function(tag){ return Math.abs(E.q(tag)[0]) > 2e-6; });
     }
+    if(INSP && inspSim === s) INSP.update();
   }
 
   /* ---------------- ISI sweep: two A pulses at each interval, on a separate engine ---------------- */

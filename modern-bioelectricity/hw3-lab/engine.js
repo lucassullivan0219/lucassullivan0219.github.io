@@ -36,7 +36,7 @@ var SynEngine = function(){
 
   var NODES = [], N = 0, IDX = {}, V, Vprev, F, J, dx, A;
   var R = [], C = [], D = [], Q = [], BAT = [];
-  var t = 0, gmin = GMIN, lastH = 0;
+  var t = 0, gmin = GMIN, lastH = 0, stat = {it:0, sub:false, ok:true};
 
   function memOf(v){ return MEM[v] || MEM.kit; }
   function nodeNames(){
@@ -195,7 +195,7 @@ var SynEngine = function(){
           for(var s = 0; s < 3; s++){ var col = nn[s]; if(col >= 0) J[row * N + col] += o.d[tt * 3 + s]; }
         }
       }
-      if(it >= 20){ var fm = 0; for(k = 0; k < N; k++) if(Math.abs(F[k]) > fm) fm = Math.abs(F[k]); if(fm < 1e-11) return true; }
+      if(it >= 20){ var fm = 0; for(k = 0; k < N; k++) if(Math.abs(F[k]) > fm) fm = Math.abs(F[k]); if(fm < 1e-11){ stat.it = it + 1; return true; } }
       var W = N + 1, r, cc, p, q;
       for(r = 0; r < N; r++){ for(cc = 0; cc < N; cc++) A[r * W + cc] = J[r * N + cc]; A[r * W + N] = -F[r]; }
       for(cc = 0; cc < N; cc++){
@@ -217,18 +217,19 @@ var SynEngine = function(){
       }
       var sc = mx <= 0.1 ? 1 : 0.1 / mx;
       for(r = 0; r < N; r++) V[r] += sc * dx[r];
-      if(mx < 1e-7) return true;
+      if(mx < 1e-7){ stat.it = it + 1; return true; }
     }
+    stat.it = maxit;
     return false;
   }
   function powerOn(){ V.fill(0); Vprev.fill(0); t = 0; lastH = 0; }
   function step(dt){
     Vprev.set(V);
-    if(newton(dt, 80)){ t += dt; lastH = dt; return true; }
+    if(newton(dt, 80)){ t += dt; lastH = dt; stat.sub = false; stat.ok = true; return true; }
     V.set(Vprev);
     var ok = true;
     for(var k = 0; k < 10; k++){ Vprev.set(V); ok = newton(dt / 10, 400) && ok; }
-    t += dt; lastH = dt / 10;
+    t += dt; lastH = dt / 10; stat.sub = true; stat.ok = ok;
     return ok;
   }
   function v(n){ var i = IDX[n]; return i === undefined ? NaN : gv(V, i); }
@@ -247,11 +248,40 @@ var SynEngine = function(){
     for(k = 0; k < BAT.length; k++){ e = BAT[k]; if(e[4] === name) return (gv(V, e[0]) - gv(V, e[1]) + e[2]) / e[3]; }
     return 0;
   }
+  /* every named branch current at once, for the electron flow and the inspector (HW2's AM.currents()):
+     two-terminal parts first node -> second (A), transistors [into C, into B, into E], batteries - -> +.
+     Capacitors use the last step (backward Euler, like newton). */
+  function currents(){
+    var o = {}, k, e, x;
+    for(k = 0; k < R.length; k++){ e = R[k]; if(e[3]) o[e[3]] = e[2] * (gv(V, e[0]) - gv(V, e[1])); }
+    for(k = 0; k < C.length; k++){ e = C[k];
+      if(e[3]) o[e[3]] = lastH ? e[2] / lastH * ((gv(V, e[0]) - gv(V, e[1])) - (gv(Vprev, e[0]) - gv(Vprev, e[1]))) : 0; }
+    for(k = 0; k < D.length; k++){ e = D[k]; x = lexp((gv(V, e[0]) - gv(V, e[1])) / (MD.n * VT)); o[e[2]] = MD.Is * (x[0] - 1); }
+    for(k = 0; k < Q.length; k++){ e = Q[k]; x = bjt(e[0], gv(V, e[1]), gv(V, e[2]), gv(V, e[3]), e[4]); o[e[5]] = [x.i[0], x.i[1], x.i[2]]; }
+    for(k = 0; k < BAT.length; k++){ e = BAT[k]; o[e[4]] = (gv(V, e[0]) - gv(V, e[1]) + e[2]) / e[3]; }
+    return o;
+  }
+  /* every element as built, for the inspector: node names in engine order, value, model */
+  function nodeName(i){ return i >= 0 ? NODES[i] : ({'-1':'GND', '-2':'V+', '-3':'VS'})[i]; }
+  function branches(){
+    var o = [];
+    R.forEach(function(e){ o.push({kind:'R', name:e[3], nodes:[nodeName(e[0]), nodeName(e[1])], val:1 / e[2]}); });
+    C.forEach(function(e){ o.push({kind:'C', name:e[3], nodes:[nodeName(e[0]), nodeName(e[1])], val:e[2]}); });
+    D.forEach(function(e){ o.push({kind:'D', name:e[2], nodes:[nodeName(e[0]), nodeName(e[1])], model:MD}); });
+    Q.forEach(function(e){ o.push({kind:'Q', name:e[5], type:e[0], nodes:[nodeName(e[1]), nodeName(e[2]), nodeName(e[3])], model:e[4]}); });
+    BAT.forEach(function(e){ o.push({kind:'B', name:e[4], nodes:[nodeName(e[0]), nodeName(e[1])], val:e[2], rint:e[3]}); });
+    return o;
+  }
   /* settle: run with every switch released until the circuit rests (power-on transient) */
   function settle(T, dt){ dt = dt || 2e-4; var n = Math.round(T / dt); for(var k = 0; k < n; k++) step(dt); t = 0; }
   alloc(nodeNames());
   return {
-    st:st, MEM:MEM, build:build, powerOn:powerOn, step:step, settle:settle, v:v, q:qCurrents, branch:branch,
+    st:st, MEM:MEM, build:build, powerOn:powerOn, step:step, settle:settle, v:function(n){ return n === 'GND' ? 0 : n === 'V+' ? st.vplus : n === 'VS' ? (st.vsyn || st.vplus) : v(n); },
+    q:qCurrents, branch:branch, currents:currents,
+    /* inspector: elements, previous-step voltage, step size, solver stats, constants and the solver's own functions */
+    branches:branches, vprev:function(n){ var i = IDX[n]; return i === undefined ? NaN : gv(Vprev, i); }, h:function(){ return lastH; }, stat:stat,
+    K:{VT:VT, EXPLIM:EXPLIM, GMIN:GMIN, CPAR:CPAR, M3904:M3904, M4403:M4403, MD:MD},
+    fn:{build:build, newton:newton, stampG:stampG, bjt:bjt, lexp:lexp, step:step, currents:currents},
     time:function(){ return t; }, nodes:function(){ return NODES; }, has:function(n){ return IDX[n] !== undefined; },
     snapshot:function(){ return {V:Float64Array.from(V), t:t, names:NODES.slice()}; },
     restore:function(s){ if(s.names.join() !== NODES.join()) return false; V.set(s.V); Vprev.set(s.V); t = s.t; return true; }

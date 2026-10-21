@@ -149,6 +149,31 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
 .isiplot{display:block;width:100%;height:210px}
 .fsbox.fs .isiplot{height:calc(100vh - 80px)}
 kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--surface)}
+/* ---------- circuit inspector (inspect.js) ---------- */
+.insp{position:fixed;left:24px;top:80px;z-index:80;width:min(470px,calc(100vw - 16px));max-height:min(80vh,760px);display:flex;flex-direction:column;
+  background:var(--surface);color:var(--ink);border:1.5px solid var(--accent);border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.28);font-size:13px}
+.insp[hidden]{display:none}
+.insp-h{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;padding:8px 10px 6px 12px;border-bottom:1px solid var(--rule);cursor:move;touch-action:none;background:var(--tint);border-radius:9px 9px 0 0}
+.insp-h b{font-size:15px;display:block;line-height:1.3}
+.insp-h small{color:var(--muted);font-size:11.5px}
+.insp-x{border:0;background:transparent;color:var(--ink);font-size:16px;cursor:pointer;padding:0 4px;line-height:1.2}
+.insp-b{overflow:auto;padding:6px 12px 10px}
+.insp h4{font-size:12px;color:var(--accent);margin:10px 0 3px;letter-spacing:.03em}
+.insp-d{margin:4px 0;color:var(--muted)}
+.insp-d.warn{color:var(--warn)}
+.insp-t{width:100%;font-size:12.5px}
+.insp-t td,.insp-t th{padding:2px 5px}
+.insp-t td.num{font-family:"IBM Plex Mono",monospace;white-space:nowrap}
+.insp-t tr.sum td{font-weight:700;border-top:1.5px solid var(--rule)}
+.insp-eq{font-family:"IBM Plex Mono",monospace;font-size:12px;white-space:pre-wrap;background:var(--tint);border-left:3px solid var(--accent);padding:6px 8px;line-height:1.6}
+.insp .lv{color:var(--link);font-weight:500}
+.insp-code{margin:6px 0}
+.insp-code .ct{font-size:12px;font-weight:700}
+.insp-code pre{font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.45;margin:2px 0;white-space:pre;overflow-x:auto;background:var(--tint);padding:5px 7px;border-radius:4px;max-height:260px}
+.insp-code details summary{cursor:pointer;font-size:11.5px;color:var(--link)}
+.insp-f{font-size:11.5px;color:var(--muted);margin:10px 0 0}
+@media (max-width:600px){.insp{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:70vh}.insp-h{cursor:default}}
+
 /* ---------- 0 電路圖與 PCB 的差別（同 HW2） ---------- */
 .r0-one{font-size:15px;font-weight:500;line-height:1.55;margin:2px 0 10px;max-width:60em;color:var(--muted)}
 .r0-big{margin:0 0 10px;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:6px;overflow-x:auto}
@@ -462,16 +487,17 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     </div>
     <div class="grp"><div class="gt">板子</div>
       <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
+      <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
       <div class="row" data-show="basic"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
       <div class="row"><label>突觸 Q1 電源</label><select data-k="vsyn" data-num><option value="0">排針 V+（PCB）</option><option value="9">獨立 9 V（講義圖）</option></select></div>
       <div data-show="adv">
         <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
+        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
         <div class="row"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
       </div>
       <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
       <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
-      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計，沒量過（HW2 的 7.8 V 是別組的板子）。</p>
+      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計（HW2 的 7.8 V 是別組的板子）。2026-10-21 我們的電池實測 8.44 V；但模型的原版 Pre 在 8.44 V 會自己一直發 AP，我們的實體板不會，所以預設先不改。</p>
     </div>
     <div class="grp"><div class="gt">Stimulator A（Pre）</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
@@ -532,17 +558,18 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     </div>
     <div class="grp"><div class="gt">板子</div>
       <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
+      <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
       <div class="row" data-show="basic"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
       <div class="row"><label>突觸 Q1 電源</label><select data-k="vsyn" data-num><option value="0">排針 V+（PCB）</option><option value="9">獨立 9 V（講義圖）</option></select></div>
       <div data-show="adv">
         <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
+        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
         <div class="row"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
       </div>
       <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
       <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
-      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計，沒量過（HW2 的 7.8 V 是別組的板子）。</p>
+      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計（HW2 的 7.8 V 是別組的板子）。2026-10-21 我們的電池實測 8.44 V；但模型的原版 Pre 在 8.44 V 會自己一直發 AP，我們的實體板不會，所以預設先不改。</p>
     </div>
     <div class="grp"><div class="gt">Stimulator A（Pre）</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
@@ -609,14 +636,15 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     </div>
     <div class="grp"><div class="gt">板子</div>
       <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
+      <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
       <div class="row"><label>1.5 V 電池</label><select data-k="bat"><option value="on">接上</option><option value="short">拔掉，跳線接通</option><option value="open">拔掉（開路）</option></select></div>
       <div data-show="adv">
         <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
+        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
       </div>
       <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
       <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
-      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計，沒量過（HW2 的 7.8 V 是別組的板子）。</p>
+      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計（HW2 的 7.8 V 是別組的板子）。2026-10-21 我們的電池實測 8.44 V；但模型的原版 Pre 在 8.44 V 會自己一直發 AP，我們的實體板不會，所以預設先不改。</p>
     </div>
     <div class="grp"><div class="gt">Stimulator A（Pre）</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
@@ -675,15 +703,16 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     </div>
     <div class="grp"><div class="gt">板子</div>
       <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
+      <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
       <div class="row"><label>1.5 V 電池（Q4）</label><select data-k="bat"><option value="on">接上</option><option value="short">拔掉，跳線接通</option><option value="open">拔掉（開路）</option></select></div>
       <div data-show="adv">
         <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
+        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
       </div>
       <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
       <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
-      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計，沒量過（HW2 的 7.8 V 是別組的板子）。</p>
+      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計（HW2 的 7.8 V 是別組的板子）。2026-10-21 我們的電池實測 8.44 V；但模型的原版 Pre 在 8.44 V 會自己一直發 AP，我們的實體板不會，所以預設先不改。</p>
     </div>
     <div class="grp"><div class="gt">Stimulator A（Pre）</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
@@ -779,8 +808,9 @@ S 的放電：τ ≈ 4.7 µF × 200 kΩ ≈ 0.94 s；Post（Passive）τ = 1 µF
 
 </main>
 </div>
-<script src="engine.js?v=20261021b"></script>
-<script src="schematic.js?v=20261021b"></script>
-<script src="app.js?v=20261021c"></script>
+<script src="engine.js?v=20261021e"></script>
+<script src="schematic.js?v=20261021e"></script>
+<script src="inspect.js?v=20261021e"></script>
+<script src="app.js?v=20261021e"></script>
 </body>
 </html>

@@ -564,12 +564,14 @@
         var d = Infinity;
         elPaths(e).forEach(function(path){ d = Math.min(d, lineD(p, path)); });
         if(!e.P.length) d = Math.min(d, Math.max(0, lineD(p, e.T) - 12));   /* capacitor plates are 26 wide */
-        if(e.q){ var c = e.P[0][3], dc = Math.sqrt((c[0] + 5 - x) * (c[0] + 5 - x) + (c[1] - y) * (c[1] - y)); if(dc < 22) d = Math.min(d, dc / 4); }
+        if(e.q){ var c = e.P[0][3], dc = Math.sqrt((c[0] + 5 - x) * (c[0] + 5 - x) + (c[1] - y) * (c[1] - y)); if(dc < 18) d = Math.min(d, dc / 4); }
         if(d < bd){ bd = d; best = e; }
       });
       WIRES.forEach(function(w, i){ if(!shown(w.keys)) return; var d = lineD(p, w.pts); if(d < wd){ wd = d; wi = i; } });
-      if(best && bd <= 10 && bd <= wd + 3) return {part:best.name, d:bd};
-      if(wi >= 0 && wd <= 8) return {wire:wi, d:wd};
+      /* 2026-10-21: smaller part boxes (was 10 px and a 3 px head start over wires), so nets next to parts are easy to click */
+      if(best && bd <= 7 && bd < wd) return {part:best.name, d:bd};
+      if(wi >= 0 && wd <= 10) return {wire:wi, d:wd};
+      if(best && bd <= 7) return {part:best.name, d:bd};
       return null;
     }
     /* drawn wires -> electrical nodes, named by the elements whose terminals they reach */
