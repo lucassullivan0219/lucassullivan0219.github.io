@@ -28,7 +28,7 @@
       def:{basic:{wA:20, ch2:'B.Vm', wB:10}, adv:{ch2:'B.Vm', nA:2, isiA:100, wB:5, offB:-50}},
       scope:{v1:1, v2:1, t:0.1}, combo:true,
       presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:20}, '助教的電路：兩塊 active membrane 都是原版。Pre 推不動突觸，沒有 EPSP；Post 按 B 10 ms 只到約 1.8 V（V+ 7.8 V 時會自己冒 1.5 V 小峰，按 B 到 1.5–2.1 V），按住停在 0.77 V。'],
+        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:20}, '助教的電路：兩塊 active membrane 都是原版。Pre 推不動突觸，沒有 EPSP；Post 按 B 10 ms 只到約 1.8 V，之後一直自己冒約 1.5 V 的小峰（約每 0.23 s；V+ 7.8 V 時不按也會冒），按住停在 0.77 V。'],
         ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, rpotB:0, wA:15}, '兩塊都用 HW2 真正的 AP、突觸板不加東西：EPSP 傳不到 Post。'],
         ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：一個 EPSP 讓 Post 從 1.02 V 升到 1.20 V（不到門檻），兩個 EPSP（間隔 50–500 ms）就觸發 Post AP，間隔 1.2 s 不夠。Stimulator B 按 8.5 ms 會觸發，8 ms 不會。']
       ]},

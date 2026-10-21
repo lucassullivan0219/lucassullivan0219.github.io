@@ -329,7 +329,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <li><b>原版 Pre 的「AP」推不動突觸</b>：原版 active membrane 按 SW A 20 ms 只到約 2.4 V（V+ 7.8 V 時 1.5–2.2 V，看按下時碰到小峰的哪個時候），按住則被 Slow out 拉回 0.77 V；突觸的 Q2 要 Pre 到約 6 V 才導通。所以 #3-1–#3-4 怎麼按都沒有 EPSP／IPSP（S 不到 1 mV）。照實記錄「沒有 PSP」，並附 Pre 的波形。</li>
           <li><b>原版 Pre 會不會自己冒小峰，要看電池</b>：Stimulator A 放開時漏約 6 µA，把 Pre 墊高。V+ 7.0 V 時 Pre 安靜停在約 0.45 V，不會自己冒峰；7.8 V 時墊到 FI 門檻附近，不按也每秒約 6 個 1.5 V 小峰（HW2 第三輪在別組 7.8 V 的板子上量到的那個）。所以示波器上看到小峰，表示電池比較高。觸發 CH1 時準位設在 1.8 V 以上，兩種情況都不會被小峰觸發。</li>
           <li><b>HW2 真正的 AP 也不夠</b>：峰值約 4.8 V 只讓 S 升到 0.09 V（V+ 7.8 V 時 5.2 V、0.17 V），沒有 EPSP（見進階目標）。</li>
-          <li><b>原版 Post（#3-2、#3-4）</b>：不會鎖住，但也不會連續發放。#3-2 的 Post 按 B 10 ms 只到約 1.8 V（V+ 7.8 V 時它和 Pre 一樣自己冒小峰，1.5–2.1 V）；#3-4 的 Post 被突觸的 100 kΩ + 200 kΩ 拉成 leak，安靜停在 0.37 V，按 B 10 ms 到約 1.65 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.77 V。#3-4 Q3 的「頻率變化」量不到。</li>
+          <li><b>原版 Post（#3-2、#3-4）</b>：不會鎖住，但也不會連續發放。#3-2 的 Post 不按 B 時安靜；按 B 10 ms 只到約 1.8 V，之後會一直自己冒約 1.5 V 的小峰（約每 0.23 s，模擬 4 s 內不會停；V+ 7.8 V 時不按也會冒）；#3-4 的 Post 被突觸的 100 kΩ + 200 kΩ 拉成 leak，安靜停在 0.37 V，按 B 10 ms 到約 1.65 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.77 V。#3-4 Q3 的「頻率變化」量不到。</li>
           <li><b>#3-3、#3-4「拔掉 1.5 V 電池」</b>：只拔掉的話 Q1 到 S 是開路，突觸完全沒有輸出。要用一條線把電池的兩個夾點接起來，才是「改變驅動力」。模擬兩種都可以選。</li>
           <li><b>#3-3 Passive 的 Post 靜止約 0 V</b>：拔掉電池後 IPSP 的反轉電位約 0 V，和靜止差不多，所以 IPSP 消失（沒有驅動力）。</li>
           <li><b>基線不是 0</b>：Stimulator B 放開時漏約 6 µA，#1 的基線約 0.15–0.16 V（V+ 7.8 V 時 0.17–0.18 V）；V+ 7.8 V 時 Stimulator A 漏電讓 Pre 在 0.52–1.52 V 之間自己冒小峰，7.0 V 時 Pre 停在約 0.45 V。振幅一律用「波峰 − 基線」。</li>
@@ -578,7 +578,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
       <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button></div>
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
-        <li><b>Note</b> 先把 Stimulator B 調弱，弱到單獨按一下不會有 Post AP（可變電阻調大或按短一點）。原版 Pre 沒有 EPSP 可以加上去（V+ 7.8 V 時 Post 還會自己冒小峰），照實記錄。</li>
+        <li><b>Note</b> 先把 Stimulator B 調弱，弱到單獨按一下不會有 Post AP（可變電阻調大或按短一點）。原版 Pre 沒有 EPSP 可以加上去；按過 B 之後 Post 會一直自己冒約 1.5 V 的小峰（不是 EPSP；V+ 7.8 V 時不按也會），照實記錄。</li>
         <li><b>Q2</b> A 串列：從 1 下開始加，記下剛好出現 Post AP 的下數和間隔（頻率）。</li>
         <li><b>Q3</b> 組合：B 調到單獨不會觸發，再加 A；按「Post 先」做 post before pre，記下需要幾個 EPSP、多快。</li>
       </ul>
@@ -781,6 +781,6 @@ S 的放電：τ ≈ 4.7 µF × 200 kΩ ≈ 0.94 s；Post（Passive）τ = 1 µF
 </div>
 <script src="engine.js?v=20261021b"></script>
 <script src="schematic.js?v=20261021b"></script>
-<script src="app.js?v=20261021b"></script>
+<script src="app.js?v=20261021c"></script>
 </body>
 </html>
