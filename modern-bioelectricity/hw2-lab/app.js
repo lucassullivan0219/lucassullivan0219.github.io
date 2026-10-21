@@ -17,20 +17,16 @@
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true, fi_on:true, so_on:true, lk2:false, leak2:true,
     stdiode:false};
 
-  /* 進階目標: the Stimulator rebuilt on a breadboard (stimulator.js) with its own 9 V: Q_sense emitter after the
-     switch as the handout draws it (no leak), 1N4148 in series with the output (else Q_pass's collector-base
-     clamps Vm at ~0.6 V once the switch opens), 100 kohm pot.  LK / FI / SO stay on their PCBs. */
-  var BB_ST = {qs:'sw', stdiode:true, vplus:9};
-  /* the 'true AP' add-on set with that Stimulator (log MB-025): 11k across R13, 680k R13 lower end -> FI.E3,
-     56k across SO C1, 390k V+ -> Vm; #2-3 adds 680k V+ -> each unit and the V+ wire to FI */
-  var TRUE_AP = Object.assign({so_r2:1e6, r13p:11e3, rf:680e3, rs:56e3, rb:390e3}, BB_ST);
+  /* the 'true AP' add-on set (hw2-debug/sim/check_trueap.py): 22k across Qpass E-B, 11k across
+     R13, 680k R13 lower end -> FI.E3, 56k across SO C1, 330k V+ -> Vm (#2-3 adds 560k V+ -> each unit) */
+  var TRUE_AP = {so_r2:1e6, qs:'rx', r13p:11e3, rf:680e3, rs:56e3, rb:330e3};
 
 
   /* ---------------- simulation regions ---------------- */
   var SIMS = {
     s21:{
       def:{basic:{rpot:700, ch2:'Vm'},
-           adv:Object.assign({rpot:700, src:'stim', isrc:50e-6, ch1:'PC1', ch2:'Vm'}, BB_ST)},
+           adv:{rpot:700, src:'stim', isrc:50e-6, qs:'pcb', vplus:7.8, ch1:'PC1', ch2:'Vm'}},
       fixed:function(m, s){ var f = {chain:4, fi_on:false, so_on:false}; if(m === 'basic') f.ch1 = 'PC1'; return f; },
       sch:function(st){ return {chain:4, passiveOnly:true}; },
       meas:['global', 'global'], scope:{v1:0.5, v2:0.5, t:0.5, z2:1}
@@ -49,8 +45,7 @@
       basicPreset:'kit',
       presets:[
         ['kit', '原版電路', {}, '助教給的電路（同基礎目標，R2 = 1 MΩ）：不按也每 0.1 秒左右冒一個約 1.5 V 小峰（Stimulator 漏電把 Vm 墊在 FI 門檻）；按下到約 2.1 V，按住停在 0.78 V。'],
-        ['bbst', '麵包板 ST', BB_ST, '只把 Stimulator 換成麵包板版，其他板子照原版：靜止 0 V、不再自發；按 100 ms 峰值 3.6 V（拔 FI 2.9 V），R13 = 100 kΩ 的 FI 太弱，還不是 AP；按住停在 0.78 V。'],
-        ['true', '真正的 AP', TRUE_AP, '麵包板 ST＋PCB 上外加 4 顆電阻（見摘要區）：靜止 1.19 V；按 8 ms 以上觸發；AP 5.7–6.0 V（拔 FI 3.2 V）；AP 後降到 0.58 V（低於靜止 0.6 V，約 134 ms）；AP 後 60 ms 內不能再發；按住約 31 Hz 連續發放。']
+        ['true', '真正的 AP', Object.assign({rpot:0}, TRUE_AP), 'R2 = 1 MΩ 再外加 5 顆電阻（見摘要區）：靜止 1.19 V、門檻約 1.66 V、AP 5.2–5.4 V、AP 後低於靜止約 0.6 V（125 ms）、AP 後 20 ms 內不能再發；按住時連續發放。']
       ]
     },
     s23:{
@@ -68,8 +63,7 @@
       presets:[
         ['kit', '原版電路', {fi_supply:'none'}, '原版、沒拉飛線：FI 沒有 V+（Passive PCB 底板沒串），n ≥ 1 只有被動反應，再被 SO 慢慢往下拉。'],
         ['wire', '原版＋V+ 飛線', {fi_supply:'stim'}, 'Stimulator 的 V+ 拉飛線到 FI，其他照原版：n ≥ 1 有 AP（門檻、FI 衝高、SO 拉回），峰值約 2.3–1.6 V（n = 1–4）。Passive unit 的 100 kΩ 吸掉 Stimulator 的 6 µA 漏電，靜止降到 0.1–0.3 V，所以不像 #2-2 會自己冒小峰；但靜止低於 SO 能拉到的約 0.6 V，沒有後過極化（C5）。n = 3、4 按住 0.3 秒以上，放開後卡在約 0.76 V（FI 和 SO 互鎖）。'],
-        ['bbst', '麵包板 ST＋飛線', Object.assign({fi_supply:'stim'}, BB_ST), '麵包板 Stimulator，V+ 拉線到 FI，其他照原版：靜止 0 V；按住 1 秒峰值 2.6／2.2／1.9／1.8 V（n = 1–4），沒有後過極化；n = 3、4 長按放開後仍卡在 0.77 V。'],
-        ['true', '真正的 AP', Object.assign({ru:680e3, fi_supply:'stim'}, TRUE_AP), '真正的 AP 外加元件，加上每個 Passive unit 一顆 680 kΩ 接 V+、V+ 拉線到 FI：n = 0–4 靜止 1.18–1.19 V，都有門檻、all-or-none、後過極化。I_min = 12.8／22.1／33.2／48.4／69.4 µA（100 kΩ 可變電阻約 13.5–100 µA 都量得到）；75 µA 時 delay = 20／40／66／111／334 ms。']
+        ['true', '真正的 AP', Object.assign({ru:560e3, fi_supply:'stim', rpot:0}, TRUE_AP), '真正的 AP 外加元件，加上每個 Passive unit 一顆 560 kΩ 接 V+、FI 拉 V+ 線：n = 0–4 靜止都是 1.19 V，都有門檻、all-or-none、後過極化。I_min = 7.6／13.4／20.9／31.0／44.8 µA；量 I_min 時把 Q_pass E–B 改成 12 kΩ。']
       ]
     }
   };
@@ -557,7 +551,7 @@
 
   /* static full drawings of the true-AP circuit (summary, advanced) */
   $$('svg[data-trueap]').forEach(function(svg){
-    var nn = +svg.dataset.trueap, st = Object.assign({}, BASE_ST, TRUE_AP, nn ? {chain:nn, ru:680e3} : {});
+    var nn = +svg.dataset.trueap, st = Object.assign({}, BASE_ST, TRUE_AP, nn ? {chain:nn, ru:560e3} : {});
     var sch = MembraneSchematic(svg, {chain:nn});
     sch.setContacts(st); sch.setQsense(st.qs); sch.setResistors(st.r13, st.rfe, st.so_r2); sch.setAddons(st); sch.setSupply('stim');
   });
@@ -610,7 +604,7 @@
     d.open = false;
     d.querySelector('summary').addEventListener('click', function(e){ e.preventDefault(); openTile(d); });
   });
-  /* links to a card (e.g. #hold23, #leak, #bbst) open it */
+  /* links to a card (e.g. #hold23, #leak) open it */
   function openFromHash(id){
     var d = id && document.getElementById(id);
     if(d && d.matches('#r1 details.card')){ openTile(d); return true; }
