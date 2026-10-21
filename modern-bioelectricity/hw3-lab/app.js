@@ -260,8 +260,8 @@
     fg.innerHTML = '<div class="gt">電路圖</div><label class="chk"><input type="checkbox" data-flow> 顯示電子流動</label>' +
       '<p class="small muted" style="margin:2px 0 0">橘點＝電子：逆著電流方向、往電池＋極走，越快＝電流越大（20 nA 以下不畫）。AP 只有十幾 ms，把示波器的「速度」調到 1/20× 才看得到 AP 期間的電子。' +
       '點元件看它的方程式和即時數值，點導線（net）看接在上面的每個元件的電流（KCL）。紫紅色＝和原版電路不同的地方。</p>';
-    var h2 = $('h2', panel), sub = $$('p.sub', panel);
-    (sub.length ? sub[sub.length - 1] : h2).insertAdjacentElement('afterend', fg);
+    var sg = $('[data-scope]', panel).closest('.grp');      /* in section 3, just before the scope */
+    sg.parentNode.insertBefore(fg, sg);
     var cb = $('[data-flow]', fg); cb.checked = FLOW;
     cb.addEventListener('change', function(){ setFlow(cb.checked); });
     /* pulse buttons */

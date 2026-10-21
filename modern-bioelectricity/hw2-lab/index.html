@@ -183,6 +183,15 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
 .tdlg .body ul,.tdlg .body ol{padding-left:1.25em;margin:6px 0}
 .tdlg .body li{margin:3px 0}
 
+/* ---------- 設定欄四段：0 參數檢查／1 電路焊接／2 模塊組合／3 實驗操作 ---------- */
+.settings details.sec{border-top:2px solid var(--rule);padding:2px 0 6px}
+.settings details.sec > summary{position:relative;display:block;padding:7px 18px 3px 0;font-size:14px;font-weight:900;color:var(--accent);list-style:none}
+.settings details.sec > summary::-webkit-details-marker{display:none}
+.settings details.sec > summary::after{content:"▸";position:absolute;right:2px;top:9px;color:var(--muted);font-size:12px}
+.settings details.sec[open] > summary::after{content:"▾"}
+.settings details.sec > summary .secn{display:inline-grid;place-items:center;min-width:20px;height:20px;margin-right:7px;border-radius:5px;background:var(--accent);color:var(--surface);font-size:12px;vertical-align:1px}
+.settings details.sec > summary .hint{display:block;margin:1px 0 0 27px;font-size:11.5px;font-weight:400;line-height:1.4;color:var(--muted)}
+.settings details.sec > .grp:first-of-type{border-top:0;padding-top:2px}
 /* ---------- circuit inspector (inspect.js) ---------- */
 .insp{position:fixed;left:24px;top:80px;z-index:80;width:min(470px,calc(100vw - 16px));max-height:min(80vh,760px);display:flex;flex-direction:column;
   background:var(--surface);color:var(--ink);border:1.5px solid var(--accent);border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.28);font-size:13px}
@@ -608,31 +617,45 @@ Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) 
   <div class="settings">
     <h2>#2-1 Passive</h2>
     <p class="sub">Stimulator → 5 個 Passive unit（1 µF ∥ 100 kΩ，隔 10 kΩ）。CH1 = 第 1 個，CH2 = 最後一個（或中間）。</p>
-    <div class="grp"><div class="gt">刺激</div>
-      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
-      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
-      <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
-      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
-      <div data-show="adv">
-        <div class="row"><label>來源</label><select data-k="src"><option value="stim">Stimulator</option><option value="ideal">理想電流源</option></select></div>
-        <div class="row"><label>理想電流（µA）</label><input type="number" data-k="isrc" min="0" max="300" step="1" data-scale="1e-6" style="width:5.5em"></div>
-        <div class="row"><label>Stimulator 漏電</label><select data-k="qs"><option value="pcb">原樣</option><option value="rx">並 22 kΩ</option></select></div>
+    <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">電池電壓</span></summary>
+      <div class="grp">
+        <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+        <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
       </div>
-      <div class="gt" style="margin-top:6px">脈衝長度（題目要五種）</div>
-      <div class="btns" data-pulses="0.01,0.05,0.1,0.2,0.5"></div>
-      <div class="row" data-show="adv"><label>自訂（ms）</label><span><input type="number" data-pulse-ms value="300" min="1" max="5000" style="width:5em"> <button class="btn" type="button" data-pulse-go>按</button></span></div>
-      <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
-      <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
-    </div>
-    <div class="grp"><div class="gt">示波器</div>
-      <div class="row" data-show="basic"><label>CH2 量</label><select data-k="ch2"><option value="Vm">第 5 個（最後）</option><option value="PC3">第 3 個（中間）</option></select></div>
-      <div data-show="adv">
-        <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="pc"></select></div>
-        <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="pc"></select></div>
+    </details>
+    <details class="sec"><summary><span class="secn">1</span>電路焊接<span class="hint">外加或更換電阻</span></summary>
+      <div class="grp">
+        <p class="small muted" data-show="basic" style="margin:0">原版電路，這裡沒有要改的。</p>
+        <div class="row" data-show="adv"><label>Stimulator 漏電</label><select data-k="qs"><option value="pcb">原樣</option><option value="rx">並 22 kΩ</option></select></div>
       </div>
-      <div data-scope></div>
-    </div>
-    <div class="grp"><div class="gt">自動量測（上一次按壓）</div><div data-meas></div></div>
+    </details>
+    <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">板子怎麼接</span></summary>
+      <div class="grp">
+        <p class="small muted" style="margin:0 0 4px">Stimulator → 5 個 Passive unit（固定）。</p>
+        <div class="row" data-show="adv"><label>來源</label><select data-k="src"><option value="stim">Stimulator</option><option value="ideal">理想電流源</option></select></div>
+      </div>
+    </details>
+    <details class="sec" open><summary><span class="secn">3</span>實驗操作<span class="hint">可變電阻、SW、示波器</span></summary>
+      <div class="grp"><div class="gt">刺激</div>
+        <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
+        <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
+        <div class="row" data-show="adv"><label>理想電流（µA）</label><input type="number" data-k="isrc" min="0" max="300" step="1" data-scale="1e-6" style="width:5.5em"></div>
+        <div class="gt" style="margin-top:6px">脈衝長度（題目要五種）</div>
+        <div class="btns" data-pulses="0.01,0.05,0.1,0.2,0.5"></div>
+        <div class="row" data-show="adv"><label>自訂（ms）</label><span><input type="number" data-pulse-ms value="300" min="1" max="5000" style="width:5em"> <button class="btn" type="button" data-pulse-go>按</button></span></div>
+        <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
+        <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
+      </div>
+      <div class="grp"><div class="gt">示波器</div>
+        <div class="row" data-show="basic"><label>CH2 量</label><select data-k="ch2"><option value="Vm">第 5 個（最後）</option><option value="PC3">第 3 個（中間）</option></select></div>
+        <div data-show="adv">
+          <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="pc"></select></div>
+          <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="pc"></select></div>
+        </div>
+        <div data-scope></div>
+      </div>
+      <div class="grp"><div class="gt">自動量測（上一次按壓）</div><div data-meas></div></div>
+    </details>
     <details><summary>題目與量法</summary>
       <ul class="small">
         <li><b>Q1</b> 照片標元件（5 個 unit 的 C1、R1，上排 10 kΩ、下排 100 Ω）。</li>
@@ -661,47 +684,57 @@ Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) 
     <h2>#2-2 Active</h2>
     <p class="sub" data-show="basic">助教給的電路：R2 = 1 MΩ、R13 = 100 kΩ。CH1 = Vm。</p>
     <p class="sub" data-show="adv">自由調整。點電路圖上的紅色接點可以斷開排針。</p>
-    <div class="grp" data-show="basic"><div class="gt">版本</div>
-      <div class="btns" data-presets="s22b"></div>
-      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
-    </div>
-    <div class="grp" data-show="adv"><div class="gt">情境</div>
-      <div class="btns" data-presets="s22"></div>
-      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
-    </div>
-    <div class="grp"><div class="gt">板子（拔掉 = TTX／TEA）</div>
-      <label class="chk"><input type="checkbox" data-k="leak"> LK Leak</label>
-      <label class="chk" data-show="adv"><input type="checkbox" data-k="lk2"> LK2：再疊一塊 Leak</label>
-      <label class="chk"><input type="checkbox" data-k="fi_on"> FI Fast inward（拔掉 = TTX）</label>
-      <label class="chk"><input type="checkbox" data-k="so_on"> SO Slow out（拔掉 = TEA）</label>
-    </div>
-    <div class="grp"><div class="gt">刺激</div>
-      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
-      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
-      <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
-      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
-      <div class="btns" data-pulses="0.02,0.1,1"></div>
-      <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
-      <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
-      <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button>
-    </div>
-    <div class="grp"><div class="gt">元件</div>
-      <div class="row"><label>R13（Q4）</label><select data-k="r13" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option><option value="1e4" data-show="adv">10 kΩ</option><option value="1e3" data-show="adv">1 kΩ</option></select></div>
-      <div data-show="adv">
-        <div class="row"><label>FI 3904 E 電阻</label><select data-k="rfe" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select></div>
-        <div class="row"><label>Q_pass E–B 並</label><select data-k="qs"><option value="pcb">不加</option><option value="rx">22 kΩ（真 AP）</option><option value="rx10">10 kΩ</option><option value="sw">Q_sense 改接（對照）</option></select></div>
-        <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="11e3">11 kΩ（真 AP）</option><option value="1e5">100 kΩ</option><option value="1e3">1 kΩ</option></select></div>
-        <div class="row"><label>R13 下端→FI.E3</label><select data-k="rf" data-num><option value="0">不加</option><option value="680e3">680 kΩ（真 AP）</option><option value="1e6">1 MΩ</option><option value="470e3">470 kΩ</option></select></div>
-        <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="330e3">330 kΩ（真 AP）</option><option value="470e3">470 kΩ</option></select></div>
-        <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="56e3">56 kΩ（真 AP）</option><option value="47e3">47 kΩ</option></select></div>
-        <div class="row"><label>Vm → GND（多加 leak）</label><select data-k="rl" data-num><option value="0">不加</option><option value="1e6">1 MΩ</option><option value="220e3">220 kΩ</option><option value="47e3">47 kΩ</option></select></div>
+    <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
+      <div class="grp" data-show="adv"><div class="gt">情境</div>
+        <div class="btns" data-presets="s22"></div>
+        <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
-    </div>
-    <div class="grp"><div class="gt">示波器</div>
-      <div class="row"><label>CH2 量</label><select data-k="ch2"><option value="">關</option><option value="SO.S">SO.S</option><option value="FI.E4">FI.E4</option><option value="FI.E3" data-show="adv">FI.E3</option><option value="SO.B3" data-show="adv">SO.B3</option><option value="FI.V+" data-show="adv">FI.V+</option></select></div>
-      <div data-scope></div>
-    </div>
-    <div class="grp"><div class="gt">自動量測（上一次按壓，第一個 AP）</div><div data-meas></div></div>
+      <div class="grp"><div class="gt">電池</div>
+        <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+        <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">1</span>電路焊接<span class="hint">外加或更換電阻</span></summary>
+      <div class="grp"><div class="gt">電阻</div>
+        <div class="row"><label>R13（Q4）</label><select data-k="r13" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option><option value="1e4" data-show="adv">10 kΩ</option><option value="1e3" data-show="adv">1 kΩ</option></select></div>
+        <div data-show="adv">
+          <div class="row"><label>FI 3904 E 電阻</label><select data-k="rfe" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select></div>
+          <div class="row"><label>Q_pass E–B 並</label><select data-k="qs"><option value="pcb">不加</option><option value="rx">22 kΩ（真 AP）</option><option value="rx10">10 kΩ</option><option value="sw">Q_sense 改接（對照）</option></select></div>
+          <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="11e3">11 kΩ（真 AP）</option><option value="1e5">100 kΩ</option><option value="1e3">1 kΩ</option></select></div>
+          <div class="row"><label>R13 下端→FI.E3</label><select data-k="rf" data-num><option value="0">不加</option><option value="680e3">680 kΩ（真 AP）</option><option value="1e6">1 MΩ</option><option value="470e3">470 kΩ</option></select></div>
+          <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="330e3">330 kΩ（真 AP）</option><option value="470e3">470 kΩ</option></select></div>
+          <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="56e3">56 kΩ（真 AP）</option><option value="47e3">47 kΩ</option></select></div>
+          <div class="row"><label>Vm → GND（多加 leak）</label><select data-k="rl" data-num><option value="0">不加</option><option value="1e6">1 MΩ</option><option value="220e3">220 kΩ</option><option value="47e3">47 kΩ</option></select></div>
+        </div>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">疊哪些板子</span></summary>
+      <div class="grp" data-show="basic"><div class="gt">版本（板子怎麼疊）</div>
+        <div class="btns" data-presets="s22b"></div>
+        <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
+      </div>
+      <div class="grp"><div class="gt">板子（拔掉 = TTX／TEA）</div>
+        <label class="chk"><input type="checkbox" data-k="leak"> LK Leak</label>
+        <label class="chk" data-show="adv"><input type="checkbox" data-k="lk2"> LK2：再疊一塊 Leak</label>
+        <label class="chk"><input type="checkbox" data-k="fi_on"> FI Fast inward（拔掉 = TTX）</label>
+        <label class="chk"><input type="checkbox" data-k="so_on"> SO Slow out（拔掉 = TEA）</label>
+      </div>
+    </details>
+    <details class="sec" open><summary><span class="secn">3</span>實驗操作<span class="hint">可變電阻、SW、示波器</span></summary>
+      <div class="grp"><div class="gt">刺激</div>
+        <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
+        <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
+        <div class="btns" data-pulses="0.02,0.1,1"></div>
+        <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
+        <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
+        <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button>
+      </div>
+      <div class="grp"><div class="gt">示波器</div>
+        <div class="row"><label>CH2 量</label><select data-k="ch2"><option value="">關</option><option value="SO.S">SO.S</option><option value="FI.E4">FI.E4</option><option value="FI.E3" data-show="adv">FI.E3</option><option value="SO.B3" data-show="adv">SO.B3</option><option value="FI.V+" data-show="adv">FI.V+</option></select></div>
+        <div data-scope></div>
+      </div>
+      <div class="grp"><div class="gt">自動量測（上一次按壓，第一個 AP）</div><div data-meas></div></div>
+    </details>
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
         <li><b>Q2</b> 按一下（例如 100 ms）記錄一個「AP」的五參數（模擬約 2.1 V、按下後約 11 ms 到峰）。不按也會自己冒小峰：Single、觸發準位 1.8 V 以上。</li>
@@ -731,45 +764,60 @@ Slow out 極限（E_K）：Vm = SO.B4 + V_EB = 0.05 + 0.02585·ln(10 µA/10 fA) 
     <h2>#2-3 Passive → active</h2>
     <p class="sub" data-show="basic">底板沒串 V+，n ≥ 1 時 FI 要拉飛線才有電。預設「有 V+ 飛線」；「照實：沒飛線」只剩被動反應。CH1 = active 端 Vm。</p>
     <p class="sub" data-show="adv">可以補 V+ 線、換電流源、套用修正。</p>
-    <div class="grp"><div class="gt">Passive unit 數 n</div>
-      <div class="btns" data-nseg></div>
-    </div>
-    <div class="grp" data-show="basic"><div class="gt">FI 的 V+</div>
-      <div class="btns" data-presets="s23b"></div>
-      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
-    </div>
-    <div class="grp" data-show="adv"><div class="gt">情境</div>
-      <div class="btns" data-presets="s23"></div>
-      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
-      <div class="row"><label>FI 的 V+</label><select data-k="fi_supply"><option value="none">沒接（照實）</option><option value="stim">從 Stimulator 拉線</option><option value="local">FI 自帶電池</option></select></div>
-      <label class="chk"><input type="checkbox" data-k="fi_on"> FI（拔掉 = TTX）</label>
-      <label class="chk"><input type="checkbox" data-k="so_on"> SO（拔掉 = TEA）</label>
-      <div class="row"><label>Q_pass E–B 並</label><select data-k="qs"><option value="pcb">不加</option><option value="rx">22 kΩ（真 AP）</option><option value="rx12">12 kΩ（量 I_min）</option></select></div>
-      <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="11e3">11 kΩ（真 AP）</option></select></div>
-      <div class="row"><label>R13 下端→FI.E3</label><select data-k="rf" data-num><option value="0">不加</option><option value="680e3">680 kΩ（真 AP）</option></select></div>
-      <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="330e3">330 kΩ（真 AP）</option></select></div>
-      <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="56e3">56 kΩ（真 AP）</option></select></div>
-      <div class="row"><label>V+ → 每個 unit</label><select data-k="ru" data-num><option value="0">不加</option><option value="560e3">560 kΩ（真 AP）</option></select></div>
-    </div>
-    <div class="grp"><div class="gt">刺激</div>
-      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
-      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
-      <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
-      <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
-      <div data-show="adv">
-        <div class="row"><label>來源</label><select data-k="src"><option value="stim">Stimulator</option><option value="ideal">理想電流源</option></select></div>
-        <div class="row"><label>理想電流（µA）</label><input type="number" data-k="isrc" min="0" max="300" step="0.5" data-scale="1e-6" style="width:5.5em"></div>
+    <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
+      <div class="grp" data-show="adv"><div class="gt">情境</div>
+        <div class="btns" data-presets="s23"></div>
+        <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
-      <div class="btns" data-pulses="0.1,1"></div>
-      <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
-      <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
-      <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button>
-    </div>
-    <div class="grp"><div class="gt">示波器</div>
-      <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="23"></select></div>
-      <div data-scope></div>
-    </div>
-    <div class="grp"><div class="gt">自動量測（上一次按壓）</div><div data-meas></div></div>
+      <div class="grp"><div class="gt">電池</div>
+        <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+        <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">1</span>電路焊接<span class="hint">外加或更換電阻</span></summary>
+      <div class="grp">
+        <p class="small muted" data-show="basic" style="margin:0">原版電路，這裡沒有要改的。</p>
+      </div>
+      <div class="grp" data-show="adv"><div class="gt">外加電阻</div>
+        <div class="row"><label>Q_pass E–B 並</label><select data-k="qs"><option value="pcb">不加</option><option value="rx">22 kΩ（真 AP）</option><option value="rx12">12 kΩ（量 I_min）</option></select></div>
+        <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="11e3">11 kΩ（真 AP）</option></select></div>
+        <div class="row"><label>R13 下端→FI.E3</label><select data-k="rf" data-num><option value="0">不加</option><option value="680e3">680 kΩ（真 AP）</option></select></div>
+        <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="330e3">330 kΩ（真 AP）</option></select></div>
+        <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="56e3">56 kΩ（真 AP）</option></select></div>
+        <div class="row"><label>V+ → 每個 unit</label><select data-k="ru" data-num><option value="0">不加</option><option value="560e3">560 kΩ（真 AP）</option></select></div>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">unit 數、飛線、拔板子</span></summary>
+      <div class="grp"><div class="gt">Passive unit 數 n</div>
+        <div class="btns" data-nseg></div>
+      </div>
+      <div class="grp" data-show="basic"><div class="gt">FI 的 V+（飛線）</div>
+        <div class="btns" data-presets="s23b"></div>
+        <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
+      </div>
+      <div class="grp" data-show="adv"><div class="gt">板子與電源</div>
+        <div class="row"><label>FI 的 V+</label><select data-k="fi_supply"><option value="none">沒接（照實）</option><option value="stim">從 Stimulator 拉線</option><option value="local">FI 自帶電池</option></select></div>
+        <label class="chk"><input type="checkbox" data-k="fi_on"> FI（拔掉 = TTX）</label>
+        <label class="chk"><input type="checkbox" data-k="so_on"> SO（拔掉 = TEA）</label>
+        <div class="row"><label>來源</label><select data-k="src"><option value="stim">Stimulator</option><option value="ideal">理想電流源</option></select></div>
+      </div>
+    </details>
+    <details class="sec" open><summary><span class="secn">3</span>實驗操作<span class="hint">可變電阻、SW、示波器</span></summary>
+      <div class="grp"><div class="gt">刺激</div>
+        <div class="row"><label>可變電阻</label><span class="val" data-out="rpot"></span></div>
+        <div class="row full"><input type="range" data-k="rpot" min="0" max="10" step="0.1" data-scale="1000"></div>
+        <div class="row" data-show="adv"><label>理想電流（µA）</label><input type="number" data-k="isrc" min="0" max="300" step="0.5" data-scale="1e-6" style="width:5.5em"></div>
+        <div class="btns" data-pulses="0.1,1"></div>
+        <button class="swbtn" type="button" data-sw style="margin-top:6px">按住 SW</button>
+        <label class="chk"><input type="checkbox" data-latch> SW 保持按下</label>
+        <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button>
+      </div>
+      <div class="grp"><div class="gt">示波器</div>
+        <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="23"></select></div>
+        <div data-scope></div>
+      </div>
+      <div class="grp"><div class="gt">自動量測（上一次按壓）</div><div data-meas></div></div>
+    </details>
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
         <li><b>Q2</b> n = 4，按一下 SW，記錄第一個 AP 的五參數（有飛線：峰值約 1.6 V；沒飛線只有被動反應）。</li>

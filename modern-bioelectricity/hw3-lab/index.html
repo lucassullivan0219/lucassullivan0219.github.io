@@ -149,6 +149,15 @@ select,input[type=number]{font-size:12.5px;padding:2px 4px;border:1px solid var(
 .isiplot{display:block;width:100%;height:210px}
 .fsbox.fs .isiplot{height:calc(100vh - 80px)}
 kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--surface)}
+/* ---------- 設定欄四段：0 參數檢查／1 電路焊接／2 模塊組合／3 實驗操作 ---------- */
+.settings details.sec{border-top:2px solid var(--rule);padding:2px 0 6px}
+.settings details.sec > summary{position:relative;display:block;padding:7px 18px 3px 0;font-size:14px;font-weight:900;color:var(--accent);list-style:none}
+.settings details.sec > summary::-webkit-details-marker{display:none}
+.settings details.sec > summary::after{content:"▸";position:absolute;right:2px;top:9px;color:var(--muted);font-size:12px}
+.settings details.sec[open] > summary::after{content:"▾"}
+.settings details.sec > summary .secn{display:inline-grid;place-items:center;min-width:20px;height:20px;margin-right:7px;border-radius:5px;background:var(--accent);color:var(--surface);font-size:12px;vertical-align:1px}
+.settings details.sec > summary .hint{display:block;margin:1px 0 0 27px;font-size:11.5px;font-weight:400;line-height:1.4;color:var(--muted)}
+.settings details.sec > .grp:first-of-type{border-top:0;padding-top:2px}
 /* ---------- circuit inspector (inspect.js) ---------- */
 .insp{position:fixed;left:24px;top:80px;z-index:80;width:min(470px,calc(100vw - 16px));max-height:min(80vh,760px);display:flex;flex-direction:column;
   background:var(--surface);color:var(--ink);border:1.5px solid var(--accent);border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.28);font-size:13px}
@@ -493,50 +502,61 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <h2>#3-1 Excitatory → passive</h2>
     <p class="sub" data-show="basic">Stimulator A → Pre → excitatory 突觸 → 5 個 Passive unit。CH1 = Pre Vm，CH2 = #1。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
-    <div class="grp" data-show="adv"><div class="gt">情境</div>
-      <div class="btns" data-presets></div>
-      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
-    </div>
-    <div class="grp"><div class="gt">板子</div>
-      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
-      <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
-      <div class="row" data-show="basic"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
-      <div class="row"><label>突觸 Q1 電源</label><select data-k="vsyn" data-num><option value="0">排針 V+（PCB）</option><option value="9">獨立 9 V（講義圖）</option></select></div>
-      <div data-show="adv">
-        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
-        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
-        <div class="row"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
+    <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
+      <div class="grp" data-show="adv"><div class="gt">情境</div>
+        <div class="btns" data-presets></div>
+        <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
-      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
-      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
-      <p class="small muted">預設 8.44 V：我們 2026-10-21 用電表量的（之前用 HW2 推估的 7.0 V；HW2 的 7.8 V 是別組的板子）。模型的原版 Pre 在 8.44 V 會自己冒小峰，我們 10-21 的截圖在兩次按壓之間沒看到。</p>
-    </div>
-    <div class="grp"><div class="gt">Stimulator A（Pre）</div>
-      <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
-      <div class="row full"><input type="range" data-k="rpotA" min="0" max="10" step="0.1" data-scale="1000"></div>
-      <div class="btns" data-pulses="0.015,0.02,0.1,0.3,1" data-who="A"></div>
-      <button class="swbtn" type="button" data-sw="A" style="margin-top:6px">按住 SW A</button>
-      <label class="chk"><input type="checkbox" data-latch="A"> SW A 保持按下</label>
-      <div class="gt" style="margin-top:8px">串列（Q4）</div>
-      <div class="row"><label>幾下</label><input type="number" data-k="nA" min="1" max="10" step="1" style="width:4.5em"></div>
-      <div class="row"><label>間隔（ms）</label><input type="number" data-k="isiA" min="20" max="3000" step="5" style="width:5.5em"></div>
-      <div class="row"><label>每下（ms）</label><input type="number" data-k="wA" min="1" max="2000" step="1" style="width:5.5em"></div>
-      <p class="small muted" data-train-label style="margin:0"></p>
-      <button class="btn acc" type="button" data-train style="margin-top:4px">送出 A 串列</button>
-    </div>
-    <div class="grp"><div class="gt">示波器</div>
-      <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="ch1"></select></div>
-      <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="ch2"></select></div>
-      <div data-scope></div>
-    </div>
-    <div class="grp"><div class="gt">自動量測（上一次刺激）</div><div data-meas></div>
-      <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button></div>
-    <div class="grp"><div class="gt">ISI 散佈圖（Q4，模擬）</div>
-      <p class="small muted" style="margin:0 0 4px">用目前的設定，兩下 SW A（每下照「每下」），間隔 50–1200 ms，量 CH2 那一點（Passive 節點或 S，否則 #1）。</p>
-      <button class="btn acc" type="button" data-isi>掃描</button>
-      <div data-isibox hidden style="margin-top:6px"><div class="fsbox"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><canvas class="isiplot" data-isiplot aria-label="EPSP 振幅 vs 間隔"></canvas></div><div data-isiout></div></div>
-    </div>
+      <div class="grp"><div class="gt">電池</div>
+        <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+        <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
+        <p class="small muted">預設 8.44 V：我們 2026-10-21 用電表量的（之前用 HW2 推估的 7.0 V；HW2 的 7.8 V 是別組的板子）。模型的原版 Pre 在 8.44 V 會自己冒小峰，我們 10-21 的截圖在兩次按壓之間沒看到。</p>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">1</span>電路焊接<span class="hint">外加或更換電阻、membrane 版本</span></summary>
+      <div class="grp">
+        <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
+        <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
+        <div class="row" data-show="basic"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
+        <div class="row" data-show="adv"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row" data-show="adv"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
+        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
+        <div class="row" data-show="adv"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">板子怎麼接、電源</span></summary>
+      <div class="grp">
+        <p class="small muted" style="margin:0 0 4px">Stimulator A → Pre（active membrane）→ excitatory 突觸板 → 5 個 Passive unit。</p>
+        <div class="row"><label>突觸 Q1 電源</label><select data-k="vsyn" data-num><option value="0">排針 V+（PCB）</option><option value="9">獨立 9 V（講義圖）</option></select></div>
+      </div>
+    </details>
+    <details class="sec" open><summary><span class="secn">3</span>實驗操作<span class="hint">可變電阻、SW、示波器</span></summary>
+      <div class="grp"><div class="gt">Stimulator A（Pre）</div>
+        <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
+        <div class="row full"><input type="range" data-k="rpotA" min="0" max="10" step="0.1" data-scale="1000"></div>
+        <div class="btns" data-pulses="0.015,0.02,0.1,0.3,1" data-who="A"></div>
+        <button class="swbtn" type="button" data-sw="A" style="margin-top:6px">按住 SW A</button>
+        <label class="chk"><input type="checkbox" data-latch="A"> SW A 保持按下</label>
+        <div class="gt" style="margin-top:8px">串列（Q4）</div>
+        <div class="row"><label>幾下</label><input type="number" data-k="nA" min="1" max="10" step="1" style="width:4.5em"></div>
+        <div class="row"><label>間隔（ms）</label><input type="number" data-k="isiA" min="20" max="3000" step="5" style="width:5.5em"></div>
+        <div class="row"><label>每下（ms）</label><input type="number" data-k="wA" min="1" max="2000" step="1" style="width:5.5em"></div>
+        <p class="small muted" data-train-label style="margin:0"></p>
+        <button class="btn acc" type="button" data-train style="margin-top:4px">送出 A 串列</button>
+      </div>
+      <div class="grp"><div class="gt">示波器</div>
+        <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="ch1"></select></div>
+        <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="ch2"></select></div>
+        <div data-scope></div>
+      </div>
+      <div class="grp"><div class="gt">自動量測（上一次刺激）</div><div data-meas></div>
+        <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button></div>
+      <div class="grp"><div class="gt">ISI 散佈圖（Q4，模擬）</div>
+        <p class="small muted" style="margin:0 0 4px">用目前的設定，兩下 SW A（每下照「每下」），間隔 50–1200 ms，量 CH2 那一點（Passive 節點或 S，否則 #1）。</p>
+        <button class="btn acc" type="button" data-isi>掃描</button>
+        <div data-isibox hidden style="margin-top:6px"><div class="fsbox"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><canvas class="isiplot" data-isiplot aria-label="EPSP 振幅 vs 間隔"></canvas></div><div data-isiout></div></div>
+      </div>
+    </details>
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
         <li><b>Q1</b> 照片標出 presynaptic（Stimulator A + active membrane）、synapse（突觸板）、postsynaptic（5 個 Passive unit）。</li>
@@ -565,58 +585,69 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <h2>#3-2 Excitatory → active</h2>
     <p class="sub" data-show="basic">Post 換成 active membrane 2，Stimulator B 刺激 Post。CH1 = Pre Vm，CH2 = Post Vm。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
-    <div class="grp" data-show="adv"><div class="gt">情境</div>
-      <div class="btns" data-presets></div>
-      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
-    </div>
-    <div class="grp"><div class="gt">板子</div>
-      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
-      <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
-      <div class="row" data-show="basic"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
-      <div class="row"><label>突觸 Q1 電源</label><select data-k="vsyn" data-num><option value="0">排針 V+（PCB）</option><option value="9">獨立 9 V（講義圖）</option></select></div>
-      <div data-show="adv">
-        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
-        <div class="row"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
-        <div class="row"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
+    <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
+      <div class="grp" data-show="adv"><div class="gt">情境</div>
+        <div class="btns" data-presets></div>
+        <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
-      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
-      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
-      <p class="small muted">預設 8.44 V：我們 2026-10-21 用電表量的（之前用 HW2 推估的 7.0 V；HW2 的 7.8 V 是別組的板子）。模型的原版 Pre 在 8.44 V 會自己冒小峰，我們 10-21 的截圖在兩次按壓之間沒看到。</p>
-    </div>
-    <div class="grp"><div class="gt">Stimulator A（Pre）</div>
-      <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
-      <div class="row full"><input type="range" data-k="rpotA" min="0" max="10" step="0.1" data-scale="1000"></div>
-      <div class="btns" data-pulses="0.015,0.1,0.3,1" data-who="A"></div>
-      <button class="swbtn" type="button" data-sw="A" style="margin-top:6px">按住 SW A</button>
-      <label class="chk"><input type="checkbox" data-latch="A"> SW A 保持按下</label>
-      <div class="gt" style="margin-top:8px">串列（Q2）</div>
-      <div class="row"><label>幾下</label><input type="number" data-k="nA" min="1" max="10" step="1" style="width:4.5em"></div>
-      <div class="row"><label>間隔（ms）</label><input type="number" data-k="isiA" min="20" max="3000" step="5" style="width:5.5em"></div>
-      <div class="row"><label>每下（ms）</label><input type="number" data-k="wA" min="1" max="2000" step="1" style="width:5.5em"></div>
-      <p class="small muted" data-train-label style="margin:0"></p>
-      <button class="btn acc" type="button" data-train style="margin-top:4px">送出 A 串列</button>
-    </div>
-    <div class="grp"><div class="gt">Stimulator B（Post）</div>
-      <div class="row"><label>可變電阻</label><span class="val" data-out="rpotB"></span></div>
-      <div class="row full"><input type="range" data-k="rpotB" min="0" max="10" step="0.1" data-scale="1000"></div>
-      <div class="btns" data-pulses="0.005,0.008,0.009,0.02" data-who="B"></div>
-      <button class="swbtn" type="button" data-sw="B" style="margin-top:6px">按住 SW B</button>
-      <label class="chk"><input type="checkbox" data-latch="B"> SW B 保持按下</label>
-      <div class="gt" style="margin-top:8px">組合（Q3）：A 串列 + B 一下</div>
-      <div class="row"><label>B 每下（ms）</label><input type="number" data-k="wB" min="1" max="2000" step="0.5" style="width:5.5em"></div>
-      <div class="row"><label>B 相對第一個 A（ms）</label><input type="number" data-k="offB" min="-2000" max="3000" step="5" style="width:5.5em"></div>
-      <div class="btns"><button class="btn" type="button" data-offq="post">Post 先</button><button class="btn" type="button" data-offq="pre">Pre 先（最後一個 A 後 30 ms）</button></div>
-      <button class="btn acc" type="button" data-combo style="margin-top:4px">送出組合</button>
-    </div>
-    <div class="grp"><div class="gt">示波器</div>
-      <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="ch1"></select></div>
-      <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="ch2"></select></div>
-      <div data-scope></div>
-    </div>
-    <div class="grp"><div class="gt">自動量測（上一次刺激）</div><div data-meas></div>
-      <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button></div>
+      <div class="grp"><div class="gt">電池</div>
+        <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+        <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
+        <p class="small muted">預設 8.44 V：我們 2026-10-21 用電表量的（之前用 HW2 推估的 7.0 V；HW2 的 7.8 V 是別組的板子）。模型的原版 Pre 在 8.44 V 會自己冒小峰，我們 10-21 的截圖在兩次按壓之間沒看到。</p>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">1</span>電路焊接<span class="hint">外加或更換電阻、membrane 版本</span></summary>
+      <div class="grp">
+        <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
+        <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
+        <div class="row" data-show="basic"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
+        <div class="row" data-show="adv"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row" data-show="adv"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
+        <div class="row" data-show="adv"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
+        <div class="row" data-show="adv"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">板子怎麼接、電源</span></summary>
+      <div class="grp">
+        <p class="small muted" style="margin:0 0 4px">Stimulator A → Pre → excitatory 突觸板 → Post（active membrane 2）←  Stimulator B。</p>
+        <div class="row"><label>突觸 Q1 電源</label><select data-k="vsyn" data-num><option value="0">排針 V+（PCB）</option><option value="9">獨立 9 V（講義圖）</option></select></div>
+      </div>
+    </details>
+    <details class="sec" open><summary><span class="secn">3</span>實驗操作<span class="hint">可變電阻、SW、示波器</span></summary>
+      <div class="grp"><div class="gt">Stimulator A（Pre）</div>
+        <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
+        <div class="row full"><input type="range" data-k="rpotA" min="0" max="10" step="0.1" data-scale="1000"></div>
+        <div class="btns" data-pulses="0.015,0.1,0.3,1" data-who="A"></div>
+        <button class="swbtn" type="button" data-sw="A" style="margin-top:6px">按住 SW A</button>
+        <label class="chk"><input type="checkbox" data-latch="A"> SW A 保持按下</label>
+        <div class="gt" style="margin-top:8px">串列（Q2）</div>
+        <div class="row"><label>幾下</label><input type="number" data-k="nA" min="1" max="10" step="1" style="width:4.5em"></div>
+        <div class="row"><label>間隔（ms）</label><input type="number" data-k="isiA" min="20" max="3000" step="5" style="width:5.5em"></div>
+        <div class="row"><label>每下（ms）</label><input type="number" data-k="wA" min="1" max="2000" step="1" style="width:5.5em"></div>
+        <p class="small muted" data-train-label style="margin:0"></p>
+        <button class="btn acc" type="button" data-train style="margin-top:4px">送出 A 串列</button>
+      </div>
+      <div class="grp"><div class="gt">Stimulator B（Post）</div>
+        <div class="row"><label>可變電阻</label><span class="val" data-out="rpotB"></span></div>
+        <div class="row full"><input type="range" data-k="rpotB" min="0" max="10" step="0.1" data-scale="1000"></div>
+        <div class="btns" data-pulses="0.005,0.008,0.009,0.02" data-who="B"></div>
+        <button class="swbtn" type="button" data-sw="B" style="margin-top:6px">按住 SW B</button>
+        <label class="chk"><input type="checkbox" data-latch="B"> SW B 保持按下</label>
+        <div class="gt" style="margin-top:8px">組合（Q3）：A 串列 + B 一下</div>
+        <div class="row"><label>B 每下（ms）</label><input type="number" data-k="wB" min="1" max="2000" step="0.5" style="width:5.5em"></div>
+        <div class="row"><label>B 相對第一個 A（ms）</label><input type="number" data-k="offB" min="-2000" max="3000" step="5" style="width:5.5em"></div>
+        <div class="btns"><button class="btn" type="button" data-offq="post">Post 先</button><button class="btn" type="button" data-offq="pre">Pre 先（最後一個 A 後 30 ms）</button></div>
+        <button class="btn acc" type="button" data-combo style="margin-top:4px">送出組合</button>
+      </div>
+      <div class="grp"><div class="gt">示波器</div>
+        <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="ch1"></select></div>
+        <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="ch2"></select></div>
+        <div data-scope></div>
+      </div>
+      <div class="grp"><div class="gt">自動量測（上一次刺激）</div><div data-meas></div>
+        <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button></div>
+    </details>
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
         <li><b>Note</b> 先把 Stimulator B 調弱，弱到單獨按一下不會有 Post AP（可變電阻調大或按短一點）。原版 Pre 沒有 EPSP 可以加上去；按過 B 之後 Post 會一直自己冒約 1.5 V 的小峰（不是 EPSP；V+ 7.8 V 時不按也會），照實記錄。</li>
@@ -644,48 +675,59 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <h2>#3-3 Inhibitory → passive</h2>
     <p class="sub" data-show="basic">Stimulator A → Pre → inhibitory 突觸 → 5 個 Passive unit。CH1 = Pre Vm，CH2 = #1（IPSP 是負的）。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
-    <div class="grp" data-show="adv"><div class="gt">情境</div>
-      <div class="btns" data-presets></div>
-      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
-    </div>
-    <div class="grp"><div class="gt">板子</div>
-      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
-      <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
-      <div class="row"><label>1.5 V 電池</label><select data-k="bat"><option value="on">接上</option><option value="short">拔掉，跳線接通</option><option value="open">拔掉（開路）</option></select></div>
-      <div data-show="adv">
-        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
-        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
+    <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
+      <div class="grp" data-show="adv"><div class="gt">情境</div>
+        <div class="btns" data-presets></div>
+        <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
-      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
-      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
-      <p class="small muted">預設 8.44 V：我們 2026-10-21 用電表量的（之前用 HW2 推估的 7.0 V；HW2 的 7.8 V 是別組的板子）。模型的原版 Pre 在 8.44 V 會自己冒小峰，我們 10-21 的截圖在兩次按壓之間沒看到。</p>
-    </div>
-    <div class="grp"><div class="gt">Stimulator A（Pre）</div>
-      <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
-      <div class="row full"><input type="range" data-k="rpotA" min="0" max="10" step="0.1" data-scale="1000"></div>
-      <div class="btns" data-pulses="0.015,0.02,0.1,0.3,1" data-who="A"></div>
-      <button class="swbtn" type="button" data-sw="A" style="margin-top:6px">按住 SW A</button>
-      <label class="chk"><input type="checkbox" data-latch="A"> SW A 保持按下</label>
-      <div class="gt" style="margin-top:8px">串列（Q4）</div>
-      <div class="row"><label>幾下</label><input type="number" data-k="nA" min="1" max="10" step="1" style="width:4.5em"></div>
-      <div class="row"><label>間隔（ms）</label><input type="number" data-k="isiA" min="20" max="3000" step="5" style="width:5.5em"></div>
-      <div class="row"><label>每下（ms）</label><input type="number" data-k="wA" min="1" max="2000" step="1" style="width:5.5em"></div>
-      <p class="small muted" data-train-label style="margin:0"></p>
-      <button class="btn acc" type="button" data-train style="margin-top:4px">送出 A 串列</button>
-    </div>
-    <div class="grp"><div class="gt">示波器</div>
-      <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="ch1"></select></div>
-      <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="ch2"></select></div>
-      <div data-scope></div>
-    </div>
-    <div class="grp"><div class="gt">自動量測（上一次刺激）</div><div data-meas></div>
-      <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button></div>
-    <div class="grp"><div class="gt">ISI 散佈圖（Q4，模擬）</div>
-      <p class="small muted" style="margin:0 0 4px">兩下 SW A，間隔 50–1200 ms，量 CH2 那一點（Passive 節點或 S，否則 #1）。</p>
-      <button class="btn acc" type="button" data-isi>掃描</button>
-      <div data-isibox hidden style="margin-top:6px"><div class="fsbox"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><canvas class="isiplot" data-isiplot aria-label="IPSP 振幅 vs 間隔"></canvas></div><div data-isiout></div></div>
-    </div>
+      <div class="grp"><div class="gt">電池</div>
+        <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+        <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
+        <p class="small muted">預設 8.44 V：我們 2026-10-21 用電表量的（之前用 HW2 推估的 7.0 V；HW2 的 7.8 V 是別組的板子）。模型的原版 Pre 在 8.44 V 會自己冒小峰，我們 10-21 的截圖在兩次按壓之間沒看到。</p>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">1</span>電路焊接<span class="hint">外加或更換電阻、membrane 版本</span></summary>
+      <div class="grp">
+        <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
+        <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
+        <div class="row" data-show="adv"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row" data-show="adv"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
+        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">板子怎麼接、電源</span></summary>
+      <div class="grp">
+        <p class="small muted" style="margin:0 0 4px">Stimulator A → Pre → inhibitory 突觸板（含 1.5 V 電池）→ 5 個 Passive unit。</p>
+        <div class="row"><label>1.5 V 電池</label><select data-k="bat"><option value="on">接上</option><option value="short">拔掉，跳線接通</option><option value="open">拔掉（開路）</option></select></div>
+      </div>
+    </details>
+    <details class="sec" open><summary><span class="secn">3</span>實驗操作<span class="hint">可變電阻、SW、示波器</span></summary>
+      <div class="grp"><div class="gt">Stimulator A（Pre）</div>
+        <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
+        <div class="row full"><input type="range" data-k="rpotA" min="0" max="10" step="0.1" data-scale="1000"></div>
+        <div class="btns" data-pulses="0.015,0.02,0.1,0.3,1" data-who="A"></div>
+        <button class="swbtn" type="button" data-sw="A" style="margin-top:6px">按住 SW A</button>
+        <label class="chk"><input type="checkbox" data-latch="A"> SW A 保持按下</label>
+        <div class="gt" style="margin-top:8px">串列（Q4）</div>
+        <div class="row"><label>幾下</label><input type="number" data-k="nA" min="1" max="10" step="1" style="width:4.5em"></div>
+        <div class="row"><label>間隔（ms）</label><input type="number" data-k="isiA" min="20" max="3000" step="5" style="width:5.5em"></div>
+        <div class="row"><label>每下（ms）</label><input type="number" data-k="wA" min="1" max="2000" step="1" style="width:5.5em"></div>
+        <p class="small muted" data-train-label style="margin:0"></p>
+        <button class="btn acc" type="button" data-train style="margin-top:4px">送出 A 串列</button>
+      </div>
+      <div class="grp"><div class="gt">示波器</div>
+        <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="ch1"></select></div>
+        <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="ch2"></select></div>
+        <div data-scope></div>
+      </div>
+      <div class="grp"><div class="gt">自動量測（上一次刺激）</div><div data-meas></div>
+        <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button></div>
+      <div class="grp"><div class="gt">ISI 散佈圖（Q4，模擬）</div>
+        <p class="small muted" style="margin:0 0 4px">兩下 SW A，間隔 50–1200 ms，量 CH2 那一點（Passive 節點或 S，否則 #1）。</p>
+        <button class="btn acc" type="button" data-isi>掃描</button>
+        <div data-isibox hidden style="margin-top:6px"><div class="fsbox"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><canvas class="isiplot" data-isiplot aria-label="IPSP 振幅 vs 間隔"></canvas></div><div data-isiout></div></div>
+      </div>
+    </details>
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
         <li><b>Q1</b> 照片標出 pre／synapse（含 1.5 V 電池）／post。</li>
@@ -712,56 +754,67 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <h2>#3-4 Inhibitory → active</h2>
     <p class="sub" data-show="basic">Post 換成 active membrane 2。CH1 = Pre Vm，CH2 = Post Vm。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
-    <div class="grp" data-show="adv"><div class="gt">情境</div>
-      <div class="btns" data-presets></div>
-      <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
-    </div>
-    <div class="grp"><div class="gt">板子</div>
-      <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
-      <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
-      <div class="row"><label>1.5 V 電池（Q4）</label><select data-k="bat"><option value="on">接上</option><option value="short">拔掉，跳線接通</option><option value="open">拔掉（開路）</option></select></div>
-      <div data-show="adv">
-        <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
-        <div class="row"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
+    <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
+      <div class="grp" data-show="adv"><div class="gt">情境</div>
+        <div class="btns" data-presets></div>
+        <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
-      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
-      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
-      <p class="small muted">預設 8.44 V：我們 2026-10-21 用電表量的（之前用 HW2 推估的 7.0 V；HW2 的 7.8 V 是別組的板子）。模型的原版 Pre 在 8.44 V 會自己冒小峰，我們 10-21 的截圖在兩次按壓之間沒看到。</p>
-    </div>
-    <div class="grp"><div class="gt">Stimulator A（Pre）</div>
-      <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
-      <div class="row full"><input type="range" data-k="rpotA" min="0" max="10" step="0.1" data-scale="1000"></div>
-      <div class="btns" data-pulses="0.015,0.1,0.3,1" data-who="A"></div>
-      <button class="swbtn" type="button" data-sw="A" style="margin-top:6px">按住 SW A</button>
-      <label class="chk"><input type="checkbox" data-latch="A"> SW A 保持按下（Q3）</label>
-      <div class="gt" style="margin-top:8px">串列</div>
-      <div class="row"><label>幾下</label><input type="number" data-k="nA" min="1" max="10" step="1" style="width:4.5em"></div>
-      <div class="row"><label>間隔（ms）</label><input type="number" data-k="isiA" min="20" max="3000" step="5" style="width:5.5em"></div>
-      <div class="row"><label>每下（ms）</label><input type="number" data-k="wA" min="1" max="2000" step="1" style="width:5.5em"></div>
-      <p class="small muted" data-train-label style="margin:0"></p>
-      <button class="btn acc" type="button" data-train style="margin-top:4px">送出 A 串列</button>
-    </div>
-    <div class="grp"><div class="gt">Stimulator B（Post）</div>
-      <div class="row"><label>可變電阻</label><span class="val" data-out="rpotB"></span></div>
-      <div class="row full"><input type="range" data-k="rpotB" min="0" max="10" step="0.1" data-scale="1000"></div>
-      <div class="btns" data-pulses="0.011,0.012,0.0125,0.0135,0.02" data-who="B"></div>
-      <button class="swbtn" type="button" data-sw="B" style="margin-top:6px">按住 SW B</button>
-      <label class="chk"><input type="checkbox" data-latch="B"> SW B 保持按下（Q3）</label>
-      <div class="gt" style="margin-top:8px">組合（Q2）：A 串列 + B 一下</div>
-      <div class="row"><label>B 每下（ms）</label><input type="number" data-k="wB" min="1" max="2000" step="0.5" style="width:5.5em"></div>
-      <div class="row"><label>B 相對第一個 A（ms）</label><input type="number" data-k="offB" min="-2000" max="3000" step="5" style="width:5.5em"></div>
-      <div class="btns"><button class="btn" type="button" data-offq="pre">Pre 先（最後一個 A 後 30 ms）</button><button class="btn" type="button" data-offq="post">Post 先</button></div>
-      <button class="btn acc" type="button" data-combo style="margin-top:4px">送出組合</button>
-    </div>
-    <div class="grp"><div class="gt">示波器</div>
-      <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="ch1"></select></div>
-      <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="ch2"></select></div>
-      <div data-scope></div>
-    </div>
-    <div class="grp"><div class="gt">自動量測（上一次刺激）</div><div data-meas></div>
-      <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button></div>
+      <div class="grp"><div class="gt">電池</div>
+        <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+        <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
+        <p class="small muted">預設 8.44 V：我們 2026-10-21 用電表量的（之前用 HW2 推估的 7.0 V；HW2 的 7.8 V 是別組的板子）。模型的原版 Pre 在 8.44 V 會自己冒小峰，我們 10-21 的截圖在兩次按壓之間沒看到。</p>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">1</span>電路焊接<span class="hint">外加或更換電阻、membrane 版本</span></summary>
+      <div class="grp">
+        <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
+        <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
+        <div class="row" data-show="adv"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row" data-show="adv"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
+        <div class="row" data-show="adv"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
+        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
+      </div>
+    </details>
+    <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">板子怎麼接、電源</span></summary>
+      <div class="grp">
+        <p class="small muted" style="margin:0 0 4px">Stimulator A → Pre → inhibitory 突觸板（含 1.5 V 電池）→ Post（active membrane 2）← Stimulator B。</p>
+        <div class="row"><label>1.5 V 電池（Q4）</label><select data-k="bat"><option value="on">接上</option><option value="short">拔掉，跳線接通</option><option value="open">拔掉（開路）</option></select></div>
+      </div>
+    </details>
+    <details class="sec" open><summary><span class="secn">3</span>實驗操作<span class="hint">可變電阻、SW、示波器</span></summary>
+      <div class="grp"><div class="gt">Stimulator A（Pre）</div>
+        <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
+        <div class="row full"><input type="range" data-k="rpotA" min="0" max="10" step="0.1" data-scale="1000"></div>
+        <div class="btns" data-pulses="0.015,0.1,0.3,1" data-who="A"></div>
+        <button class="swbtn" type="button" data-sw="A" style="margin-top:6px">按住 SW A</button>
+        <label class="chk"><input type="checkbox" data-latch="A"> SW A 保持按下（Q3）</label>
+        <div class="gt" style="margin-top:8px">串列</div>
+        <div class="row"><label>幾下</label><input type="number" data-k="nA" min="1" max="10" step="1" style="width:4.5em"></div>
+        <div class="row"><label>間隔（ms）</label><input type="number" data-k="isiA" min="20" max="3000" step="5" style="width:5.5em"></div>
+        <div class="row"><label>每下（ms）</label><input type="number" data-k="wA" min="1" max="2000" step="1" style="width:5.5em"></div>
+        <p class="small muted" data-train-label style="margin:0"></p>
+        <button class="btn acc" type="button" data-train style="margin-top:4px">送出 A 串列</button>
+      </div>
+      <div class="grp"><div class="gt">Stimulator B（Post）</div>
+        <div class="row"><label>可變電阻</label><span class="val" data-out="rpotB"></span></div>
+        <div class="row full"><input type="range" data-k="rpotB" min="0" max="10" step="0.1" data-scale="1000"></div>
+        <div class="btns" data-pulses="0.011,0.012,0.0125,0.0135,0.02" data-who="B"></div>
+        <button class="swbtn" type="button" data-sw="B" style="margin-top:6px">按住 SW B</button>
+        <label class="chk"><input type="checkbox" data-latch="B"> SW B 保持按下（Q3）</label>
+        <div class="gt" style="margin-top:8px">組合（Q2）：A 串列 + B 一下</div>
+        <div class="row"><label>B 每下（ms）</label><input type="number" data-k="wB" min="1" max="2000" step="0.5" style="width:5.5em"></div>
+        <div class="row"><label>B 相對第一個 A（ms）</label><input type="number" data-k="offB" min="-2000" max="3000" step="5" style="width:5.5em"></div>
+        <div class="btns"><button class="btn" type="button" data-offq="pre">Pre 先（最後一個 A 後 30 ms）</button><button class="btn" type="button" data-offq="post">Post 先</button></div>
+        <button class="btn acc" type="button" data-combo style="margin-top:4px">送出組合</button>
+      </div>
+      <div class="grp"><div class="gt">示波器</div>
+        <div class="row"><label>CH1 量</label><select data-k="ch1" data-nodes="ch1"></select></div>
+        <div class="row"><label>CH2 量</label><select data-k="ch2" data-nodes="ch2"></select></div>
+        <div data-scope></div>
+      </div>
+      <div class="grp"><div class="gt">自動量測（上一次刺激）</div><div data-meas></div>
+        <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button></div>
+    </details>
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
         <li><b>Note</b> 只按 B：從短到長（或可變電阻從大到小），找剛好會觸發 Post AP 的最弱刺激。</li>
