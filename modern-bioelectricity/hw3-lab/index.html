@@ -163,7 +163,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
   <p class="mode-note" data-show="basic">完整測試助教給的電路、完成每一題，測出什麼就寫什麼。</p>
   <p class="mode-note" data-show="adv">讓一個 AP 就有 EPSP／IPSP、能疊加、能觸發或抑制 Post AP，並解釋助教電路的問題。</p>
   <nav class="regions" aria-label="區域">
-    <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small data-show="basic">模型定義、題目清單、可能的問題</small><small data-show="adv">電路的問題、改法、驗證</small></span></a>
+    <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small data-show="basic">模型定義、可能的問題</small><small data-show="adv">電路的問題、改法、驗證</small></span></a>
     <a href="#r2"><span class="n">2</span><span>#3-1 Excitatory → passive<small>EPSP、疊加、ISI、#1 vs #5</small></span></a>
     <a href="#r3"><span class="n">3</span><span>#3-2 Excitatory → active<small>多個 EPSP 觸發 Post AP</small></span></a>
     <a href="#r4"><span class="n">4</span><span>#3-3 Inhibitory → passive<small>IPSP、疊加、ISI、#1 vs #5</small></span></a>
@@ -189,45 +189,21 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <li><b>突觸板照 PCB 實際接法</b>（從講義 PCB 圖追線）。<b>Excitatory 的 D2 後面沒有 100 kΩ</b>：講義電路圖畫了，PCB 上 D2 的負極直接走線到 PostSynapse 排針。Inhibitory 的 100 kΩ（R5）PCB 上有。</li>
           <li>Excitatory：820 kΩ → 1N4148 → 2N3904（基極 10 nF ∥ 100 kΩ，射極 30 kΩ）→ 2N4403（射極 1 kΩ 接 V+）→ S（4.7 µF ∥ 200 kΩ）→ 1N4148 → Post。</li>
           <li>Inhibitory：輸入級相同；2N4403 的射極接 1.5 V 電池的 +、電池 − 接 S，集極 15 kΩ 到 GND；S（4.7 µF ∥ 200 kΩ）→ 100 kΩ → Post。</li>
-          <li><span class="tag t-inf">推測</span>Excitatory 的 V+ 從 2×2 排針來（= Stimulator 的電池，7.8 V）。講義畫成獨立的 9 V；如果你另外接 9 V 電池，Q1 開的時候 S 會高一點，其他不變。</li>
+          <li><span class="tag t-inf">推測</span>Excitatory 的 V+ 從 2×2 排針來（= Stimulator 的電池；本頁預設 7.0 V，是從 HW2 #2-2 推的估計，沒量過；HW2 的 7.8 V 是別組的板子）。講義畫成獨立的 9 V；如果你另外接 9 V 電池，Q1 開的時候 S 會高一點，其他不變。</li>
           <li><b>Pre／Post active membrane = HW2 的板子</b>，預設原版（Slow out 的 R2 = 1 MΩ，大家都已換好）。各區右側「Active membrane」可以改成 HW2 真正的 AP。</li>
           <li>Passive unit：1 µF ∥ 100 kΩ，上排 10 kΩ；細胞外照講義圖直接接 GND（HW2 的 100 Ω 影響可忽略）。Stimulator A、B 都是 HW2 的 Stimulator（放開時漏約 6 µA）。×1 探棒（1 MΩ，和 HW2 一樣），CH1、CH2 各接一支。</li>
         </ul>
       </div></details>
 
-      <details class="card" open><summary>作業題目與狀態<span class="hint">點題號跳到對應區域</span></summary><div class="body">
-        <div class="tbl"><table>
-          <tr><th>題目</th><th>要交</th><th>狀態</th></tr>
-          <tr class="grp"><td colspan="3"><a href="#r2">#3-1 Excitatory → passive</a></td></tr>
-          <tr><td>Q1–Q2</td><td>照片（標 pre／synapse／post）；類似哪種傳遞（2 種神經傳導物質）</td><td class="t-part">要寫</td></tr>
-          <tr><td>Q3</td><td>一個 AP → 一個 EPSP：五參數、AP 到 EPSP 的延遲（起始點、波峰）</td><td class="t-warn">未量</td></tr>
-          <tr><td>Q4</td><td>多個 AP → EPSP 疊加：五參數；兩個 EPSP 振幅 vs 間隔（6 種以上，散佈圖）</td><td class="t-warn">未量</td></tr>
-          <tr><td>Q5</td><td>第一個 vs 最後一個 RC 的 EPSP</td><td class="t-warn">未量</td></tr>
-          <tr class="grp"><td colspan="3"><a href="#r3">#3-2 Excitatory → active</a></td></tr>
-          <tr><td>Q1</td><td>照片</td><td class="t-part">要拍</td></tr>
-          <tr><td>Q2</td><td>EPSP 疊加；幾個、多快的 EPSP 能觸發 Post AP</td><td class="t-warn">未量</td></tr>
-          <tr><td>Q3</td><td>Pre 和 Post 刺激的整合；post 先 pre 後</td><td class="t-warn">未量</td></tr>
-          <tr class="grp"><td colspan="3"><a href="#r4">#3-3 Inhibitory → passive</a></td></tr>
-          <tr><td>Q1–Q2</td><td>照片；類似哪種傳遞（1 種神經傳導物質）</td><td class="t-part">要寫</td></tr>
-          <tr><td>Q3–Q5</td><td>同 #3-1，換成 IPSP</td><td class="t-warn">未量</td></tr>
-          <tr class="grp"><td colspan="3"><a href="#r5">#3-4 Inhibitory → active</a></td></tr>
-          <tr><td>Q1</td><td>照片</td><td class="t-part">要拍</td></tr>
-          <tr><td>Q2</td><td>Pre 先 post 後：幾個 IPSP 能擋住 Post AP</td><td class="t-warn">未量</td></tr>
-          <tr><td>Q3</td><td>按住 SW B 連續發放，再按住 SW A：Post 頻率變化</td><td class="t-warn">未量</td></tr>
-          <tr><td>Q4</td><td>拔掉 1.5 V 電池，重做 Q2、Q3</td><td class="t-warn">未量</td></tr>
-        </table></div>
-        <p class="small muted">題號照講義的清單順序；子項目（量五參數、延遲、散佈圖）歸在上一層題目下。</p>
-      </div></details>
-
       <details class="card" open><summary>我認為可能有問題的地方<span class="hint">模擬預測，會影響基礎目標的量測</span></summary><div class="body">
         <ol>
-          <li><b>原版 Pre 的「AP」推不動突觸</b>：原版 active membrane 按 SW A 只到約 1.5–2.2 V（看按下時碰到小峰的哪個時候），按住則被 Slow out 拉回 0.77 V；突觸的 Q2 要 Pre 到約 6 V 才導通。所以 #3-1–#3-4 怎麼按都沒有 EPSP／IPSP（S 不到 1 mV）。照實記錄「沒有 PSP」，並附 Pre 的波形。</li>
-          <li><b>原版 Pre 會自己冒小峰</b>：Stimulator A 放開時漏約 6 µA，把 Pre 墊在 FI 門檻附近，不按也每秒約 6 個 1.5 V 小峰（HW2 第三輪量到的那個）。觸發 CH1 時準位要設在 1.8 V 以上，才不會被小峰觸發。</li>
-          <li><b>HW2 真正的 AP 也不夠</b>：峰值 5.4 V 只讓 S 升到 0.17 V，沒有 EPSP（見進階目標）。</li>
-          <li><b>原版 Post（#3-2、#3-4）</b>：不會鎖住，但也不會連續發放。#3-2 的 Post 和 Pre 一樣自己冒小峰，按 B 10 ms 只到 1.5–2.1 V；#3-4 的 Post 被突觸的 100 kΩ + 200 kΩ 拉成 leak，安靜停在 0.41 V，按 B 10 ms 到 1.8 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.77 V。#3-4 Q3 的「頻率變化」量不到。</li>
+          <li><b>原版 Pre 的「AP」推不動突觸</b>：原版 active membrane 按 SW A 20 ms 只到約 2.4 V（V+ 7.8 V 時 1.5–2.2 V，看按下時碰到小峰的哪個時候），按住則被 Slow out 拉回 0.77 V；突觸的 Q2 要 Pre 到約 6 V 才導通。所以 #3-1–#3-4 怎麼按都沒有 EPSP／IPSP（S 不到 1 mV）。照實記錄「沒有 PSP」，並附 Pre 的波形。</li>
+          <li><b>原版 Pre 會不會自己冒小峰，要看電池</b>：Stimulator A 放開時漏約 6 µA，把 Pre 墊高。V+ 7.0 V 時 Pre 安靜停在約 0.45 V，不會自己冒峰；7.8 V 時墊到 FI 門檻附近，不按也每秒約 6 個 1.5 V 小峰（HW2 第三輪在別組 7.8 V 的板子上量到的那個）。所以示波器上看到小峰，表示電池比較高。觸發 CH1 時準位設在 1.8 V 以上，兩種情況都不會被小峰觸發。</li>
+          <li><b>HW2 真正的 AP 也不夠</b>：峰值約 4.8 V 只讓 S 升到 0.09 V（V+ 7.8 V 時 5.2 V、0.17 V），沒有 EPSP（見進階目標）。</li>
+          <li><b>原版 Post（#3-2、#3-4）</b>：不會鎖住，但也不會連續發放。#3-2 的 Post 按 B 10 ms 只到約 1.8 V（V+ 7.8 V 時它和 Pre 一樣自己冒小峰，1.5–2.1 V）；#3-4 的 Post 被突觸的 100 kΩ + 200 kΩ 拉成 leak，安靜停在 0.37 V，按 B 10 ms 到約 1.65 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.77 V。#3-4 Q3 的「頻率變化」量不到。</li>
           <li><b>#3-3、#3-4「拔掉 1.5 V 電池」</b>：只拔掉的話 Q1 到 S 是開路，突觸完全沒有輸出。要用一條線把電池的兩個夾點接起來，才是「改變驅動力」。模擬兩種都可以選。</li>
-          <li><b>#3-3 Passive 的 Post 靜止約 0 V</b>：拔掉電池後 IPSP 的反轉電位約 0 V，和靜止差不多，所以 IPSP 消失；這本身就是答案（沒有驅動力）。</li>
-          <li><b>基線不是 0</b>：Stimulator B 放開時漏約 6 µA，#1 的基線約 0.17–0.18 V；Stimulator A 漏電讓 Pre 在 0.52–1.52 V 之間自己冒小峰。振幅一律用「波峰 − 基線」。</li>
+          <li><b>#3-3 Passive 的 Post 靜止約 0 V</b>：拔掉電池後 IPSP 的反轉電位約 0 V，和靜止差不多，所以 IPSP 消失（沒有驅動力）。</li>
+          <li><b>基線不是 0</b>：Stimulator B 放開時漏約 6 µA，#1 的基線約 0.15–0.16 V（V+ 7.8 V 時 0.17–0.18 V）；V+ 7.8 V 時 Stimulator A 漏電讓 Pre 在 0.52–1.52 V 之間自己冒小峰，7.0 V 時 Pre 停在約 0.45 V。振幅一律用「波峰 − 基線」。</li>
           <li><b>講義的小錯</b>：#3-4 Q4 說重做「#3-4-5 and #3-4-6」，這兩題不存在，應該是 Q2、Q3；檔名寫 <code>HW02_…</code>，應該是 HW03（交之前問助教）。</li>
         </ol>
       </div></details>
@@ -240,6 +216,9 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <li><b>散佈圖（Q4）</b>：兩下 SW A，間隔 6 種以上（例如 75、100、150、200、300、500、800 ms），每個間隔量疊加後的峰值。手按的話用 Roll、慢速度看間隔；右側「ISI 散佈圖」會算出預期。</li>
           <li><b>第一個 vs 最後一個 RC</b>：CH1 改量 #1、CH2 量 #5，同一次刺激兩條一起看。</li>
           <li>每次刺激之間至少隔 2 秒，讓 4.7 µF 放完電（τ 約 1 秒）。</li>
+          <li><b>電池</b>：本頁預設 V+ = 7.0 V，是從 HW2 #2-2 的波形推的估計，沒量過；HW2 量到的 7.8 V 是別組的板子。每個區域都可以用滑桿改。實驗時用電表量一次電池最準。</li>
+          <li><b>用「平台 ÷ 100 kΩ」算刺激電流會偏低</b>：Stimulator 的輸出最高約 V+ − 0.7 V（7.0 V 時約 6.3 V，7.8 V 時約 7.1 V，HW2 手算）。只接 1 個 Passive unit 時，平台碰到這個上限就被削平，算出來的電流比設定的小（HW2 #2-1：平台 6.97 V 就是卡在上限）。刺激電流用電表串在 Stimulator 輸出量。</li>
+          <li><b>可變電阻 0–10 kΩ 是照絲印</b>：照 10 kΩ 算，Stimulator 最小約 44 µA。但 HW2 我們組的板子記到 15.6 µA（#2-2 Q3），實際的電位器可能大於 10 kΩ（沒量）。本頁滑桿只到 10 kΩ。</li>
         </ul>
       </div></details>
     </div>
@@ -252,28 +231,28 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
       <details class="card" open><summary>問題：突觸的門檻在 6 V<span class="hint">為什麼原版和 HW2 真 AP 都沒反應</span></summary><div class="body">
         <p class="small">Q2 的基極被 820 kΩ 和 100 kΩ 分壓，還要先過 D1：</p>
 <div class="calc">Q2.B ≈ (V_pre − V_D1) × 100k / (100k + R1)        （10 nF 只決定速度）
-820 kΩ、Pre 5.4 V（HW2 真 AP）：(5.4 − 0.45) × 100/920 = 0.54 V → Q2 幾乎不導通，S 只到 0.17 V
+820 kΩ、Pre 4.8 V（HW2 真 AP，V+ 7.0 V）：(4.8 − 0.45) × 100/920 = 0.47 V → Q2 幾乎不導通，S 只到 0.09 V
 要 Q2.B ≈ 0.6 V：V_pre ≈ 0.6 × 920/100 + 0.45 ≈ 6 V
-原版 AP 最高約 2.2 V：遠低於 6 V</div>
-        <p class="small"><span class="tag t-inf">推測</span>突觸是照講義的 active membrane 設計的：講義的 FI 是 1 kΩ（PCB 是 R13 = 100 kΩ），AP 會接近 V+，就能過 6 V。PCB 版的 AP 最高 5.4 V（HW2 真 AP），差一點點，而 Q2 是指數關係，所以幾乎沒有輸出。</p>
+原版 AP 最高約 2.4–2.6 V：遠低於 6 V</div>
+        <p class="small"><span class="tag t-inf">推測</span>突觸是照講義的 active membrane 設計的：講義的 FI 是 1 kΩ（PCB 是 R13 = 100 kΩ），AP 會接近 V+，就能過 6 V。PCB 版的 AP 最高約 4.8 V（HW2 真 AP，V+ 7.0 V；7.8 V 時 5.2 V），差一截，而 Q2 是指數關係，所以幾乎沒有輸出。</p>
       </div></details>
 
       <details class="card wide" open><summary>改法：820 kΩ 兩端並 1.5 MΩ<span class="hint">兩塊突觸板都一樣</span></summary><div class="body">
         <div class="tbl"><table>
           <tr><th>加什麼</th><th>夾在哪</th><th>為什麼</th></tr>
           <tr><td>HW2 真 AP 的 6 顆</td><td>Pre（和 #3-2、#3-4 的 Post）active membrane</td><td>有門檻、all-or-none、再極化、後過極化（見 HW2 實驗台）</td></tr>
-          <tr><td class="t-ok">1.5 MΩ</td><td>突觸板 820 kΩ（R1）兩端</td><td>R1 有效值 530 kΩ：Q2.B = 4.95 × 100/630 = 0.79 V，AP 時 Q2 打開；靜止（1.19 V）時 0.14 V，關著</td></tr>
+          <tr><td class="t-ok">1.5 MΩ</td><td>突觸板 820 kΩ（R1）兩端</td><td>R1 有效值 530 kΩ：Q2.B = (4.84 − 0.45) × 100/630 ≈ 0.70 V（模擬 0.71 V），AP 時 Q2 打開；靜止（Pre 0.97 V）時模擬 0.11 V，關著</td></tr>
           <tr><td>1.5 V 電池的跳線</td><td>電池兩個夾點（#3-3、#3-4 Q4）</td><td>「拔掉電池」= 換成導線，突觸仍然接著，只是驅動力改變</td></tr>
         </table></div>
         <p class="small">選 1.5 MΩ 的理由（模擬，Pre = HW2 真 AP、按 15 ms）：</p>
         <div class="tbl"><table>
           <tr><th>820 kΩ 並</th><th class="num">S 峰值</th><th class="num">EPSP #1／#5</th><th class="num">觸發 Post 要幾個 EPSP</th><th class="num">IPSP #1</th></tr>
-          <tr><td>不加</td><td class="num">0.17 V</td><td class="num">0／0 mV</td><td class="num">—</td><td class="num">−21 mV</td></tr>
-          <tr><td>4.7 MΩ</td><td class="num">0.55 V</td><td class="num">35／12 mV</td><td class="num">6（間隔 100 ms）</td><td class="num">−30 mV</td></tr>
-          <tr><td>3.3 MΩ</td><td class="num">0.73 V</td><td class="num">145／43 mV</td><td class="num">4–6</td><td class="num">−32 mV</td></tr>
-          <tr><td>2.2 MΩ</td><td class="num">1.05 V</td><td class="num">421／113 mV</td><td class="num">2–3</td><td class="num">−36 mV</td></tr>
-          <tr><td class="t-ok">1.5 MΩ</td><td class="num">1.54 V</td><td class="num">879／229 mV</td><td class="num">2（50 ms–1.2 s）</td><td class="num">−40 mV</td></tr>
-          <tr><td>1 MΩ</td><td class="num">2.35 V</td><td class="num">1666／430 mV</td><td class="num">1（單一 EPSP 就觸發）</td><td class="num">−43 mV</td></tr>
+          <tr><td>不加</td><td class="num">0.09 V</td><td class="num">0／0 mV</td><td class="num">—</td><td class="num">−14 mV</td></tr>
+          <tr><td>4.7 MΩ</td><td class="num">0.40 V</td><td class="num">5／2 mV</td><td class="num">&gt; 6（間隔 100 ms）</td><td class="num">−30 mV</td></tr>
+          <tr><td>3.3 MΩ</td><td class="num">0.58 V</td><td class="num">63／21 mV</td><td class="num">5</td><td class="num">−34 mV</td></tr>
+          <tr><td>2.2 MΩ</td><td class="num">0.90 V</td><td class="num">306／84 mV</td><td class="num">3</td><td class="num">−38 mV</td></tr>
+          <tr><td class="t-ok">1.5 MΩ</td><td class="num">1.39 V</td><td class="num">760／200 mV</td><td class="num">2（間隔 50–100 ms）；1.2 s 要 3</td><td class="num">−43 mV</td></tr>
+          <tr><td>1 MΩ</td><td class="num">2.22 V</td><td class="num">1567／408 mV</td><td class="num">1（單一 EPSP 就觸發）</td><td class="num">−48 mV</td></tr>
         </table></div>
         <p class="small">Q2 是指數關係，實際電晶體的 I<sub>S</sub> 差兩三倍就差一級：<b>一個 AP 看不到 EPSP → 改 1 MΩ；一個 EPSP 就觸發 Post → 改 2.2 MΩ</b>。IPSP 被 15 kΩ 和 1.5 V 電池限制（Q1 最多約 90 µA），換電阻幾乎不變。</p>
       </div></details>
@@ -282,35 +261,35 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         <div class="tbl"><table>
           <tr><th>題目</th><th>結果</th></tr>
           <tr class="grp"><td colspan="2">#3-1 Excitatory → passive</td></tr>
-          <tr><td>Q3 一個 AP</td><td>Pre AP 5.2 V；#1 EPSP +0.88 V，比 AP 波峰晚約 5 ms 到峰（S 經 D2 直接充 #1）；#5 +0.23 V，晚約 93 ms</td></tr>
-          <tr><td>Q4 疊加、ISI</td><td>兩個 AP 間隔 100 ms：#1 約 +1.7 V、#5 約 +0.5 V。散佈圖（#1，÷ 單一）：50 ms 1.61、75 ms 1.87、100 ms 1.92、200 ms 1.71、500 ms 1.38、1.2 s 1.17。50 ms 比較小是因為第二個 Pre AP 在不反應期、比較小；S 的 τ ≈ 4.7 µF × 200 kΩ ≈ 1 s，所以間隔到 1 秒都還有疊加</td></tr>
+          <tr><td>Q3 一個 AP</td><td>Pre AP 4.8 V；#1 EPSP +0.76 V，比 AP 波峰晚約 5 ms 到峰（S 經 D2 直接充 #1）；#5 +0.20 V，晚約 94 ms</td></tr>
+          <tr><td>Q4 疊加、ISI</td><td>兩個 AP 間隔 100 ms：#1 約 +1.4 V、#5 約 +0.4 V。散佈圖（#1，÷ 單一）：50 ms 1.50、75 ms 1.81、100 ms 1.89、200 ms 1.73、500 ms 1.41、1.2 s 1.18。50 ms 比較小是因為第二個 Pre AP 在不反應期、比較小；S 的 τ ≈ 4.7 µF × 200 kΩ ≈ 1 s，所以間隔到 1 秒都還有疊加</td></tr>
           <tr><td>Q5 #1 vs #5</td><td>#5 約 #1 的 1/4，更慢、更晚（被動纜線的衰減與低通）</td></tr>
           <tr class="grp"><td colspan="2">#3-2 Excitatory → active</td></tr>
-          <tr><td>Q2</td><td>Post 靜止 1.14 V；一個 EPSP → 1.36 V（不到門檻 1.67 V）；兩個 EPSP（間隔 50 ms–1.2 s）→ Post AP；之後 S 還有電，每個 EPSP 都觸發一個 AP（間隔 100 ms 的 5 下 → 4 個 Post AP）</td></tr>
-          <tr><td>Q3</td><td>Stimulator B 按 9 ms 觸發、8 ms 不會（門檻約 8.3 ms）。<b>Pre 先</b>：按 SW A 後 30–50 ms 再按 B 5 ms → AP。<b>Post 先</b>：B 5 ms 後再給 EPSP，還是要 2 個，和沒有 B 一樣</td></tr>
+          <tr><td>Q2</td><td>Post 靜止 1.02 V；一個 EPSP → 1.20 V（不到門檻約 1.54 V）；兩個 EPSP（間隔 50–500 ms）→ Post AP，間隔 1.2 s 不夠；之後 S 還有電，每個 EPSP 都觸發一個 AP（間隔 100 ms 的 5 下 → 4 個 Post AP）</td></tr>
+          <tr><td>Q3</td><td>Stimulator B 按 8.5 ms 觸發、8 ms 不會（門檻約 8.3 ms）。<b>Pre 先</b>：按 SW A 後 0–120 ms 再按 B 5 ms，都不會觸發（V+ 7.8 V 時 30–50 ms 會）。<b>Post 先</b>：B 5 ms 後再給一個 EPSP，不會觸發，和沒有 B 一樣</td></tr>
           <tr class="grp"><td colspan="2">#3-3 Inhibitory → passive</td></tr>
-          <tr><td>Q3–Q5</td><td>#1 IPSP 約 −40 mV、#5 約 −17 mV。散佈圖（#1，÷ 單一）：50 ms 1.71、100 ms 1.82、300 ms 1.53、1.2 s 1.05。拔掉電池（跳線或開路）：IPSP 消失</td></tr>
+          <tr><td>Q3–Q5</td><td>#1 IPSP 約 −43 mV、#5 約 −19 mV。散佈圖（#1，÷ 單一）：50 ms 1.65、100 ms 1.78、300 ms 1.52、1.2 s 1.05。拔掉電池（跳線或開路）：IPSP 消失</td></tr>
           <tr class="grp"><td colspan="2">#3-4 Inhibitory → active</td></tr>
-          <tr><td>Note</td><td>Post 靜止 0.98 V（突觸的 100 kΩ + 200 kΩ 也是一條 leak）；Stimulator B 最弱觸發 = 按 12 ms（11 ms 不會）</td></tr>
+          <tr><td>Note</td><td>Post 靜止 0.88 V（突觸的 100 kΩ + 200 kΩ 也是一條 leak）；Stimulator B 最弱觸發 = 按 12 ms（11.5 ms 不會）</td></tr>
           <tr><td>Q2</td><td>B 按 12.5 ms：1 個 IPSP 就擋住；B 按 13.5 ms：要 2 個。電池拔掉（跳線）：6 個也擋不住</td></tr>
-          <tr><td>Q3</td><td>按住 SW B（可變電阻 6 kΩ）16.2 Hz，按住 SW A（Pre 28 Hz）時 8.4 Hz；8 kΩ 時 13.0 Hz → 停止</td></tr>
-          <tr><td>Q4 拔電池</td><td>跳線：6 kΩ 時 16.2 → 13.9 Hz，8 kΩ 時 13.0 → 10.0 Hz（反轉電位從約 −1.4 V 變成約 0 V，仍低於靜止，抑制變弱）；開路：沒有變化</td></tr>
+          <tr><td>Q3</td><td>按住 SW B（可變電阻 6 kΩ）16.4 Hz，按住 SW A（Pre 28 Hz）時 8.2 Hz；8 kΩ 時 13.2 Hz → 停止</td></tr>
+          <tr><td>Q4 拔電池</td><td>跳線：6 kΩ 時 16.4 → 14.0 Hz，8 kΩ 時 13.2 → 10.1 Hz（反轉電位從約 −1.4 V 變成約 0 V，仍低於靜止，抑制變弱）；開路：沒有變化</td></tr>
         </table></div>
         <p class="small muted">「Post 先」沒有幫助的原因：D2 只有在 S 比 Post 高約 0.45 V 時才導通，Post 被 B 墊高時 EPSP 反而變小，像接近反轉電位時驅動力變小。</p>
       </div></details>
 
       <details class="card"><summary>助教電路的問題<span class="hint">原版為什麼量不出題目要的東西</span></summary><div class="body">
         <ol class="small">
-          <li><b>突觸門檻約 6 V</b>，原版 AP 最高約 2.2 V（HW2 R13 = 100 kΩ 的結果），HW2 真 AP 5.4 V 也不到。</li>
-          <li><b>原版 active membrane 沒有穩定的靜止</b>：Stimulator 漏電讓它自己冒小峰；按住時被 Slow out 拉在 0.77 V，不會連續發放，#3-4 Q3 量不到頻率變化。</li>
-          <li><b>Excitatory 沒有 100 kΩ</b>（PCB 和講義電路圖不同）：S 經 D2 直接灌進 Post，EPSP 很快、很大；有 100 kΩ 時 #1 的 EPSP 小約 5 倍（0.88 → 0.18 V）、到峰晚約 100 ms。進階區可以切換。</li>
-          <li><b>Inhibitory 接在 active membrane 上會變成 leak</b>：S 的 200 kΩ 經 100 kΩ 接到 Post，靜止從 1.14 降到 0.98 V，門檻變遠。</li>
+          <li><b>突觸門檻約 6 V</b>，原版 AP 最高約 2.4–2.6 V（HW2 R13 = 100 kΩ 的結果），HW2 真 AP 約 4.8 V 也不到（V+ 7.0 V）。</li>
+          <li><b>原版 active membrane 的靜止要看電池</b>：V+ 7.0 V 時安靜停在約 0.45 V；7.8 V 時 Stimulator 漏電讓它自己冒小峰。按住時被 Slow out 拉在 0.77 V，不會連續發放，#3-4 Q3 量不到頻率變化。</li>
+          <li><b>Excitatory 沒有 100 kΩ</b>（PCB 和講義電路圖不同）：S 經 D2 直接灌進 Post，EPSP 很快、很大；有 100 kΩ 時 #1 的 EPSP 小約 5 倍（0.76 → 0.16 V）、到峰晚約 100 ms。進階區可以切換。</li>
+          <li><b>Inhibitory 接在 active membrane 上會變成 leak</b>：S 的 200 kΩ 經 100 kΩ 接到 Post，靜止從 1.02 降到 0.88 V，門檻變遠。</li>
           <li><b>拔電池 = 開路</b>：沒有說要接回導線，照字面做會變成「沒有突觸」，不是「改變驅動力」。</li>
-          <li><b>Stimulator 漏電</b>（HW2 的 Q<sub>sense</sub> 接在 SW 前）：#1 基線約 0.17 V，Pre 自己冒小峰。HW2 真 AP 的 22 kΩ 已消掉 Pre 這邊的；Post 是 Passive 時 Stimulator B 沒有修正。</li>
+          <li><b>Stimulator 漏電</b>（HW2 的 Q<sub>sense</sub> 接在 SW 前）：#1 基線約 0.15–0.16 V；V+ 較高（7.8 V）時 Pre 會自己冒小峰。HW2 真 AP 的 22 kΩ 已消掉 Pre 這邊的；Post 是 Passive 時 Stimulator B 沒有修正。</li>
         </ol>
       </div></details>
 
-      <details class="card"><summary>電路和生理的對應<span class="hint">Q2、Q4 生理意義用</span></summary><div class="body">
+      <details class="card"><summary>電路和生理的對應</summary><div class="body">
         <div class="tbl"><table>
           <tr><th>電路</th><th>生理</th></tr>
           <tr><td>820 kΩ + D1 + Q2 的門檻</td><td>突觸前末梢：AP 夠大才打開電壓門控 Ca²⁺ 通道、釋放神經傳導物質</td></tr>
@@ -322,17 +301,16 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <tr><td>拔掉電池（跳線）</td><td>E<sub>Cl</sub> 接近靜止：shunting inhibition，電位變化小但仍會降低興奮性</td></tr>
           <tr><td>#1 → #5</td><td>近端 vs 遠端樹突：被動纜線的衰減與延遲</td></tr>
         </table></div>
-        <p class="small">#3-1 Q2：類似 glutamate（AMPA 受體）、acetylcholine（神經肌肉接頭的 nicotinic 受體）的快速興奮性傳遞。#3-3 Q2：GABA（GABA<sub>A</sub>，也可寫 glycine）。</p>
       </div></details>
 
       <details class="card"><summary>加上之後要量的<span class="hint">確認夾對</span></summary><div class="body">
         <div class="tbl"><table>
           <tr><th>量</th><th>條件</th><th class="num">預期</th></tr>
-          <tr><td>Pre Vm</td><td>放開</td><td class="num">約 1.08 V（突觸的 820k ∥ 1.5M 也拉一點）</td></tr>
-          <tr><td>Q2.B</td><td>放開／AP 時</td><td class="num">約 0.13 V／約 0.76 V</td></tr>
-          <tr><td>S（Excitatory）</td><td>放開／一個 AP 後</td><td class="num">0 V／約 1.5 V，約 1 秒內放掉</td></tr>
-          <tr><td>S（Inhibitory、Passive）</td><td>放開／一個 AP 後</td><td class="num">約 0.11 V／約 −0.15 V</td></tr>
-          <tr><td>#1（Passive）</td><td>放開</td><td class="num">約 0.17–0.18 V（Stimulator B 漏電）</td></tr>
+          <tr><td>Pre Vm</td><td>放開</td><td class="num">約 0.97 V（突觸的 820k ∥ 1.5M 也拉一點）</td></tr>
+          <tr><td>Q2.B</td><td>放開／AP 時</td><td class="num">約 0.11 V／約 0.71 V</td></tr>
+          <tr><td>S（Excitatory）</td><td>放開／一個 AP 後</td><td class="num">0 V／約 1.4 V，約 1 秒內放掉</td></tr>
+          <tr><td>S（Inhibitory、Passive）</td><td>放開／一個 AP 後</td><td class="num">約 0.10 V／約 −0.18 V</td></tr>
+          <tr><td>#1（Passive）</td><td>放開</td><td class="num">約 0.15–0.16 V（Stimulator B 漏電）</td></tr>
         </table></div>
       </div></details>
     </div>
@@ -359,8 +337,10 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
         <div class="row"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
-        <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
       </div>
+      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
+      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計，沒量過（HW2 的 7.8 V 是別組的板子）。</p>
     </div>
     <div class="grp"><div class="gt">Stimulator A（Pre）</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
@@ -390,7 +370,6 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
         <li><b>Q1</b> 照片標出 presynaptic（Stimulator A + active membrane）、synapse（突觸板）、postsynaptic（5 個 Passive unit）。</li>
-        <li><b>Q2</b> 類似 glutamate、acetylcholine 的興奮性傳遞（見進階目標「電路和生理的對應」）。</li>
         <li><b>Q3</b> 刺激一次，CH1 Pre、CH2 #1：五參數、延遲（右側自動量測）。原版沒有 EPSP，照實記錄。</li>
         <li><b>Q4</b> 串列 2–5 下；散佈圖：兩下、6 種以上間隔，量疊加後的峰值。</li>
         <li><b>Q5</b> CH1 改量 #1、CH2 量 #5，同一次刺激比較。</li>
@@ -427,8 +406,10 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         <div class="row"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
         <div class="row"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
-        <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
       </div>
+      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
+      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計，沒量過（HW2 的 7.8 V 是別組的板子）。</p>
     </div>
     <div class="grp"><div class="gt">Stimulator A（Pre）</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
@@ -464,14 +445,14 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
       <button class="btn" type="button" data-reset style="margin-top:4px">斷電重置</button></div>
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
-        <li><b>Note</b> 先把 Stimulator B 調弱，弱到單獨按一下不會有 Post AP（可變電阻調大或按短一點）。原版 Post 會自己冒小峰，Pre 也沒有 EPSP 可以加上去，照實記錄。</li>
+        <li><b>Note</b> 先把 Stimulator B 調弱，弱到單獨按一下不會有 Post AP（可變電阻調大或按短一點）。原版 Pre 沒有 EPSP 可以加上去（V+ 7.8 V 時 Post 還會自己冒小峰），照實記錄。</li>
         <li><b>Q2</b> A 串列：從 1 下開始加，記下剛好出現 Post AP 的下數和間隔（頻率）。</li>
         <li><b>Q3</b> 組合：B 調到單獨不會觸發，再加 A；按「Post 先」做 post before pre，記下需要幾個 EPSP、多快。</li>
       </ul>
     </details>
     <details data-show="adv"><summary>進階：怎麼解讀</summary>
       <ul class="small">
-        <li>一個 EPSP 讓 Post 升約 0.22 V，門檻差 0.53 V；第二個 EPSP 時 S 還有電（τ 約 1 秒），所以間隔到 1.2 秒都只要 2 個。</li>
+        <li>一個 EPSP 讓 Post 升約 0.18 V，門檻差約 0.52 V；第二個 EPSP 時 S 還有電（τ 約 1 秒），所以間隔 50–500 ms 只要 2 個；間隔 1.2 秒時 2 個不夠（V+ 7.8 V 時 1.2 秒也只要 2 個）。</li>
         <li>觸發之後 S 還沒放掉，後面每一個 EPSP 都直接觸發 AP：Pre 5 下（間隔 100 ms）→ Post 4 個 AP，第一下是「被吃掉」的。</li>
         <li>Pre 先、Post 後有加成；Post 先沒有：D2 只在 S 比 Post 高約 0.45 V 時導通，Post 被墊高時 EPSP 變小。</li>
       </ul>
@@ -499,8 +480,10 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
       <div data-show="adv">
         <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
-        <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
       </div>
+      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
+      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計，沒量過（HW2 的 7.8 V 是別組的板子）。</p>
     </div>
     <div class="grp"><div class="gt">Stimulator A（Pre）</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
@@ -530,7 +513,6 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <details data-show="basic"><summary>題目與量法</summary>
       <ul class="small">
         <li><b>Q1</b> 照片標出 pre／synapse（含 1.5 V 電池）／post。</li>
-        <li><b>Q2</b> 類似 GABA（GABA<sub>A</sub>）或 glycine 的抑制性傳遞。</li>
         <li><b>Q3–Q5</b> 同 #3-1。IPSP 小，CH2 用 20–50 mV/div，CH2 零點放中間。</li>
       </ul>
     </details>
@@ -565,8 +547,10 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         <div class="row"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
         <div class="row"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option></select></div>
-        <div class="row"><label>V+（V）</label><input type="number" data-k="vplus" min="6" max="12" step="0.1" style="width:5em"></div>
       </div>
+      <div class="row"><label>電池電壓 V+</label><span class="val" data-out="vplus"></span></div>
+      <div class="row full"><input type="range" data-k="vplus" min="0" max="12" step="0.1" aria-label="電池電壓 V+（0–12 V）"></div>
+      <p class="small muted">預設 7.0 V：從 HW2 #2-2 的波形推的估計，沒量過（HW2 的 7.8 V 是別組的板子）。</p>
     </div>
     <div class="grp"><div class="gt">Stimulator A（Pre）</div>
       <div class="row"><label>可變電阻</label><span class="val" data-out="rpotA"></span></div>
@@ -610,8 +594,8 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     </details>
     <details data-show="adv"><summary>進階：怎麼解讀</summary>
       <ul class="small">
-        <li>Q3 的抑制和 Post 被推得多用力有關：可變電阻 0（約 99 µA）28.2 → 25.2 Hz；6 kΩ 16.2 → 8.4 Hz；8 kΩ 13.0 Hz → 停止。</li>
-        <li>拔電池（跳線）：反轉電位約 0 V，仍低於 Post 靜止（0.98 V），所以還是抑制，只是弱很多（6 kΩ：16.2 → 13.9 Hz）。這就是驅動力 = V<sub>m</sub> − E<sub>rev</sub> 變小。</li>
+        <li>Q3 的抑制和 Post 被推得多用力有關：可變電阻 0（約 99 µA）28.4 → 25.3 Hz；6 kΩ 16.4 → 8.2 Hz；8 kΩ 13.2 Hz → 停止。</li>
+        <li>拔電池（跳線）：反轉電位約 0 V，仍低於 Post 靜止（0.88 V），所以還是抑制，只是弱很多（6 kΩ：16.4 → 14.0 Hz）。這就是驅動力 = V<sub>m</sub> − E<sub>rev</sub> 變小。</li>
         <li>開路：Q1 沒有路徑，突觸完全沒作用。</li>
       </ul>
     </details>
@@ -634,8 +618,8 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     </ul></div></details>
     <details class="card" data-show="adv"><summary>手算重點<span class="hint">門檻、IPSP 的極限</span></summary><div class="body">
 <div class="calc">Q2 開始導通：Q2.B ≈ 0.6 V → V_pre ≈ 0.6 × (100k + R1)/100k + V_D1
-    R1 = 820k：≈ 6 V；820k ∥ 1.5M = 530k：≈ 4.2 V（HW2 真 AP 5.4 V 過得去，靜止 1.1 V 不會）
-Excitatory S 上限：Q1 飽和 → S ≈ V+ × 200k/(200k + 1k) ≈ 7.7 V（有 Post 時被 D2 夾住）
+    R1 = 820k：≈ 6 V；820k ∥ 1.5M = 530k：≈ 4.2 V（HW2 真 AP 約 4.8 V 過得去，靜止約 1.0 V 不會）
+Excitatory S 上限：Q1 飽和 → S ≈ V+ × 200k/(200k + 1k) ≈ 7.0 V（V+ 7.0 V；有 Post 時被 D2 夾住）
 Excitatory 進 Post：只有 S > V_post + 0.45 V 才有電流（D2）
 Inhibitory S 下限：Q1 飽和 → S ≈ −1.5 + V_CE(sat) + 15k × I ≈ −1.4 V（E_rev）
            Q1 最大電流 ≈ (S + 1.5 − 0.1)/15k ≈ 90 µA（S = 0 V 時）
@@ -644,14 +628,15 @@ S 的放電：τ ≈ 4.7 µF × 200 kΩ ≈ 0.94 s；Post（Passive）τ = 1 µF
     </div></details>
     <details class="card" data-show="adv"><summary>模擬方法<span class="hint">和 HW2 相同的模型</span></summary><div class="body"><ul>
       <li>引擎 <a href="engine.js">engine.js</a>：和 HW2（<a href="../active-membrane-sim/engine.js">active-membrane-sim/engine.js</a>、hw2-debug/sim/sim.py）一樣的修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton、Ebers–Moll；每個節點 10 pF 雜散電容。電池用 1 Ω Norton 等效。</li>
-      <li>參數：2N3904 I<sub>S</sub> 6.7 fA、β 200；2N4403 I<sub>S</sub> 10 fA、β 150；1N4148 I<sub>S</sub> 2.52 nA、n 1.752。V+ = 7.8 V。</li>
+      <li>參數：2N3904 I<sub>S</sub> 6.7 fA、β 200；2N4403 I<sub>S</sub> 10 fA、β 150；1N4148 I<sub>S</sub> 2.52 nA、n 1.752。V+ 預設 7.0 V（滑桿 0–12 V）。</li>
       <li>Active membrane 的排針接點合併（沒有可拔的接點）；Leak、FI、SO 直接在 Vm 上。每次進入區域先讓電路靜置 2 秒（不畫），示波器從靜止開始。</li>
-      <li>電路圖 <a href="schematic.js">schematic.js</a>：每塊板子都畫出完整電路，上列 Stimulator A → Pre → 突觸，下列 Stimulator B → Post；Stimulator、active membrane、passive unit 沿用 HW2 的排法（<a href="../active-membrane-sim/schematic.js">HW2 schematic.js</a>）。圖太小時按左下角 ＋／－ 或 Ctrl＋滾輪放大、拖曳平移。操作 <a href="app.js">app.js</a>。頁面上的模擬數字可以用 <a href="check_numbers.js">check_numbers.js</a> 重算（在這頁的 console 貼上後跑 <code>HW3CHK.all(1e6)</code>）。</li>
+      <li>電路圖 <a href="schematic.js">schematic.js</a>：每塊板子都畫出完整電路，上列 Stimulator A → Pre → 突觸，下列 Stimulator B → Post；Stimulator、active membrane、passive unit 沿用 HW2 的排法（<a href="../active-membrane-sim/schematic.js">HW2 schematic.js</a>）。圖太小時按左下角 ＋／－ 或 Ctrl＋滾輪放大、拖曳平移。操作 <a href="app.js">app.js</a>。頁面上的模擬數字可以用 <a href="check_numbers.js">check_numbers.js</a> 重算（在這頁的 console 貼上後跑 <code>HW3CHK.all(1e6, null, 7.0)</code>，第三個數字是電池 V+）。</li>
     </ul></div></details>
     <details class="card wide" id="history" open><summary>History／Log<span class="hint">這一頁的版本</span></summary><div class="body">
       <div class="tbl"><table>
         <tr><th>日期</th><th>內容</th></tr>
         <tr><td>10-13</td><td>建立 HW3 實驗台：四個電路的即時模擬、基礎／進階目標、真正的突觸（820 kΩ 並 1.5 MΩ）、ISI 散佈圖。全部是模擬，尚未實測。</td></tr>
+        <tr><td>10-21</td><td>探棒改 ×1（1 MΩ）。拿掉作業題目與狀態表和答案性質的句子。電池 V+ 改成兩個目標都有 0–12 V 滑桿，預設 7.0 V（從 HW2 #2-2 推的估計，沒量過）；頁面上的模擬數字照 7.0 V 重算。7.0 V 時原版 Pre、Post 不會自己冒小峰，7.8 V 時會。加上削頂、電池來源、可變電阻照絲印的說明。</td></tr>
       </table></div>
       <p class="small muted">HW2 的紀錄在 <a href="../hw2-lab/#history">HW2 實驗台 History</a>。</p>
     </div></details>

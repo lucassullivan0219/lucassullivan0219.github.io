@@ -9,7 +9,7 @@
   var MODE = 'basic';
   try{ MODE = localStorage.getItem('hw3mode') === 'adv' ? 'adv' : 'basic'; }catch(e){}
 
-  var BASE = {vplus:7.8, rpotA:700, rpotB:700, pre:'kit', postMem:'kit', mem:'kit', r1p:0, r6:0, bat:'on',
+  var BASE = {vplus:7.0, rpotA:700, rpotB:700, pre:'kit', postMem:'kit', mem:'kit', r1p:0, r6:0, bat:'on',
     wA:20, nA:3, isiA:100, wB:10, offB:-50, ch1:'A.Vm', ch2:'P1'};
   /* the 'true synapse' set: HW2 true-AP add-ons on both membranes, 1.5 Mohm across the synapse's 820k */
   var TRUE_SYN = {pre:'true', postMem:'true', r1p:1.5e6, rpotA:0, rpotB:0, wA:15};
@@ -20,33 +20,33 @@
       def:{basic:{wA:20, ch2:'P1'}, adv:{ch2:'P1', nA:3, isiA:100}},
       scope:{v1:1, v2:0.2, t:0.1}, isi:true,
       presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:20}, '助教的電路（同基礎目標）：Pre 是原版 active membrane，不按也每秒冒約 6 個 1.5 V 小峰，按 SW A 只到 1.5–2.2 V。突觸要 Pre 到約 6 V 才導通，所以怎麼按都沒有 EPSP。'],
-        ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, wA:15}, 'Pre 換成 HW2 的真正的 AP（5.4 V）：突觸板不加東西時 Q2 幾乎不導通，S 只到 0.17 V，沒有 EPSP。'],
-        ['true', '真正的突觸', TRUE_SYN, 'HW2 真正的 AP ＋ 820 kΩ 兩端並 1.5 MΩ：一個 AP 在 #1 產生約 0.88 V、#5 約 0.23 V 的 EPSP；多個 AP 會疊加。']
+        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:20}, '助教的電路（同基礎目標）：Pre 是原版 active membrane：V+ 7.0 V 時安靜停在 0.45 V（7.8 V 時每秒自己冒約 6 個 1.5 V 小峰），按 SW A 只到約 2.4 V。突觸要 Pre 到約 6 V 才導通，所以怎麼按都沒有 EPSP。'],
+        ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, wA:15}, 'Pre 換成 HW2 的真正的 AP（約 4.8 V）：突觸板不加東西時 Q2 幾乎不導通，S 只到 0.09 V，沒有 EPSP。'],
+        ['true', '真正的突觸', TRUE_SYN, 'HW2 真正的 AP ＋ 820 kΩ 兩端並 1.5 MΩ：一個 AP 在 #1 產生約 0.76 V、#5 約 0.20 V 的 EPSP；多個 AP 會疊加。']
       ]},
     s32:{fixed:{syn:'exc', post:'active'},
       def:{basic:{wA:20, ch2:'B.Vm', wB:10}, adv:{ch2:'B.Vm', nA:2, isiA:100, wB:5, offB:-50}},
       scope:{v1:1, v2:1, t:0.1}, combo:true,
       presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:20}, '助教的電路：兩塊 active membrane 都是原版。Pre 推不動突觸，沒有 EPSP；Post 不按也自己冒 1.5 V 小峰，按 B 10 ms 只到 1.5–2.1 V，按住停在 0.77 V。'],
+        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:20}, '助教的電路：兩塊 active membrane 都是原版。Pre 推不動突觸，沒有 EPSP；Post 按 B 10 ms 只到約 1.8 V（V+ 7.8 V 時會自己冒 1.5 V 小峰，按 B 到 1.5–2.1 V），按住停在 0.77 V。'],
         ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, rpotB:0, wA:15}, '兩塊都用 HW2 真正的 AP、突觸板不加東西：EPSP 傳不到 Post。'],
-        ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：一個 EPSP 讓 Post 從 1.14 V 升到 1.36 V（不到門檻），兩個 EPSP（間隔 50 ms–1.2 s）就觸發 Post AP。Stimulator B 按 9 ms 會觸發，8 ms 不會。']
+        ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：一個 EPSP 讓 Post 從 1.02 V 升到 1.20 V（不到門檻），兩個 EPSP（間隔 50–500 ms）就觸發 Post AP，間隔 1.2 s 不夠。Stimulator B 按 8.5 ms 會觸發，8 ms 不會。']
       ]},
     s33:{fixed:{syn:'inh', post:'passive'},
       def:{basic:{wA:20, ch2:'P1'}, adv:{ch2:'P1', nA:3, isiA:100}},
       scope:{v1:1, v2:0.05, t:0.1}, isi:true,
       presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:20}, '助教的電路：Pre 只到約 2.2 V，突觸不導通，怎麼按都沒有 IPSP。'],
-        ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, wA:15}, 'Pre 用 HW2 真正的 AP：一個 AP 只有約 −20 mV。'],
-        ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：一個 AP 在 #1 約 −40 mV（被 15 kΩ 和 1.5 V 電池限制），多個 AP 疊加。拔掉電池 IPSP 就消失（Post 靜止約 0 V，沒有驅動力）。']
+        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:20}, '助教的電路：Pre 只到約 2.4 V，突觸不導通，怎麼按都沒有 IPSP。'],
+        ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, wA:15}, 'Pre 用 HW2 真正的 AP：一個 AP 只有約 −14 mV。'],
+        ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：一個 AP 在 #1 約 −43 mV（被 15 kΩ 和 1.5 V 電池限制），多個 AP 疊加。拔掉電池 IPSP 就消失（Post 靜止約 0 V，沒有驅動力）。']
       ]},
     s34:{fixed:{syn:'inh', post:'active'},
       def:{basic:{wA:20, ch2:'B.Vm', wB:20}, adv:{ch2:'B.Vm', nA:1, isiA:50, wB:12.5, offB:30}},
       scope:{v1:1, v2:1, t:0.1}, combo:true,
       presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:20}, '助教的電路：沒有 IPSP；Post 靜止 0.41 V（突觸的 100 kΩ + 200 kΩ 當 leak，不再自己冒峰），按 B 10 ms 到 1.8 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.77 V，不會連續發放，量不到頻率變化。'],
+        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:20}, '助教的電路：沒有 IPSP；Post 靜止 0.37 V（突觸的 100 kΩ + 200 kΩ 當 leak，不會自己冒峰），按 B 10 ms 到約 1.65 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.77 V，不會連續發放，量不到頻率變化。'],
         ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, rpotB:0, wA:15}, '兩塊都用 HW2 真正的 AP、突觸板不加東西。'],
-        ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：Post 靜止 0.98 V（突觸的 300 kΩ 也是 leak），Stimulator B 最弱觸發 = 按 12 ms。B 按 12.5 ms 時 1 個 IPSP 就擋住 AP，按 13.5 ms 要 2 個。按住 SW B（可變電阻 6 kΩ）16.2 Hz，同時按住 SW A 降到 8.4 Hz；電池拔掉（跳線）只降到 13.9 Hz。']
+        ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：Post 靜止 0.88 V（突觸的 300 kΩ 也是 leak），Stimulator B 最弱觸發 = 按 12 ms。B 按 12.5 ms 時 1 個 IPSP 就擋住 AP，按 13.5 ms 要 2 個。按住 SW B（可變電阻 6 kΩ）16.4 Hz，同時按住 SW A 降到 8.2 Hz；電池拔掉（跳線）只降到 14.0 Hz。']
       ]}
   };
 
@@ -64,7 +64,7 @@
   /* effective engine state for a region in the current mode */
   function engineState(s){
     var u = s.state[MODE], st = Object.assign({}, BASE, u, s.fixed);
-    if(MODE === 'basic'){ st.pre = st.postMem = u.mem; st.r1p = 0; st.r6 = 0; st.vplus = 7.8; }
+    if(MODE === 'basic'){ st.pre = st.postMem = u.mem; st.r1p = 0; st.r6 = 0; }
     if(st.post === 'passive' && st.ch2 === 'B.Vm') st.ch2 = 'P1';
     if(st.post === 'active' && /^P/.test(st.ch2)) st.ch2 = 'B.Vm';
     if(st.post === 'active' && /^P/.test(st.ch1)) st.ch1 = 'A.Vm';
@@ -175,7 +175,7 @@
       if(blk && blk.dataset.show !== MODE) return;
       setCtl(el, u[el.dataset.k] !== undefined ? u[el.dataset.k] : st[el.dataset.k]);
     });
-    $$('[data-out]', s.el).forEach(function(o){ o.textContent = ((u[o.dataset.out] || 0) / 1e3).toFixed(1) + ' kΩ'; });
+    $$('[data-out]', s.el).forEach(function(o){ o.textContent = outText(o.dataset.out, u[o.dataset.out] !== undefined ? u[o.dataset.out] : st[o.dataset.out]); });
     $$('[data-presets] button', s.el).forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.p === u._preset ? 'true' : 'false'); });
     var pn = $('[data-preset-note]', s.el); if(pn) pn.textContent = u._note || '';
     var sc = s.sc;
@@ -183,13 +183,14 @@
     $$('[data-scmode]', s.el).forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.scmode === sc.mode ? 'true' : 'false'); });
     var tl = $('[data-train-label]', s.el); if(tl) tl.textContent = trainText(u);
   }
+  function outText(k, v){ return k === 'vplus' ? (+v || 0).toFixed(1) + ' V' : ((v || 0) / 1e3).toFixed(1) + ' kΩ'; }
   function trainText(u){ return u.nA + ' 下 × ' + u.wA + ' ms，間隔 ' + u.isiA + ' ms（' + (1000 / u.isiA).toFixed(1) + ' Hz）'; }
   function onCtl(s, el){
     var blk = el.closest('[data-show]');
     if(blk && blk.dataset.show !== MODE) return;
     var k = el.dataset.k, u = s.state[MODE];
     u[k] = ctlValue(el);
-    if(k === 'rpotA' || k === 'rpotB') $$('[data-out="' + k + '"]', s.el).forEach(function(o){ o.textContent = (u[k] / 1e3).toFixed(1) + ' kΩ'; });
+    if(k === 'rpotA' || k === 'rpotB' || k === 'vplus') $$('[data-out="' + k + '"]', s.el).forEach(function(o){ o.textContent = outText(k, u[k]); });
     if(k === 'ch1' || k === 'ch2') clearBuf(s);
     var tl = $('[data-train-label]', s.el); if(tl) tl.textContent = trainText(u);
     if(active === s) applyEngine(s);

@@ -1,18 +1,18 @@
 /* Re-measures the simulated numbers written on index.html and in app.js (preset notes), for a given scope probe.
    Not loaded by the page.  Open hw3-lab/index.html, paste this file into the console (or load it with a <script>),
-   then:   HW3CHK.all(1e6)   -> {key: value}   (1e6 = x1 probe, 1e7 = x10 probe)
+   then:   HW3CHK.all(1e6, null, 7.0)   -> {key: value}   (1e6 = x1 probe, 1e7 = x10 probe; 7.0 = battery V+, the page default)
    Each check builds a fresh SynEngine with the same defaults as app.js (BASE, TRUE_SYN), powers on and rests 2 s,
    then drives SW A / SW B on a schedule.  AP counting is app.js's: rising through 2 V, re-armed below 1.5 V. */
 var HW3CHK = (function(){
   var DT = 2e-4, THR = 2.0, REARM = 1.5;
-  var BASE = {vplus:7.8, pre:'kit', postMem:'kit', r1p:0, r6:0, bat:'on', rpotA:700, rpotB:700, syn:'exc', post:'passive', ch1:'A.Vm', ch2:'P1'};
+  var BASE = {vplus:7.0, pre:'kit', postMem:'kit', r1p:0, r6:0, bat:'on', rpotA:700, rpotB:700, syn:'exc', post:'passive', ch1:'A.Vm', ch2:'P1'};
   var TRUE = {pre:'true', postMem:'true', r1p:1.5e6, rpotA:0, rpotB:0};
   var CIRC = {s31:{syn:'exc', post:'passive', ch2:'P1'}, s32:{syn:'exc', post:'active', ch2:'B.Vm'},
               s33:{syn:'inh', post:'passive', ch2:'P1'}, s34:{syn:'inh', post:'active', ch2:'B.Vm'}};
-  var RP = 1e6;
+  var RP = 1e6, VP = 7.0;
   function mk(circ, cfg){
     var E = SynEngine();
-    Object.assign(E.st, BASE, CIRC[circ], cfg || {}, {rprobe:RP, swA:false, swB:false});
+    Object.assign(E.st, BASE, CIRC[circ], cfg || {}, {rprobe:RP, vplus:VP, swA:false, swB:false});
     E.build(); E.powerOn(); E.settle(2.0);
     return E;
   }
@@ -218,8 +218,8 @@ var HW3CHK = (function(){
     return r;
   };
 
-  function all(rp, keys){
-    RP = rp || 1e6; var out = {rprobe:RP};
+  function all(rp, keys, vp){
+    RP = rp || 1e6; VP = vp || 7.0; var out = {rprobe:RP, vplus:VP};
     (keys || Object.keys(C)).forEach(function(k){ var t0 = performance.now(); out[k] = C[k](); out[k]._s = Math.round(performance.now() - t0) / 1e3; });
     return out;
   }

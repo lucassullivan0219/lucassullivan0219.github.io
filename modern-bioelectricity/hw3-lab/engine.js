@@ -21,7 +21,7 @@ var SynEngine = function(){
   };
 
   var st = {
-    vplus:7.8,               /* Stimulator battery (9 V measured 7.8 V); also the synapse V+ through the header */
+    vplus:7.0,               /* Stimulator battery (9 V cell). 7.0 V = estimate from HW2 #2-2, not measured (7.8 V was another group's board); also the synapse V+ through the header */
     vsyn:0,                  /* synapse V+ if it has its own battery (0 = same as vplus) */
     swA:false, swB:false, rpotA:700, rpotB:700,
     pre:'true', post:'passive', postMem:'true',
