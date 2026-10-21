@@ -1,0 +1,364 @@
+﻿id,session,experiment,condition,quantity,value,unit,method,who,used_in_report,sim_value,compare_key,image,status,supersedes,note
+R0001,S-1007,#2-2、#2-3,29 張 BMP：2-3-x、2-4-x、2-6(TEA)、2-6(TTX)、3-2、3-3_np、3-4_np,（整批）,—,,—,不確定,否,,#2-2、#2-3｜（整批）,,不採用,,量測點不明、可能開了 AC coupling。原始檔在雲端 HW2/(wrong)_DSO_20261007/。
+R0002,S-1009a,#2-2 除錯,Stimulator 電源端子,電池 V+,7.8,V,Tektronix 讀格子,我量的,否（HW2 報告後來改標成別組的板子）,,電池 V+,,,,
+R0003,S-1009a,#2-2 除錯,測試 1：全部接上，可變電阻最大、最小都試,平台（比基線高）,約 4.4,V,Tektronix 讀格子（約 2.2 格）,我量的,,,#2-2 除錯｜平台（比基線高）,,,,平滑上升、平台、平滑下降，沒有尖峰
+R0004,S-1009a,#2-2 除錯,測試 2：量 FI 的供電腳,FI 供電腳電壓,約 0.4（上下震盪）,V,Tektronix 讀格子,我量的,,,#2-2 除錯｜FI 供電腳電壓,,,,Stimulator、Passive unit 的供電腳和電池相同。解讀：FI 的 V+ 接點斷開，浮接撿到 60 Hz
+R0005,S-1009a,#2-2 除錯,測試 4：FI 的 Vm 斷開、不按 SW,FI 的 Vm 腳,約 ½ V+,,Tektronix 讀格子,我量的,,自鎖手算／模擬 4.24 V（hw2-debug）,#2-2 除錯｜FI 的 Vm 腳,,,,
+R0006,S-1009a,#2-2 除錯,測試 5：FI 的 Vm 斷開，量 FI 電晶體各腳,FI 2N4403 E,4.0,V,Tektronix 讀格子,我量的,,,#2-2 除錯｜FI 2N4403 E,,,,焊點無互碰。解讀：FI 正常自鎖，元件都好
+R0007,S-1009a,#2-2 除錯,測試 5：FI 的 Vm 斷開，量 FI 電晶體各腳,FI 2N4403 C,4.0,V,Tektronix 讀格子,我量的,,,#2-2 除錯｜FI 2N4403 C,,,,焊點無互碰。解讀：FI 正常自鎖，元件都好
+R0008,S-1009a,#2-2 除錯,測試 5：FI 的 Vm 斷開，量 FI 電晶體各腳,FI 2N4403 B,3.5,V,Tektronix 讀格子,我量的,,,#2-2 除錯｜FI 2N4403 B,,,,焊點無互碰。解讀：FI 正常自鎖，元件都好
+R0009,S-1009a,#2-2 除錯,測試 5：FI 的 Vm 斷開，量 FI 電晶體各腳,FI 2N3904 E,3.0,V,Tektronix 讀格子,我量的,,,#2-2 除錯｜FI 2N3904 E,,,,焊點無互碰。解讀：FI 正常自鎖，元件都好
+R0010,S-1009a,#2-2 除錯,測試 5：FI 的 Vm 斷開，量 FI 電晶體各腳,FI 2N3904 B,3.7,V,Tektronix 讀格子,我量的,,,#2-2 除錯｜FI 2N3904 B,,,,焊點無互碰。解讀：FI 正常自鎖，元件都好
+R0011,S-1009a,#2-2 除錯,測試 5：FI 的 Vm 斷開，量 FI 電晶體各腳,FI 2N3904 C,3.5,V,Tektronix 讀格子,我量的,,,#2-2 除錯｜FI 2N3904 C,,,,焊點無互碰。解讀：FI 正常自鎖，元件都好
+R0012,S-1009a,#2-2 除錯,測試 9：閒置一段時間後按 SW,Vm,先沒反應 → 卡在約 4 → 自己回到約 0.6,V,Tektronix 讀格子,我量的,,,#2-2 除錯｜Vm,,,,先解讀成 Slow out 鉗住（錯），後改為接點時通時斷
+R0013,S-1009a,#2-2 除錯,測試 10a：只接 Stimulator,靜止 Vm,約 7,V,Tektronix 讀格子,我量的,,,只接 Stimulator｜靜止 Vm,,,,
+R0014,S-1009a,#2-2 除錯,測試 10a：只接 Stimulator,按下 SW 時 Vm,約 7.2,V,Tektronix 讀格子,我量的,,,只接 Stimulator｜按住 SW 時 Vm,,,,
+R0015,S-1009a,#2-2 除錯,測試 10b：Stimulator + Leak,靜止 Vm,約 0.6,V,Tektronix 讀格子,我量的,,,Stimulator + 一個 100 kΩ ∥ 1 µF｜靜止 Vm（漏電造成的基線）,,,,Stimulator 放開時漏約 6 µA（PCB 走線，MB-007）
+R0016,S-1009a,#2-2 除錯,測試 10b：Stimulator + Leak,按住 SW 時 Vm,約 7.2,V,Tektronix 讀格子,我量的,,,Stimulator + 一個 100 kΩ ∥ 1 µF｜按住 SW 時 Vm,,,,
+R0017,S-1009a,#2-2 除錯,測試 10c：Stimulator + Leak + Slow out,靜止與按住 Vm,和 10b 完全相同,,Tektronix 讀格子,我量的,,,#2-2 除錯｜靜止與按住 Vm,,,,當時 Slow out 沒接上
+R0018,S-1009a,#2-2 除錯,測試 10d：Stimulator + Leak + FI,靜止 Vm,晃動後卡在約 3；拔掉重插回到約 0.6,V,Tektronix 讀格子,我量的,,,S + LK + FI（= 拔掉 SO）｜靜止 Vm,,,,FI 的 V+ 晃到接上就自鎖
+R0019,S-1009b,#2-2 除錯,S,靜止 Vm,7.1,V,Tektronix 讀格子，重複 3 次以上,我量的,,,只接 Stimulator｜靜止 Vm,,,,
+R0020,S-1009b,#2-2 除錯,S,按住 SW 時最高 Vm,7.3,V,Tektronix 讀格子，重複 3 次以上,我量的,,,只接 Stimulator｜按住 SW 時 Vm,,,,
+R0021,S-1009b,#2-2 除錯,S + LK,靜止 Vm,0.7,V,Tektronix 讀格子，重複 3 次以上,我量的,,,Stimulator + 一個 100 kΩ ∥ 1 µF｜靜止 Vm（漏電造成的基線）,,,,
+R0022,S-1009b,#2-2 除錯,S + LK,按住 SW 時最高 Vm,7.2,V,Tektronix 讀格子，重複 3 次以上,我量的,,,Stimulator + 一個 100 kΩ ∥ 1 µF｜按住 SW 時 Vm,,,,
+R0023,S-1009b,#2-2 除錯,S + FI,靜止 Vm,3.0,V,Tektronix 讀格子，重複 3 次以上,我量的,,,S + FI｜靜止 Vm,,,,
+R0024,S-1009b,#2-2 除錯,S + FI,按住 SW 時最高 Vm,5.9,V,Tektronix 讀格子，重複 3 次以上,我量的,,,S + FI｜按住 SW 時 Vm,,,,S + FI 這列當時對不上，懷疑 Leak 還插著（MB-002 前後）
+R0025,S-1009b,#2-2 除錯,S + SO,靜止 Vm,1.0,V,Tektronix 讀格子，重複 3 次以上,我量的,,,S + SO｜靜止 Vm,,,,Slow out 的 R2 當時是 100 Ω（套件給錯）
+R0026,S-1009b,#2-2 除錯,S + SO,按住 SW 時最高 Vm,7.2,V,Tektronix 讀格子，重複 3 次以上,我量的,,,S + SO｜按住 SW 時 Vm,,,,
+R0027,S-1009b,#2-2 除錯,S + LK + FI,靜止 Vm,3.1,V,Tektronix 讀格子，重複 3 次以上,我量的,,,S + LK + FI（= 拔掉 SO）｜靜止 Vm,,,,
+R0028,S-1009b,#2-2 除錯,S + LK + FI,按住 SW 時最高 Vm,5.9,V,Tektronix 讀格子，重複 3 次以上,我量的,,,S + LK + FI（= 拔掉 SO）｜按住 SW 時 Vm,,,,
+R0029,S-1009b,#2-2 除錯,S + LK + SO,靜止 Vm,0.5,V,Tektronix 讀格子，重複 3 次以上,我量的,,,S + LK + SO（= 拔掉 FI）｜靜止 Vm,,,,Slow out 的 R2 當時是 100 Ω（套件給錯）
+R0030,S-1009b,#2-2 除錯,S + LK + SO,按住 SW 時最高 Vm,4.8,V,Tektronix 讀格子，重複 3 次以上,我量的,,,S + LK + SO（= 拔掉 FI）｜按住 SW 時 Vm,,,,
+R0031,S-1009b,#2-2 除錯,S + LK + FI，再插上 SO,靜止 Vm,3.1 → 2.4；第一次按 SW 後仍是 2.4,V,Tektronix 讀格子，重複 3 次以上,我量的,,2.42 V（手算，R2 = 100 Ω 時 FI 鎖住）,四塊全接｜靜止 Vm,,,,Slow out 的 R2 當時是 100 Ω（套件給錯）
+R0032,S-1009b,#2-2 除錯,S + LK + FI，再插上 SO,按住 SW 時最高 Vm,4.5,V,Tektronix 讀格子，重複 3 次以上,我量的,,,四塊全接｜按住 SW 時 Vm,,,,
+R0033,S-1009b,#2-2 除錯,S + LK + SO，再插上 FI,靜止 Vm,維持 0.5；第一次按 SW 後變成 2.4,V,Tektronix 讀格子，重複 3 次以上,我量的,,,四塊全接｜靜止 Vm,,,,Slow out 的 R2 當時是 100 Ω（套件給錯）
+R0034,S-1009b,#2-2 除錯,S + LK + SO，再插上 FI,按住 SW 時最高 Vm,4.5,V,Tektronix 讀格子，重複 3 次以上,我量的,,,四塊全接｜按住 SW 時 Vm,,,,
+R0035,S-1009c,#2-2 除錯,四塊全接，不按 SW,靜止 Vm,約 0.6,V,Tektronix 讀格子,我量的,,,四塊全接｜靜止 Vm,,,,
+R0036,S-1009c,#2-2 除錯,四塊全接，不按 SW,自己冒的小峰,約 1.6，約每 100 ms 一個,V,Tektronix 讀格子,我量的,,約 1.5 V（實驗台，V+ 7.8 V）,#2-2 除錯｜自己冒的小峰,,,,Stimulator 漏電把 Vm 墊在 FI 門檻附近
+R0037,S-1009c,#2-2 除錯,四塊全接，按下 SW 的瞬間,第一個峰（絕對值）,約 2.2,V,Tektronix 讀格子,我量的,,約 2.1 V（實驗台，V+ 7.8 V）,四塊全接｜第一個峰（絕對值）,,,,
+R0038,S-1009c,#2-2 除錯,四塊全接，一直按著 SW,按住 SW 時 Vm,0.6–1.0，約 40 Hz 震盪,V,Tektronix 讀格子,我量的,,0.78 V（實驗台）,四塊全接｜按住 SW 時 Vm,,,,
+R0039,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，短按數下；電流 0.07 mA（電表，組員）,基線,0.50,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.63 V（手算：漏電 6.3 µA × 100 kΩ）,Stimulator + 一個 100 kΩ ∥ 1 µF｜靜止 Vm（漏電造成的基線）,MB-0063-2-1_Q2_1unit_short-press_raw.jpg,,,
+R0040,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，短按數下；電流 0.07 mA（電表，組員）,振幅 A,6.47,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜振幅 A,MB-0063-2-1_Q2_1unit_short-press_raw.jpg,,,
+R0041,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，短按數下；電流 0.07 mA（電表，組員）,半高寬,195,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜半高寬,MB-0063-2-1_Q2_1unit_short-press_raw.jpg,,,
+R0042,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，短按數下；電流 0.07 mA（電表，組員）,上升 τ,75,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（理想電流源 RC）；削頂模型 75 ms,#2-1 Q2／Q3｜上升 τ,MB-0063-2-1_Q2_1unit_short-press_raw.jpg,,,
+R0043,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，短按數下；電流 0.07 mA（電表，組員）,衰減 τ,100,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（RC）,#2-1 Q2／Q3｜衰減 τ,MB-0063-2-1_Q2_1unit_short-press_raw.jpg,,,
+R0044,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，短按數下；電流 0.07 mA（電表，組員）,起點→波峰,181,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,理想 300 ms（到 95 %）；削頂模型 157 ms,#2-1 Q2／Q3｜起點→波峰,MB-0063-2-1_Q2_1unit_short-press_raw.jpg,,,
+R0045,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 0.5s；電流 0.07 mA（電表，組員）,基線,0.70,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.63 V（手算：漏電 6.3 µA × 100 kΩ）,Stimulator + 一個 100 kΩ ∥ 1 µF｜靜止 Vm（漏電造成的基線）,MB-0063-2-1_Q3_1unit_0.5s_raw.jpg,,,
+R0046,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 0.5s；電流 0.07 mA（電表，組員）,振幅 A,6.47,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜振幅 A,MB-0063-2-1_Q3_1unit_0.5s_raw.jpg,,,
+R0047,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 0.5s；電流 0.07 mA（電表，組員）,半高寬,563,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜半高寬,MB-0063-2-1_Q3_1unit_0.5s_raw.jpg,,,
+R0048,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 0.5s；電流 0.07 mA（電表，組員）,上升 τ,70,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（理想電流源 RC）；削頂模型 75 ms,#2-1 Q2／Q3｜上升 τ,MB-0063-2-1_Q3_1unit_0.5s_raw.jpg,,,
+R0049,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 0.5s；電流 0.07 mA（電表，組員）,衰減 τ,92,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（RC）,#2-1 Q2／Q3｜衰減 τ,MB-0063-2-1_Q3_1unit_0.5s_raw.jpg,,,
+R0050,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 0.5s；電流 0.07 mA（電表，組員）,起點→波峰,150,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,理想 300 ms（到 95 %）；削頂模型 157 ms,#2-1 Q2／Q3｜起點→波峰,MB-0063-2-1_Q3_1unit_0.5s_raw.jpg,,,
+R0051,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.0s；電流 0.07 mA（電表，組員）,基線,0.66,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.63 V（手算：漏電 6.3 µA × 100 kΩ）,Stimulator + 一個 100 kΩ ∥ 1 µF｜靜止 Vm（漏電造成的基線）,MB-0063-2-1_Q3_1unit_1.0s_raw-a.jpg,,,
+R0052,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.0s；電流 0.07 mA（電表，組員）,振幅 A,6.47,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜振幅 A,MB-0063-2-1_Q3_1unit_1.0s_raw-a.jpg,,,
+R0053,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.0s；電流 0.07 mA（電表，組員）,半高寬,1034,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜半高寬,MB-0063-2-1_Q3_1unit_1.0s_raw-a.jpg,,,
+R0054,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.0s；電流 0.07 mA（電表，組員）,上升 τ,69,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（理想電流源 RC）；削頂模型 75 ms,#2-1 Q2／Q3｜上升 τ,MB-0063-2-1_Q3_1unit_1.0s_raw-a.jpg,,,
+R0055,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.0s；電流 0.07 mA（電表，組員）,衰減 τ,100,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（RC）,#2-1 Q2／Q3｜衰減 τ,MB-0063-2-1_Q3_1unit_1.0s_raw-a.jpg,,,
+R0056,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.0s；電流 0.07 mA（電表，組員）,起點→波峰,150,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,理想 300 ms（到 95 %）；削頂模型 157 ms,#2-1 Q2／Q3｜起點→波峰,MB-0063-2-1_Q3_1unit_1.0s_raw-a.jpg,,,
+R0057,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.5s；電流 0.07 mA（電表，組員）,基線,0.70,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.63 V（手算：漏電 6.3 µA × 100 kΩ）,Stimulator + 一個 100 kΩ ∥ 1 µF｜靜止 Vm（漏電造成的基線）,MB-0063-2-1_Q3_1unit_1.5s_raw.jpg,,,
+R0058,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.5s；電流 0.07 mA（電表，組員）,振幅 A,6.47,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜振幅 A,MB-0063-2-1_Q3_1unit_1.5s_raw.jpg,,,
+R0059,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.5s；電流 0.07 mA（電表，組員）,半高寬,1515,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜半高寬,MB-0063-2-1_Q3_1unit_1.5s_raw.jpg,,,
+R0060,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.5s；電流 0.07 mA（電表，組員）,上升 τ,67,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（理想電流源 RC）；削頂模型 75 ms,#2-1 Q2／Q3｜上升 τ,MB-0063-2-1_Q3_1unit_1.5s_raw.jpg,,,
+R0061,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.5s；電流 0.07 mA（電表，組員）,衰減 τ,97,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（RC）,#2-1 Q2／Q3｜衰減 τ,MB-0063-2-1_Q3_1unit_1.5s_raw.jpg,,,
+R0062,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 1.5s；電流 0.07 mA（電表，組員）,起點→波峰,150,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,理想 300 ms（到 95 %）；削頂模型 157 ms,#2-1 Q2／Q3｜起點→波峰,MB-0063-2-1_Q3_1unit_1.5s_raw.jpg,,,
+R0063,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.0s；電流 0.07 mA（電表，組員）,基線,0.70,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.63 V（手算：漏電 6.3 µA × 100 kΩ）,Stimulator + 一個 100 kΩ ∥ 1 µF｜靜止 Vm（漏電造成的基線）,MB-0063-2-1_Q3_1unit_2.0s_raw.jpg,,,
+R0064,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.0s；電流 0.07 mA（電表，組員）,振幅 A,6.47,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜振幅 A,MB-0063-2-1_Q3_1unit_2.0s_raw.jpg,,,
+R0065,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.0s；電流 0.07 mA（電表，組員）,半高寬,1834,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜半高寬,MB-0063-2-1_Q3_1unit_2.0s_raw.jpg,,,
+R0066,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.0s；電流 0.07 mA（電表，組員）,上升 τ,75,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（理想電流源 RC）；削頂模型 75 ms,#2-1 Q2／Q3｜上升 τ,MB-0063-2-1_Q3_1unit_2.0s_raw.jpg,,,
+R0067,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.0s；電流 0.07 mA（電表，組員）,衰減 τ,92,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（RC）,#2-1 Q2／Q3｜衰減 τ,MB-0063-2-1_Q3_1unit_2.0s_raw.jpg,,,
+R0068,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.0s；電流 0.07 mA（電表，組員）,起點→波峰,150,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,理想 300 ms（到 95 %）；削頂模型 157 ms,#2-1 Q2／Q3｜起點→波峰,MB-0063-2-1_Q3_1unit_2.0s_raw.jpg,,,
+R0069,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.5s；電流 0.07 mA（電表，組員）,基線,0.70,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.63 V（手算：漏電 6.3 µA × 100 kΩ）,Stimulator + 一個 100 kΩ ∥ 1 µF｜靜止 Vm（漏電造成的基線）,MB-0063-2-1_Q3_1unit_2.5s_raw.jpg,,,
+R0070,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.5s；電流 0.07 mA（電表，組員）,振幅 A,6.47,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜振幅 A,MB-0063-2-1_Q3_1unit_2.5s_raw.jpg,,,
+R0071,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.5s；電流 0.07 mA（電表，組員）,半高寬,2757,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q2／Q3｜半高寬,MB-0063-2-1_Q3_1unit_2.5s_raw.jpg,,,
+R0072,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.5s；電流 0.07 mA（電表，組員）,上升 τ,75,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（理想電流源 RC）；削頂模型 75 ms,#2-1 Q2／Q3｜上升 τ,MB-0063-2-1_Q3_1unit_2.5s_raw.jpg,,,
+R0073,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.5s；電流 0.07 mA（電表，組員）,衰減 τ,97,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,100 ms（RC）,#2-1 Q2／Q3｜衰減 τ,MB-0063-2-1_Q3_1unit_2.5s_raw.jpg,,,
+R0074,S-1013,#2-1 Q2／Q3,只接 1 個 passive unit，按 2.5s；電流 0.07 mA（電表，組員）,起點→波峰,160,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,理想 300 ms（到 95 %）；削頂模型 157 ms,#2-1 Q2／Q3｜起點→波峰,MB-0063-2-1_Q3_1unit_2.5s_raw.jpg,,,
+R0075,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 0.5s；電流 0.07 mA（電表，組員）,基線,0.26,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q3｜基線,MB-0063-2-1_Q3_5unit_0.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0076,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 0.5s；電流 0.07 mA（電表，組員）,振幅 A,1.45,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.90 V（實驗台，65 µA）,#2-1 Q3｜振幅 A,MB-0063-2-1_Q3_5unit_0.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0077,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 0.5s；電流 0.07 mA（電表，組員）,半高寬,460,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q3｜半高寬,MB-0063-2-1_Q3_5unit_0.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0078,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 0.5s；電流 0.07 mA（電表，組員）,上升 τ,104,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,137 ms（實驗台）,#2-1 Q3｜上升 τ,MB-0063-2-1_Q3_5unit_0.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0079,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 0.5s；電流 0.07 mA（電表，組員）,衰減 τ,94,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,137 ms（實驗台）,#2-1 Q3｜衰減 τ,MB-0063-2-1_Q3_5unit_0.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0080,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 0.5s；電流 0.07 mA（電表，組員）,起點→波峰,261,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,337 ms（實驗台）,#2-1 Q3｜起點→波峰,MB-0063-2-1_Q3_5unit_0.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0081,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.0s；電流 0.07 mA（電表，組員）,基線,0.22,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q3｜基線,MB-0063-2-1_Q3_5unit_1.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0082,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.0s；電流 0.07 mA（電表，組員）,振幅 A,1.57,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.90 V（實驗台，65 µA）,#2-1 Q3｜振幅 A,MB-0063-2-1_Q3_5unit_1.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0083,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.0s；電流 0.07 mA（電表，組員）,半高寬,945,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q3｜半高寬,MB-0063-2-1_Q3_5unit_1.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0084,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.0s；電流 0.07 mA（電表，組員）,上升 τ,114,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,137 ms（實驗台）,#2-1 Q3｜上升 τ,MB-0063-2-1_Q3_5unit_1.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0085,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.0s；電流 0.07 mA（電表，組員）,衰減 τ,129,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,137 ms（實驗台）,#2-1 Q3｜衰減 τ,MB-0063-2-1_Q3_5unit_1.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0086,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.0s；電流 0.07 mA（電表，組員）,起點→波峰,391,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,337 ms（實驗台）,#2-1 Q3｜起點→波峰,MB-0063-2-1_Q3_5unit_1.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0087,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.5s；電流 0.07 mA（電表，組員）,基線,0.22,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q3｜基線,MB-0063-2-1_Q3_5unit_1.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0088,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.5s；電流 0.07 mA（電表，組員）,振幅 A,1.57,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.90 V（實驗台，65 µA）,#2-1 Q3｜振幅 A,MB-0063-2-1_Q3_5unit_1.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0089,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.5s；電流 0.07 mA（電表，組員）,半高寬,1424,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q3｜半高寬,MB-0063-2-1_Q3_5unit_1.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0090,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.5s；電流 0.07 mA（電表，組員）,上升 τ,114,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,137 ms（實驗台）,#2-1 Q3｜上升 τ,MB-0063-2-1_Q3_5unit_1.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0091,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.5s；電流 0.07 mA（電表，組員）,衰減 τ,114,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,137 ms（實驗台）,#2-1 Q3｜衰減 τ,MB-0063-2-1_Q3_5unit_1.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0092,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 1.5s；電流 0.07 mA（電表，組員）,起點→波峰,391,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,337 ms（實驗台）,#2-1 Q3｜起點→波峰,MB-0063-2-1_Q3_5unit_1.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0093,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.0s；電流 0.07 mA（電表，組員）,基線,0.22,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q3｜基線,MB-0063-2-1_Q3_5unit_2.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0094,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.0s；電流 0.07 mA（電表，組員）,振幅 A,1.57,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.90 V（實驗台，65 µA）,#2-1 Q3｜振幅 A,MB-0063-2-1_Q3_5unit_2.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0095,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.0s；電流 0.07 mA（電表，組員）,半高寬,2096,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q3｜半高寬,MB-0063-2-1_Q3_5unit_2.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0096,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.0s；電流 0.07 mA（電表，組員）,上升 τ,114,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,137 ms（實驗台）,#2-1 Q3｜上升 τ,MB-0063-2-1_Q3_5unit_2.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0097,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.0s；電流 0.07 mA（電表，組員）,衰減 τ,129,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,137 ms（實驗台）,#2-1 Q3｜衰減 τ,MB-0063-2-1_Q3_5unit_2.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0098,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.0s；電流 0.07 mA（電表，組員）,起點→波峰,351,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,337 ms（實驗台）,#2-1 Q3｜起點→波峰,MB-0063-2-1_Q3_5unit_2.0s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0099,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.5s；電流 0.07 mA（電表，組員）,基線,0.23,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q3｜基線,MB-0063-2-1_Q3_5unit_2.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0100,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.5s；電流 0.07 mA（電表，組員）,振幅 A,1.56,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.90 V（實驗台，65 µA）,#2-1 Q3｜振幅 A,MB-0063-2-1_Q3_5unit_2.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0101,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.5s；電流 0.07 mA（電表，組員）,半高寬,2616,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-1 Q3｜半高寬,MB-0063-2-1_Q3_5unit_2.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0102,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.5s；電流 0.07 mA（電表，組員）,上升 τ,94,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,137 ms（實驗台）,#2-1 Q3｜上升 τ,MB-0063-2-1_Q3_5unit_2.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0103,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.5s；電流 0.07 mA（電表，組員）,衰減 τ,109,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,137 ms（實驗台）,#2-1 Q3｜衰減 τ,MB-0063-2-1_Q3_5unit_2.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0104,S-1013,#2-1 Q3,5 個 passive unit 串成鏈，量最後一個，按 2.5s；電流 0.07 mA（電表，組員）,起點→波峰,321,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,337 ms（實驗台）,#2-1 Q3｜起點→波峰,MB-0063-2-1_Q3_5unit_2.5s_raw.jpg,,,照片看起來 4 顆：第 5 顆垂直接在 Stimulator 正下方（MB-035）。最後一顆偏大的原因沒查清楚。
+R0105,S-1013,#2-2 Q2,四塊全接，一次 AP；電流沒記錄,基線,0.36,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,否（報告 Q2 用 R13 100 kΩ 那張，DEC-016）,0.53–0.62 V（實驗台，V+ 7.8 V）,四塊全接｜靜止 Vm,MB-0063-2-2_Q2_AP_Rigol_measure_RECOVERED.png,,,原檔 2-2.png（15:35）檔尾損毀，用救回的版本。
+R0106,S-1013,#2-2 Q2,四塊全接，一次 AP；電流沒記錄,振幅 A,2.00,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,否（報告 Q2 用 R13 100 kΩ 那張，DEC-016）,,#2-2 Q2｜振幅 A,MB-0063-2-2_Q2_AP_Rigol_measure_RECOVERED.png,,,原檔 2-2.png（15:35）檔尾損毀，用救回的版本。
+R0107,S-1013,#2-2 Q2,四塊全接，一次 AP；電流沒記錄,半高寬,32,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,否（報告 Q2 用 R13 100 kΩ 那張，DEC-016）,,#2-2 Q2｜半高寬,MB-0063-2-2_Q2_AP_Rigol_measure_RECOVERED.png,,,原檔 2-2.png（15:35）檔尾損毀，用救回的版本。
+R0108,S-1013,#2-2 Q2,四塊全接，一次 AP；電流沒記錄,上升 τ,23,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,否（報告 Q2 用 R13 100 kΩ 那張，DEC-016）,,#2-2 Q2｜上升 τ,MB-0063-2-2_Q2_AP_Rigol_measure_RECOVERED.png,,,原檔 2-2.png（15:35）檔尾損毀，用救回的版本。
+R0109,S-1013,#2-2 Q2,四塊全接，一次 AP；電流沒記錄,衰減 τ,7,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,否（報告 Q2 用 R13 100 kΩ 那張，DEC-016）,,#2-2 Q2｜衰減 τ,MB-0063-2-2_Q2_AP_Rigol_measure_RECOVERED.png,,,原檔 2-2.png（15:35）檔尾損毀，用救回的版本。
+R0110,S-1013,#2-2 Q2,四塊全接，一次 AP；電流沒記錄,起點→波峰,42,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,否（報告 Q2 用 R13 100 kΩ 那張，DEC-016）,,#2-2 Q2｜起點→波峰,MB-0063-2-2_Q2_AP_Rigol_measure_RECOVERED.png,,,原檔 2-2.png（15:35）檔尾損毀，用救回的版本。
+R0111,S-1013,#2-2 Q4,R13 = 50 kΩ，刺激電流 95 µA（組員紀錄）,基線,0.46,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,四塊全接｜靜止 Vm,MB-0063-2-2_Q4_R13-050k.png,,,
+R0112,S-1013,#2-2 Q4,R13 = 50 kΩ，刺激電流 95 µA（組員紀錄）,振幅 A,2.27,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,1.95 V（7.8 V、95 µA）；2.14 V（7.0 V、53 µA）,#2-2 Q4｜振幅 A,MB-0063-2-2_Q4_R13-050k.png,,,
+R0113,S-1013,#2-2 Q4,R13 = 50 kΩ，刺激電流 95 µA（組員紀錄）,半高寬,21,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜半高寬,MB-0063-2-2_Q4_R13-050k.png,,,
+R0114,S-1013,#2-2 Q4,R13 = 50 kΩ，刺激電流 95 µA（組員紀錄）,上升 τ,16,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜上升 τ,MB-0063-2-2_Q4_R13-050k.png,,,
+R0115,S-1013,#2-2 Q4,R13 = 50 kΩ，刺激電流 95 µA（組員紀錄）,衰減 τ,7,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜衰減 τ,MB-0063-2-2_Q4_R13-050k.png,,,
+R0116,S-1013,#2-2 Q4,R13 = 50 kΩ，刺激電流 95 µA（組員紀錄）,起點→波峰,28,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜起點→波峰,MB-0063-2-2_Q4_R13-050k.png,,,
+R0117,S-1013,#2-2 Q4,R13 = 100 kΩ，刺激電流 95 µA（組員紀錄）,基線,0.46,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是（也當 Q2）,,四塊全接｜靜止 Vm,MB-0063-2-2_Q4_R13-100k.png,,,
+R0118,S-1013,#2-2 Q4,R13 = 100 kΩ，刺激電流 95 µA（組員紀錄）,振幅 A,1.85,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是（也當 Q2）,1.25 V（7.8 V、95 µA）；1.69 V（7.0 V、53 µA）,#2-2 Q4｜振幅 A,MB-0063-2-2_Q4_R13-100k.png,,,
+R0119,S-1013,#2-2 Q4,R13 = 100 kΩ，刺激電流 95 µA（組員紀錄）,半高寬,25,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是（也當 Q2）,,#2-2 Q4｜半高寬,MB-0063-2-2_Q4_R13-100k.png,,,
+R0120,S-1013,#2-2 Q4,R13 = 100 kΩ，刺激電流 95 µA（組員紀錄）,上升 τ,17,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是（也當 Q2）,,#2-2 Q4｜上升 τ,MB-0063-2-2_Q4_R13-100k.png,,,
+R0121,S-1013,#2-2 Q4,R13 = 100 kΩ，刺激電流 95 µA（組員紀錄）,衰減 τ,7,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是（也當 Q2）,,#2-2 Q4｜衰減 τ,MB-0063-2-2_Q4_R13-100k.png,,,
+R0122,S-1013,#2-2 Q4,R13 = 100 kΩ，刺激電流 95 µA（組員紀錄）,起點→波峰,32,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是（也當 Q2）,,#2-2 Q4｜起點→波峰,MB-0063-2-2_Q4_R13-100k.png,,,
+R0123,S-1013,#2-2 Q4,R13 = 300 kΩ，刺激電流 95 µA（組員紀錄）,基線,0.46,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,四塊全接｜靜止 Vm,MB-0063-2-2_Q4_R13-300k.png,,,
+R0124,S-1013,#2-2 Q4,R13 = 300 kΩ，刺激電流 95 µA（組員紀錄）,振幅 A,1.51,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,1.12 V（7.8 V、95 µA）；1.29 V（7.0 V、53 µA）,#2-2 Q4｜振幅 A,MB-0063-2-2_Q4_R13-300k.png,,,
+R0125,S-1013,#2-2 Q4,R13 = 300 kΩ，刺激電流 95 µA（組員紀錄）,半高寬,31,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜半高寬,MB-0063-2-2_Q4_R13-300k.png,,,
+R0126,S-1013,#2-2 Q4,R13 = 300 kΩ，刺激電流 95 µA（組員紀錄）,上升 τ,21,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜上升 τ,MB-0063-2-2_Q4_R13-300k.png,,,
+R0127,S-1013,#2-2 Q4,R13 = 300 kΩ，刺激電流 95 µA（組員紀錄）,衰減 τ,9,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜衰減 τ,MB-0063-2-2_Q4_R13-300k.png,,,
+R0128,S-1013,#2-2 Q4,R13 = 300 kΩ，刺激電流 95 µA（組員紀錄）,起點→波峰,40,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜起點→波峰,MB-0063-2-2_Q4_R13-300k.png,,,
+R0129,S-1013,#2-2 Q4,R13 = 820 kΩ，刺激電流 95 µA（組員紀錄）,基線,0.46,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,四塊全接｜靜止 Vm,MB-0063-2-2_Q4_R13-820k.png,,,
+R0130,S-1013,#2-2 Q4,R13 = 820 kΩ，刺激電流 95 µA（組員紀錄）,振幅 A,1.29,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,0.82 V（7.8 V、95 µA）；1.13 V（7.0 V、53 µA）,#2-2 Q4｜振幅 A,MB-0063-2-2_Q4_R13-820k.png,,,
+R0131,S-1013,#2-2 Q4,R13 = 820 kΩ，刺激電流 95 µA（組員紀錄）,半高寬,39,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜半高寬,MB-0063-2-2_Q4_R13-820k.png,,,
+R0132,S-1013,#2-2 Q4,R13 = 820 kΩ，刺激電流 95 µA（組員紀錄）,上升 τ,22,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜上升 τ,MB-0063-2-2_Q4_R13-820k.png,,,
+R0133,S-1013,#2-2 Q4,R13 = 820 kΩ，刺激電流 95 µA（組員紀錄）,衰減 τ,10,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜衰減 τ,MB-0063-2-2_Q4_R13-820k.png,,,
+R0134,S-1013,#2-2 Q4,R13 = 820 kΩ，刺激電流 95 µA（組員紀錄）,起點→波峰,44,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜起點→波峰,MB-0063-2-2_Q4_R13-820k.png,,,
+R0135,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,基線,0.50,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,四塊全接｜靜止 Vm,MB-0063-2-2_Q4_R13-3M.png,,,
+R0136,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,振幅 A,1.05,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,1.09 V（7.8 V、95 µA）；1.06 V（7.0 V、53 µA）,#2-2 Q4｜振幅 A,MB-0063-2-2_Q4_R13-3M.png,,,
+R0137,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,半高寬,27,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜半高寬,MB-0063-2-2_Q4_R13-3M.png,,,
+R0138,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,上升 τ,16,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜上升 τ,MB-0063-2-2_Q4_R13-3M.png,,,
+R0139,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,衰減 τ,12,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜衰減 τ,MB-0063-2-2_Q4_R13-3M.png,,,
+R0140,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,起點→波峰,28,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜起點→波峰,MB-0063-2-2_Q4_R13-3M.png,,,
+R0141,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,undershoot,-40.2,mV,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q4｜undershoot,MB-0063-2-2_Q4_R13-3M.png,,,
+R0142,S-1013,#2-2 Q6 TTX,拔掉 Fast inward（= TTX），95 µA（組員紀錄）,基線,0.44,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q6 TTX｜基線,MB-0063-2-2_Q6_TTX_no-FI.png,,,
+R0143,S-1013,#2-2 Q6 TTX,拔掉 Fast inward（= TTX），95 µA（組員紀錄）,振幅 A,1.40,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,1.53 V（7.8 V、95 µA）；1.14 V（7.0 V、53 µA）；網站 10-17 版 2.05 → 1.94 V,#2-2 Q6 TTX｜振幅 A,MB-0063-2-2_Q6_TTX_no-FI.png,,,
+R0144,S-1013,#2-2 Q6 TTX,拔掉 Fast inward（= TTX），95 µA（組員紀錄）,半高寬,34,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q6 TTX｜半高寬,MB-0063-2-2_Q6_TTX_no-FI.png,,,
+R0145,S-1013,#2-2 Q6 TTX,拔掉 Fast inward（= TTX），95 µA（組員紀錄）,上升 τ,22,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q6 TTX｜上升 τ,MB-0063-2-2_Q6_TTX_no-FI.png,,,
+R0146,S-1013,#2-2 Q6 TTX,拔掉 Fast inward（= TTX），95 µA（組員紀錄）,衰減 τ,9,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q6 TTX｜衰減 τ,MB-0063-2-2_Q6_TTX_no-FI.png,,,
+R0147,S-1013,#2-2 Q6 TTX,拔掉 Fast inward（= TTX），95 µA（組員紀錄）,起點→波峰,43,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q6 TTX｜起點→波峰,MB-0063-2-2_Q6_TTX_no-FI.png,,,
+R0148,S-1013,#2-2 Q6 TEA,拔掉 Slow outward（= TEA），95 µA（組員紀錄）,基線,2.68,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,2.96 V（7.8 V）；2.67 V（7.0 V）；手算 3.1 V,S + LK + FI（= 拔掉 SO）｜靜止 Vm,MB-0063-2-2_Q6_TEA_no-SO.png,,,最高點 = 基線 + A ≈ 4.60 V。
+R0149,S-1013,#2-2 Q6 TEA,拔掉 Slow outward（= TEA），95 µA（組員紀錄）,振幅 A,1.92,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q6 TEA｜振幅 A,MB-0063-2-2_Q6_TEA_no-SO.png,,,最高點 = 基線 + A ≈ 4.60 V。
+R0150,S-1013,#2-2 Q6 TEA,拔掉 Slow outward（= TEA），95 µA（組員紀錄）,半高寬,122,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q6 TEA｜半高寬,MB-0063-2-2_Q6_TEA_no-SO.png,,,最高點 = 基線 + A ≈ 4.60 V。
+R0151,S-1013,#2-2 Q6 TEA,拔掉 Slow outward（= TEA），95 µA（組員紀錄）,上升 τ,41,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q6 TEA｜上升 τ,MB-0063-2-2_Q6_TEA_no-SO.png,,,最高點 = 基線 + A ≈ 4.60 V。
+R0152,S-1013,#2-2 Q6 TEA,拔掉 Slow outward（= TEA），95 µA（組員紀錄）,衰減 τ,50,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q6 TEA｜衰減 τ,MB-0063-2-2_Q6_TEA_no-SO.png,,,最高點 = 基線 + A ≈ 4.60 V。
+R0153,S-1013,#2-2 Q6 TEA,拔掉 Slow outward（= TEA），95 µA（組員紀錄）,起點→波峰,114,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-2 Q6 TEA｜起點→波峰,MB-0063-2-2_Q6_TEA_no-SO.png,,,最高點 = 基線 + A ≈ 4.60 V。
+R0154,S-1013,#2-3 Q2,n 和電流都沒記錄,基線,0.22,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,否（報告用 n = 4 那張，DEC-016）,,#2-3 Q2｜基線,MB-0063-2-3_Q2_AP_measure.png,,,
+R0155,S-1013,#2-3 Q2,n 和電流都沒記錄,振幅 A,1.65,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,否（報告用 n = 4 那張，DEC-016）,,#2-3 Q2｜振幅 A,MB-0063-2-3_Q2_AP_measure.png,,,
+R0156,S-1013,#2-3 Q2,n 和電流都沒記錄,半高寬,44,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,否（報告用 n = 4 那張，DEC-016）,,#2-3 Q2｜半高寬,MB-0063-2-3_Q2_AP_measure.png,,,
+R0157,S-1013,#2-3 Q2,n 和電流都沒記錄,上升 τ,57,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,否（報告用 n = 4 那張，DEC-016）,,#2-3 Q2｜上升 τ,MB-0063-2-3_Q2_AP_measure.png,,,
+R0158,S-1013,#2-3 Q2,n 和電流都沒記錄,衰減 τ,14,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,否（報告用 n = 4 那張，DEC-016）,,#2-3 Q2｜衰減 τ,MB-0063-2-3_Q2_AP_measure.png,,,
+R0159,S-1013,#2-3 Q2,n 和電流都沒記錄,起點→波峰,84,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,否（報告用 n = 4 那張，DEC-016）,,#2-3 Q2｜起點→波峰,MB-0063-2-3_Q2_AP_measure.png,,,
+R0160,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,基線,0.50,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜基線,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0161,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,振幅 A,1.15,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜振幅 A,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0162,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,半高寬,35,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜半高寬,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0163,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,上升 τ,51,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜上升 τ,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0164,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,衰減 τ,11,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜衰減 τ,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0165,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,起點→波峰,72,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜起點→波峰,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0166,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,undershoot,-99.0,mV,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜undershoot,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0167,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,基線,0.38,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜基線,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0168,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,振幅 A,1.21,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜振幅 A,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0169,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,半高寬,40,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜半高寬,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0170,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,上升 τ,82,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜上升 τ,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0171,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,衰減 τ,12,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜衰減 τ,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0172,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,起點→波峰,108,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜起點→波峰,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0173,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,undershoot,-0.14,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜undershoot,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0174,S-1013,#2-3 Q3,3 個 passive + active，29 µA（截圖說明）,基線,0.34,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜基線,MB-0063-2-3_Q3_3unit_I29uA.png,,,
+R0175,S-1013,#2-3 Q3,3 個 passive + active，29 µA（截圖說明）,振幅 A,1.39,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜振幅 A,MB-0063-2-3_Q3_3unit_I29uA.png,,,
+R0176,S-1013,#2-3 Q3,3 個 passive + active，29 µA（截圖說明）,半高寬,40,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜半高寬,MB-0063-2-3_Q3_3unit_I29uA.png,,,
+R0177,S-1013,#2-3 Q3,3 個 passive + active，29 µA（截圖說明）,上升 τ,90,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜上升 τ,MB-0063-2-3_Q3_3unit_I29uA.png,,,
+R0178,S-1013,#2-3 Q3,3 個 passive + active，29 µA（截圖說明）,衰減 τ,11,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜衰減 τ,MB-0063-2-3_Q3_3unit_I29uA.png,,,
+R0179,S-1013,#2-3 Q3,3 個 passive + active，29 µA（截圖說明）,起點→波峰,116,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3｜起點→波峰,MB-0063-2-3_Q3_3unit_I29uA.png,,,
+R0180,S-1013,#2-3 Q3／Q4,4 個 passive + active，30 µA（截圖說明）,基線,0.34,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3／Q4｜基線,MB-0063-2-3_Q3-Q4_4unit_I30uA.png,,,
+R0181,S-1013,#2-3 Q3／Q4,4 個 passive + active，30 µA（截圖說明）,振幅 A,1.41,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3／Q4｜振幅 A,MB-0063-2-3_Q3-Q4_4unit_I30uA.png,,,
+R0182,S-1013,#2-3 Q3／Q4,4 個 passive + active，30 µA（截圖說明）,半高寬,36,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3／Q4｜半高寬,MB-0063-2-3_Q3-Q4_4unit_I30uA.png,,,
+R0183,S-1013,#2-3 Q3／Q4,4 個 passive + active，30 µA（截圖說明）,上升 τ,109,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3／Q4｜上升 τ,MB-0063-2-3_Q3-Q4_4unit_I30uA.png,,,
+R0184,S-1013,#2-3 Q3／Q4,4 個 passive + active，30 µA（截圖說明）,衰減 τ,15,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3／Q4｜衰減 τ,MB-0063-2-3_Q3-Q4_4unit_I30uA.png,,,
+R0185,S-1013,#2-3 Q3／Q4,4 個 passive + active，30 µA（截圖說明）,起點→波峰,128,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q3／Q4｜起點→波峰,MB-0063-2-3_Q3-Q4_4unit_I30uA.png,,,
+R0186,S-1013,#2-3 Q4,3 個 passive + active，30 µA（截圖說明）,基線,0.18,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜基線,MB-0063-2-3_Q4_3unit_I30uA.png,,,
+R0187,S-1013,#2-3 Q4,3 個 passive + active，30 µA（截圖說明）,振幅 A,1.58,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜振幅 A,MB-0063-2-3_Q4_3unit_I30uA.png,,,
+R0188,S-1013,#2-3 Q4,3 個 passive + active，30 µA（截圖說明）,半高寬,51,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜半高寬,MB-0063-2-3_Q4_3unit_I30uA.png,,,
+R0189,S-1013,#2-3 Q4,3 個 passive + active，30 µA（截圖說明）,上升 τ,57,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜上升 τ,MB-0063-2-3_Q4_3unit_I30uA.png,,,
+R0190,S-1013,#2-3 Q4,3 個 passive + active，30 µA（截圖說明）,衰減 τ,13,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜衰減 τ,MB-0063-2-3_Q4_3unit_I30uA.png,,,
+R0191,S-1013,#2-3 Q4,3 個 passive + active，30 µA（截圖說明）,起點→波峰,92,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜起點→波峰,MB-0063-2-3_Q4_3unit_I30uA.png,,,
+R0192,S-1013,#2-3 Q4,2 個 passive + active，30 µA（截圖說明）,基線,0.30,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜基線,MB-0063-2-3_Q4_2unit_I30uA.png,,,
+R0193,S-1013,#2-3 Q4,2 個 passive + active，30 µA（截圖說明）,振幅 A,1.71,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜振幅 A,MB-0063-2-3_Q4_2unit_I30uA.png,,,
+R0194,S-1013,#2-3 Q4,2 個 passive + active，30 µA（截圖說明）,半高寬,39,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜半高寬,MB-0063-2-3_Q4_2unit_I30uA.png,,,
+R0195,S-1013,#2-3 Q4,2 個 passive + active，30 µA（截圖說明）,上升 τ,32,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜上升 τ,MB-0063-2-3_Q4_2unit_I30uA.png,,,
+R0196,S-1013,#2-3 Q4,2 個 passive + active，30 µA（截圖說明）,衰減 τ,11,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜衰減 τ,MB-0063-2-3_Q4_2unit_I30uA.png,,,
+R0197,S-1013,#2-3 Q4,2 個 passive + active，30 µA（截圖說明）,起點→波峰,56,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜起點→波峰,MB-0063-2-3_Q4_2unit_I30uA.png,,,
+R0198,S-1013,#2-3 Q4,1 個 passive + active，30 µA（截圖說明）,基線,0.38,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜基線,MB-0063-2-3_Q4_1unit_I30uA.png,,,
+R0199,S-1013,#2-3 Q4,1 個 passive + active，30 µA（截圖說明）,振幅 A,1.85,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜振幅 A,MB-0063-2-3_Q4_1unit_I30uA.png,,,
+R0200,S-1013,#2-3 Q4,1 個 passive + active，30 µA（截圖說明）,半高寬,29,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜半高寬,MB-0063-2-3_Q4_1unit_I30uA.png,,,
+R0201,S-1013,#2-3 Q4,1 個 passive + active，30 µA（截圖說明）,上升 τ,19,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜上升 τ,MB-0063-2-3_Q4_1unit_I30uA.png,,,
+R0202,S-1013,#2-3 Q4,1 個 passive + active，30 µA（截圖說明）,衰減 τ,8,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜衰減 τ,MB-0063-2-3_Q4_1unit_I30uA.png,,,
+R0203,S-1013,#2-3 Q4,1 個 passive + active，30 µA（截圖說明）,起點→波峰,36,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q4｜起點→波峰,MB-0063-2-3_Q4_1unit_I30uA.png,,,
+R0204,S-1013,#2-3 Q5,2 個 passive + active，細胞內（active 的 Vm）,基線,0.30,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜基線,MB-0063-2-3_Q5_intracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0205,S-1013,#2-3 Q5,2 個 passive + active，細胞內（active 的 Vm）,振幅 A,1.39,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜振幅 A,MB-0063-2-3_Q5_intracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0206,S-1013,#2-3 Q5,2 個 passive + active，細胞內（active 的 Vm）,半高寬,45,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜半高寬,MB-0063-2-3_Q5_intracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0207,S-1013,#2-3 Q5,2 個 passive + active，細胞內（active 的 Vm）,上升 τ,70,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜上升 τ,MB-0063-2-3_Q5_intracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0208,S-1013,#2-3 Q5,2 個 passive + active，細胞內（active 的 Vm）,衰減 τ,16,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜衰減 τ,MB-0063-2-3_Q5_intracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0209,S-1013,#2-3 Q5,2 個 passive + active，細胞內（active 的 Vm）,起點→波峰,96,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜起點→波峰,MB-0063-2-3_Q5_intracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0210,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,基線,0.8,mV,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜基線,MB-0063-2-3_Q5_extracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0211,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,振幅 A,21.5,mV,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜振幅 A,MB-0063-2-3_Q5_extracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0212,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,半高寬,113,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜半高寬,MB-0063-2-3_Q5_extracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0213,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,上升 τ,52,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜上升 τ,MB-0063-2-3_Q5_extracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0214,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,衰減 τ,98,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜衰減 τ,MB-0063-2-3_Q5_extracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0215,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,起點→波峰,140,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜起點→波峰,MB-0063-2-3_Q5_extracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0216,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,undershoot,-2.2,mV,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,不是我量的,是,,#2-3 Q5｜undershoot,MB-0063-2-3_Q5_extracellular.png,,,細胞內、細胞外是兩次分開記錄，時間刻度不同。
+R0217,S-1013,#2-2 Q3,四塊全接，刺激電流 15.62 µA（檔名；量法沒記錄）,基線,0.40,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,四塊全接｜靜止 Vm,MB-0063-2-2_Q3_15.62muA.jpg,,,手機翻拍螢幕（16:31），透視校正後數位化（ISS-015）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0218,S-1013,#2-2 Q3,四塊全接，刺激電流 15.62 µA（檔名；量法沒記錄）,振幅 A,1.18,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,1.27 V（16 µA），模擬 V+ 7.0 V,#2-2 Q3｜振幅 A,MB-0063-2-2_Q3_15.62muA.jpg,,,手機翻拍螢幕（16:31），透視校正後數位化（ISS-015）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0219,S-1013,#2-2 Q3,四塊全接，刺激電流 15.62 µA（檔名；量法沒記錄）,半高寬,40,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜半高寬,MB-0063-2-2_Q3_15.62muA.jpg,,,手機翻拍螢幕（16:31），透視校正後數位化（ISS-015）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0220,S-1013,#2-2 Q3,四塊全接，刺激電流 15.62 µA（檔名；量法沒記錄）,上升 τ,124,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜上升 τ,MB-0063-2-2_Q3_15.62muA.jpg,,,手機翻拍螢幕（16:31），透視校正後數位化（ISS-015）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0221,S-1013,#2-2 Q3,四塊全接，刺激電流 15.62 µA（檔名；量法沒記錄）,衰減 τ,8,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜衰減 τ,MB-0063-2-2_Q3_15.62muA.jpg,,,手機翻拍螢幕（16:31），透視校正後數位化（ISS-015）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0222,S-1013,#2-2 Q3,四塊全接，刺激電流 15.62 µA（檔名；量法沒記錄）,起點→波峰,150,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜起點→波峰,MB-0063-2-2_Q3_15.62muA.jpg,,,手機翻拍螢幕（16:31），透視校正後數位化（ISS-015）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0223,S-1013,#2-2 Q3,四塊全接，刺激電流 20.45 µA（檔名；量法沒記錄）,基線,0.41,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,四塊全接｜靜止 Vm,MB-0063-2-3_UNASSIGNED_Rigol_1634_RECOVERED.png,,,原檔 RigolDS1.png（16:34）檔尾損毀，用救回的版本。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0224,S-1013,#2-2 Q3,四塊全接，刺激電流 20.45 µA（檔名；量法沒記錄）,振幅 A,1.30,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,1.37 V（24 µA），模擬 V+ 7.0 V,#2-2 Q3｜振幅 A,MB-0063-2-3_UNASSIGNED_Rigol_1634_RECOVERED.png,,,原檔 RigolDS1.png（16:34）檔尾損毀，用救回的版本。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0225,S-1013,#2-2 Q3,四塊全接，刺激電流 20.45 µA（檔名；量法沒記錄）,半高寬,42,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜半高寬,MB-0063-2-3_UNASSIGNED_Rigol_1634_RECOVERED.png,,,原檔 RigolDS1.png（16:34）檔尾損毀，用救回的版本。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0226,S-1013,#2-2 Q3,四塊全接，刺激電流 20.45 µA（檔名；量法沒記錄）,上升 τ,67,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜上升 τ,MB-0063-2-3_UNASSIGNED_Rigol_1634_RECOVERED.png,,,原檔 RigolDS1.png（16:34）檔尾損毀，用救回的版本。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0227,S-1013,#2-2 Q3,四塊全接，刺激電流 20.45 µA（檔名；量法沒記錄）,衰減 τ,9,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜衰減 τ,MB-0063-2-3_UNASSIGNED_Rigol_1634_RECOVERED.png,,,原檔 RigolDS1.png（16:34）檔尾損毀，用救回的版本。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0228,S-1013,#2-2 Q3,四塊全接，刺激電流 20.45 µA（檔名；量法沒記錄）,起點→波峰,95,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜起點→波峰,MB-0063-2-3_UNASSIGNED_Rigol_1634_RECOVERED.png,,,原檔 RigolDS1.png（16:34）檔尾損毀，用救回的版本。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0229,S-1013,#2-2 Q3,四塊全接，刺激電流 30.67 µA（檔名；量法沒記錄）,基線,0.41,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,四塊全接｜靜止 Vm,MB-0063-2-3_UNASSIGNED_Rigol_I30.67uA_1612_RECOVERED.png,,,原檔檔尾損毀，用救回的版本。10-13 檔名寫 2-3(30.67muA)。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0230,S-1013,#2-2 Q3,四塊全接，刺激電流 30.67 µA（檔名；量法沒記錄）,振幅 A,1.40,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,1.51 V（36 µA），模擬 V+ 7.0 V,#2-2 Q3｜振幅 A,MB-0063-2-3_UNASSIGNED_Rigol_I30.67uA_1612_RECOVERED.png,,,原檔檔尾損毀，用救回的版本。10-13 檔名寫 2-3(30.67muA)。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0231,S-1013,#2-2 Q3,四塊全接，刺激電流 30.67 µA（檔名；量法沒記錄）,半高寬,39,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜半高寬,MB-0063-2-3_UNASSIGNED_Rigol_I30.67uA_1612_RECOVERED.png,,,原檔檔尾損毀，用救回的版本。10-13 檔名寫 2-3(30.67muA)。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0232,S-1013,#2-2 Q3,四塊全接，刺激電流 30.67 µA（檔名；量法沒記錄）,上升 τ,40,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜上升 τ,MB-0063-2-3_UNASSIGNED_Rigol_I30.67uA_1612_RECOVERED.png,,,原檔檔尾損毀，用救回的版本。10-13 檔名寫 2-3(30.67muA)。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0233,S-1013,#2-2 Q3,四塊全接，刺激電流 30.67 µA（檔名；量法沒記錄）,衰減 τ,9,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜衰減 τ,MB-0063-2-3_UNASSIGNED_Rigol_I30.67uA_1612_RECOVERED.png,,,原檔檔尾損毀，用救回的版本。10-13 檔名寫 2-3(30.67muA)。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0234,S-1013,#2-2 Q3,四塊全接，刺激電流 30.67 µA（檔名；量法沒記錄）,起點→波峰,65,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜起點→波峰,MB-0063-2-3_UNASSIGNED_Rigol_I30.67uA_1612_RECOVERED.png,,,原檔檔尾損毀，用救回的版本。10-13 檔名寫 2-3(30.67muA)。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0235,S-1013,#2-2 Q3,四塊全接，刺激電流 90.76 µA（檔名；量法沒記錄）,基線,0.41,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,四塊全接｜靜止 Vm,MB-0063-RigolDS0.png,,,原檔 RigolDS0.png（16:19）；10-18 資料夾裡的 90.76 jpg 是它的裁切版（ISS-014）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0236,S-1013,#2-2 Q3,四塊全接，刺激電流 90.76 µA（檔名；量法沒記錄）,振幅 A,1.97,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,2.10 V（95 µA），模擬 V+ 7.0 V,#2-2 Q3｜振幅 A,MB-0063-RigolDS0.png,,,原檔 RigolDS0.png（16:19）；10-18 資料夾裡的 90.76 jpg 是它的裁切版（ISS-014）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0237,S-1013,#2-2 Q3,四塊全接，刺激電流 90.76 µA（檔名；量法沒記錄）,半高寬,31,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜半高寬,MB-0063-RigolDS0.png,,,原檔 RigolDS0.png（16:19）；10-18 資料夾裡的 90.76 jpg 是它的裁切版（ISS-014）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0238,S-1013,#2-2 Q3,四塊全接，刺激電流 90.76 µA（檔名；量法沒記錄）,上升 τ,21,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜上升 τ,MB-0063-RigolDS0.png,,,原檔 RigolDS0.png（16:19）；10-18 資料夾裡的 90.76 jpg 是它的裁切版（ISS-014）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0239,S-1013,#2-2 Q3,四塊全接，刺激電流 90.76 µA（檔名；量法沒記錄）,衰減 τ,8,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜衰減 τ,MB-0063-RigolDS0.png,,,原檔 RigolDS0.png（16:19）；10-18 資料夾裡的 90.76 jpg 是它的裁切版（ISS-014）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0240,S-1013,#2-2 Q3,四塊全接，刺激電流 90.76 µA（檔名；量法沒記錄）,起點→波峰,40,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜起點→波峰,MB-0063-RigolDS0.png,,,原檔 RigolDS0.png（16:19）；10-18 資料夾裡的 90.76 jpg 是它的裁切版（ISS-014）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0241,S-1013,#2-2 Q3,四塊全接，刺激電流 95.77 µA（檔名；量法沒記錄）,基線,0.41,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,四塊全接｜靜止 Vm,MB-0063-2-3_95.77muA.png,,,10-13 檔名寫 2-3(95.77muA)（16:08）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0242,S-1013,#2-2 Q3,四塊全接，刺激電流 95.77 µA（檔名；量法沒記錄）,振幅 A,1.97,V,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,2.13 V（99 µA），模擬 V+ 7.0 V,#2-2 Q3｜振幅 A,MB-0063-2-3_95.77muA.png,,,10-13 檔名寫 2-3(95.77muA)（16:08）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0243,S-1013,#2-2 Q3,四塊全接，刺激電流 95.77 µA（檔名；量法沒記錄）,半高寬,31,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜半高寬,MB-0063-2-3_95.77muA.png,,,10-13 檔名寫 2-3(95.77muA)（16:08）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0244,S-1013,#2-2 Q3,四塊全接，刺激電流 95.77 µA（檔名；量法沒記錄）,上升 τ,20,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜上升 τ,MB-0063-2-3_95.77muA.png,,,10-13 檔名寫 2-3(95.77muA)（16:08）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0245,S-1013,#2-2 Q3,四塊全接，刺激電流 95.77 µA（檔名；量法沒記錄）,衰減 τ,7,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜衰減 τ,MB-0063-2-3_95.77muA.png,,,10-13 檔名寫 2-3(95.77muA)（16:08）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0246,S-1013,#2-2 Q3,四塊全接，刺激電流 95.77 µA（檔名；量法沒記錄）,起點→波峰,40,ms,截圖數位化（labeled_v0，HW2_analysis/mark_real.py）,我量的,是,,#2-2 Q3｜起點→波峰,MB-0063-2-3_95.77muA.png,,,10-13 檔名寫 2-3(95.77muA)（16:08）。 10-18 使用者把這些檔案改名成 2-2_Q3。
+R0247,S-1013,#2-2 Q4,R13 = 50 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Amplitude,2.20,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Amplitude,MB-0063-2-2_Q4_R13-050k.png,,,
+R0248,S-1013,#2-2 Q4,R13 = 50 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Peak,2.40,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Peak,MB-0063-2-2_Q4_R13-050k.png,,,
+R0249,S-1013,#2-2 Q4,R13 = 50 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Middle,1.54,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Middle,MB-0063-2-2_Q4_R13-050k.png,,,
+R0250,S-1013,#2-2 Q4,R13 = 50 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Fall,4.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Fall,MB-0063-2-2_Q4_R13-050k.png,,,
+R0251,S-1013,#2-2 Q4,R13 = 50 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Rise,20.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Rise,MB-0063-2-2_Q4_R13-050k.png,,,
+R0252,S-1013,#2-2 Q4,R13 = 100 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Amplitude,1.78,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Amplitude,MB-0063-2-2_Q4_R13-100k.png,,,
+R0253,S-1013,#2-2 Q4,R13 = 100 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Peak,1.92,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Peak,MB-0063-2-2_Q4_R13-100k.png,,,
+R0254,S-1013,#2-2 Q4,R13 = 100 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Middle,1.30,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Middle,MB-0063-2-2_Q4_R13-100k.png,,,
+R0255,S-1013,#2-2 Q4,R13 = 100 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Fall,4.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Fall,MB-0063-2-2_Q4_R13-100k.png,,,
+R0256,S-1013,#2-2 Q4,R13 = 100 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Rise,24.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Rise,MB-0063-2-2_Q4_R13-100k.png,,,
+R0257,S-1013,#2-2 Q4,R13 = 300 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Amplitude,1.48,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Amplitude,MB-0063-2-2_Q4_R13-300k.png,,,
+R0258,S-1013,#2-2 Q4,R13 = 300 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Peak,1.60,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Peak,MB-0063-2-2_Q4_R13-300k.png,,,
+R0259,S-1013,#2-2 Q4,R13 = 300 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Middle,1.16,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Middle,MB-0063-2-2_Q4_R13-300k.png,,,
+R0260,S-1013,#2-2 Q4,R13 = 300 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Fall,4.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Fall,MB-0063-2-2_Q4_R13-300k.png,,,
+R0261,S-1013,#2-2 Q4,R13 = 300 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Rise,28.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Rise,MB-0063-2-2_Q4_R13-300k.png,,,
+R0262,S-1013,#2-2 Q4,R13 = 820 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Amplitude,1.28,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Amplitude,MB-0063-2-2_Q4_R13-820k.png,,,
+R0263,S-1013,#2-2 Q4,R13 = 820 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Peak,1.36,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Peak,MB-0063-2-2_Q4_R13-820k.png,,,
+R0264,S-1013,#2-2 Q4,R13 = 820 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Middle,1.06,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Middle,MB-0063-2-2_Q4_R13-820k.png,,,
+R0265,S-1013,#2-2 Q4,R13 = 820 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Fall,4.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Fall,MB-0063-2-2_Q4_R13-820k.png,,,
+R0266,S-1013,#2-2 Q4,R13 = 820 kΩ，刺激電流 95 µA（組員紀錄）,UNI-T Rise,28.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Rise,MB-0063-2-2_Q4_R13-820k.png,,,
+R0267,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,UNI-T Amplitude,1.02,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Amplitude,MB-0063-2-2_Q4_R13-3M.png,,,
+R0268,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,UNI-T Peak,1.20,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Peak,MB-0063-2-2_Q4_R13-3M.png,,,
+R0269,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,UNI-T Middle,960.00,mV,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Middle,MB-0063-2-2_Q4_R13-3M.png,,,
+R0270,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,UNI-T Fall,12.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Fall,MB-0063-2-2_Q4_R13-3M.png,,,
+R0271,S-1013,#2-2 Q4,R13 = 3 MΩ，刺激電流 95 µA（組員紀錄）,UNI-T Rise,20.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q4｜UNI-T Rise,MB-0063-2-2_Q4_R13-3M.png,,,
+R0272,S-1013,#2-2 Q6 TTX,拔掉 Fast inward（= TTX），95 µA（組員紀錄）,UNI-T Amplitude,1.43,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q6 TTX｜UNI-T Amplitude,MB-0063-2-2_Q6_TTX_no-FI.png,,,
+R0273,S-1013,#2-2 Q6 TTX,拔掉 Fast inward（= TTX），95 µA（組員紀錄）,UNI-T Peak,1.44,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q6 TTX｜UNI-T Peak,MB-0063-2-2_Q6_TTX_no-FI.png,,,
+R0274,S-1013,#2-2 Q6 TTX,拔掉 Fast inward（= TTX），95 µA（組員紀錄）,UNI-T Middle,1.08,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q6 TTX｜UNI-T Middle,MB-0063-2-2_Q6_TTX_no-FI.png,,,
+R0275,S-1013,#2-2 Q6 TTX,拔掉 Fast inward（= TTX），95 µA（組員紀錄）,UNI-T Fall,34.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q6 TTX｜UNI-T Fall,MB-0063-2-2_Q6_TTX_no-FI.png,,,
+R0276,S-1013,#2-2 Q6 TTX,拔掉 Fast inward（= TTX），95 µA（組員紀錄）,UNI-T Rise,30.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q6 TTX｜UNI-T Rise,MB-0063-2-2_Q6_TTX_no-FI.png,,,
+R0277,S-1013,#2-2 Q6 TEA,拔掉 Slow outward（= TEA），95 µA（組員紀錄）,UNI-T Amplitude,1.96,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q6 TEA｜UNI-T Amplitude,MB-0063-2-2_Q6_TEA_no-SO.png,,,
+R0278,S-1013,#2-2 Q6 TEA,拔掉 Slow outward（= TEA），95 µA（組員紀錄）,UNI-T Peak,1.98,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q6 TEA｜UNI-T Peak,MB-0063-2-2_Q6_TEA_no-SO.png,,,
+R0279,S-1013,#2-2 Q6 TEA,拔掉 Slow outward（= TEA），95 µA（組員紀錄）,UNI-T Middle,3.56,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q6 TEA｜UNI-T Middle,MB-0063-2-2_Q6_TEA_no-SO.png,,,
+R0280,S-1013,#2-2 Q6 TEA,拔掉 Slow outward（= TEA），95 µA（組員紀錄）,UNI-T Fall,103.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q6 TEA｜UNI-T Fall,MB-0063-2-2_Q6_TEA_no-SO.png,,,
+R0281,S-1013,#2-2 Q6 TEA,拔掉 Slow outward（= TEA），95 µA（組員紀錄）,UNI-T Rise,66.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-2 Q6 TEA｜UNI-T Rise,MB-0063-2-2_Q6_TEA_no-SO.png,,,
+R0282,S-1013,#2-3 Q2,n 和電流都沒記錄,UNI-T Amplitude,1.70,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q2｜UNI-T Amplitude,MB-0063-2-3_Q2_AP_measure.png,,,
+R0283,S-1013,#2-3 Q2,n 和電流都沒記錄,UNI-T Peak,1.72,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q2｜UNI-T Peak,MB-0063-2-3_Q2_AP_measure.png,,,
+R0284,S-1013,#2-3 Q2,n 和電流都沒記錄,UNI-T Middle,980.00,mV,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q2｜UNI-T Middle,MB-0063-2-3_Q2_AP_measure.png,,,
+R0285,S-1013,#2-3 Q2,n 和電流都沒記錄,UNI-T Fall,4.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q2｜UNI-T Fall,MB-0063-2-3_Q2_AP_measure.png,,,
+R0286,S-1013,#2-3 Q2,n 和電流都沒記錄,UNI-T Rise,60.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q2｜UNI-T Rise,MB-0063-2-3_Q2_AP_measure.png,,,
+R0287,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,UNI-T Amplitude,1.31,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Amplitude,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0288,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,UNI-T Peak,1.32,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Peak,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0289,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,UNI-T Middle,1.00,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Middle,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0290,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,UNI-T Fall,4.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Fall,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0291,S-1013,#2-3 Q3,1 個 passive + active，14 µA（截圖說明）,UNI-T Rise,60.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Rise,MB-0063-2-3_Q3_1unit_I14uA.png,,,
+R0292,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,UNI-T Amplitude,1.39,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Amplitude,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0293,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,UNI-T Peak,1.40,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Peak,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0294,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,UNI-T Middle,880.00,mV,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Middle,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0295,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,UNI-T Fall,132.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Fall,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0296,S-1013,#2-3 Q3,2 個 passive + active，28 µA（截圖說明）,UNI-T Rise,100.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Rise,MB-0063-2-3_Q3_2unit_I28uA.png,,,
+R0297,S-1013,#2-3 Q3,3 個 passive + active，29 µA（截圖說明）,UNI-T Amplitude,1.50,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Amplitude,MB-0063-2-3_Q3_3unit_I29uA.png,,,
+R0298,S-1013,#2-3 Q3,3 個 passive + active，29 µA（截圖說明）,UNI-T Peak,1.52,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Peak,MB-0063-2-3_Q3_3unit_I29uA.png,,,
+R0299,S-1013,#2-3 Q3,3 個 passive + active，29 µA（截圖說明）,UNI-T Middle,940.00,mV,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Middle,MB-0063-2-3_Q3_3unit_I29uA.png,,,
+R0300,S-1013,#2-3 Q3,3 個 passive + active，29 µA（截圖說明）,UNI-T Fall,4.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Fall,MB-0063-2-3_Q3_3unit_I29uA.png,,,
+R0301,S-1013,#2-3 Q3,3 個 passive + active，29 µA（截圖說明）,UNI-T Rise,104.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3｜UNI-T Rise,MB-0063-2-3_Q3_3unit_I29uA.png,,,
+R0302,S-1013,#2-3 Q3／Q4,4 個 passive + active，30 µA（截圖說明）,UNI-T Amplitude,1.54,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3／Q4｜UNI-T Amplitude,MB-0063-2-3_Q3-Q4_4unit_I30uA.png,,,
+R0303,S-1013,#2-3 Q3／Q4,4 個 passive + active，30 µA（截圖說明）,UNI-T Peak,1.56,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3／Q4｜UNI-T Peak,MB-0063-2-3_Q3-Q4_4unit_I30uA.png,,,
+R0304,S-1013,#2-3 Q3／Q4,4 個 passive + active，30 µA（截圖說明）,UNI-T Middle,960.00,mV,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3／Q4｜UNI-T Middle,MB-0063-2-3_Q3-Q4_4unit_I30uA.png,,,
+R0305,S-1013,#2-3 Q3／Q4,4 個 passive + active，30 µA（截圖說明）,UNI-T Fall,92.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3／Q4｜UNI-T Fall,MB-0063-2-3_Q3-Q4_4unit_I30uA.png,,,
+R0306,S-1013,#2-3 Q3／Q4,4 個 passive + active，30 µA（截圖說明）,UNI-T Rise,116.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q3／Q4｜UNI-T Rise,MB-0063-2-3_Q3-Q4_4unit_I30uA.png,,,
+R0307,S-1013,#2-3 Q4,1 個 passive + active，30 µA（截圖說明）,UNI-T Amplitude,1.90,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Amplitude,MB-0063-2-3_Q4_1unit_I30uA.png,,,
+R0308,S-1013,#2-3 Q4,1 個 passive + active，30 µA（截圖說明）,UNI-T Peak,1.92,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Peak,MB-0063-2-3_Q4_1unit_I30uA.png,,,
+R0309,S-1013,#2-3 Q4,1 個 passive + active，30 µA（截圖說明）,UNI-T Middle,1.24,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Middle,MB-0063-2-3_Q4_1unit_I30uA.png,,,
+R0310,S-1013,#2-3 Q4,1 個 passive + active，30 µA（截圖說明）,UNI-T Fall,4.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Fall,MB-0063-2-3_Q4_1unit_I30uA.png,,,
+R0311,S-1013,#2-3 Q4,1 個 passive + active，30 µA（截圖說明）,UNI-T Rise,28.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Rise,MB-0063-2-3_Q4_1unit_I30uA.png,,,
+R0312,S-1013,#2-3 Q4,2 個 passive + active，30 µA（截圖說明）,UNI-T Amplitude,1.82,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Amplitude,MB-0063-2-3_Q4_2unit_I30uA.png,,,
+R0313,S-1013,#2-3 Q4,2 個 passive + active，30 µA（截圖說明）,UNI-T Peak,1.84,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Peak,MB-0063-2-3_Q4_2unit_I30uA.png,,,
+R0314,S-1013,#2-3 Q4,2 個 passive + active，30 µA（截圖說明）,UNI-T Middle,1.08,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Middle,MB-0063-2-3_Q4_2unit_I30uA.png,,,
+R0315,S-1013,#2-3 Q4,2 個 passive + active，30 µA（截圖說明）,UNI-T Fall,144.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Fall,MB-0063-2-3_Q4_2unit_I30uA.png,,,
+R0316,S-1013,#2-3 Q4,2 個 passive + active，30 µA（截圖說明）,UNI-T Rise,36.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Rise,MB-0063-2-3_Q4_2unit_I30uA.png,,,
+R0317,S-1013,#2-3 Q4,3 個 passive + active，30 µA（截圖說明）,UNI-T Amplitude,1.66,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Amplitude,MB-0063-2-3_Q4_3unit_I30uA.png,,,
+R0318,S-1013,#2-3 Q4,3 個 passive + active，30 µA（截圖說明）,UNI-T Peak,1.68,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Peak,MB-0063-2-3_Q4_3unit_I30uA.png,,,
+R0319,S-1013,#2-3 Q4,3 個 passive + active，30 µA（截圖說明）,UNI-T Middle,900.00,mV,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Middle,MB-0063-2-3_Q4_3unit_I30uA.png,,,
+R0320,S-1013,#2-3 Q4,3 個 passive + active，30 µA（截圖說明）,UNI-T Fall,4.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Fall,MB-0063-2-3_Q4_3unit_I30uA.png,,,
+R0321,S-1013,#2-3 Q4,3 個 passive + active，30 µA（截圖說明）,UNI-T Rise,68.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q4｜UNI-T Rise,MB-0063-2-3_Q4_3unit_I30uA.png,,,
+R0322,S-1013,#2-3 Q5,2 個 passive + active，細胞內（active 的 Vm）,UNI-T Amplitude,1.50,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q5｜UNI-T Amplitude,MB-0063-2-3_Q5_intracellular.png,,,
+R0323,S-1013,#2-3 Q5,2 個 passive + active，細胞內（active 的 Vm）,UNI-T Peak,1.52,V,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q5｜UNI-T Peak,MB-0063-2-3_Q5_intracellular.png,,,
+R0324,S-1013,#2-3 Q5,2 個 passive + active，細胞內（active 的 Vm）,UNI-T Middle,920.00,mV,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q5｜UNI-T Middle,MB-0063-2-3_Q5_intracellular.png,,,
+R0325,S-1013,#2-3 Q5,2 個 passive + active，細胞內（active 的 Vm）,UNI-T Fall,120.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q5｜UNI-T Fall,MB-0063-2-3_Q5_intracellular.png,,,
+R0326,S-1013,#2-3 Q5,2 個 passive + active，細胞內（active 的 Vm）,UNI-T Rise,80.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q5｜UNI-T Rise,MB-0063-2-3_Q5_intracellular.png,,,
+R0327,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,UNI-T Amplitude,30.49,mV,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q5｜UNI-T Amplitude,MB-0063-2-3_Q5_extracellular.png,,,
+R0328,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,UNI-T Peak,30.80,mV,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q5｜UNI-T Peak,MB-0063-2-3_Q5_extracellular.png,,,
+R0329,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,UNI-T Middle,11.20,mV,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q5｜UNI-T Middle,MB-0063-2-3_Q5_extracellular.png,,,
+R0330,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,UNI-T Fall,130.00,ms,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q5｜UNI-T Fall,MB-0063-2-3_Q5_extracellular.png,,,
+R0331,S-1013,#2-3 Q5,2 個 passive + active，細胞外（100 Ω 兩端）,UNI-T Rise,1.11,s,示波器螢幕讀值（UNI-T Measure；Rise／Fall 是示波器自己的定義，不是 63 %／37 %）,不是我量的,不確定（HW2 報告用數位化值，DEC-025）,,#2-3 Q5｜UNI-T Rise,MB-0063-2-3_Q5_extracellular.png,,,
+R0332,S-1013,#2-2 Q2,四塊全接，一次 AP；電流沒記錄,Rigol 基線,0.36,V,示波器螢幕讀值（Rigol Measure，HW2 專案頁讀的）,我量的,否,,#2-2 Q2｜Rigol 基線,MB-0063-2-2_Q2_AP_Rigol_measure_RECOVERED.png,,,
+R0333,S-1013,#2-2 Q2,四塊全接，一次 AP；電流沒記錄,Rigol 頂端,2.31,V,示波器螢幕讀值（Rigol Measure，HW2 專案頁讀的）,我量的,否,,四塊全接｜第一個峰（絕對值）,MB-0063-2-2_Q2_AP_Rigol_measure_RECOVERED.png,,,
+R0334,S-1013,#2-2 Q2,四塊全接，一次 AP；電流沒記錄,Rigol Vpp,2.04,V,示波器螢幕讀值（Rigol Measure，HW2 專案頁讀的）,我量的,否,,#2-2 Q2｜Rigol Vpp,MB-0063-2-2_Q2_AP_Rigol_measure_RECOVERED.png,,,
+R0335,S-1013,#2-2 Q2,四塊全接，一次 AP；電流沒記錄,Rigol 10–90 % 上升,28.9,ms,示波器螢幕讀值（Rigol Measure，HW2 專案頁讀的）,我量的,否,,#2-2 Q2｜Rigol 10–90 % 上升,MB-0063-2-2_Q2_AP_Rigol_measure_RECOVERED.png,,,
+R0336,S-1013,#2-2 Q2,四塊全接，一次 AP；電流沒記錄,Rigol 下降,56.8,ms,示波器螢幕讀值（Rigol Measure，HW2 專案頁讀的）,我量的,否,,#2-2 Q2｜Rigol 下降,MB-0063-2-2_Q2_AP_Rigol_measure_RECOVERED.png,,,
+R0337,S-1013,#2-1,只接 1 個 passive unit,刺激電流,0.07,mA,電表（組員報告：「0.07mA using multimeter measured」）,不是我量的,是,,#2-1｜刺激電流,,,,≈ 平台 6.97 V ÷ 100 kΩ；平台卡在 Stimulator 輸出上限，設定電流可能約 83 µA（AI 推，HW2 專案頁）
+R0338,S-1013,#2-2 Q4、Q6,四塊全接,刺激電流,95,µA,組員報告（「Stimulation current : 95muA」）,不是我量的,是,,#2-2 Q4、Q6｜刺激電流,,,,量的時間、方法沒記錄；高機率和 Q3 不是同一次設定（MB-033）
+R0339,S-1013,#2-2,—,電池 V+,沒量,,—,—,,,電池 V+,,,,
+R0340,S-1013,#2-3 Q3,1 個 passive + active，長按,最小刺激電流 I_min,14,µA,截圖說明（組員）,不是我量的,是（D-4）,4.7 µA（實驗台原版＋飛線）,#2-3｜最小刺激電流 I_min（n = 1）,,,,
+R0341,S-1013,#2-3 Q3,2 個 passive + active，長按,最小刺激電流 I_min,28,µA,截圖說明（組員）,不是我量的,是（D-4）,11.7 µA（實驗台原版＋飛線）,#2-3｜最小刺激電流 I_min（n = 2）,,,,
+R0342,S-1013,#2-3 Q3,3 個 passive + active，長按,最小刺激電流 I_min,29,µA,截圖說明（組員）,不是我量的,是（D-4）,20.5 µA（實驗台原版＋飛線）,#2-3｜最小刺激電流 I_min（n = 3）,,,,
+R0343,S-1013,#2-3 Q3,4 個 passive + active，長按,最小刺激電流 I_min,30,µA,截圖說明（組員）,不是我量的,是（D-4）,32 µA（實驗台原版＋飛線）,#2-3｜最小刺激電流 I_min（n = 4）,,,,
+R0344,S-1013,#2-3 Q3,1 個 passive + active，長按,最小刺激電流 I_min,27.26,µA,組員的作圖和結論公式,不是我量的,否（D-4 選另一組）,,#2-3｜最小刺激電流 I_min（n = 1）,,和截圖說明那組不一致,,她的分析段落寫「4 units 略降」只符合這組，表示改了數據沒改分析（HW2 專案頁 D-4）
+R0345,S-1013,#2-3 Q3,2 個 passive + active，長按,最小刺激電流 I_min,32.32,µA,組員的作圖和結論公式,不是我量的,否（D-4 選另一組）,,#2-3｜最小刺激電流 I_min（n = 2）,,和截圖說明那組不一致,,她的分析段落寫「4 units 略降」只符合這組，表示改了數據沒改分析（HW2 專案頁 D-4）
+R0346,S-1013,#2-3 Q3,3 個 passive + active，長按,最小刺激電流 I_min,36.16,µA,組員的作圖和結論公式,不是我量的,否（D-4 選另一組）,,#2-3｜最小刺激電流 I_min（n = 3）,,和截圖說明那組不一致,,她的分析段落寫「4 units 略降」只符合這組，表示改了數據沒改分析（HW2 專案頁 D-4）
+R0347,S-1013,#2-3 Q3,4 個 passive + active，長按,最小刺激電流 I_min,33.15,µA,組員的作圖和結論公式,不是我量的,否（D-4 選另一組）,,#2-3｜最小刺激電流 I_min（n = 4）,,和截圖說明那組不一致,,她的分析段落寫「4 units 略降」只符合這組，表示改了數據沒改分析（HW2 專案頁 D-4）
+R0348,S-1013,#2-3 Q2、Q4,4 個 passive + active,定電流,30,µA,截圖說明（組員）,不是我量的,是,,#2-3 Q2、Q4｜定電流,,,,
+R0349,S-1013,#2-3 Q2、Q4,4 個 passive + active,定電流,33.15,µA,組員結論公式,不是我量的,否,,#2-3 Q2、Q4｜定電流,,和截圖說明不一致,,
+R0350,S-1013,#2-2 Q3（組員那組）,CH2，200 mV/div，刺激電流 6.07 µA,振幅 A,118,mV,參考檔表格（組員報告）,不是我量的,否,,#2-2 Q3（組員那組）｜振幅 A,,CH2 讀值比 Rigol 小約 10 倍,,可能是 CH2 探棒 ×10、示波器設 ×1（AI possible）。21.15 µA 那格表格誤抄了半高值。
+R0351,S-1013,#2-2 Q3（組員那組）,CH2，200 mV/div，刺激電流 6.98 µA,振幅 A,沒抄,mV,參考檔表格（組員報告）,不是我量的,否,,#2-2 Q3（組員那組）｜振幅 A,,CH2 讀值比 Rigol 小約 10 倍,,
+R0352,S-1013,#2-2 Q3（組員那組）,CH2，200 mV/div，刺激電流 9.01 µA,振幅 A,沒抄,mV,參考檔表格（組員報告）,不是我量的,否,,#2-2 Q3（組員那組）｜振幅 A,,CH2 讀值比 Rigol 小約 10 倍,,
+R0353,S-1013,#2-2 Q3（組員那組）,CH2，200 mV/div，刺激電流 12.47 µA,振幅 A,沒抄,mV,參考檔表格（組員報告）,不是我量的,否,,#2-2 Q3（組員那組）｜振幅 A,,CH2 讀值比 Rigol 小約 10 倍,,
+R0354,S-1013,#2-2 Q3（組員那組）,CH2，200 mV/div，刺激電流 21.15 µA,振幅 A,154（表格）／308（照片手寫）,mV,參考檔表格（組員報告）,不是我量的,否,,#2-2 Q3（組員那組）｜振幅 A,,CH2 讀值比 Rigol 小約 10 倍,,可能是 CH2 探棒 ×10、示波器設 ×1（AI possible）。21.15 µA 那格表格誤抄了半高值。
+R0355,S-1013,#2-2 Q3（組員那組）,CH2，200 mV/div，刺激電流 73.58 µA,振幅 A,440,mV,參考檔表格（組員報告）,不是我量的,否,,#2-2 Q3（組員那組）｜振幅 A,,CH2 讀值比 Rigol 小約 10 倍,,
+R0356,S-1013,#2-2 Q4,五個 R13,振幅（表格）,五個都寫 440；最後一欄寫 300M,mV,參考檔表格（組員報告）,不是我量的,否,,#2-2 Q4｜振幅（表格）,,和螢幕讀值不一致（D-3）,,
+R0357,S-1013,#2-2 Q6 TTX,拔 FI,振幅（表格）,440,mV,參考檔表格（組員報告）,不是我量的,否,,#2-2 Q6 TTX｜振幅（表格）,,和螢幕讀值不一致（D-3）,,
+R0358,S-1013,#2-2 Q6 TEA,拔 SO,振幅（表格）,780,mV,參考檔表格（組員報告）,不是我量的,否,,#2-2 Q6 TEA｜振幅（表格）,,和螢幕讀值不一致（D-3）,,
+R0359,S-1013,#2-3 Q2,CH2 照片,振幅（表格）,810,mV,參考檔表格（組員報告）,不是我量的,否,,#2-3 Q2｜振幅（表格）,,和螢幕讀值不一致（D-3）,,
+R0360,S-1013,#2-3 Q5,細胞內／細胞外,振幅（表格）,700／6.8,mV,參考檔表格（組員報告）,不是我量的,否,,#2-3 Q5｜振幅（表格）,,和螢幕讀值不一致（D-3）,,
+R0361,S-1013,#2-1 Q1,電路照片,照片,—,,手機照片,不是我量的,否（報告用自己標註的版本）,,#2-1 Q1｜照片,MB-0063-2-1_Q1_circuit_raw.jpg,,,紅色「1-1」是組員加的標記。
+R0362,S-1013,#2-2 Q1,電路照片,照片,—,,手機照片,不確定,否（報告用自己標註的版本）,,#2-2 Q1｜照片,MB-0063-2-2_Q1_circuit_raw_CANDIDATE.jpg,,,對應哪一題是 OCR 判斷的，信心低（HW2 專案頁）。紅色「3-1」是組員加的標記。
+R0363,S-1013,#2-3 Q1,電路照片,照片,—,,手機照片,不確定,否（報告用自己標註的版本）,,#2-3 Q1｜照片,MB-0063-2-3_Q1_circuit_raw.jpg,,,
