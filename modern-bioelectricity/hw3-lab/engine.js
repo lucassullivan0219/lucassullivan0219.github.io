@@ -21,7 +21,7 @@ var SynEngine = function(){
   };
 
   var st = {
-    vplus:7.0,               /* Stimulator battery (9 V cell). 7.0 V = estimate from HW2 #2-2, not measured (7.8 V was another group's board); also the synapse V+ through the header */
+    vplus:8.44,              /* Stimulator battery (9 V cell). 8.44 V = our board, measured 2026-10-21 (was 7.0 V, an estimate from HW2 #2-2; 7.8 V was another group's board); also the synapse V+ through the header */
     vsyn:0,                  /* synapse V+ if it has its own battery (0 = same as vplus) */
     swA:false, swB:false, rpotA:700, rpotB:700,
     pre:'true', post:'passive', postMem:'true',
@@ -29,6 +29,7 @@ var SynEngine = function(){
     bat:'on',                /* inhibitory 1.5 V battery: 'on' | 'short' (removed, jumper) | 'open' (removed) */
     vbat:1.5,
     r1p:0,                   /* add-on across the synapse's 820k input resistor (0 = none) */
+    r13A:0,                  /* Pre's FI emitter resistor R13 (0 = the PCB's 100k; the handout FI draws 1k) */
     r6:0,                    /* excitatory: resistor between D2 and the post cell; PCB = 0 (straight trace), handout 100k */
     stimA:true, stimB:true,  /* Stimulator B plugged in */
     rprobe:1e6, ch1:'A.Vm', ch2:'P1'
@@ -80,7 +81,7 @@ var SynEngine = function(){
       Q.push(['n', IDX[p + '.FI.B4'], IDX[p + '.FI.B3'], IDX[p + '.FI.E3'], M3904, p + '.fi3904']);
       r(p + '.FI.E3', 'GND', 1e5, p + '.fire');
       Q.push(['p', IDX[vm], IDX[p + '.FI.B4'], IDX[p + '.FI.E4'], M4403, p + '.fi4403']);
-      r(p + '.FI.E4', 'V+', 1e5, p + '.r13');
+      r(p + '.FI.E4', 'V+', p === 'A' && st.r13A ? st.r13A : 1e5, p + '.r13');
       r(vm, p + '.SO.S', 1e5, p + '.sor1');                                                /* Slow out */
       C.push([IDX[p + '.SO.S'], -1, 1e-6, p + '.soc']);
       D.push([IDX[p + '.SO.S'], IDX[p + '.SO.B3'], p + '.sod']);

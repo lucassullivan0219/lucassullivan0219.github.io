@@ -235,7 +235,7 @@
       tag(p + '.FI.E3', 'E3', 540, 280);
       bjt(620, 170, 'p', 0, false, p + '.fi4403'); txt(646, 166, '4403', 'lab');
       L([[634, 140], [634, 120]]);
-      resV(634, 200, 310, 214, 262, p + '.r13'); txt(626, 263, 'R13 100k', 'lab', 'end');
+      resV(634, 200, 310, 214, 262, p + '.r13'); txt(626, 263, 'R13 100k', 'lab', 'end', ' data-r13="' + p + '"');
       tag(p + '.FI.E4', 'E4', 628, 212, 'end');
       mod(p + '-r13p');                                /* across R13 */
       L([[634, 206], [660, 206]]); resV(660, 206, 282, 220, 268, p + '.r13p', true); L([[660, 282], [634, 282]]);
@@ -640,7 +640,7 @@
         var b = q('[data-mod="bat"]');
         if(b){ show('[data-mod="bat"]', st.bat !== 'short'); b.setAttribute('class', st.bat === 'open' ? 'ghost' : ''); show('[data-mod="batshort"]', st.bat === 'short');
           q('[data-vbat]').textContent = st.bat === 'on' ? (st.vbat || 1.5) + ' V' : st.bat === 'open' ? '拔掉（開路）' : '拔掉'; q('[data-vbat]').setAttribute('class', st.bat === 'on' ? 'lab' : 'modt'); }
-        var vp = q('[data-vplus]'), v78 = Math.abs((st.vplus || 7.0) - 7.0) < 1e-6 && !st.vsyn;   /* default: 7.0 V from the header */
+        var vp = q('[data-vplus]'), v78 = Math.abs((st.vplus || 8.44) - 8.44) < 1e-6 && !st.vsyn;   /* default: 8.44 V (measured) from the header */
         if(vp){ vp.textContent = st.vsyn ? '獨立 ' + st.vsyn + ' V 電池（講義圖）' : 'V+（排針，同 Stimulator A 電池）'; vp.setAttribute('class', v78 ? 'lab' : 'modt'); }
         qa('[data-bat]').forEach(function(e){ e.setAttribute('class', v78 ? '' : 'mod'); });
         [['SA', st.rpotA], ['SB', st.rpotB]].forEach(function(p){
@@ -650,6 +650,7 @@
           var bl = q('#' + p[0] + '-blade'); if(!bl) return;
           bl.setAttribute('x2', p[1] ? 74 : 88); bl.setAttribute('y2', p[1] ? 58 : 62);
         });
+        var r13 = q('[data-r13="A"]'); if(r13){ r13.textContent = 'R13 ' + (st.r13A ? fmtS(st.r13A) : '100k'); r13.setAttribute('class', st.r13A ? 'modt' : 'lab'); r13.setAttribute('text-anchor', 'end'); }
         readVis();
       },
       setValues:function(fn){

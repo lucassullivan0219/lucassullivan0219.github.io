@@ -1,15 +1,15 @@
 /* Re-measures the simulated numbers written on index.html and in app.js (preset notes), for a given scope probe.
    Not loaded by the page.  Open hw3-lab/index.html, paste this file into the console (or load it with a <script>),
-   then:   HW3CHK.all(1e6, null, 7.0)   -> {key: value}   (1e6 = x1 probe, 1e7 = x10 probe; 7.0 = battery V+, the page default)
+   then:   HW3CHK.all(1e6, null, 8.44)   -> {key: value}   (1e6 = x1 probe, 1e7 = x10 probe; 8.44 = battery V+, the page default, measured 2026-10-21)
    Each check builds a fresh SynEngine with the same defaults as app.js (BASE, TRUE_SYN), powers on and rests 2 s,
    then drives SW A / SW B on a schedule.  AP counting is app.js's: rising through 2 V, re-armed below 1.5 V. */
 var HW3CHK = (function(){
   var DT = 2e-4, THR = 2.0, REARM = 1.5;
-  var BASE = {vplus:7.0, vsyn:0, pre:'kit', postMem:'kit', r1p:0, r6:0, bat:'on', rpotA:700, rpotB:700, syn:'exc', post:'passive', ch1:'A.Vm', ch2:'P1'};
+  var BASE = {vplus:8.44, vsyn:0, pre:'kit', postMem:'kit', r1p:0, r6:0, bat:'on', rpotA:700, rpotB:700, syn:'exc', post:'passive', ch1:'A.Vm', ch2:'P1'};
   var TRUE = {pre:'true', postMem:'true', r1p:1.5e6, rpotA:0, rpotB:0};
   var CIRC = {s31:{syn:'exc', post:'passive', ch2:'P1'}, s32:{syn:'exc', post:'active', ch2:'B.Vm'},
               s33:{syn:'inh', post:'passive', ch2:'P1'}, s34:{syn:'inh', post:'active', ch2:'B.Vm'}};
-  var RP = 1e6, VP = 7.0;
+  var RP = 1e6, VP = 8.44;
   function mk(circ, cfg){
     var E = SynEngine();
     Object.assign(E.st, BASE, CIRC[circ], cfg || {}, {rprobe:RP, vplus:VP, swA:false, swB:false});
@@ -218,8 +218,36 @@ var HW3CHK = (function(){
     return r;
   };
 
+  /* ---- section 0: handout schematic (100k after D2) vs PCB (straight), true synapse ---- */
+  C.pcb_vs_sch = function(){
+    var r = {};
+    [['pcb', 0], ['sch', 1e5]].forEach(function(v){
+      var cfg = Object.assign({}, TRUE, {r6:v[1]});
+      var E = mk('s31', cfg), b1 = E.v('P1'), b5 = E.v('P5'), o = run(E, 1.5, [[0, 0.015, 'A']], ['A.Vm', 'P1', 'P5']);
+      var ap = max(o['A.Vm']), p1 = max(o.P1), p5 = max(o.P5);
+      r[v[0]] = {P1_mV:Math.round((p1[0] - b1) * 1e3), P5_mV:Math.round((p5[0] - b5) * 1e3), P1_delay_ms:Math.round((p1[1] - ap[1]) * DT * 1e3),
+        n50:needEPSP(cfg, 0.05), n100:needEPSP(cfg, 0.1), n500:needEPSP(cfg, 0.5)};
+    });
+    return r;
+  };
+  /* ---- original Pre with a smaller FI emitter resistor R13 (handout FI draws 1k; PCB 100k), synapse unchanged ---- */
+  C.kit_r13 = function(){
+    var r = {};
+    [1e5, 22e3, 10e3, 4.7e3, 2.2e3, 1e3].forEach(function(R){
+      var E = SynEngine(); Object.assign(E.st, BASE, CIRC.s31, {rprobe:RP, vplus:VP, swA:false, swB:false});
+      if(R < 1e5) E.MEM.kit.r13p = 1 / (1 / R - 1 / 1e5);
+      E.build(); E.powerOn(); E.settle(2.0);
+      var b1 = E.v('P1'), b5 = E.v('P5'), sp = run(E, 1, [], ['A.Vm']), nsp = peaks(sp['A.Vm'], 1.0).length;
+      b1 = E.v('P1'); b5 = E.v('P5');
+      var o = run(E, 1.5, [[0, 0.02, 'A']], ['A.Vm', 'SY.B', 'SY.S', 'P1', 'P5']);
+      r[R >= 1e3 ? (R / 1e3) + 'k' : R] = {spont_per_s:nsp, pre_peak:r2(max(o['A.Vm'])[0]), Q2B:r2(max(o['SY.B'])[0]), S:r2(max(o['SY.S'])[0]),
+        P1_mV:Math.round((max(o.P1)[0] - b1) * 1e3), P5_mV:Math.round((max(o.P5)[0] - b5) * 1e3)};
+    });
+    return r;
+  };
+
   function all(rp, keys, vp){
-    RP = rp || 1e6; VP = vp || 7.0; var out = {rprobe:RP, vplus:VP};
+    RP = rp || 1e6; VP = vp || 8.44; var out = {rprobe:RP, vplus:VP};
     (keys || Object.keys(C)).forEach(function(k){ var t0 = performance.now(); out[k] = C[k](); out[k]._s = Math.round(performance.now() - t0) / 1e3; });
     return out;
   }
