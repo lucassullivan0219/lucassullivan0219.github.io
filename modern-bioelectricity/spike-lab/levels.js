@@ -7,12 +7,12 @@
    probes  where the scope clips start (engine node codes)
    The explain answers are written from the HW2 report and the benches' notes; the user reviews them. */
 var LEVELS = [
-  {id:'t0', ch:'START', code:'Tutorial', title:'Power up', kind:'tutorial', cid:'c22', parts:['battery', 'leak', 'stim'],
+  {id:'t0', ch:'START', code:'Tutorial', title:'Power up', kind:'tutorial', cid:'c22', parts:['battery', 'passive', 'stim'],
    goal:'Build the smallest membrane and make it respond.'},
 
   /* ---------------- HW2 ---------------- */
-  {id:'21q1', ch:'HW2', code:'#2-1 Q1', title:'Lay the cable', kind:'build', cid:'c21', parts:['battery', 'base', 'stim', 'passive', 'leak'],
-   goal:'Build #2-1: a Base Board; socket 1 = a Passive Unit with the Stimulator on top; sockets 2–4 = Passive Units; socket 5 = a Leak board.',
+  {id:'21q1', ch:'HW2', code:'#2-1 Q1', title:'Lay the cable', kind:'build', cid:'c21', parts:['battery', 'base', 'stim', 'passive'],
+   goal:'Build #2-1: a Base Board; socket 1 = a Passive Unit with the Stimulator on top; sockets 2–5 = one Passive Unit each.',
    sig:{hw:2, n:4, fi:false, so:false},
    hints:['Drop the Base Board first: its 5 sockets are the cable.', 'The Stimulator always goes on top of a stack — drop it on socket 1 after the Passive Unit.']},
   {id:'21q2', ch:'HW2', code:'#2-1 Q2', title:'One pulse, three places', kind:'measure', cid:'c21', probes:['PC1', 'Vm'],
@@ -20,7 +20,7 @@ var LEVELS = [
    hints:['Use the “100 ms” button so the pulse length is exact.', 'The peak is the highest point of the yellow trace; the readout under the scope shows CH1 MAX.']},
   {id:'21q3', ch:'HW2', code:'#2-1 Q3', title:'Far end of the cable', kind:'measure', cid:'c21', probes:['PC1', 'Vm'],
    goal:'Press SW for 1 s. What is the peak at the last unit (CH2)?', measure:{ch:1, metric:'peak', unit:'V'},
-   hints:['CH2 is clipped to the last board (the Leak on socket 5).', 'Wait until the cyan trace has turned over before you read it.']},
+   hints:['CH2 is clipped to the last board (the Passive Unit on socket 5).', 'Wait until the cyan trace has turned over before you read it.']},
   {id:'21q4', ch:'HW2', code:'#2-1 Q4', title:'Why smaller, why later?', kind:'explain', cid:'c21', probes:['PC1', 'Vm'],
    quiz:{q:'The last unit rises less and later than the first. Why?',
      opts:['Current leaks out through every 100 kΩ on the way, and each 1 µF has to charge through 10 kΩ: the cable is a leaky low-pass filter.',
@@ -33,8 +33,8 @@ var LEVELS = [
      opts:['A passive dendrite or axon: signals fade with distance (length constant λ ≈ 3 units here).', 'A myelinated axon that regenerates the spike at every node.', 'A chemical synapse.', 'The axon hillock that decides to fire.'], ans:0,
      why:'Without voltage-gated channels the cable only spreads and attenuates the signal. λ ≈ √(100 kΩ / 10 kΩ) ≈ 3 units.'}},
 
-  {id:'22q1', ch:'HW2', code:'#2-2 Q1', title:'Stack a membrane', kind:'build', cid:'c22', parts:['battery', 'stim', 'leak', 'fi', 'so'],
-   goal:'Build #2-2: Slow Out, Fast Inward and Leak in one stack, the Stimulator on top. No Base Board.',
+  {id:'22q1', ch:'HW2', code:'#2-2 Q1', title:'Stack a membrane', kind:'build', cid:'c22', parts:['battery', 'stim', 'passive', 'fi', 'so'],
+   goal:'Build #2-2: Slow Out, Fast Inward and a Passive Unit (it is the leak, LK) in one stack, the Stimulator on top. No Base Board.',
    sig:{hw:2, n:0, fi:true, so:true},
    hints:['Drop all four boards on the same bare spot.', 'The order under the Stimulator does not matter; the Stimulator stays on top by itself.']},
   {id:'22q2', ch:'HW2', code:'#2-2 Q2', title:'The first spike', kind:'measure', cid:'c22', probes:['Vm', 'SO.S'],
@@ -56,8 +56,8 @@ var LEVELS = [
    require:{fi:false}, requireMsg:'Remove the Fast Inward board first (click it, then REMOVE).',
    hints:['Click the yellow Fast Inward board and press REMOVE.', 'Without FI only the passive response is left.']},
 
-  {id:'23q1', ch:'HW2', code:'#2-3 Q1', title:'Cable into a membrane', kind:'build', cid:'c23', parts:['battery', 'base', 'stim', 'passive', 'leak', 'fi', 'so', 'wire'],
-   goal:'Build #2-3 with 4 Passive Units: socket 1 = Passive Unit + Stimulator on top, sockets 2–4 = Passive Units, socket 5 = Leak + Fast Inward + Slow Out. Remember the V+ Flywire!',
+  {id:'23q1', ch:'HW2', code:'#2-3 Q1', title:'Cable into a membrane', kind:'build', cid:'c23', parts:['battery', 'base', 'stim', 'passive', 'fi', 'so', 'wire'],
+   goal:'Build #2-3 with 4 Passive Units: socket 1 = Passive Unit + Stimulator on top, sockets 2–4 = Passive Units, socket 5 = a Passive Unit (the leak) + Fast Inward + Slow Out. Remember the V+ Flywire!',
    sig:{hw:2, n:4, fi:true, so:true, wire:true},
    hints:['The Base Board does not carry V+: without the flywire Fast Inward is dead.', 'Put all three membrane boards on socket 5.']},
   {id:'23q2', ch:'HW2', code:'#2-3 Q2', title:'Spike after four units', kind:'measure', cid:'c23', n:4, probes:['Vm', 'PC1'],
@@ -77,8 +77,8 @@ var LEVELS = [
      why:'About +118–146 mV at n = 2 in the simulation, a few ms after the CH1 peak, mostly the Fast Inward current through 100 Ω.'}},
 
   /* ---------------- HW3 ---------------- */
-  {id:'31q1', ch:'HW3', code:'#3-1 Q1', title:'Wire a synapse', kind:'build', cid:'c31', parts:['battery', 'syne', 'stim', 'leak', 'fi', 'so', 'base', 'passive'],
-   goal:'Build #3-1: an Excitatory Synapse; on its left (Pre) side Slow Out + Fast Inward + Leak with Stimulator A on top; a Base Board right of it with 5 Passive Units.',
+  {id:'31q1', ch:'HW3', code:'#3-1 Q1', title:'Wire a synapse', kind:'build', cid:'c31', parts:['battery', 'syne', 'stim', 'passive', 'fi', 'so', 'base'],
+   goal:'Build #3-1: an Excitatory Synapse; on its left (Pre) side Slow Out + Fast Inward + a Passive Unit (leak) with Stimulator A on top; a Base Board right of it with 5 Passive Units.',
    sig:{hw:3, syn:'exc', post:'passive', units:5},
    hints:['The synapse board takes two spots: left = Pre, right = Post.', 'The Base Board must start right next to the synapse’s right side.']},
   {id:'31q3', ch:'HW3', code:'#3-1 Q3', title:'Find the EPSP', kind:'measure', cid:'c31', probes:['A.Vm', 'P1'],
@@ -99,7 +99,7 @@ var LEVELS = [
    quiz:{q:'Pre-before-post helps the Post cell fire; post-before-pre does not. Why, in this circuit?',
      opts:['D2 only conducts while S is about 0.45 V above Post; if Post is already raised, the EPSP shrinks.', 'The synapse only works in one direction in time.', 'Stimulator B blocks Stimulator A.', 'The battery is shared.'], ans:0,
      why:'The diode at the synapse output makes the EPSP depend on the Post voltage at that moment.'}},
-  {id:'33q1', ch:'HW3', code:'#3-3 Q1', title:'Inhibition', kind:'build', cid:'c33', parts:['battery', 'syni', 'cell', 'stim', 'leak', 'fi', 'so', 'base', 'passive'],
+  {id:'33q1', ch:'HW3', code:'#3-3 Q1', title:'Inhibition', kind:'build', cid:'c33', parts:['battery', 'syni', 'cell', 'stim', 'passive', 'fi', 'so', 'base'],
    goal:'Build #3-3: an Inhibitory Synapse with the 1.5 V cell clipped on; Pre stack on its left with Stimulator A on top; a Base Board with 5 Passive Units on its right.',
    sig:{hw:3, syn:'inh', post:'passive', units:5, bat:'on'},
    hints:['Clip the 1.5 V Cell after the synapse is on the table.']},

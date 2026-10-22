@@ -193,6 +193,7 @@ const REC = {
 /* ================================================================ drawer */
 function renderDrawer(types){
   const box = $('#parts'); box.innerHTML = '';
+  document.body.classList.toggle('noparts', !types.length);
   if(!types.length){ box.innerHTML = '<p class="small" style="color:var(--muted);font:700 13px Nunito;margin:6px 4px">No parts needed: everything is already on the table.</p>'; return; }
   types.forEach(t => box.appendChild(partCard(t)));
 }
@@ -213,7 +214,8 @@ const ICON = {
 const pick = {};
 function partCard(type){
   const p = P[type], d = document.createElement('div');
-  d.className = 'part'; d.dataset.type = type; d.style.setProperty('--pc', p.color); d.style.touchAction = 'pan-y';
+  d.className = 'part'; d.dataset.type = type; d.style.setProperty('--pc', p.color);
+  d.dataset.name = ({battery:'Battery', stim:'Stimulator', fi:'Fast In', so:'Slow Out', passive:'Passive', base:'Base', syne:'Exc. syn.', syni:'Inh. syn.', cell:'1.5 V', jumper:'Jumper', wire:'Flywire'})[type] || p.name;
   d.innerHTML = '<div class="ic"><svg viewBox="0 0 48 48">' + ICON[type] + '</svg></div><h3>' + p.name + '</h3><p>' + p.blurb + '</p><div class="vers"></div>' +
     '<button type="button" class="add" title="Add to the table">＋</button>';
   const vb = $('.vers', d);
@@ -245,7 +247,8 @@ function dragSource(el, what){
     if(!st) return;
     const dx = e.clientX - st.x, dy = e.clientY - st.y;
     if(!DRAG && st.armed && Math.hypot(dx, dy) > 8){ startDrag(what(), e.clientX, e.clientY); try{ el.setPointerCapture(st.id); }catch(err){} }
-    if(!DRAG && st.touch && Math.abs(dy) > 10){ clearTimeout(timer); st = null; return; }   /* scrolling the list */
+    const scrollD = document.body.classList.contains('phone') ? Math.abs(dx) : Math.abs(dy);   /* the tray scrolls sideways on a phone */
+    if(!DRAG && st.touch && scrollD > 10){ clearTimeout(timer); st = null; return; }
     if(DRAG) moveDrag(e.clientX, e.clientY);
   });
   const end = e => {
@@ -376,7 +379,9 @@ function renderSel(){
   }
   $('#sp-vers').innerHTML = vh;
   let th = '';
-  if(free && v.tune) v.tune.forEach(k => {
+  let keys = v.tune || [];
+  if(p.type === 'passive' && keys.length) keys = /Vm$/.test(R.boardNode[p.id] || '') ? ['rb'] : ['ru'];
+  if(free) keys.forEach(k => {
     const t = SL.tn(k), val = p.tune[k] !== undefined ? p.tune[k] : SL.DEF[k];
     th += '<div class="tr"><div class="tl"><span>' + label(k) + '</span><span data-tv="' + k + '">' + fmt(val, t.unit) + '</span></div>' +
       '<input type="range" min="' + t.min + '" max="' + t.max + '" step="' + t.step + '" value="' + val + '" data-tune="' + k + '"><p>' + t.en + '</p></div>';
@@ -427,10 +432,45 @@ $('#tab-drawer').addEventListener('click', () => togglePanel('dclosed', $('#tab-
 $('#tab-bay').addEventListener('click', () => togglePanel('bclosed', $('#tab-bay'), '◀', '▶'));
 if(innerWidth < 860){ document.body.classList.add('dclosed', 'bclosed'); $('#tab-drawer').textContent = '▶'; $('#tab-bay').textContent = '◀'; }
 
+/* ---------------- phones: landscape only, a game HUD ----------------
+   portrait -> a full-screen "rotate" card (plus a fullscreen + landscape-lock button where the browser allows it).
+   landscape: the bench fills the screen; parts = a tray at the bottom left; SW pad at the bottom right;
+   the scope = a mini screen top right (tap to enlarge); view / blueprint / clear in the ⚙ menu. */
+const FORCE_PHONE = /[?&]phone=1/.test(location.search);
+function isPhone(){ return FORCE_PHONE || (Math.min(innerWidth, innerHeight) <= 540 && matchMedia('(pointer:coarse)').matches); }
+const menu = document.createElement('div'); menu.className = 'phonemenu'; menu.id = 'phonemenu'; menu.hidden = true; $('#scr-game').appendChild(menu);
+const homeOf = new Map();
+function setPhone(){
+  const ph = isPhone(), portrait = innerHeight > innerWidth;
+  document.body.classList.toggle('phone', ph);
+  document.body.classList.toggle('phone-portrait', ph && portrait);
+  const movers = [$('.seg[role="tablist"]'), $('#bpwrap'), $('#btn-clear')];
+  movers.forEach(el => {
+    if(!homeOf.has(el)) homeOf.set(el, {parent:el.parentNode, next:el.nextSibling});
+    if(ph && el.parentNode !== menu) menu.appendChild(el);
+    if(!ph && el.parentNode === menu){ const h = homeOf.get(el); h.parent.insertBefore(el, h.next); }
+  });
+  if(!ph){ menu.hidden = true; document.body.classList.remove('scopebig'); }
+  if(ph && !$('#goal').hidden && !lvState?.phoneGoalOpen) $('#goal').classList.add('mini');
+  setTimeout(() => { resize3D(true); fitScope(); }, 60);
+}
+$('#btn-menu').addEventListener('click', () => { menu.hidden = !menu.hidden; });
+menu.addEventListener('click', e => { if(e.target.closest('button') && !e.target.closest('.seg')) menu.hidden = true; });
+$('#scope-catch').addEventListener('click', () => { document.body.classList.add('scopebig'); setTimeout(fitScope, 30); });
+$('#scope-close').addEventListener('click', () => { document.body.classList.remove('scopebig'); setTimeout(fitScope, 30); });
+$('#btn-rotate').addEventListener('click', async () => {
+  try{ await document.documentElement.requestFullscreen(); await screen.orientation.lock('landscape'); }
+  catch(e){ toast('Turn your phone sideways'); }
+});
+window.addEventListener('resize', setPhone);
+window.addEventListener('orientationchange', setPhone);
+setPhone();
+
 /* ================================================================ oscilloscope */
 const SCOPE = Scope($('#scope'));
 function fitScope(){
-  const w = $('#scopefit').clientWidth; if(!w) return;
+  let w = $('#scopefit').clientWidth; if(!w) return;
+  if(document.body.classList.contains('scopebig')) w = Math.min(w, (innerHeight - 64) * 566 / 380);
   const s = Math.min(1.2, w / 566);
   $('#scope').firstChild.style.transform = 'scale(' + s + ')'; $('#scopefit').style.height = Math.round(380 * s) + 'px';
 }
@@ -789,15 +829,19 @@ function fitBounds(){
 }
 function resize3D(force){
   const w = canvas.clientWidth, h = canvas.clientHeight; if(!w || !h) return;
-  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-  const [x0, x1] = fitBounds(), key = x0 + ':' + x1 + ':' + w + 'x' + h;
+  renderer.setSize(w, h, false); camera.aspect = w / h;
+  /* on a phone the bottom ~90 px are the parts tray and the SW pad: draw the bench higher, in the free area */
+  const phone = document.body.classList.contains('phone'), lift = phone ? 46 : 0, hEff = h - 2 * lift;
+  if(lift) camera.setViewOffset(w, h, 0, lift, w, h); else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+  const [x0, x1] = fitBounds(), key = x0 + ':' + x1 + ':' + w + 'x' + h + ':' + lift;
   if(key === fitKey && !force) return;
   fitKey = key;
   const cx = (x0 + x1) / 2, half = (x1 - x0) / 2 + 0.3;
   const dir = camera.position.clone().sub(controls.target).normalize();
   controls.target.set(cx, 0.6, 0);
   const vf = camera.fov * Math.PI / 360, hf = Math.atan(Math.tan(vf) * camera.aspect);
-  const d = Math.max(half / Math.tan(hf), 3.4 / Math.tan(vf));
+  const d = Math.max(half / Math.tan(hf), 3.4 / Math.tan(vf)) * (phone ? h / Math.max(1, hEff) : 1);
   camera.position.copy(controls.target).addScaledVector(dir, Math.min(d, controls.maxDistance));
   controls.update();
 }
@@ -817,7 +861,8 @@ function renderGoal(){
   else if(LV.kind === 'explain') body = '<p>' + LV.quiz.q + '</p><div class="opts">' + shuffled(LV).map(i => '<button type="button" class="opt" data-opt="' + i + '">' + LV.quiz.opts[i] + '</button>').join('') + '</div><div class="fb" data-fb></div>';
   else body = '<p>' + LV.goal + '</p>';
   g.innerHTML = '<button type="button" class="min" data-min title="Fold">–</button><div class="gh"><span class="code">' + LV.code + '</span><b>' + LV.title + '</b>' + kindTag(LV.kind) + '</div>' + body + '<div data-hints></div>';
-  $('[data-min]', g).addEventListener('click', () => { g.classList.toggle('mini'); $('[data-min]', g).textContent = g.classList.contains('mini') ? '+' : '–'; });
+  $('[data-min]', g).addEventListener('click', () => { g.classList.toggle('mini'); $('[data-min]', g).textContent = g.classList.contains('mini') ? '+' : '–'; if(lvState) lvState.phoneGoalOpen = !g.classList.contains('mini'); });
+  if(document.body.classList.contains('phone') && LV.kind !== 'explain' && LV.kind !== 'measure'){ g.classList.add('mini'); $('[data-min]', g).textContent = '+'; }
   const h = $('[data-hint]', g); if(h) h.addEventListener('click', showHint);
   const s = $('[data-submit]', g); if(s) s.addEventListener('click', submitMeasure);
   const inp = $('[data-ans]', g); if(inp) inp.addEventListener('keydown', e => { if(e.key === 'Enter') submitMeasure(); });
@@ -884,14 +929,14 @@ function win(){
    lets taps through to exactly the thing the step asks for.  Placing is two taps (card, then table), which
    works the same with a mouse and on a phone. */
 const TUT = [
-  {t:'Tap the <b>9 V Battery</b> card in the <b>PARTS</b> panel on the left.', el:() => $('.part[data-type="battery"]'), panel:'drawer', ok:() => (holding && holding.type === 'battery') || !!A.battery},
+  {t:'Tap the <b>9 V Battery</b> in the <b>PARTS</b> panel (left, or the tray at the bottom on a phone).', el:() => $('.part[data-type="battery"]'), panel:'drawer', ok:() => (holding && holding.type === 'battery') || !!A.battery},
   {t:'Now tap anywhere on the <b>table</b>. A battery always goes to the <b>POWER DOCK</b> at the left end.', el:() => $('#stage'), ok:() => !!A.battery},
-  {t:'Tap the <b>Leak</b> card in the PARTS panel.', el:() => $('.part[data-type="leak"]'), panel:'drawer', ok:() => (holding && holding.type === 'leak') || A.spots.some(s => s.stack.some(p => p.type === 'leak'))},
-  {t:'Tap the glowing <b>spot 4</b> on the table (the dashed box with the number 4).', el:() => $('#stage'), mark:3, ok:() => A.spots.some(s => s.stack.some(p => p.type === 'leak'))},
+  {t:'Tap the <b>Passive Unit</b> card in the PARTS panel. Under a Stimulator it works as the membrane’s <b>leak</b> (100 kΩ ∥ 1 µF).', el:() => $('.part[data-type="passive"]'), panel:'drawer', ok:() => (holding && holding.type === 'passive') || A.spots.some(s => s.stack.some(p => p.type === 'passive'))},
+  {t:'Tap the glowing <b>spot 4</b> on the table (the dashed box with the number 4).', el:() => $('#stage'), mark:3, ok:() => A.spots.some(s => s.stack.some(p => p.type === 'passive'))},
   {t:'Tap the <b>Stimulator</b> card in the PARTS panel.', el:() => $('.part[data-type="stim"]'), panel:'drawer', ok:() => (holding && holding.type === 'stim') || !!(R && R.ok)},
-  {t:'Tap the <b>same spot</b> again. The Stimulator always lands on <b>top</b> of the stack.', el:() => $('#stage'), mark:'leak', ok:() => !!(R && R.ok)},
-  {t:'Press and <b>hold</b> the big red <b>SW</b> button at the bottom of the table for about a second, then let go.', el:() => $('#swA'), ok:() => lvState.tutPressed && !sw.A},
-  {t:'This is the <b>oscilloscope</b>. The yellow trace is <b>Vm</b>: it rose while you pushed current in, then decayed back through the Leak (τ = 100 ms). You just built a membrane!', el:() => $('#scopefit'), panel:'bay', next:true, ok:() => lvState.tutNext}
+  {t:'Tap the <b>same spot</b> again. The Stimulator always lands on <b>top</b> of the stack.', el:() => $('#stage'), mark:'pu', ok:() => !!(R && R.ok)},
+  {t:'Press and <b>hold</b> the big red <b>SW</b> button (bottom of the screen) for about a second, then let go.', el:() => $('#swA'), ok:() => lvState.tutPressed && !sw.A},
+  {t:'This is the <b>oscilloscope</b>. The yellow trace is <b>Vm</b>: it rose while you pushed current in, then decayed back through the leak (τ = 100 ms). You just built a membrane!', el:() => $('#scopefit'), panel:'bay', next:true, ok:() => lvState.tutNext}
 ];
 let tutOn = false, tutMark = null;
 function startTutorial(){ tutOn = true; lvState.tutStep = 0; lvState.tutNext = false; $('#tut').hidden = false; tutRender(); }
@@ -900,6 +945,7 @@ function endTutorial(){
   if(tutMark){ scene.remove(tutMark); tutMark = null; }
 }
 function openPanel(which){
+  if(document.body.classList.contains('phone')) return;
   if(which === 'drawer' && document.body.classList.contains('dclosed')){ document.body.classList.remove('dclosed'); $('#tab-drawer').textContent = '◀'; }
   if(which === 'bay' && document.body.classList.contains('bclosed')){ document.body.classList.remove('bclosed'); $('#tab-bay').textContent = '▶'; }
   if(innerWidth < 860){                                   /* a phone: only one side panel at a time */
@@ -918,7 +964,7 @@ function tutRender(){
   $('.tut-x', $('#tutbox')).addEventListener('click', () => { endTutorial(); renderMap(); show('scr-map'); });
   const n = $('#tut-next'); if(n) n.addEventListener('click', () => { lvState.tutNext = true; });
   if(tutMark){ scene.remove(tutMark); tutMark = null; }
-  let spot = s.mark === 'leak' ? A.spots.findIndex(x => x.stack.some(p => p.type === 'leak')) : s.mark;
+  let spot = s.mark === 'pu' ? A.spots.findIndex(x => x.stack.some(p => p.type === 'passive')) : s.mark;
   if(spot !== undefined && spot !== null && spot >= 0){
     tutMark = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.04, 2.5), new THREE.MeshBasicMaterial({color:0xffe066, transparent:true, opacity:.55, depthWrite:false}));
     tutMark.position.set(SPX(spot), 0.03 + (A.spots[spot].stack.length ? boardY(spot, A.spots[spot].stack.length) - PITCH : 0), 0); scene.add(tutMark);

@@ -56,7 +56,7 @@ body.bclosed .bay{transform:translateX(calc(100% + 16px))}
 
 /* ---------- parts ---------- */
 .parts{flex:1;overflow-y:auto;padding:2px 10px 14px;display:flex;flex-direction:column;gap:10px}
-.part{position:relative;border:3px solid var(--line);border-radius:14px;background:#f3ead6;color:#2a2116;padding:8px 9px 8px 74px;min-height:76px;
+.part{touch-action:pan-y;position:relative;border:3px solid var(--line);border-radius:14px;background:#f3ead6;color:#2a2116;padding:8px 9px 8px 74px;min-height:76px;
   box-shadow:0 4px 0 var(--line);cursor:grab;user-select:none;transition:transform .1s}
 .part:hover{transform:translateY(-2px) rotate(-.4deg)}
 .part:active{cursor:grabbing}
@@ -313,3 +313,76 @@ body.campaign .status{top:auto;bottom:132px}
 .padrow .swbig.sm{width:52px;height:52px;font-size:15px}
 .padrow .train{flex-direction:row;align-items:center}
 @media (max-width:860px){.padrow{flex-wrap:wrap;justify-content:center}}
+
+/* =================== phones (landscape game HUD) =================== */
+.chip.menu{display:none;font-size:18px;padding:4px 10px}
+.phonemenu{position:absolute;top:50px;right:8px;z-index:60;display:flex;flex-direction:column;gap:8px;align-items:stretch;border:3px solid var(--line);border-radius:14px;
+  background:linear-gradient(var(--panel2),var(--panel));padding:10px;box-shadow:0 5px 0 var(--line)}
+.phonemenu .seg{justify-content:center}
+.scope-catch{display:none}
+.scope-close{display:none}
+.rotate{display:none}
+body.phone-portrait .rotate{display:grid;position:fixed;inset:0;z-index:200;place-items:center;background:radial-gradient(700px 500px at 50% 40%,#2b4876,#0e1a2b);text-align:center;padding:20px}
+.rot-card h2{font:400 30px "Lilita One",sans-serif;color:var(--gold);margin:10px 0 4px;text-shadow:0 3px 0 var(--line)}
+.rot-card p{font:800 15px "Nunito",sans-serif;color:#dfeaff;margin:0 0 16px}
+.rot-phone{font-size:64px;animation:rot 2.2s ease-in-out infinite}
+@keyframes rot{0%,25%{transform:rotate(0)}50%,75%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+
+body.phone{--top:46px}
+body.phone .hud{height:46px;gap:6px;padding:0 8px;overflow:visible}
+body.phone .hud .chip{font-size:13px;padding:4px 9px;box-shadow:0 3px 0 var(--line)}
+body.phone .hud .logo,body.phone .hud .grow{display:none}
+body.phone .hud .chip.menu{display:inline-flex;margin-left:auto}
+body.phone .hud .seg.ctype button{padding:5px 8px;font-size:12px}
+body.phone .idealsel{font-size:11px;padding:3px}
+body.phone .stage{left:0!important;right:0!important;top:var(--top);bottom:0;border-radius:12px 12px 0 0}
+body.phone .tab{display:none}
+/* parts: a tray of icons at the bottom left */
+body.phone .drawer{transform:none!important;left:6px;right:auto;top:auto;bottom:6px;width:calc(100% - 360px);min-width:180px;height:78px;flex-direction:row;border-radius:14px;z-index:20;padding:0}
+body.phone .drawer .panel-head,body.phone .drawer .vtoggle{display:none}
+body.phone .parts{flex-direction:row;overflow-x:auto;overflow-y:hidden;gap:7px;padding:6px 8px;align-items:center}
+body.phone .part{flex:0 0 auto;width:62px;min-height:62px;height:62px;padding:0;border-radius:12px;display:grid;place-items:center;touch-action:pan-x}
+body.phone .part h3,body.phone .part p,body.phone .part .vers,body.phone .part .add{display:none!important}
+body.phone .part .ic{position:static;width:52px;height:52px;border-width:2px}
+body.phone .part::after{content:attr(data-name);position:absolute;bottom:-1px;left:0;right:0;text-align:center;font:900 8px/1.1 "Nunito",sans-serif;color:#2a2116;background:rgba(243,234,214,.9);border-radius:0 0 9px 9px}
+/* pad: bottom right */
+body.phone .pad{left:auto;right:6px;bottom:6px;transform:none;padding:5px 8px;gap:4px;max-width:340px;z-index:21}
+body.phone .padrow{gap:6px}
+body.phone .padrow .pot{min-width:96px;flex:1 1 96px}
+body.phone .pot-l small{display:none}
+body.phone .pulses .chip{font-size:11px;padding:3px 6px}
+body.phone .swbig{width:58px;height:58px;font-size:18px}
+body.phone .padrow .swbig.sm{width:46px;height:46px;font-size:13px}
+body.phone .train select{font-size:10px}
+/* scope: a mini screen top right; tap to enlarge */
+body.phone .bay{transform:none!important;top:52px;right:6px;bottom:auto;width:232px;background:transparent;border:0;box-shadow:none;z-index:22}
+body.phone .bay-in{position:static;padding:0;gap:4px;overflow:visible}
+body.phone .rack{border:0;background:transparent;padding:0}
+body.phone .rack .panel-head,body.phone .rack .meas{display:none}
+body.phone .clips{justify-content:flex-end;margin:0;gap:5px}
+body.phone .clip{font-size:12px;padding:3px 8px;box-shadow:0 2px 0 var(--line)}
+body.phone .clip span{font-size:10px}
+body.phone .scope-catch{display:block;position:absolute;inset:0;background:transparent;border:0;cursor:zoom-in;z-index:3}
+body.phone.scopebig .bay{top:50px;left:6px;right:auto;width:calc(100% - 360px);z-index:40}
+body.phone.scopebig .scope-catch{display:none}
+body.phone.scopebig .scope-close{display:inline-flex;align-self:flex-start;font-size:12px;padding:3px 9px}
+/* goal, status, selection, holding */
+body.phone .goal{top:6px;left:6px;width:min(330px,calc(100% - 260px));padding:6px 9px 8px}
+body.phone .goal .gh b{font-size:15px}
+body.phone .goal p{font-size:12px}
+body.phone .status{top:6px!important;bottom:auto!important;left:auto;right:248px;max-width:calc(100% - 600px);min-width:150px}
+body.phone .status .msg{font-size:11px;padding:3px 7px}
+body.phone .status .msg:not(:first-child){display:none}
+body.phone.campaign .status{display:none}
+body.phone .selpanel{top:6px;right:auto;left:50%;transform:translateX(-50%);max-height:calc(100% - 100px);z-index:30}
+body.phone .holding{top:6px;bottom:auto;font-size:12px;z-index:25}
+body.phone .tut-box{font-size:12.5px}
+
+body.phone.noparts .drawer{display:none}
+body.phone .pad{max-width:calc(100% - 12px)}
+body.phone .padrow .pot{min-width:78px;flex:1 1 78px}
+body.phone .padrow .pulses .chip{padding:2px 5px;font-size:10.5px}
+body.phone .train select{width:66px;font-size:10px;padding:1px 2px}
+body.phone .train .chip{font-size:11px;padding:3px 6px}
+body.phone.scopebig .bay-in{position:relative}
+body.phone.scopebig .scope-close{position:absolute;right:4px;top:4px;z-index:5}

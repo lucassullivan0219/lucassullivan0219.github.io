@@ -8,10 +8,11 @@
    board of its stack, and inside a stack the current runs from top to bottom.
 
    HW2 (no synapse on the table): the Stimulator's stack is the start.
-     - Leak / FI / SO stacked under it          -> #2-2 (n = 0): one membrane node
+     - FI / SO (and a Passive Unit as the leak) stacked under it -> #2-2 (n = 0): one membrane node
      - on a Base Board                           -> follow the occupied sockets away from it; every socket is
                                                      one node, 10 kΩ apart; the last one is the membrane (Vm)
-     - Passive Unit and Leak are the same RC (100 kΩ ∥ 1 µF); two of them on one node = 50 kΩ ∥ 2 µF
+     - the kit has no separate Leak board: a Passive Unit on the membrane node IS the leak (100 kΩ ∥ 1 µF);
+       on the Base Board the same board is one segment of the cable; two on one node = 50 kΩ ∥ 2 µF
      - FI gets V+ through the stacked header only in its own stack; otherwise it needs the V+ Flywire
    HW3 (a synapse board on the table): Pre = the stack on its left side (Stimulator A on top),
      Post = the stack on its right side (active membrane 2, Stimulator B on top), or the Base Board right
@@ -33,9 +34,6 @@ var SL = (function(){
             {id:'add', grp:'IDEAL', label:'+22 kΩ', tune:['rxv'], desc:'22 kΩ clipped across Q_pass E–B: no leak, no trace cut.'},
             {id:'bb', grp:'IDEAL', label:'Breadboard', desc:'Rebuilt on a breadboard: Q_sense after SW, a 1N4148 at the output, its own 9 V.'},
             {id:'src', grp:'IDEAL', label:'Ideal source', tune:['isrc'], desc:'An ideal current source while SW is held (no leak, pot ignored).'}]},
-    leak:{name:'Leak', silk:'Leak', color:'#4ea8ff', kind:'board', blurb:'Membrane R and C: 100 kΩ ∥ 1 µF (τ = 100 ms).',
-      vers:[{id:'kit', grp:'KIT', my:true, label:'Kit', desc:'100 kΩ ∥ 1 µF.'},
-            {id:'true', grp:'IDEAL', label:'True AP', tune:['rb'], desc:'Adds a resistor from V+ to Vm so the membrane rests above where Slow Out can pull.'}]},
     fi:{name:'Fast Inward', silk:'Fast Inward', color:'#ffd23f', kind:'board', blurb:'Na⁺-like: a regenerative inward current above threshold.',
       vers:[{id:'kit', grp:'KIT', my:true, label:'Kit', desc:'R13 = 100 kΩ: too weak, the "AP" only reaches ~2 V.'},
             {id:'true', grp:'IDEAL', label:'True AP', tune:['r13p', 'rf'], desc:'A resistor across R13 and one from R13 to FI.E3: strong, with a real threshold.'},
@@ -43,9 +41,9 @@ var SL = (function(){
     so:{name:'Slow Out', silk:'Slow Out.', color:'#b98cff', kind:'board', blurb:'K⁺-like: a slow outward current that repolarizes.',
       vers:[{id:'kit', grp:'KIT', my:true, label:'Kit', desc:'R2 = 1 MΩ (the TA’s part on every board).'},
             {id:'true', grp:'IDEAL', label:'True AP', tune:['rs'], desc:'A resistor across C1: Slow Out stays off at rest and opens during the AP.'}]},
-    passive:{name:'Passive Unit', silk:'Passive Unit', color:'#3fe0c5', kind:'board', blurb:'A patch of passive cable: 1 µF ∥ 100 kΩ. On the Base Board, units are 10 kΩ apart.',
+    passive:{name:'Passive Unit', silk:'Passive Unit', color:'#3fe0c5', kind:'board', blurb:'1 µF ∥ 100 kΩ. On the Base Board it is a piece of cable (10 kΩ apart); stacked with FI and SO it is the membrane’s leak (LK).',
       vers:[{id:'kit', grp:'KIT', my:true, label:'Kit', desc:'1 µF ∥ 100 kΩ.'},
-            {id:'true', grp:'IDEAL', label:'True AP', tune:['ru'], desc:'Adds a resistor to V+ so every unit rests at the same level as the active end.'}]},
+            {id:'true', grp:'IDEAL', label:'True AP', tune:['rb', 'ru'], desc:'Adds a resistor to V+: as the leak it lifts rest above where Slow Out can pull (330 kΩ); in the cable it keeps every unit at the same level (560 kΩ).'}]},
     base:{name:'Base Board', silk:'Extracellular Solution', color:'#9fb4d9', kind:'base', span:5, blurb:'5 sockets: 10 kΩ (inside) and 100 Ω (outside) between neighbours. Its V+ pins are not connected.',
       vers:[{id:'kit', grp:'KIT', my:true, label:'Kit', desc:'Used in #2-1, #2-3, #3-1 and #3-3.'}]},
     syne:{name:'Excitatory Synapse', silk:'Excitatory Synapse', color:'#ff8fa3', kind:'base', span:2, blurb:'Pre plugs into its left side, Post into its right side.',
@@ -62,7 +60,7 @@ var SL = (function(){
     wire:{name:'V+ Flywire', color:'#ff6bb5', kind:'wire', blurb:'From the Stimulator V+ to Fast Inward. Base Boards do not carry V+!',
       vers:[{id:'kit', grp:'KIT', my:true, label:'Red wire', desc:'Pulls V+ over to the Fast Inward board.'}]}
   };
-  var MEMB = {leak:1, fi:1, so:1}, RC = {leak:1, passive:1};
+  var MEMB = {fi:1, so:1}, RC = {passive:1};
 
   /* ---------- assembly ---------- */
   var uid = 1;
@@ -131,7 +129,7 @@ var SL = (function(){
       for(i = 0; i < NS; i++) if(baseAt(A, i) && !A.spots[i].stack.some(function(p){ return p.type === 'stim'; })) return i;
       return bare(A);
     }
-    if(MEMB[type] || type === 'passive'){
+    if(MEMB[type] || type === 'passive'){   /* FI, SO, Passive Unit */
       if(first >= 0 && !baseAt(A, first)) return first;                      /* #2-2: under the Stimulator */
       var bb = A.bases.filter(function(b){ return b.type === 'base'; })[0];
       if(bb){ for(i = bb.at; i < bb.at + 5; i++){ var t = A.spots[i].stack; if(!t.length || (type !== 'passive' && t.some(function(p){ return MEMB[p.type]; }))) return i; } }
@@ -182,7 +180,7 @@ var SL = (function(){
   function memSt(boards, stim){
     var m = {so_r2:1e6, qs:stimSt(stim).qs === 'pcb' ? 'pcb' : 'rx', r13p:0, rf:0, rs:0, rb:0};
     boards.forEach(function(p){
-      if(p.type === 'leak' && p.ver === 'true') m.rb = tv(p, 'rb');
+      if(p.type === 'passive' && p.ver === 'true') m.rb = tv(p, 'rb');
       if(p.type === 'fi' && p.ver === 'true'){ m.r13p = tv(p, 'r13p'); m.rf = tv(p, 'rf'); }
       if(p.type === 'so' && p.ver === 'true') m.rs = tv(p, 'rs');
     });
@@ -231,22 +229,22 @@ var SL = (function(){
         nodes.push(t);
       }
     }
-    if(!nodes.length){ msgs.push(['tip', 'Stack Leak / Fast Inward / Slow Out under the Stimulator (#2-2), or put Passive Units on a Base Board next to it (#2-1, #2-3).']); R.nodes = ['Vm']; R.ok = false; mark(R, [stim], 'Vm'); return R; }
+    if(!nodes.length){ msgs.push(['tip', 'Stack a Passive Unit (the leak), Fast Inward and Slow Out under the Stimulator (#2-2), or put Passive Units on a Base Board next to it (#2-1, #2-3).']); R.nodes = ['Vm']; R.ok = false; mark(R, [stim], 'Vm'); return R; }
     var vm = nodes[nodes.length - 1], n = nodes.length - 1;
     st.chain = n;
     nodes.slice(0, -1).forEach(function(t, i){
       mark(R, t.filter(function(p){ return RC[p.type]; }), 'PC' + (i + 1));
       if(t.some(function(p){ return p.type === 'fi' || p.type === 'so'; })) msgs.push(['tip', 'FI / SO only act on the last board group of the cable; the ones in the middle are ignored.']);
-      if(t.filter(function(p){ return RC[p.type]; }).length > 1) msgs.push(['tip', 'Two units on one socket act as one (the model keeps one per socket).']);
+      if(t.filter(function(p){ return RC[p.type]; }).length > 1) msgs.push(['tip', 'Two Passive Units on one socket act as one (the model keeps one per socket).']);
     });
     var rcs = vm.filter(function(p){ return RC[p.type]; }), fi = vm.filter(function(p){ return p.type === 'fi'; })[0], so = vm.filter(function(p){ return p.type === 'so'; })[0];
     st.leak = rcs.length >= 1; st.lk2 = rcs.length >= 2;
-    if(rcs.length > 2) msgs.push(['tip', 'More than two Leak / Passive boards on the membrane: the model keeps two.']);
+    if(rcs.length > 2) msgs.push(['tip', 'More than two Passive Units on the membrane: the model keeps two.']);
+    if(!rcs.length && (fi || so)) msgs.push(['tip', 'No leak: add a Passive Unit to the membrane stack (in the kit the leak is a Passive Unit).']);
     st.fi_on = !!fi; st.so_on = !!so;
     var m = memSt(vm, stim); st.rb = m.rb; st.r13p = m.r13p; st.rf = m.rf; st.rs = m.rs;
     if(fi && fi.ver === 'r13') st.r13 = 1e3;
-    if(stim.ver === 'bb' && st.rb) st.rb = tv(vm.filter(function(p){ return p.type === 'leak' && p.ver === 'true'; })[0] || {}, 'rb');
-    var pas = [].concat.apply([], nodes).filter(function(p){ return p.type === 'passive' && p.ver === 'true'; });
+    var pas = [].concat.apply([], nodes.slice(0, -1)).filter(function(p){ return p.type === 'passive' && p.ver === 'true'; });
     if(pas.length) st.ru = tv(pas[0], 'ru');
     st.fi_supply = (viaHeader && n === 0) ? 'stim' : (A.wire ? 'stim' : 'none');
     if(fi && st.fi_supply === 'none') msgs.push(['bad', 'Fast Inward has no V+! The Base Board does not carry it. Drop the V+ Flywire.']);
@@ -255,7 +253,7 @@ var SL = (function(){
     R.boardNode[stim.id] = n ? 'PC1' : 'Vm';
     var nodesList = ['Vm']; for(var c = 1; c <= n; c++) nodesList.push('PC' + c); if(fi) nodesList.push('FI.E4'); if(so) nodesList.push('SO.S');
     R.nodes = nodesList; R.n = n; R.mem = {lk:rcs.length, fi:!!fi, so:!!so}; R.ok = true;
-    var label = (n ? n + ' × Passive → ' : '') + '[' + vm.map(function(p){ return ({leak:'LK', fi:'FI', so:'SO', passive:'PU'})[p.type]; }).join(' ') + ']';
+    var label = (n ? n + ' × Passive → ' : '') + '[' + vm.map(function(p){ return ({fi:'FI', so:'SO', passive:'LK'})[p.type]; }).join(' ') + ']';
     msgs.unshift([msgs.some(function(x){ return x[0] === 'bad'; }) ? 'tip' : 'ok', 'Stimulator → ' + label + (vbat ? ' · ' + st.vplus + ' V' : '')]);
     R.sig = {hw:2, n:n, lk:rcs.length, fi:!!fi, so:!!so, wire:st.fi_supply === 'stim'};
     return R;
@@ -265,13 +263,14 @@ var SL = (function(){
     var msgs = R.msgs, p = syn.at, pre = A.spots[p].stack, post = A.spots[p + 1].stack;
     R.hw = 3; R.used[syn.id] = true;
     var stimA = pre.length && pre[pre.length - 1].type === 'stim' ? pre[pre.length - 1] : null;
-    var preM = pre.filter(function(x){ return MEMB[x.type]; });
+    var MEM3 = {passive:1, fi:1, so:1}, preM = pre.filter(function(x){ return MEM3[x.type]; });
     var st = {vplus:vbat, syn:syn.type === 'syne' ? 'exc' : 'inh', r1p:0, r13A:0, r6:0, vsyn:0, stimA:!!stimA, stimB:false,
               post:'passive', pre:'cusA', postMem:'cusB', bat:A.cell ? 'on' : A.jumper ? 'short' : 'open', rxv:22e3, ch1:'A.Vm', ch2:'P1'};
     R.st = st;
     if(!stimA) msgs.push(['bad', 'Put Stimulator A on top of the Pre stack (left side of the synapse).']);
-    var need = ['leak', 'fi', 'so'].filter(function(t){ return !preM.some(function(x){ return x.type === t; }); });
-    if(need.length) msgs.push(['tip', 'The HW3 model always has a full Pre membrane (Leak + FI + SO); missing here: ' + need.join(', ') + '.']);
+    var NM = {passive:'Passive Unit (leak)', fi:'Fast Inward', so:'Slow Out'};
+    var need = ['passive', 'fi', 'so'].filter(function(t){ return !preM.some(function(x){ return x.type === t; }); });
+    if(need.length) msgs.push(['tip', 'The HW3 model always has a full Pre membrane (Passive Unit as leak + FI + SO); missing here: ' + need.map(function(t){ return NM[t]; }).join(', ') + '.']);
     var sv = verOf(syn); if(syn.ver !== 'kit') st.r1p = syn.ver === 'true' ? tv(syn, 'r1p') : sv.st.r1p;
     if(st.syn === 'inh' && st.bat === 'open') msgs.push(['tip', 'No 1.5 V cell (or jumper) on the Inhibitory Synapse: the synapse is open.']);
     var fiA = preM.filter(function(x){ return x.type === 'fi'; })[0];
@@ -279,15 +278,15 @@ var SL = (function(){
     R.memA = memSt(preM, stimA); if(stimA && stimA.ver === 'add') st.rxv = tv(stimA, 'rxv');
     mark(R, preM.concat(stimA ? [stimA] : []), 'A.Vm'); preM.forEach(function(x){ if(x.type === 'so') R.boardNode[x.id] = 'A.SO.S'; });
     R.boardNode[syn.id] = 'SY.S';
-    var postM = post.filter(function(x){ return MEMB[x.type]; }), stimB = post.length && post[post.length - 1].type === 'stim' ? post[post.length - 1] : null;
+    var postM = post.filter(function(x){ return MEM3[x.type]; }), stimB = post.length && post[post.length - 1].type === 'stim' ? post[post.length - 1] : null;
     var nodes = ['A.Vm', 'SY.S'];
-    if(postM.length){
+    if(postM.some(function(x){ return MEMB[x.type]; })){
       st.post = 'active'; st.stimB = !!stimB; st.ch2 = 'B.Vm';
       R.memB = memSt(postM, stimB);
       mark(R, postM.concat(stimB ? [stimB] : []), 'B.Vm'); postM.forEach(function(x){ if(x.type === 'so') R.boardNode[x.id] = 'B.SO.S'; });
       nodes.push('B.Vm');
-      var needB = ['leak', 'fi', 'so'].filter(function(t){ return !postM.some(function(x){ return x.type === t; }); });
-      if(needB.length) msgs.push(['tip', 'The HW3 model always has a full Post membrane (Leak + FI + SO); missing: ' + needB.join(', ') + '.']);
+      var needB = ['passive', 'fi', 'so'].filter(function(t){ return !postM.some(function(x){ return x.type === t; }); });
+      if(needB.length) msgs.push(['tip', 'The HW3 model always has a full Post membrane (Passive Unit as leak + FI + SO); missing: ' + needB.map(function(t){ return NM[t]; }).join(', ') + '.']);
       R.sig = {hw:3, syn:st.syn, post:'active', bat:st.bat};
     } else {
       var bb = baseAt(A, p + 2), units = 0, sB = null;
@@ -300,7 +299,7 @@ var SL = (function(){
         }
         R.used[bb.b.id] = true;
       }
-      if(post.length && !postM.length) msgs.push(['tip', 'Only a membrane stack works on the Post side; for #3-1 / #3-3 put the Base Board right of the synapse.']);
+      if(post.length && !postM.some(function(x){ return MEMB[x.type]; })) msgs.push(['tip', 'Only a membrane stack works on the Post side; for #3-1 / #3-3 put the Base Board right of the synapse.']);
       if(!units) msgs.push(['bad', 'Nothing on the Post side: put a Base Board with Passive Units right of the synapse, or an active membrane on its right side.']);
       else if(units !== 5) msgs.push(['tip', 'The HW3 model always has 5 Passive Units after the synapse (you have ' + units + ').']);
       st.post = 'passive'; st.stimB = !!sB;
@@ -317,7 +316,7 @@ var SL = (function(){
   /* ---------- circuit types -> board versions ---------- */
   /* engine values of a circuits.js type (st) turned into versions + tune values for the boards on the table */
   function applySt(A, cst){
-    var preSide = null;
+    var preSide = null, R0 = analyze(A), role = function(p){ var n = R0.boardNode[p.id]; return n === 'Vm' || n === 'A.Vm' || n === 'B.Vm' ? 'mem' : 'cable'; };
     var syn = A.bases.filter(function(b){ return b.type === 'syne' || b.type === 'syni'; })[0];
     if(syn) preSide = syn.at;
     all(A).forEach(function(p){
@@ -330,13 +329,15 @@ var SL = (function(){
           else p.ver = cst.stdiode ? 'bb' : cst.qs === 'rx' ? 'add' : 'kit';
           if(p.ver === 'add' && cst.rxv) p.tune.rxv = cst.rxv;
           break;
-        case 'leak': p.ver = hw3 ? (trueMem ? 'true' : 'kit') : (cst.rb ? 'true' : 'kit'); if(!hw3 && cst.rb) p.tune.rb = cst.rb; break;
         case 'fi':
           if(hw3) p.ver = trueMem ? 'true' : (onPre && cst.r13A ? 'r13' : 'kit');
           else p.ver = cst.r13p ? 'true' : cst.r13 === 1e3 ? 'r13' : 'kit';
           break;
         case 'so': p.ver = hw3 ? (trueMem ? 'true' : 'kit') : (cst.rs ? 'true' : 'kit'); break;
-        case 'passive': p.ver = cst.ru ? 'true' : 'kit'; if(cst.ru) p.tune.ru = cst.ru; break;
+        case 'passive':
+          if(role(p) === 'mem'){ p.ver = hw3 ? (trueMem ? 'true' : 'kit') : (cst.rb ? 'true' : 'kit'); if(!hw3 && cst.rb) p.tune.rb = cst.rb; }
+          else { p.ver = !hw3 && cst.ru ? 'true' : 'kit'; if(!hw3 && cst.ru) p.tune.ru = cst.ru; }
+          break;
         case 'syne': case 'syni':
           p.ver = !cst.r1p ? 'kit' : cst.r1p === 1e5 && p.type === 'syne' ? 'mine' : 'true';
           if(p.ver === 'true') p.tune.r1p = cst.r1p;
@@ -357,11 +358,11 @@ var SL = (function(){
     var A = empty(), n = opts.n === undefined ? 4 : opts.n;
     function put(type, spot){ var r = place(A, type, null, spot); return r.id; }
     A.battery = mk('battery', 'mine');
-    function membraneOn(spot, stim){ put('so', spot); put('fi', spot); put('leak', spot); if(stim) put('stim', spot); }
+    function membraneOn(spot, stim){ put('so', spot); put('fi', spot); put('passive', spot); if(stim) put('stim', spot); }
     if(cid === 'c22' || (cid === 'c23' && n === 0)){ membraneOn(2, true); if(cid === 'c23') A.wire = mk('wire'); }
     else if(cid === 'c21' || cid === 'c23'){
       place(A, 'base', null, 1);
-      if(cid === 'c21'){ put('passive', 1); put('stim', 1); for(var i = 2; i <= 4; i++) put('passive', i); put('leak', 5); }
+      if(cid === 'c21'){ put('passive', 1); put('stim', 1); for(var i = 2; i <= 5; i++) put('passive', i); }
       else {
         put('passive', 1); put('stim', 1);
         for(i = 2; i <= n; i++) put('passive', i);
