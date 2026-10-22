@@ -386,3 +386,8 @@ body.phone .train select{width:66px;font-size:10px;padding:1px 2px}
 body.phone .train .chip{font-size:11px;padding:3px 6px}
 body.phone.scopebig .bay-in{position:relative}
 body.phone.scopebig .scope-close{position:absolute;right:4px;top:4px;z-index:5}
+
+.tut-box .tut-skip{display:block;margin:6px 0 0 auto;border:0;background:transparent;color:#8a7a62;font:800 11px "Nunito",sans-serif;text-decoration:underline;cursor:pointer}
+.tut-box.folded p,.tut-box.folded #tut-next,.tut-box.folded .tut-skip{display:none}
+.tut-box.folded{cursor:pointer;padding:6px 10px}
+body.phone .pad{z-index:26}

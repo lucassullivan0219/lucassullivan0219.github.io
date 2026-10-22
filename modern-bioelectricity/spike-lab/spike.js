@@ -469,6 +469,12 @@ setPhone();
 /* ================================================================ oscilloscope */
 const SCOPE = Scope($('#scope'));
 function fitScope(){
+  const bay = $('#bay');
+  if(document.body.classList.contains('phone') && !document.body.classList.contains('scopebig')){
+    /* mini scope: as wide as fits between the top bar and the SW pad, leaving room for the clips */
+    const room = innerHeight - 52 - 100 - 34;
+    bay.style.width = Math.round(Math.max(140, Math.min(232, room * 566 / 380))) + 'px';
+  } else bay.style.width = '';
   let w = $('#scopefit').clientWidth; if(!w) return;
   if(document.body.classList.contains('scopebig')) w = Math.min(w, (innerHeight - 64) * 566 / 380);
   const s = Math.min(1.2, w / 566);
@@ -838,10 +844,10 @@ function resize3D(force){
   if(key === fitKey && !force) return;
   fitKey = key;
   const cx = (x0 + x1) / 2, half = (x1 - x0) / 2 + 0.3;
-  const dir = camera.position.clone().sub(controls.target).normalize();
-  controls.target.set(cx, 0.6, 0);
+  const dir = phone ? new THREE.Vector3(0.03, 0.9, 0.43).normalize() : camera.position.clone().sub(controls.target).normalize();
+  controls.target.set(cx, 0.6, phone ? 0.25 : 0);
   const vf = camera.fov * Math.PI / 360, hf = Math.atan(Math.tan(vf) * camera.aspect);
-  const d = Math.max(half / Math.tan(hf), 3.4 / Math.tan(vf)) * (phone ? h / Math.max(1, hEff) : 1);
+  const d = Math.max(half / Math.tan(hf), (phone ? 2.9 : 3.4) / Math.tan(vf)) * (phone ? h / Math.max(1, hEff) : 1);
   camera.position.copy(controls.target).addScaledVector(dir, Math.min(d, controls.maxDistance));
   controls.update();
 }
@@ -959,9 +965,12 @@ function tutRender(){
   const s = TUT[lvState.tutStep];
   if(!s){ endTutorial(); win(); return; }
   openPanel(s.panel || null);
-  $('#tutbox').innerHTML = '<div class="tut-h"><b>STEP ' + (lvState.tutStep + 1) + ' / ' + TUT.length + '</b><button type="button" class="tut-x" title="Leave the tutorial">✕</button></div><p>' + s.t + '</p>' +
-    (s.next ? '<button type="button" class="chip" id="tut-next">GOT IT ▶</button>' : '');
-  $('.tut-x', $('#tutbox')).addEventListener('click', () => { endTutorial(); renderMap(); show('scr-map'); });
+  const box = $('#tutbox'); box.classList.remove('folded');
+  box.innerHTML = '<div class="tut-h"><b>STEP ' + (lvState.tutStep + 1) + ' / ' + TUT.length + '</b><button type="button" class="tut-x" title="Make this box small">–</button></div><p>' + s.t + '</p>' +
+    (s.next ? '<button type="button" class="chip" id="tut-next">GOT IT ▶</button>' : '') + '<button type="button" class="tut-skip">skip tutorial</button>';
+  $('.tut-x', box).addEventListener('click', e => { e.stopPropagation(); box.classList.toggle('folded'); $('.tut-x', box).textContent = box.classList.contains('folded') ? '+' : '–'; tutPlace(); });
+  box.addEventListener('click', e => { if(box.classList.contains('folded') && !e.target.closest('button')){ box.classList.remove('folded'); $('.tut-x', box).textContent = '–'; tutPlace(); } });
+  $('.tut-skip', box).addEventListener('click', () => { if(confirm('Leave the tutorial and go back to the map?')){ endTutorial(); renderMap(); show('scr-map'); } });
   const n = $('#tut-next'); if(n) n.addEventListener('click', () => { lvState.tutNext = true; });
   if(tutMark){ scene.remove(tutMark); tutMark = null; }
   let spot = s.mark === 'pu' ? A.spots.findIndex(x => x.stack.some(p => p.type === 'passive')) : s.mark;
@@ -980,10 +989,13 @@ function tutPlace(){
   const set = (id, x, y, w, h) => { const e = $(id); e.style.left = x + 'px'; e.style.top = y + 'px'; e.style.width = Math.max(0, w) + 'px'; e.style.height = Math.max(0, h) + 'px'; };
   set('#tb-t', 0, 0, W, y0); set('#tb-b', 0, y1, W, H - y1); set('#tb-l', 0, y0, x0, y1 - y0); set('#tb-r', x1, y0, W - x1, y1 - y0);
   set('#tut-hole', x0, y0, x1 - x0, y1 - y0);
-  const box = $('#tutbox'), bw = Math.min(380, W - 24), bh = box.offsetHeight || 120;
+  const box = $('#tutbox'), phone = document.body.classList.contains('phone'), folded = box.classList.contains('folded');
+  const bw = folded ? 150 : Math.min(phone ? 330 : 380, W - 24), bh = box.offsetHeight || 120;
   let bx = Math.min(Math.max(12, (x0 + x1) / 2 - bw / 2), W - bw - 12), by;
   if(H - y1 > bh + 20) by = y1 + 12; else if(y0 > bh + 20) by = y0 - bh - 12; else { by = Math.max(12, H / 2 - bh / 2); bx = x1 + 12 + bw < W ? x1 + 12 : Math.max(12, x0 - bw - 12); }
   if(el.id === 'stage' && H - y1 < bh + 20){ by = Math.max(12, y0 + 64); bx = Math.max(12, x1 - bw - 16); }
+  if(el.id === 'stage' && phone){ bx = W - bw - 8; by = H - bh - 8; }
+  if(folded && el.id === 'stage'){ bx = W - bw - 8; by = H - bh - 8; }
   box.style.left = bx + 'px'; box.style.top = by + 'px'; box.style.width = bw + 'px';
 }
 function tutTick(real){
