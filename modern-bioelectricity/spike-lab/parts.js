@@ -178,7 +178,9 @@ var SL = (function(){
     return {qs:'pcb', src:'stim'};
   }
   function memSt(boards, stim){
-    var m = {so_r2:1e6, qs:stimSt(stim).qs === 'pcb' ? 'pcb' : 'rx', r13p:0, rf:0, rs:0, rb:0};
+    var m = {so_r2:1e6, qs:stimSt(stim).qs === 'pcb' ? 'pcb' : 'rx', r13p:0, rf:0, rs:0, rb:0, nlk:1};
+    /* HW3: every Passive Unit on the membrane stack is one more leak in parallel (2 = 50 kOhm || 2 uF) */
+    m.nlk = Math.max(1, boards.filter(function(p){ return p.type === 'passive'; }).length);
     boards.forEach(function(p){
       if(p.type === 'passive' && p.ver === 'true') m.rb = tv(p, 'rb');
       if(p.type === 'fi' && p.ver === 'true'){ m.r13p = tv(p, 'r13p'); m.rf = tv(p, 'rf'); }
@@ -272,6 +274,7 @@ var SL = (function(){
     var need = ['passive', 'fi', 'so'].filter(function(t){ return !preM.some(function(x){ return x.type === t; }); });
     if(need.length) msgs.push(['tip', 'The HW3 model always has a full Pre membrane (Passive Unit as leak + FI + SO); missing here: ' + need.map(function(t){ return NM[t]; }).join(', ') + '.']);
     var sv = verOf(syn); if(syn.ver !== 'kit') st.r1p = syn.ver === 'true' ? tv(syn, 'r1p') : sv.st.r1p;
+    if(A.wire) msgs.push(['tip', 'HW3 does not use the V+ Flywire: every membrane gets V+ through its own stack. Tap the red wire, then REMOVE.']);
     if(st.syn === 'inh' && st.bat === 'open') msgs.push(['tip', 'No 1.5 V cell (or jumper) on the Inhibitory Synapse: the synapse is open.']);
     var fiA = preM.filter(function(x){ return x.type === 'fi'; })[0];
     if(fiA && fiA.ver === 'r13') st.r13A = 1e3;

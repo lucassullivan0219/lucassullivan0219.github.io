@@ -108,7 +108,7 @@ function changed(replug){
   if(selId && !SL.find(A, selId)) selId = null;
   fixProbes();
   applyEngine(replug !== false);
-  renderStatus(); renderPad(); renderClips(); build3D(); drawSchema(); renderSel(); renderCT();
+  renderStatus(); renderPad(); renderClips(); build3D(); drawSchema(); renderSel(); renderCT(); syncDrawer();
   if(MODE === 'campaign') checkLive();
 }
 function fixProbes(){
@@ -191,7 +191,13 @@ const REC = {
 };
 
 /* ================================================================ drawer */
+let drawerTypes = [], wireShown = null;
+/* free build: the V+ Flywire card shows only when it is useful (HW2 with a cable, so FI is off the Stimulator's stack) or already on the table */
+function wireUseful(){ return !!(A.wire || (R && R.hw === 2 && R.n > 0)); }
+function syncDrawer(){ if(MODE === 'free' && wireShown !== wireUseful()) renderDrawer(drawerTypes); }
 function renderDrawer(types){
+  drawerTypes = types;
+  if(MODE === 'free'){ wireShown = wireUseful(); if(!wireShown) types = types.filter(t => t !== 'wire'); }
   const box = $('#parts'); box.innerHTML = '';
   document.body.classList.toggle('noparts', !types.length);
   if(!types.length){ box.innerHTML = '<p class="small" style="color:var(--muted);font:700 13px Nunito;margin:6px 4px">No parts needed: everything is already on the table.</p>'; return; }
@@ -290,7 +296,12 @@ $('#view-schema').addEventListener('click', () => { if(holding && holding.type){
 
 /* ================================================================ status, pad, probes, selection */
 function renderStatus(){
-  $('#status').innerHTML = R.msgs.slice(0, 3).map(m => '<div class="msg ' + m[0] + '"><b class="i">' + ({ok:'✔', bad:'!', tip:'i'})[m[0]] + '</b><span>' + m[1] + '</span></div>').join('');
+  let list = R.msgs;
+  if(document.body.classList.contains('phone')){                  /* a phone shows one line: an error wins; in a level only errors */
+    const bad = list.filter(m => m[0] === 'bad');
+    list = MODE === 'campaign' ? bad : bad.concat(list.filter(m => m[0] !== 'bad'));
+  }
+  $('#status').innerHTML = list.slice(0, 3).map(m => '<div class="msg ' + m[0] + '"><b class="i">' + ({ok:'✔', bad:'!', tip:'i'})[m[0]] + '</b><span>' + m[1] + '</span></div>').join('');
 }
 function potRow(who){
   const v = rpot[who] / 1e3;
@@ -341,9 +352,15 @@ function nodeLabel(n){
   if(/^P\d/.test(n)) return 'unit #' + n.slice(1);
   return n;
 }
+/* HW3 always simulates the whole circuit; a probe on a node that has no board on the table measures nothing */
+function onTable(n){ return !n || !R || R.hw !== 3 || Object.values(R.boardNode).indexOf(n) >= 0; }
+let probeLive = [true, true];
 function renderClips(){
-  $('#clip1').textContent = nodeLabel(probes[0]); $('#clip2').textContent = nodeLabel(probes[1]);
-  SCOPE.setLabels([nodeLabel(probes[0]), probes[1] ? nodeLabel(probes[1]) : '']);
+  probeLive = [onTable(probes[0]), onTable(probes[1])];
+  const lab = c => nodeLabel(probes[c]) + (probes[c] && !probeLive[c] ? ' · no board' : '');
+  $('#clip1').textContent = lab(0); $('#clip2').textContent = lab(1);
+  $$('.clip').forEach((b, c) => b.classList.toggle('dead', !probeLive[c]));
+  SCOPE.setLabels([lab(0), probes[1] ? lab(1) : '']);
 }
 $$('.clip').forEach(c => {
   const ch = +c.dataset.clip;
@@ -731,7 +748,9 @@ function build3D(){
     const st = stims[0], fiB = PICK.find(g => { const f = SL.find(A, g.userData.partId); return f && f.p.type === 'fi'; });
     const a = st ? new THREE.Vector3(st.g.position.x, st.g.position.y + 0.12, BL / 2 - 0.2) : new THREE.Vector3(SPX(1), 1, 1);
     const b = fiB ? new THREE.Vector3(fiB.position.x, fiB.position.y + 0.12, BL / 2 - 0.2) : new THREE.Vector3(SPX(4), 1, 1);
-    const t = tube(a, b, 1.1, Mt.wire, 0.045), g = new THREE.Group(); g.add(t);
+    const same = Math.abs(a.x - b.x) < 0.1;                 /* FI in the Stimulator's own stack: a short loop down the board edge */
+    if(same){ a.x += 0.3; b.x += 0.3; a.z = b.z = BL / 2 - 0.05; }
+    const t = tube(a, b, same ? 0.15 : 1.1, Mt.wire, 0.045), g = new THREE.Group(); g.add(t);
     t.userData.partId = A.wire.id; g.userData.partId = A.wire.id; g.userData.y = 0; BOARD.add(g); PICK.push(g);
   }
   const syn = A.bases.find(b => b.type === 'syni');
@@ -1011,7 +1030,7 @@ let last = performance.now(), carry = 0, lastUI = 0, lastSch = 0;
 function frame(now){
   const real = Math.min(now - last, 50) / 1000; last = now;
   if(!$('#scr-game').hidden && ENG){
-    const E = ENG.E, c1 = probes[0], c2 = probes[1], h1 = E.has(c1), h2 = c2 && E.has(c2);
+    const E = ENG.E, c1 = probes[0], c2 = probes[1], h1 = E.has(c1) && probeLive[0], h2 = c2 && E.has(c2) && probeLive[1];
     carry += real;
     let n = Math.floor(carry / DT); carry -= n * DT; if(n > 300){ n = 300; carry = 0; }
     for(let k = 0; k < n; k++){

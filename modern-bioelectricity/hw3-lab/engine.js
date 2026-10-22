@@ -75,7 +75,8 @@ var SynEngine = function(){
     }
     function membrane(p, m){
       var vm = p + '.Vm';
-      C.push([IDX[vm], -1, 1e-6, p + '.lkc']); r(vm, 'GND', 1e5, p + '.lkr');           /* Leak */
+      var nlk = m.nlk || 1;                                                                 /* Leak: nlk Passive Units in parallel (SPIKE LAB stacks) */
+      C.push([IDX[vm], -1, 1e-6 * nlk, p + '.lkc']); r(vm, 'GND', 1e5 / nlk, p + '.lkr');
       D.push([IDX[vm], IDX[p + '.FI.B3'], p + '.fid']);                                    /* Fast inward */
       r(p + '.FI.B3', 'GND', 3e6, p + '.fir3');
       Q.push(['n', IDX[p + '.FI.B4'], IDX[p + '.FI.B3'], IDX[p + '.FI.E3'], M3904, p + '.fi3904']);
