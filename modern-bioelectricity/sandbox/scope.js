@@ -48,7 +48,10 @@
     '.osc-bot{position:absolute;left:18px;right:18px;bottom:8px;height:30px;display:flex;align-items:center;gap:16px}',
     '.osc-bnc{display:flex;align-items:center;gap:6px;font:900 8.5px/1 "Nunito",sans-serif;letter-spacing:.1em;color:#aab4c2}',
     '.osc-bnc span{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle,#1a1d22 22%,#c9ced6 25%,#8d949e 55%,#3a3f47 60%);border:2px solid #0a0d12;box-shadow:0 0 0 3px var(--ring,#555)}',
-    '.osc-pwr{margin-left:auto;width:26px;height:26px;border-radius:50%;border:2px solid #0a0d12;background:radial-gradient(circle at 40% 35%,#8af59a,#2fae45);color:#06350e;font:900 13px/1 sans-serif;cursor:default;box-shadow:0 2px 0 #0a0d12}'
+    '.osc-pwr{margin-left:auto;width:26px;height:26px;border-radius:50%;border:2px solid #0a0d12;background:radial-gradient(circle at 40% 35%,#8af59a,#2fae45);color:#06350e;font:900 13px/1 sans-serif;cursor:pointer;padding:0;box-shadow:0 2px 0 #0a0d12}',
+    '.osc-pwr:active{transform:translateY(2px);box-shadow:none}',
+    '.osc-pwr.off{background:radial-gradient(circle at 40% 35%,#7d8590,#4b525d);color:#1a1d22}',
+    '.osc.off .osc-scr canvas{background:#020304}'
   ].join('\n');
 
   var VSC = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5];
@@ -62,11 +65,11 @@
 
   window.Scope = function(root){
     if(!document.getElementById('osc-css')){ var s = document.createElement('style'); s.id = 'osc-css'; s.textContent = CSS; document.head.appendChild(s); }
-    var S = {
-      ch:[{on:true, vi:6, pos:-3}, {on:true, vi:5, pos:-3}],
-      ti:6, hpos:0, mode:'AUTO', src:0, slope:1, level:2.0, run:true,
-      labels:['Vm', '']
-    };
+    /* factory settings: a power cycle (POWER key) always comes back to these */
+    function defaults(){ return {ch:[{on:true, vi:6, pos:-3}, {on:true, vi:5, pos:-3}], ti:6, hpos:0, mode:'AUTO', src:0, slope:1, level:2.0, run:true}; }
+    var S = Object.assign(defaults(), {labels:['Vm', ''], power:true});
+    var bootUntil = 0, BOOT = 1600;                    /* ms of boot screen after power-on */
+    function live(){ return S.power && performance.now() >= bootUntil; }
     var CAP = 1 << 17, bt = new Float64Array(CAP), ba = new Float32Array(CAP), bb = new Float32Array(CAP), head = 0, count = 0;
     var snap = null, armed = true, trigT = null, lastDone = -Infinity, prevSrc = NaN, status = 'RUN';
     var api = {onChange:null};
@@ -78,7 +81,7 @@
       '<div class="osc-scr"><canvas width="320" height="240" aria-label="Oscilloscope screen"></canvas></div>' +
       '<div class="osc-soft"></div><div class="osc-ctl"></div>' +
       '<div class="osc-bot"><span class="osc-bnc" style="--ring:#e2c022"><span></span>CH1</span><span class="osc-bnc" style="--ring:#29b8d6"><span></span>CH2</span>' +
-      '<span class="osc-bnc"><span></span>EXT TRIG</span><span class="osc-pwr" title="Power">⏻</span></div>';
+      '<span class="osc-bnc"><span></span>EXT TRIG</span><button type="button" class="osc-pwr" title="Power (power-cycling restores factory settings)" aria-label="Scope power" aria-pressed="true">⏻</button></div>';
     root.appendChild(o);
     var cv = o.querySelector('canvas'), ctx = cv.getContext('2d'), ctl = o.querySelector('.osc-ctl'), soft = o.querySelector('.osc-soft');
     var dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
@@ -88,7 +91,7 @@
     function key(parent, label, cls, x, y, fn, led){
       var b = document.createElement('button'); b.type = 'button'; b.className = 'osc-key ' + (cls || ''); b.innerHTML = label + (led ? '<span class="led"></span>' : '');
       if(x !== null){ b.style.position = 'absolute'; b.style.left = x + 'px'; b.style.top = y + 'px'; }
-      b.addEventListener('click', function(){ fn(b); paint(); changed(); });
+      b.addEventListener('click', function(){ if(!live()) return; fn(b); paint(); changed(); });
       parent.appendChild(b); return b;
     }
     function sec(title, x, y, w, h){
@@ -101,7 +104,8 @@
       k.innerHTML = '<div class="cap ' + (cls || '') + '" tabindex="0" role="slider" aria-label="' + label + '" style="width:' + size + 'px;height:' + size + 'px"><i></i></div><label>' + label + '</label>';
       parent.appendChild(k);
       var cap = k.firstChild, ang = 0, drag = null;
-      function turn(d){ if(!d) return; ang += d * 24; cap.style.transform = 'rotate(' + ang + 'deg)'; step(d); paint(); changed(); }
+      function turn(d){ if(!d || !live()) return; ang += d * 24; cap.style.transform = 'rotate(' + ang + 'deg)'; step(d); paint(); changed(); }
+      KNOBS.push(function(){ ang = 0; cap.style.transform = ''; });
       cap.addEventListener('wheel', function(e){ e.preventDefault(); turn(e.deltaY < 0 ? 1 : -1); }, {passive:false});
       cap.addEventListener('pointerdown', function(e){ drag = {y:e.clientY, moved:0, x:e.offsetX}; cap.setPointerCapture(e.pointerId); });
       cap.addEventListener('pointermove', function(e){
@@ -118,6 +122,7 @@
       });
       return k;
     }
+    var KNOBS = [];                                   /* resets each knob's pointer on power-on */
     function clampI(i, n){ return Math.max(0, Math.min(n - 1, i)); }
 
     /* top row */
@@ -149,7 +154,7 @@
     /* soft keys under the screen (decoration + quick help) */
     ['MENU', 'MEASURE', 'CURSOR', 'DISPLAY', 'UTILITY'].forEach(function(n){
       var b = document.createElement('button'); b.type = 'button'; b.className = 'osc-key sm'; b.textContent = n; b.style.minWidth = '56px';
-      b.addEventListener('click', function(){ flash(n === 'MEASURE' ? 'Measurements are listed under the scope' : n + ': not in this prototype'); });
+      b.addEventListener('click', function(){ if(!live()) return; flash(n === 'MEASURE' ? 'Measurements are listed under the scope' : n + ': not in this prototype'); });
       soft.appendChild(b);
     });
     var flashMsg = null, flashUntil = 0;
@@ -163,6 +168,18 @@
     }
     paint();
 
+    /* POWER: off = dark screen, every key and knob dead; on = boot screen, then factory settings */
+    var pwr = o.querySelector('.osc-pwr');
+    api.setPower = function(on){
+      S.power = on; o.classList.toggle('off', !on); pwr.classList.toggle('off', !on); pwr.setAttribute('aria-pressed', on);
+      if(on){
+        Object.assign(S, defaults()); KNOBS.forEach(function(f){ f(); });
+        api.clear(); bootUntil = performance.now() + BOOT; flashMsg = null;
+      } else { api.clear(); }
+      paint(); changed();
+    };
+    pwr.addEventListener('click', function(){ api.setPower(!S.power); });
+
     /* ---------------- data ---------------- */
     function idx(k){ return (head - count + k + CAP) % CAP; }     /* logical k -> ring slot */
     function lastIdx(){ return count ? (head - 1 + CAP) % CAP : -1; }
@@ -172,6 +189,7 @@
       return lo;
     }
     api.push = function(t, a, b){
+      if(!S.power) return;
       bt[head] = t; ba[head] = a; bb[head] = b; head = (head + 1) % CAP; if(count < CAP) count++;
       if(!S.run || S.mode === 'AUTO') { prevSrc = S.src ? b : a; return; }
       var v = S.src ? b : a, W = 10 * TSC[S.ti], pre = (5 + S.hpos) * TSC[S.ti];
@@ -211,7 +229,7 @@
     }
     var lastView = null;
     api.measure = function(){
-      var w = lastView, out = {};
+      var w = S.power ? lastView : null, out = {};
       [0, 1].forEach(function(c){
         if(!w || !S.ch[c].on){ out['c' + (c + 1)] = null; return; }
         var V = series(w, c)[1], mx = -Infinity, mn = Infinity;
@@ -238,6 +256,16 @@
 
     /* ---------------- screen ---------------- */
     api.draw = function(){
+      if(!S.power){ ctx.fillStyle = '#020304'; ctx.fillRect(0, 0, 320, 240); lastView = null; return; }
+      var now = performance.now();
+      if(now < bootUntil){                             /* boot screen */
+        var p = 1 - (bootUntil - now) / BOOT;
+        ctx.fillStyle = '#04080c'; ctx.fillRect(0, 0, 320, 240);
+        ctx.textAlign = 'center'; ctx.fillStyle = '#e9edf3'; ctx.font = '22px "Lilita One", sans-serif'; ctx.fillText('SANDBOX SCOPE', 160, 104);
+        ctx.font = '11px "Share Tech Mono", monospace'; ctx.fillStyle = '#98a3b3'; ctx.fillText('DSO-2C  ·  restoring factory settings', 160, 126);
+        ctx.strokeStyle = '#3d4450'; ctx.strokeRect(70.5, 146.5, 180, 10); ctx.fillStyle = '#ffcf3f'; ctx.fillRect(72, 148, 177 * p, 7);
+        ctx.textAlign = 'left'; lastView = null; return;
+      }
       var w = view(); if(w) lastView = w; else w = lastView;
       ctx.fillStyle = '#04080c'; ctx.fillRect(0, 0, 320, 240);
       /* grid */

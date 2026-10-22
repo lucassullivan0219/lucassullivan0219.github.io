@@ -326,7 +326,7 @@ potEl.addEventListener('input', () => { potUI(); if(CUR){ CUR.st.rpot = rpot; AM
 $('#pulses').innerHTML = [0.01, 0.1, 1].map(T => '<button type="button" class="chip" data-t="' + T + '">' + (T >= 1 ? T + ' s' : T * 1e3 + ' ms') + '</button>').join('');
 $('#pulses').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if(b) pressFor(+b.dataset.t); });
 const swb = $('#swbig');
-swb.addEventListener('pointerdown', e => { swb.setPointerCapture(e.pointerId); pulseEnd = null; setSW(true); });
+swb.addEventListener('pointerdown', e => { try{ swb.setPointerCapture(e.pointerId); }catch(err){} pulseEnd = null; setSW(true); });
 const swUp = () => { if(swDown && pulseEnd === null) setSW(false); };
 swb.addEventListener('pointerup', swUp); swb.addEventListener('pointercancel', swUp);
 window.addEventListener('keydown', e => { if(e.code === 'Space' && !e.repeat && e.target === document.body){ e.preventDefault(); pulseEnd = null; setSW(true); } });
