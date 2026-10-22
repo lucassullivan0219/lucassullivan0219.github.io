@@ -175,3 +175,135 @@ body.bclosed .stage{right:12px}
   .pot{min-width:120px}
   .pulses .chip{padding:3px 6px;font-size:12px}
 }
+
+/* =================== SPIKE LAB additions =================== */
+[hidden]{display:none!important}
+.screen{position:absolute;inset:0}
+.chip.big{font-size:26px;padding:12px 30px;border-radius:16px;box-shadow:0 6px 0 var(--line),inset 0 2px 0 rgba(255,255,255,.55)}
+.chip.teal{background:linear-gradient(#73e9d6,var(--teal) 45%,#16a98f);color:#043a31}
+
+/* title */
+.title{display:grid;place-items:center;overflow:hidden;background:radial-gradient(900px 600px at 50% 40%,#2b4876,#0e1a2b)}
+.title-in{position:relative;z-index:2;text-align:center;padding:24px}
+.biglogo{margin:0;font:400 clamp(64px,13vw,150px)/.9 "Lilita One",sans-serif;color:var(--gold);letter-spacing:.02em;transform:rotate(-4deg);
+  text-shadow:0 6px 0 #9b5c00,4px 0 0 var(--line),-4px 0 0 var(--line),0 4px 0 var(--line),0 -4px 0 var(--line),0 12px 0 var(--line)}
+.biglogo span{color:var(--red)}
+.tag{font:800 clamp(15px,2.4vw,21px) "Nunito",sans-serif;color:#dfeaff;margin:22px 0 26px}
+.title-btns{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+.tiny{margin-top:26px;font:700 12px "Nunito",sans-serif;color:var(--muted)}
+.title-spark{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0 79px,rgba(255,255,255,.04) 79px 80px),repeating-linear-gradient(0deg,transparent 0 79px,rgba(255,255,255,.04) 79px 80px)}
+.title-spark svg{position:absolute;left:0;top:64%;width:200%;height:90px;opacity:.35;animation:sweep 6s linear infinite}
+@keyframes sweep{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* map */
+.map{overflow-y:auto}
+.maptitle{margin:0;font:400 28px "Lilita One",sans-serif;color:var(--gold);letter-spacing:.06em;text-shadow:0 3px 0 var(--line)}
+.chip.starsum{background:linear-gradient(#ffe27a,var(--gold));cursor:default}
+.chapters{position:absolute;top:var(--top);left:0;right:0;padding:10px 18px 40px;display:flex;flex-direction:column;gap:18px}
+.chapter{border:3px solid var(--line);border-radius:18px;background:linear-gradient(var(--panel2),var(--panel));box-shadow:0 6px 0 var(--line);padding:12px 14px 16px}
+.chapter h3{margin:0 0 10px;font:400 24px "Lilita One",sans-serif;color:var(--gold);letter-spacing:.05em;text-shadow:0 2px 0 var(--line)}
+.chapter h3 small{font:800 12px "Nunito",sans-serif;color:var(--muted);letter-spacing:0;margin-left:8px;text-shadow:none}
+.lvls{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.lvl{position:relative;text-align:left;border:3px solid var(--line);border-radius:14px;background:#f3ead6;color:#2a2116;padding:8px 10px 10px;cursor:pointer;box-shadow:0 4px 0 var(--line);min-height:96px}
+.lvl:hover{transform:translateY(-2px) rotate(-.5deg)}
+.lvl .code{font:900 11px "Nunito",sans-serif;color:#7a6a52}
+.lvl b{display:block;font:400 17px/1.1 "Lilita One",sans-serif;margin:2px 0 4px}
+.kind{display:inline-block;font:900 10px "Nunito",sans-serif;letter-spacing:.08em;padding:1px 6px;border-radius:6px;border:2px solid var(--line);background:#fff;color:#2a2116}
+.kind.build{background:#9ee6a4}.kind.measure{background:#9fd3ff}.kind.explain{background:#ffd27a}.kind.tutorial{background:#ff9f9f}
+.lvl .st{position:absolute;right:8px;bottom:6px;font:400 17px "Lilita One",sans-serif;color:#c9b998;letter-spacing:1px}
+.lvl .st .on{color:#f2a300;text-shadow:0 1px 0 var(--line)}
+
+/* game hud bits */
+.seg.ctype button[data-ct="kit"].on{background:linear-gradient(#a7f5ae,var(--green));color:#06350e}
+.seg.ctype button[data-ct="mine"].on{background:linear-gradient(#a9cdfa,#4c8ee8);color:#06224a}
+.seg.ctype button[data-ct="ideal"].on{background:linear-gradient(#ffc39a,#f07c3a);color:#3a1600}
+.idealsel{border:3px solid var(--line);border-radius:10px;background:#3a2414;color:#ffe2c9;font:800 13px "Nunito",sans-serif;padding:5px 6px;box-shadow:0 4px 0 var(--line)}
+.vtoggle{display:flex;align-items:center;gap:6px;font:800 12px "Nunito",sans-serif;color:var(--muted);margin:-2px 14px 8px;cursor:pointer}
+.part .vers{display:none}
+.part .vers .grp{font:900 9px "Nunito",sans-serif;letter-spacing:.08em;color:#8a7a62;align-self:center}
+body.showvers .part .vers{display:flex}
+
+/* selection panel: version groups and sliders */
+.selpanel{width:290px;max-height:calc(100% - 130px);overflow-y:auto}
+.sp-v .g{width:100%;font:900 9.5px "Nunito",sans-serif;letter-spacing:.1em;color:#8a7a62;margin-top:2px}
+.sp-v .g.my{color:#2b5c9e}
+.sp-t{display:flex;flex-direction:column;gap:6px;margin:0 0 8px}
+.sp-t .tr{border:2px solid var(--line);border-radius:8px;background:#fff;padding:4px 7px}
+.sp-t .tr .tl{display:flex;justify-content:space-between;font:900 11.5px "Nunito",sans-serif}
+.sp-t .tr input{width:100%;accent-color:#f07c3a}
+.sp-t .tr p{margin:1px 0 0;font:700 11px/1.3 "Nunito",sans-serif;color:#6b5a43}
+.sp-my{font:800 11px "Nunito",sans-serif;color:#2b5c9e;margin:-4px 0 6px}
+
+/* goal card (campaign) */
+.goal{position:absolute;left:12px;top:12px;width:min(360px,calc(100% - 24px));z-index:7;border:3px solid var(--line);border-radius:14px;background:#f3ead6;color:#2a2116;
+  box-shadow:0 5px 0 var(--line);padding:9px 11px 11px}
+.goal .gh{display:flex;align-items:baseline;gap:8px;padding-right:26px}
+.goal .gh .code{font:900 11px "Nunito",sans-serif;color:#7a6a52}
+.goal .gh b{font:400 19px "Lilita One",sans-serif}
+.goal p{margin:5px 0 8px;font:700 13px/1.4 "Nunito",sans-serif}
+.goal .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.goal input[type=number]{width:110px;border:3px solid var(--line);border-radius:10px;padding:5px 8px;font:800 15px "Share Tech Mono",monospace;background:#fff;color:#111}
+.goal .unit{font:900 14px "Nunito",sans-serif}
+.goal .opts{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.goal .opt{text-align:left;border:2px solid var(--line);border-radius:10px;background:#fff;padding:6px 9px;cursor:pointer;font:700 12.5px/1.35 "Nunito",sans-serif;color:#2a2116}
+.goal .opt:hover{background:#fff6dd}
+.goal .opt.bad{background:#ffd5d0;text-decoration:line-through}
+.goal .opt.good{background:#c9f5cf}
+.goal .ghint{margin:6px 0 0;padding:5px 8px;border-radius:8px;background:#fff3c4;font:800 12px/1.4 "Nunito",sans-serif}
+.goal .fb{margin:6px 0 0;font:900 12.5px "Nunito",sans-serif}
+.goal .fb.no{color:#c92d22}.goal .fb.yes{color:#1f8a33}
+.goal .min{position:absolute;right:8px;top:7px;border:2px solid var(--line);border-radius:7px;background:#fff;cursor:pointer;font:900 11px "Nunito",sans-serif;color:#2a2116;width:24px}
+.goal.mini p,.goal.mini .row,.goal.mini .opts,.goal.mini .ghint,.goal.mini .fb{display:none}
+body.campaign .status{top:auto;bottom:132px}
+
+/* holding a part (tap-to-place) */
+.holding{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:8;border:3px solid var(--line);border-radius:12px;background:var(--gold);color:#3a2400;
+  padding:5px 12px;font:400 15px "Lilita One",sans-serif;box-shadow:0 4px 0 var(--line);display:flex;gap:10px;align-items:center;white-space:nowrap}
+.holding button{border:2px solid var(--line);border-radius:7px;background:#fff;cursor:pointer;font:900 11px "Nunito",sans-serif}
+.drag-ghost{position:fixed;z-index:90;pointer-events:none;transform:translate(-50%,-60%) rotate(-4deg);border:3px solid var(--line);border-radius:12px;padding:6px 12px;
+  background:var(--gold);color:#3a2400;font:400 15px "Lilita One",sans-serif;box-shadow:0 6px 0 var(--line)}
+
+/* pad: one or two stimulators */
+.pad .sw-col{display:flex;flex-direction:column;align-items:center;gap:3px}
+.pad .sw-col .lbl{font:400 12px "Lilita One",sans-serif;color:var(--muted);letter-spacing:.06em}
+.pad .swbig.b{background:radial-gradient(circle at 38% 30%,#b1d6ff,#4c8ee8 45%,#245fb0 80%)}
+.pad .swbig.sm{width:64px;height:64px;font-size:19px}
+.pad .train{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.pad .train select{border:2px solid var(--line);border-radius:8px;background:#14213a;color:#dfeaff;font:800 12px "Nunito",sans-serif;padding:2px 4px}
+
+/* probe clips */
+.clips{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 8px}
+.clip{border:3px solid var(--line);border-radius:12px;padding:6px 12px;cursor:grab;font:400 15px "Lilita One",sans-serif;color:#1b1404;box-shadow:0 3px 0 var(--line);touch-action:none}
+.clip span{font:800 12px "Share Tech Mono",monospace;margin-left:6px}
+.clip.c1{background:#ffe14d}.clip.c2{background:#4de4ff}
+.clip.held{outline:4px dashed #fff;outline-offset:2px}
+
+/* win + tutorial */
+.win{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(6,12,22,.6)}
+.win .card{border:4px solid var(--line);border-radius:20px;background:#f3ead6;color:#2a2116;padding:18px 26px 20px;text-align:center;box-shadow:0 8px 0 var(--line);animation:pop .3s cubic-bezier(.3,1.6,.5,1);max-width:min(460px,92vw)}
+.win h2{margin:0;font:400 40px "Lilita One",sans-serif;color:#f2a300;text-shadow:0 3px 0 var(--line)}
+.win .bigstars{font:400 54px "Lilita One",sans-serif;color:#d8cbb0;letter-spacing:6px}
+.win .bigstars .on{color:#f2a300;text-shadow:0 3px 0 var(--line)}
+.win p{font:700 13px/1.45 "Nunito",sans-serif;margin:6px 0 12px}
+.win .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.tut{position:fixed;inset:0;z-index:70;pointer-events:none}
+.tut-box{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);max-width:min(440px,90vw);border:3px solid var(--line);border-radius:14px;background:#fff3c4;color:#2a2116;
+  padding:9px 14px;font:800 14px/1.4 "Nunito",sans-serif;box-shadow:0 5px 0 var(--line);text-align:center}
+.tut-box b{font:400 16px "Lilita One",sans-serif;color:#c25b00;margin-right:6px}
+.tut-target{outline:4px solid var(--gold)!important;outline-offset:3px}
+
+@media (max-width:860px){
+  .goal{width:calc(100% - 24px)}
+  .seg.ctype button{padding:6px 7px;font-size:12px}
+  .hud .logo{display:none}
+  .chip.big{font-size:20px;padding:10px 20px}
+}
+
+.pad{flex-direction:column;align-items:stretch;gap:6px;padding:7px 10px;max-width:calc(100% - 24px)}
+.padrow{display:flex;align-items:center;gap:10px}
+.padrow .pot{min-width:130px;flex:1 1 130px}
+.padrow .pulses{flex-wrap:nowrap}
+.padrow .swbig.sm{width:52px;height:52px;font-size:15px}
+.padrow .train{flex-direction:row;align-items:center}
+@media (max-width:860px){.padrow{flex-wrap:wrap;justify-content:center}}

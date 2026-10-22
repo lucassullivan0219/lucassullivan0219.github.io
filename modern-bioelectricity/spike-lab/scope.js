@@ -77,7 +77,7 @@
     /* ---------------- panel ---------------- */
     var o = document.createElement('div'); o.className = 'osc';
     o.innerHTML =
-      '<div class="osc-top"><span class="osc-brand">SANDBOX<b>SCOPE</b></span><span class="osc-model">DSO-2C · 2 CH · 100 MHz · 1 GSa/s</span></div>' +
+      '<div class="osc-top"><span class="osc-brand">SPIKE<b>SCOPE</b></span><span class="osc-model">DSO-2C · 2 CH · 100 MHz · 1 GSa/s</span></div>' +
       '<div class="osc-scr"><canvas width="320" height="240" aria-label="Oscilloscope screen"></canvas></div>' +
       '<div class="osc-soft"></div><div class="osc-ctl"></div>' +
       '<div class="osc-bot"><span class="osc-bnc" style="--ring:#e2c022"><span></span>CH1</span><span class="osc-bnc" style="--ring:#29b8d6"><span></span>CH2</span>' +
@@ -261,7 +261,7 @@
       if(now < bootUntil){                             /* boot screen */
         var p = 1 - (bootUntil - now) / BOOT;
         ctx.fillStyle = '#04080c'; ctx.fillRect(0, 0, 320, 240);
-        ctx.textAlign = 'center'; ctx.fillStyle = '#e9edf3'; ctx.font = '22px "Lilita One", sans-serif'; ctx.fillText('SANDBOX SCOPE', 160, 104);
+        ctx.textAlign = 'center'; ctx.fillStyle = '#e9edf3'; ctx.font = '22px "Lilita One", sans-serif'; ctx.fillText('SPIKE SCOPE', 160, 104);
         ctx.font = '11px "Share Tech Mono", monospace'; ctx.fillStyle = '#98a3b3'; ctx.fillText('DSO-2C  ·  restoring factory settings', 160, 126);
         ctx.strokeStyle = '#3d4450'; ctx.strokeRect(70.5, 146.5, 180, 10); ctx.fillStyle = '#ffcf3f'; ctx.fillRect(72, 148, 177 * p, 7);
         ctx.textAlign = 'left'; lastView = null; return;

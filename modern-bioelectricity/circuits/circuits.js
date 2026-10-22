@@ -37,6 +37,7 @@ var CIRCUITS = (function(){
   var TRUE_SYN = {pre:'true', postMem:'true', r1p:1.5e6, r13A:0};
 
   return {
+    TUNE:T,                                                           /* tunable values with their purpose (SPIKE LAB) */
     updated:'2026-10-22',
     battery:{mine:8.44, note:'我們的 9 V 電池，2026-10-21 電表量 8.44 V'},
     c21:{hw:2, title:'#2-1 Passive',
