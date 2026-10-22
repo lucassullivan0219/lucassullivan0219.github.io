@@ -65,7 +65,7 @@ var AM = (function(){
     Q.push(['p', IDX[st.stdiode ? 'ST.C' : out], IDX['ST.R'], IDX['ST.Q'], M4403, 'pass']);
     if(st.stdiode) D.push([IDX['ST.C'], IDX[out], 'std']);
     Q.push(['p', IDX['ST.R'], IDX['ST.Q'], st.qs === 'sw' ? IDX['ST.P'] : IDX['V+'], M4403, 'sense']);
-    if(st.qs === 'rx') r('ST.Q', 'ST.R', 22e3, 'rx');      /* fix: 22 kohm across Qpass E-B */
+    if(st.qs === 'rx') r('ST.Q', 'ST.R', st.rxv || 22e3, 'rx');   /* fix: 22 kohm across Qpass E-B (st.rxv to tune it) */
     if(st.qs === 'rx10') r('ST.Q', 'ST.R', 10e3, 'rx');    /* 10 kohm there: pot range ~41-0.3 uA */
     if(st.qs === 'rx12') r('ST.Q', 'ST.R', 12e3, 'rx');    /* 12 kohm there: pot range ~51-2.6 uA (#2-3 I_min, true AP) */
     r('ST.R', 'GND', 7e3, 'r7b');

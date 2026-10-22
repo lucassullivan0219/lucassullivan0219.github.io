@@ -70,7 +70,7 @@ var SynEngine = function(){
       r(p + '.K', p + '.Q', 7e3, p + '.r7a');
       Q.push(['p', IDX[out], IDX[p + '.R'], IDX[p + '.Q'], M4403, p + '.pass']);
       Q.push(['p', IDX[p + '.R'], IDX[p + '.Q'], IDX['V+'], M4403, p + '.sense']);
-      if(qs === 'rx') r(p + '.Q', p + '.R', 22e3, p + '.rx');     /* true AP: 22 kohm across Qpass E-B, no leak */
+      if(qs === 'rx') r(p + '.Q', p + '.R', st.rxv || 22e3, p + '.rx');   /* true AP: 22 kohm across Qpass E-B, no leak (st.rxv to tune) */
       r(p + '.R', 'GND', 7e3, p + '.r7b');
     }
     function membrane(p, m){

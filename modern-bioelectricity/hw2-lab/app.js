@@ -6,8 +6,13 @@
   var $ = function(s, r){ return (r || document).querySelector(s); };
   var $$ = function(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var DT = 2e-4;
-  var MODE = 'basic', FLOW = true;
-  try{ MODE = localStorage.getItem('hw2mode') === 'adv' ? 'adv' : 'basic'; FLOW = localStorage.getItem('hw2flow') !== '0'; }catch(e){}
+  /* circuit type (../circuits/circuits.js): kit 原版, mine 我的, ideal 理想.  MODE is the page content it shows:
+     kit and mine use the 'basic' blocks, ideal the 'adv' ones. */
+  var CT = 'mine', MODE = 'basic', FLOW = true;
+  try{ var ct0 = localStorage.getItem('hw2ct'); if(['kit', 'mine', 'ideal'].indexOf(ct0) >= 0) CT = ct0; FLOW = localStorage.getItem('hw2flow') !== '0'; }catch(e){}
+  MODE = CT === 'ideal' ? 'adv' : 'basic';
+  var CTNAME = {kit:'原版', mine:'我的', ideal:'理想'};
+  var CTDESC = {kit:'老師現行對全班指定的接法（只有一種）。', mine:'我們組實際做的電路（只有一種）。', ideal:'模擬出最符合科學證據或我的要求的電路（可以有很多種，不一定會做）。'};
   /* a data-show block lists the modes it belongs to, e.g. "basic adv" */
   function inMode(blk, m){ return blk.dataset.show.split(' ').indexOf(m) >= 0; }
 
@@ -19,7 +24,8 @@
 
   /* the 'true AP' add-on set (hw2-debug/sim/check_trueap.py): 22k across Qpass E-B, 11k across
      R13, 680k R13 lower end -> FI.E3, 56k across SO C1, 330k V+ -> Vm (#2-3 adds 560k V+ -> each unit) */
-  var TRUE_AP = {so_r2:1e6, qs:'rx', r13p:11e3, rf:680e3, rs:56e3, rb:330e3};
+  var TRUE_AP = Object.assign({}, CIRCUITS.c22.ideal.filter(function(i){ return i.def; })[0].st);
+  delete TRUE_AP.rpot;
 
 
   /* ---------------- simulation regions ---------------- */
@@ -29,7 +35,8 @@
            adv:{rpot:700, src:'stim', isrc:50e-6, qs:'pcb', vplus:7.8, ch1:'PC1', ch2:'Vm'}},
       fixed:function(m, s){ var f = {chain:4, fi_on:false, so_on:false}; if(m === 'basic') f.ch1 = 'PC1'; return f; },
       sch:function(st){ return {chain:4, passiveOnly:true}; },
-      meas:['global', 'global'], scope:{v1:0.5, v2:0.5, t:0.5, z2:1}
+      meas:['global', 'global'], scope:{v1:0.5, v2:0.5, t:0.5, z2:1},
+      circuit:'c21'
     },
     s22:{
       def:{basic:{rpot:700, leak:true, fi_on:true, so_on:true, r13:1e5, ch2:''},
@@ -43,10 +50,7 @@
         ['lk2', '多疊一個 LK', {lk2:true}, 'LK 上面再疊一塊 LK（同一組排針，直接接 Vm，中間沒有 10 kΩ／100 Ω）：R_leak 變 50 kΩ、C_m 變 2 µF，τ 一樣 100 ms。漏電 6.3 µA 只把 Vm 墊到 0.30 V，低於 FI 門檻，不再自己冒峰。按 10 ms 以上才觸發（按 5 ms 只到 0.5 V，和拔掉 FI 一樣）；按 10 ms 放開後 FI 繼續推，約 60 ms 後到 1.5 V（拔 FI 只有 0.7 V）。按 100 ms：峰值 2.3 V（拔 FI 1.8 V）、半高寬約 32 ms；按住只發一次，停在 0.77 V；沒有低於靜止的後過極化。']
       ],
       basicPreset:'kit',
-      presets:[
-        ['kit', '原版電路', {}, '助教給的電路（同基礎目標，R2 = 1 MΩ）：不按也每 0.1 秒左右冒一個約 1.5 V 小峰（Stimulator 漏電把 Vm 墊在 FI 門檻）；按下到約 2.1 V，按住停在 0.78 V。'],
-        ['true', '真正的 AP', Object.assign({rpot:0}, TRUE_AP), 'R2 = 1 MΩ 再外加 5 顆電阻（見摘要區）：靜止 1.19 V、門檻約 1.66 V、AP 5.2–5.4 V、AP 後低於靜止約 0.6 V（125 ms）、AP 後 20 ms 內不能再發；按住時連續發放。']
-      ]
+      circuit:'c22'
     },
     s23:{
       def:{basic:{chain:4, rpot:700, ch2:'AX'},
@@ -56,23 +60,26 @@
       meas:['firstAP', 'signed'], scope:{v1:1, v2:0.02, t:0.5, z2:4},
       /* basic: the circuit as given, with or without the V+ flying wire (hw2-debug/sim/check_23.py combos) */
       presetsBasic:[
-        ['kit', '照實：沒飛線', {fi_supply:'none'}, 'FI 沒有 V+：n ≥ 1 只有被動反應，按住 1 秒最高 1.68／1.36／1.12／0.92 V（n = 1–4），再被 SO 慢慢拉到約 0.75 V，沒有尖峰。n = 0 的 V+ 走疊接排針，有電。'],
-        ['wire', '有 V+ 飛線', {fi_supply:'stim'}, 'Stimulator 的 V+ 拉一條飛線到 FI.V+：n ≥ 1 有 AP，峰值約 2.3／2.0／1.8／1.6 V（n = 1–4），過門檻 FI 衝高、SO 拉回；沒有後過極化。另一組實測到的就是這個。n = 3、4 按住 0.3 秒以上，放開後會卡在約 0.76 V（FI 和 SO 互相撐住），要斷電重置；n = 0 不按也會自己冒小峰。']
+        ['kit', '舊原版：沒飛線', {fi_supply:'none'}, 'FI 沒有 V+：n ≥ 1 只有被動反應，按住 1 秒最高 1.68／1.36／1.12／0.92 V（n = 1–4），再被 SO 慢慢拉到約 0.75 V，沒有尖峰。n = 0 的 V+ 走疊接排針，有電。'],
+        ['wire', '原版：有 V+ 飛線', {fi_supply:'stim'}, 'Stimulator 的 V+ 拉一條飛線到 FI.V+：n ≥ 1 有 AP，峰值約 2.3／2.0／1.8／1.6 V（n = 1–4），過門檻 FI 衝高、SO 拉回；沒有後過極化。另一組實測到的就是這個。n = 3、4 按住 0.3 秒以上，放開後會卡在約 0.76 V（FI 和 SO 互相撐住），要斷電重置；n = 0 不按也會自己冒小峰。']
       ],
       basicPreset:'wire',
-      presets:[
-        ['kit', '原版電路', {fi_supply:'none'}, '原版、沒拉飛線：FI 沒有 V+（Passive PCB 底板沒串），n ≥ 1 只有被動反應，再被 SO 慢慢往下拉。'],
-        ['wire', '原版＋V+ 飛線', {fi_supply:'stim'}, 'Stimulator 的 V+ 拉飛線到 FI，其他照原版：n ≥ 1 有 AP（門檻、FI 衝高、SO 拉回），峰值約 2.3–1.6 V（n = 1–4）。Passive unit 的 100 kΩ 吸掉 Stimulator 的 6 µA 漏電，靜止降到 0.1–0.3 V，所以不像 #2-2 會自己冒小峰；但靜止低於 SO 能拉到的約 0.6 V，沒有後過極化（C5）。n = 3、4 按住 0.3 秒以上，放開後卡在約 0.76 V（FI 和 SO 互鎖）。'],
-        ['true', '真正的 AP', Object.assign({ru:560e3, fi_supply:'stim', rpot:0}, TRUE_AP), '真正的 AP 外加元件，加上每個 Passive unit 一顆 560 kΩ 接 V+、FI 拉 V+ 線：n = 0–4 靜止都是 1.19 V，都有門檻、all-or-none、後過極化。I_min = 7.6／13.4／20.9／31.0／44.8 µA；量 I_min 時把 Q_pass E–B 改成 12 kΩ。']
-      ]
+      circuit:'c23'
     }
   };
   Object.keys(SIMS).forEach(function(k){
     var s = SIMS[k];
     s.id = k; s.el = $('[data-sim="' + k + '"]'); s.svg = $('svg.sch', s.el); s.cv = $('canvas', s.el);
-    s.state = {basic:Object.assign({}, s.def.basic), adv:Object.assign({}, s.def.adv)};
-    if(s.presets){ var tp = s.presets[s.presets.length - 1]; Object.assign(s.state.adv, tp[2], {_preset:tp[0], _note:tp[3]}); }
-    if(s.presetsBasic){ var bp = s.presetsBasic.filter(function(p){ return p[0] === s.basicPreset; })[0]; Object.assign(s.state.basic, bp[2], {_preset:bp[0], _note:bp[3]}); }
+    /* three buckets: kit and mine start from the basic defaults plus circuits.js, ideal from its default ideal */
+    var C = CIRCUITS[s.circuit];
+    s.C = C;
+    s.presets = C.ideal.map(function(i){ return [i.id, i.zh, i.st, i.note]; });
+    s.state = {kit:Object.assign({}, s.def.basic), mine:Object.assign({}, s.def.basic), ideal:Object.assign({}, s.def.adv)};
+    if(s.presetsBasic){ var bp = s.presetsBasic.filter(function(p){ return p[0] === s.basicPreset; })[0];
+      ['kit', 'mine'].forEach(function(b){ Object.assign(s.state[b], bp[2], {_preset:bp[0], _note:bp[3]}); }); }
+    Object.assign(s.state.kit, C.kit.st); Object.assign(s.state.mine, C.mine.st);
+    var di = C.ideal.filter(function(i){ return i.def; })[0] || C.ideal[C.ideal.length - 1];
+    Object.assign(s.state.ideal, di.st, {_preset:di.id, _note:di.note});
     s.sc = {v1:s.scope.v1, v2:s.scope.v2, t:s.scope.t, z1:1, z2:s.scope.z2, mode:'roll', tsrc:'ch1', lvl:1.0,
             trig:'idle', t0:0, prev:0, frozen:null};
     s.buf = {cap:40000, t:new Float64Array(40000), a:new Float64Array(40000), b:new Float64Array(40000), head:0, n:0};
@@ -81,7 +88,7 @@
 
   /* effective engine state for a region in the current mode */
   function engineState(s){
-    var u = s.state[MODE];
+    var u = s.state[CT];
     var st = Object.assign({}, BASE_ST, u, s.fixed(MODE, u));
     if(st.fi_supply === 'none'){ if(st.chain) st.fi_vplus = false; st.fi_supply = 'stim'; }   /* n = 0: the header carries V+ */
     if(st.ch2 && st.ch2 !== '' && st.chain === 0 && /^(PC|PX|AX)/.test(st.ch2)) st.ch2 = '';
@@ -89,7 +96,7 @@
   }
   /* how FI.V+ is fed, as the engine has it: header (n = 0) or pulled wire 'stim', FI's battery 'local', 'none' */
   function supplyMode(s){
-    var u = s.state[MODE], raw = Object.assign({}, BASE_ST, u, s.fixed(MODE, u)).fi_supply, st = engineState(s);
+    var u = s.state[CT], raw = Object.assign({}, BASE_ST, u, s.fixed(MODE, u)).fi_supply, st = engineState(s);
     if(raw === 'local') return 'local';
     if(!st.chain) return 'stim';
     if(raw === 'none') return 'none';
@@ -159,7 +166,7 @@
   function syncSchematic(s){ syncSchematic0(s); if(inspSim === s) inspHighlight(s); }
   function contact(s, key){
     if(key === 'sw'){ setSW(s, !AM.st.sw); return; }
-    var u = s.state[MODE], cur = engineState(s)[key];
+    var u = s.state[CT], cur = engineState(s)[key];
     u[key] = !cur;
     if(active === s) applyEngine(s);
     syncSchematic(s);
@@ -199,7 +206,7 @@
   }
   function syncControls(s){
     nodeOptions(s);
-    var u = s.state[MODE], st = engineState(s);
+    var u = s.state[CT], st = engineState(s);
     $$('[data-k]', s.el).forEach(function(el){
       var blk = el.closest('[data-show]');
       if(blk && !inMode(blk, MODE)) return;
@@ -210,6 +217,7 @@
     $$('[data-nseg] button', s.el).forEach(function(b){ b.setAttribute('aria-pressed', +b.dataset.n === (u.chain || 0) ? 'true' : 'false'); });
     $$('[data-presets] button', s.el).forEach(function(b){ if(boxMode(b) === MODE) b.setAttribute('aria-pressed', b.dataset.p === u._preset ? 'true' : 'false'); });
     $$('[data-preset-note]', s.el).forEach(function(pn){ if(boxMode(pn) === MODE) pn.textContent = u._note || ''; });
+    $$('[data-ctnote]', s.el).forEach(function(n){ n.innerHTML = '<b>' + CTNAME[CT] + '電路</b>：' + (CT === 'ideal' ? '在「0 參數檢查」選理想版本，說明在按鈕下面。' : s.C[CT].zh); });
     var sc = s.sc;
     $$('[data-sc]', s.el).forEach(function(el){ el.value = String(sc[el.dataset.sc]); });
     $$('[data-scmode]', s.el).forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.scmode === sc.mode ? 'true' : 'false'); });
@@ -219,7 +227,7 @@
   function onCtl(s, el){
     var blk = el.closest('[data-show]');
     if(blk && !inMode(blk, MODE)) return;
-    var k = el.dataset.k, u = s.state[MODE];
+    var k = el.dataset.k, u = s.state[CT];
     u[k] = ctlValue(el);
     if(k === 'rpot') $$('[data-out="rpot"]', s.el).forEach(function(o){ o.textContent = (u.rpot / 1e3).toFixed(1) + ' kΩ'; });
     if(k === 'vplus') $$('[data-out="vplus"]', s.el).forEach(function(o){ o.textContent = u.vplus.toFixed(1) + ' V'; });
@@ -231,6 +239,9 @@
   }
   function buildPanels(s){
     var panel = $('.settings', s.el);
+    var subs = $$('p.sub', panel), ctn = document.createElement('p');
+    ctn.className = 'sub ctnote'; ctn.setAttribute('data-ctnote', '');
+    (subs.length ? subs[subs.length - 1] : $('h2', panel)).insertAdjacentElement('afterend', ctn);
     /* schematic: electron flow on / off (shared by all regions) */
     var sg = $('[data-scope]', panel).closest('.grp'), fg = document.createElement('div');
     fg.className = 'grp';
@@ -252,7 +263,7 @@
     $$('[data-nseg]', panel).forEach(function(box){
       box.innerHTML = [0, 1, 2, 3, 4].map(function(n){ return '<button class="btn" type="button" data-n="' + n + '">' + n + '</button>'; }).join('');
       $$('button', box).forEach(function(b){ b.addEventListener('click', function(){
-        s.state[MODE].chain = +b.dataset.n; syncControls(s); clearBuf(s);
+        s.state[CT].chain = +b.dataset.n; syncControls(s); clearBuf(s);
         drawSchematic(s); if(active === s){ applyEngine(s); powerOn(s); }
       }); });
     });
@@ -262,8 +273,8 @@
       box.innerHTML = list.map(function(p){ return '<button class="btn" type="button" data-p="' + p[0] + '">' + p[1] + '</button>'; }).join('');
       $$('button', box).forEach(function(b){ b.addEventListener('click', function(){
         var p = list.filter(function(x){ return x[0] === b.dataset.p; })[0];
-        var keep = {chain:s.state[m].chain, ch2:s.state[m].ch2, rpot:s.state[m].rpot};
-        s.state[m] = Object.assign({}, s.def[m], keep, p[2], {_preset:p[0], _note:p[3]});   /* def has no add-ons */
+        var bk = CT, keep = {chain:s.state[bk].chain, ch2:s.state[bk].ch2, rpot:s.state[bk].rpot};
+        s.state[bk] = Object.assign({}, s.def[m], keep, bk === 'ideal' ? {} : s.C[bk].st, p[2], {_preset:p[0], _note:p[3]});   /* def has no add-ons */
         syncControls(s); drawSchematic(s); if(active === s){ applyEngine(s); powerOn(s); }
       }); });
     });
@@ -490,15 +501,19 @@
   }
 
   /* ---------------- mode, navigation, fullscreen ---------------- */
-  function setMode(m){
-    MODE = m; document.body.dataset.mode = m;
-    try{ localStorage.setItem('hw2mode', m); }catch(e){}
-    $$('.mode button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false'); });
+  function ctUI(){
+    document.body.dataset.mode = MODE; document.body.dataset.ct = CT;
+    $$('.mode button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.ct === CT ? 'true' : 'false'); });
+    $$('[data-ctdesc]').forEach(function(p){ p.textContent = CTDESC[CT]; });
+  }
+  function setMode(ct){
+    CT = ct; MODE = ct === 'ideal' ? 'adv' : 'basic'; ctUI();
+    try{ localStorage.setItem('hw2ct', ct); }catch(e){}
     Object.keys(SIMS).forEach(function(k){ var s = SIMS[k]; syncControls(s); drawSchematic(s); });
     if(active){ var a = active; active = null; activate(a); }
     queueNav();                                        /* region heights change with the mode */
   }
-  $$('.mode button').forEach(function(b){ b.addEventListener('click', function(){ setMode(b.dataset.mode); }); });
+  $$('.mode button').forEach(function(b){ b.addEventListener('click', function(){ setMode(b.dataset.ct); }); });
 
   /* sims start when half their region is on screen (they are one screen tall) */
   var io = new IntersectionObserver(function(entries){
@@ -617,8 +632,7 @@
   if(location.hash) openFromHash(location.hash.slice(1));
 
   /* ---------------- start ---------------- */
-  document.body.dataset.mode = MODE;
-  $$('.mode button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.mode === MODE ? 'true' : 'false'); });
+  ctUI();
   Object.keys(SIMS).forEach(function(k){ var s = SIMS[k]; buildPanels(s); syncControls(s); drawSchematic(s); sizeCanvas(s); });
   requestAnimationFrame(frame);
   window.HW2 = {SIMS:SIMS, activate:activate, setMode:setMode, pressFor:pressFor, engineState:engineState};

@@ -6,8 +6,15 @@
   var $ = function(s, r){ return (r || document).querySelector(s); };
   var $$ = function(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var DT = 2e-4, NEWREC = 1.5;             /* a stimulus more than 1.5 s after the last one starts a new record */
-  var MODE = 'basic', FLOW = true;
-  try{ MODE = localStorage.getItem('hw3mode') === 'adv' ? 'adv' : 'basic'; FLOW = localStorage.getItem('hw3flow') !== '0'; }catch(e){}
+  /* circuit type (../circuits/circuits.js): kit 原版, mine 我的, ideal 理想.  MODE is the page content it shows:
+     kit and mine use the 'basic' blocks, ideal the 'adv' ones. */
+  var CT = 'mine', MODE = 'basic', FLOW = true;
+  try{ var ct0 = localStorage.getItem('hw3ct'); if(['kit', 'mine', 'ideal'].indexOf(ct0) >= 0) CT = ct0; FLOW = localStorage.getItem('hw3flow') !== '0'; }catch(e){}
+  MODE = CT === 'ideal' ? 'adv' : 'basic';
+  var CTNAME = {kit:'原版', mine:'我的', ideal:'理想'};
+  var CTDESC = {kit:'老師現行對全班指定的接法（只有一種）。', mine:'我們組實際做的電路（只有一種）。', ideal:'模擬出最符合科學證據或我的要求的電路（可以有很多種，不一定會做）。'};
+  /* the basic controls use mem (both membranes) instead of pre / postMem */
+  function basicOf(st){ return {mem:st.pre, r1p:st.r1p || 0, r6:st.r6 || 0, vsyn:st.vsyn || 0, r13A:st.r13A || 0}; }
 
   var BASE = {vplus:8.44, vsyn:0, r13A:0, rpotA:700, rpotB:700, pre:'kit', postMem:'kit', mem:'kit', r1p:0, r6:0, bat:'on',
     wA:20, nA:3, isiA:100, wB:10, offB:-50, ch1:'A.Vm', ch2:'P1'};
@@ -19,44 +26,32 @@
     s31:{fixed:{syn:'exc', post:'passive'},
       def:{basic:{wA:20, ch2:'P1'}, adv:{ch2:'P1', nA:3, isiA:100}},
       scope:{v1:1, v2:0.2, t:0.1}, isi:true,
-      presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:20}, '助教的電路（同基礎目標）：Pre 是原版 active membrane：模擬 V+ 8.44 V 時靜止約 0.53 V、每秒自己冒約 7 個 1.5 V 小峰（10-21 實測沒看到），按 SW A 到約 1.5–2.2 V。820 kΩ : 100 kΩ 分壓再扣 D1，Q2 基極只到約 0.2 V（要約 0.55 V 才導通），所以怎麼按都沒有 EPSP。2026-10-21 我們的板子實測一樣：Pre AP 約 1.9 V、Q2 基極約 0.17 V。'],
-        ['kitfi', '原版＋R13 換 1 kΩ', {pre:'kit', postMem:'kit', r1p:0, r13A:1e3, rpotA:700, wA:20}, '只改 FI：Pre 的 R13 從 100 kΩ 換成講義畫的 1 kΩ（或並一顆 1 kΩ，合起來 990 Ω），突觸不動。模擬：AP 約 1.8 → 7.6 V，Q2 基極約 0.72 V，#1 EPSP 約 0.07–0.22 V（不飽和，能疊加）。V+ 7.0 V 時 AP 6.4 V、EPSP 約 73 mV。'],
-        ['kit100', '原版＋並 100 kΩ', {pre:'kit', postMem:'kit', r1p:1e5, rpotA:700, wA:20}, '我們 2026-10-21 的改法：Pre 不改，只在 820 kΩ 兩端並 100 kΩ（合起來約 89 kΩ）。實測 Q2 基極約 0.93 V、EPSP 約 6.5 V（已經頂到天花板＝飽和，兩個 EPSP 疊不高）。想看疊加可改兩顆 100 kΩ 串聯（200 kΩ）。'],
-        ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, wA:15}, 'Pre 換成 HW2 的真正的 AP（約 5.4 V）：突觸板不加東西時 Q2 幾乎不導通，S 只到 0.23 V，沒有 EPSP。'],
-        ['true', '真正的突觸', TRUE_SYN, 'HW2 真正的 AP ＋ 820 kΩ 兩端並 1.5 MΩ：一個 AP 在 #1 產生約 0.91 V、#5 約 0.24 V 的 EPSP；多個 AP 會疊加。']
-      ]},
+      circuit:'c31'},
     s32:{fixed:{syn:'exc', post:'active'},
       def:{basic:{wA:20, ch2:'B.Vm', wB:10}, adv:{ch2:'B.Vm', nA:2, isiA:100, wB:5, offB:-50}},
       scope:{v1:1, v2:1, t:0.1}, combo:true,
-      presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:20}, '助教的電路：兩塊 active membrane 都是原版。Pre 推不動突觸，沒有 EPSP；模擬 V+ 8.44 V 時 Post 不按 B 也每秒冒約 8 個 1.5 V 小峰（實體板還沒量）；按 B 10 ms 到約 1.5–2.1 V，按住停在約 0.78 V。'],
-        ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, rpotB:0, wA:15}, '兩塊都用 HW2 真正的 AP、突觸板不加東西：EPSP 傳不到 Post。'],
-        ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：一個 EPSP 讓 Post 從 1.23 V 升到 1.43 V（不到門檻），兩個 EPSP（間隔 50 ms–1.2 s）就觸發 Post AP。Stimulator B 按 8 ms 會觸發，7.5 ms 不會。']
-      ]},
+      circuit:'c32'},
     s33:{fixed:{syn:'inh', post:'passive'},
       def:{basic:{wA:20, ch2:'P1'}, adv:{ch2:'P1', nA:3, isiA:100}},
       scope:{v1:1, v2:0.05, t:0.1}, isi:true,
-      presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, wA:20}, '助教的電路：Pre 只到約 1.5–2.2 V，突觸不導通，怎麼按都沒有 IPSP。'],
-        ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, wA:15}, 'Pre 用 HW2 真正的 AP：一個 AP 只有約 −20 mV。'],
-        ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：一個 AP 在 #1 約 −37 mV（被 15 kΩ 和 1.5 V 電池限制），多個 AP 疊加。拔掉電池 IPSP 就消失（Post 靜止約 0 V，沒有驅動力）。']
-      ]},
+      circuit:'c33'},
     s34:{fixed:{syn:'inh', post:'active'},
       def:{basic:{wA:20, ch2:'B.Vm', wB:20}, adv:{ch2:'B.Vm', nA:1, isiA:50, wB:12.5, offB:30}},
       scope:{v1:1, v2:1, t:0.1}, combo:true,
-      presets:[
-        ['kit', '原版電路', {pre:'kit', postMem:'kit', r1p:0, rpotA:700, rpotB:700, wA:20}, '助教的電路：沒有 IPSP；Post 靜止 0.46 V（突觸的 100 kΩ + 200 kΩ 當 leak，不會自己冒峰），按 B 10 ms 到約 1.85 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.78 V，不會連續發放，量不到頻率變化。'],
-        ['hw2', 'HW2 真 AP', {pre:'true', postMem:'true', r1p:0, rpotA:0, rpotB:0, wA:15}, '兩塊都用 HW2 真正的 AP、突觸板不加東西。'],
-        ['true', '真正的突觸', TRUE_SYN, '加 1.5 MΩ：Post 靜止 1.06 V（突觸的 300 kΩ 也是 leak），Stimulator B 最弱觸發 = 按 12 ms。B 按 12.5 ms 時 1 個 IPSP 就擋住 AP，按 13.5 ms 要 2 個。按住 SW B（可變電阻 6 kΩ）16.0 Hz，同時按住 SW A 降到 8.5 Hz；電池拔掉（跳線）只降到 13.7 Hz。']
-      ]}
+      circuit:'c34'}
   };
 
   Object.keys(SIMS).forEach(function(k){
     var s = SIMS[k];
     s.id = k; s.el = $('[data-sim="' + k + '"]'); s.svg = $('svg.sch', s.el); s.cv = $('canvas', s.el);
-    s.state = {basic:Object.assign({}, BASE, s.def.basic), adv:Object.assign({}, BASE, s.def.adv)};
-    var tp = s.presets[s.presets.length - 1]; Object.assign(s.state.adv, tp[2], {_preset:tp[0], _note:tp[3]});
+    var C = CIRCUITS[s.circuit];
+    s.C = C;
+    s.presets = C.ideal.map(function(i){ return [i.id, i.zh, Object.assign({rpotA:0, rpotB:0, wA:15}, i.st), i.note]; });
+    s.state = {kit:Object.assign({}, BASE, s.def.basic, basicOf(C.kit.st)), mine:Object.assign({}, BASE, s.def.basic, basicOf(C.mine.st)),
+               ideal:Object.assign({}, BASE, s.def.adv)};
+    var di = C.ideal.filter(function(i){ return i.def; })[0] || C.ideal[C.ideal.length - 1];
+    var dp = s.presets.filter(function(p){ return p[0] === di.id; })[0];
+    Object.assign(s.state.ideal, dp[2], {_preset:dp[0], _note:dp[3]});
     s.sc = {v1:s.scope.v1, v2:s.scope.v2, t:s.scope.t, z1:1, z2:1, mode:'roll', tsrc:'sw', lvl:2.0, trig:'idle', t0:0, prev:0, frozen:null, speed:1};
     s.buf = {cap:60000, t:new Float64Array(60000), a:new Float64Array(60000), b:new Float64Array(60000), head:0, n:0};
     s.E = SynEngine(); s.SCH = null; s.rec = null; s.ev = []; s.hold = {A:false, B:false}; s.on = {A:false, B:false};
@@ -65,7 +60,7 @@
 
   /* effective engine state for a region in the current mode */
   function engineState(s){
-    var u = s.state[MODE], st = Object.assign({}, BASE, u, s.fixed);
+    var u = s.state[CT], st = Object.assign({}, BASE, u, s.fixed);
     if(MODE === 'basic'){ st.pre = st.postMem = u.mem; st.r1p = u.r1p || 0; }
     if(st.post === 'passive' && st.ch2 === 'B.Vm') st.ch2 = 'P1';
     if(st.post === 'active' && /^P/.test(st.ch2)) st.ch2 = 'B.Vm';
@@ -224,7 +219,7 @@
     });
   }
   function syncControls(s){
-    var u = s.state[MODE], st = engineState(s);
+    var u = s.state[CT], st = engineState(s);
     $$('[data-k]', s.el).forEach(function(el){
       var blk = el.closest('[data-show]');
       if(blk && blk.dataset.show !== MODE) return;
@@ -232,6 +227,7 @@
     });
     $$('[data-out]', s.el).forEach(function(o){ o.textContent = outText(o.dataset.out, u[o.dataset.out] !== undefined ? u[o.dataset.out] : st[o.dataset.out]); });
     $$('[data-presets] button', s.el).forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.p === u._preset ? 'true' : 'false'); });
+    $$('[data-ctnote]', s.el).forEach(function(n){ n.innerHTML = '<b>' + CTNAME[CT] + '電路</b>：' + (CT === 'ideal' ? '在「0 參數檢查」選理想版本，說明在按鈕下面。' : s.C[CT].zh); });
     var pn = $('[data-preset-note]', s.el); if(pn) pn.textContent = u._note || '';
     var sc = s.sc;
     $$('[data-sc]', s.el).forEach(function(el){ el.value = String(sc[el.dataset.sc]); });
@@ -243,7 +239,7 @@
   function onCtl(s, el){
     var blk = el.closest('[data-show]');
     if(blk && blk.dataset.show !== MODE) return;
-    var k = el.dataset.k, u = s.state[MODE];
+    var k = el.dataset.k, u = s.state[CT];
     u[k] = ctlValue(el);
     if(k === 'rpotA' || k === 'rpotB' || k === 'vplus') $$('[data-out="' + k + '"]', s.el).forEach(function(o){ o.textContent = outText(k, u[k]); });
     if(k === 'ch1' || k === 'ch2') clearBuf(s);
@@ -254,6 +250,9 @@
   }
   function buildPanels(s){
     var panel = $('.settings', s.el);
+    var subs = $$('p.sub', panel), ctn = document.createElement('p');
+    ctn.className = 'sub ctnote'; ctn.setAttribute('data-ctnote', '');
+    (subs.length ? subs[subs.length - 1] : $('h2', panel)).insertAdjacentElement('afterend', ctn);
     /* schematic: electron flow on / off and how to inspect (shared by all regions, as HW2) */
     var fg = document.createElement('div');
     fg.className = 'grp';
@@ -275,7 +274,7 @@
     $$('[data-train]', panel).forEach(function(b){ b.addEventListener('click', function(){ trainA(s); }); });
     $$('[data-combo]', panel).forEach(function(b){ b.addEventListener('click', function(){ combo(s); }); });
     $$('[data-offq]', panel).forEach(function(b){ b.addEventListener('click', function(){
-      var u = s.state[MODE];
+      var u = s.state[CT];
       u.offB = b.dataset.offq === 'post' ? -(+u.wB + 20) : (u.nA - 1) * u.isiA + 30;
       syncControls(s);
     }); });
@@ -284,8 +283,8 @@
       box.innerHTML = s.presets.map(function(p){ return '<button class="btn" type="button" data-p="' + p[0] + '">' + p[1] + '</button>'; }).join('');
       $$('button', box).forEach(function(b){ b.addEventListener('click', function(){
         var p = s.presets.filter(function(x){ return x[0] === b.dataset.p; })[0];
-        var keep = {ch1:s.state.adv.ch1, ch2:s.state.adv.ch2, nA:s.state.adv.nA, isiA:s.state.adv.isiA, bat:s.state.adv.bat};
-        s.state.adv = Object.assign({}, BASE, s.def.adv, keep, p[2], {_preset:p[0], _note:p[3]});
+        var keep = {ch1:s.state.ideal.ch1, ch2:s.state.ideal.ch2, nA:s.state.ideal.nA, isiA:s.state.ideal.isiA, bat:s.state.ideal.bat};
+        s.state.ideal = Object.assign({}, BASE, s.def.adv, keep, p[2], {_preset:p[0], _note:p[3]});
         syncControls(s); syncSchematic(s); if(active === s) powerOn(s);
       }); });
     });
@@ -389,13 +388,13 @@
   function press(s, who, T){ activate(s); var t = s.E.time() + DT; sched(s, [[t, who, true], [t + T, who, false]]); }
   function trainA(s){
     activate(s);
-    var u = s.state[MODE], t = s.E.time() + DT, L = [];
+    var u = s.state[CT], t = s.E.time() + DT, L = [];
     for(var k = 0; k < u.nA; k++) L.push([t + k * u.isiA / 1e3, 'A', true], [t + k * u.isiA / 1e3 + u.wA / 1e3, 'A', false]);
     sched(s, L);
   }
   function combo(s){
     activate(s);
-    var u = s.state[MODE], t = s.E.time() + DT, tA = t + Math.max(0, -u.offB / 1e3), tB = tA + u.offB / 1e3, L = [];
+    var u = s.state[CT], t = s.E.time() + DT, tA = t + Math.max(0, -u.offB / 1e3), tB = tA + u.offB / 1e3, L = [];
     for(var k = 0; k < u.nA; k++) L.push([tA + k * u.isiA / 1e3, 'A', true], [tA + k * u.isiA / 1e3 + u.wA / 1e3, 'A', false]);
     L.push([tB, 'B', true], [tB + u.wB / 1e3, 'B', false]);
     sched(s, L);
@@ -560,7 +559,7 @@
   /* ---------------- ISI sweep: two A pulses at each interval, on a separate engine ---------------- */
   var ISIS = [50, 75, 100, 150, 200, 300, 500, 800, 1200];
   function isiSweep(s){
-    var u = s.state[MODE], st = engineState(s), box = $('[data-isibox]', s.el), out = $('[data-isiout]', s.el), btn = $('[data-isi]', s.el);
+    var u = s.state[CT], st = engineState(s), box = $('[data-isibox]', s.el), out = $('[data-isiout]', s.el), btn = $('[data-isi]', s.el);
     if(btn.disabled) return;
     var node = /^(P\d|SY\.S)$/.test(st.ch2) ? st.ch2 : 'P1', w = u.wA / 1e3;
     var list = ISIS.filter(function(x){ return x / 1e3 > w + 0.02; });
@@ -625,14 +624,18 @@
   }
 
   /* ---------------- mode, navigation, fullscreen ---------------- */
-  function setMode(m){
-    MODE = m; document.body.dataset.mode = m;
-    try{ localStorage.setItem('hw3mode', m); }catch(e){}
-    $$('.mode button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false'); });
+  function ctUI(){
+    document.body.dataset.mode = MODE; document.body.dataset.ct = CT;
+    $$('.mode button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.ct === CT ? 'true' : 'false'); });
+    $$('[data-ctdesc]').forEach(function(p){ p.textContent = CTDESC[CT]; });
+  }
+  function setMode(ct){
+    CT = ct; MODE = ct === 'ideal' ? 'adv' : 'basic'; ctUI();
+    try{ localStorage.setItem('hw3ct', ct); }catch(e){}
     Object.keys(SIMS).forEach(function(k){ var s = SIMS[k]; syncControls(s); syncSchematic(s); });
     if(active){ var a = active; active = null; activate(a); }
   }
-  $$('.mode button').forEach(function(b){ b.addEventListener('click', function(){ setMode(b.dataset.mode); }); });
+  $$('.mode button').forEach(function(b){ b.addEventListener('click', function(){ setMode(b.dataset.ct); }); });
 
   /* section 0: click a red mark on the handout schematic -> a window on what that difference breaks (as HW2) */
   var dlg = $('#r0dlg');
@@ -690,8 +693,7 @@
   });
 
   /* ---------------- start ---------------- */
-  document.body.dataset.mode = MODE;
-  $$('.mode button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.mode === MODE ? 'true' : 'false'); });
+  ctUI();
   Object.keys(SIMS).forEach(function(k){ var s = SIMS[k]; nodeOptions(s); buildPanels(s); syncControls(s); drawSchematic(s); sizeCanvas(s.cv); });
   requestAnimationFrame(frame);
   /* run(s, T): advance region s by T seconds without the animation loop (console checks) */

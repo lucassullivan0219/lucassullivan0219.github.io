@@ -15,26 +15,67 @@
   --vmbus:#2a78d6; --qon:rgba(42,120,214,.16); --mod:#B0307F; --eflow:#E8720C;
   --bg:#EDF2EA; --accent:#2F6B3A; --tint:rgba(47,107,58,.08); --side:clamp(190px,16.6vw,270px);
 }
-body[data-mode="adv"]{--bg:#F4EAE0; --accent:#A4471F; --tint:rgba(164,71,31,.09)}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){--surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0; --rule:#2C3533;
     --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --vmbus:#3987e5; --qon:rgba(57,135,229,.22); --mod:#F07CC4; --eflow:#FFAA45;
     --bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
-  :root:not([data-theme="light"]) body[data-mode="adv"]{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
 }
 :root[data-theme="dark"]{--surface:#1C2224; --ink:#E6EAE7; --muted:#9AA5A0; --link:#7DB3F0; --rule:#2C3533;
   --warn:#E8826F; --opt:#E0B64F; --req:#7FB089; --infer:#C99BDB; --vmbus:#3987e5; --qon:rgba(57,135,229,.22); --mod:#F07CC4; --eflow:#FFAA45;
   --bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
-:root[data-theme="dark"] body[data-mode="adv"]{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--ink);font-family:"Noto Sans TC",system-ui,"Microsoft JhengHei",sans-serif;font-size:14.5px;line-height:1.65;transition:background .25s}
+body{background:var(--bg0);color:var(--ink);font-family:"Noto Sans TC",system-ui,"Microsoft JhengHei",sans-serif;font-size:14.5px;line-height:1.65;transition:background .25s}
 a{color:var(--link)}
 button,select,input{font:inherit}
 code,.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-size:.93em}
 :focus-visible{outline:3px solid var(--link);outline-offset:2px}
 body[data-mode="basic"] [data-show="adv"],body[data-mode="adv"] [data-show="basic"]{display:none!important}
 
+/* ---------- circuit types: 原版 kit (green) / 我的 mine (blue) / 理想 ideal (orange), only on the simulation side ---------- */
+:root{--bg0:#EEF0EE}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg0:#141816}}
+:root[data-theme="dark"]{--bg0:#141816}
+body[data-ct="kit"] .simreg,body[data-ct="kit"] nav.simnav,body[data-ct="kit"] .navsw{--bg:#EDF2EA; --accent:#2F6B3A; --tint:rgba(47,107,58,.08)}
+.mode button[data-ct="kit"]{--accent:#2F6B3A}
+body[data-ct="mine"] .simreg,body[data-ct="mine"] nav.simnav,body[data-ct="mine"] .navsw{--bg:#E7EEF7; --accent:#2B5C9E; --tint:rgba(43,92,158,.09)}
+.mode button[data-ct="mine"]{--accent:#2B5C9E}
+body[data-ct="ideal"] .simreg,body[data-ct="ideal"] nav.simnav,body[data-ct="ideal"] .navsw{--bg:#F4EAE0; --accent:#A4471F; --tint:rgba(164,71,31,.09)}
+.mode button[data-ct="ideal"]{--accent:#A4471F}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) body[data-ct="kit"] .simreg,  :root:not([data-theme="light"]) body[data-ct="kit"] nav.simnav,  :root:not([data-theme="light"]) body[data-ct="kit"] .navsw{--bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
+  :root:not([data-theme="light"]) .mode button[data-ct="kit"]{--accent:#7FC08A}
+  :root:not([data-theme="light"]) body[data-ct="mine"] .simreg,  :root:not([data-theme="light"]) body[data-ct="mine"] nav.simnav,  :root:not([data-theme="light"]) body[data-ct="mine"] .navsw{--bg:#10161F; --accent:#7FA9E8; --tint:rgba(127,169,232,.09)}
+  :root:not([data-theme="light"]) .mode button[data-ct="mine"]{--accent:#7FA9E8}
+  :root:not([data-theme="light"]) body[data-ct="ideal"] .simreg,  :root:not([data-theme="light"]) body[data-ct="ideal"] nav.simnav,  :root:not([data-theme="light"]) body[data-ct="ideal"] .navsw{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
+  :root:not([data-theme="light"]) .mode button[data-ct="ideal"]{--accent:#F0996B}
+}
+:root[data-theme="dark"] body[data-ct="kit"] .simreg,:root[data-theme="dark"] body[data-ct="kit"] nav.simnav,:root[data-theme="dark"] body[data-ct="kit"] .navsw{--bg:#111915; --accent:#7FC08A; --tint:rgba(127,192,138,.08)}
+:root[data-theme="dark"] .mode button[data-ct="kit"]{--accent:#7FC08A}
+:root[data-theme="dark"] body[data-ct="mine"] .simreg,:root[data-theme="dark"] body[data-ct="mine"] nav.simnav,:root[data-theme="dark"] body[data-ct="mine"] .navsw{--bg:#10161F; --accent:#7FA9E8; --tint:rgba(127,169,232,.09)}
+:root[data-theme="dark"] .mode button[data-ct="mine"]{--accent:#7FA9E8}
+:root[data-theme="dark"] body[data-ct="ideal"] .simreg,:root[data-theme="dark"] body[data-ct="ideal"] nav.simnav,:root[data-theme="dark"] body[data-ct="ideal"] .navsw{--bg:#1D1511; --accent:#F0996B; --tint:rgba(240,153,107,.09)}
+:root[data-theme="dark"] .mode button[data-ct="ideal"]{--accent:#F0996B}
+.simreg{background:var(--bg)}
+.navh{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin:10px 4px 4px}
+.navsw{margin:10px 0 2px;padding:8px 6px 4px;border-radius:10px;background:var(--tint)}
+.navsw .navh{margin:0 2px 6px;color:var(--accent)}
+.mode{grid-template-columns:1fr 1fr 1fr!important}
+.mode button{color:var(--ink)}
+.mode button[aria-pressed="true"]{background:var(--accent)!important}
+.sub.ctnote{color:var(--ink);background:var(--tint);border-left:3px solid var(--accent);padding:4px 8px;border-radius:4px}
+/* 1 摘要: comparison table + three folded rows */
+.cmp{margin:6px 0 14px}
+.cmp table{border-collapse:collapse;width:100%;font-size:13px;background:var(--surface)}
+.cmp th,.cmp td{border:1px solid var(--rule);padding:5px 7px;vertical-align:top;text-align:left}
+.cmp th{background:var(--tint);font-weight:700}
+.cmp th.k{color:#2F6B3A}.cmp th.m{color:#2B5C9E}.cmp th.i{color:#A4471F}
+.cmp td.same{color:var(--muted)}
+.cmp td a{font-size:12px}
+details.r1row{border:1px solid var(--rule);border-radius:10px;background:var(--surface);margin:8px 0;padding:0 10px}
+details.r1row > summary{cursor:pointer;font-weight:900;padding:9px 2px;font-size:15px}
+details.r1row > summary .hint{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px}
+details.r1row > .cards{padding-bottom:10px}
 /* ---------- layout: sidebar | main ---------- */
 .app{display:grid;grid-template-columns:var(--side) minmax(0,1fr);height:100vh}
 aside.side{background:var(--surface);border-right:1px solid var(--rule);display:flex;flex-direction:column;overflow-y:auto;padding:14px 12px}
@@ -227,21 +268,27 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 <aside class="side" aria-label="導覽">
   <div class="top"><a href="../../">⌂ 個人首頁</a><a href="../">← Modern Bioelectricity</a></div>
   <h1>HW3 實驗台</h1>
-  <div class="mode" role="group" aria-label="目標切換">
-    <button type="button" data-mode="basic" aria-pressed="true">基礎目標<small>照助教的電路</small></button>
-    <button type="button" data-mode="adv" aria-pressed="false">進階目標<small>做出真正的突觸</small></button>
-  </div>
-  <p class="mode-note" data-show="basic">完整測試助教給的電路、完成每一題，測出什麼就寫什麼。</p>
-  <p class="mode-note" data-show="adv">讓一個 AP 就有 EPSP／IPSP、能疊加、能觸發或抑制 Post AP，並解釋助教電路的問題。</p>
-  <nav class="regions" aria-label="區域">
+  <div class="navh">電路說明（共用，不受切換影響）</div>
+  <nav class="regions" aria-label="電路說明">
     <a href="#r0"><span class="n">0</span><span>電路圖與 PCB 的差別<small>excitatory 突觸板 2 處</small></span></a>
-    <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small data-show="basic">模型定義、可能的問題</small><small data-show="adv">電路的問題、改法、驗證</small></span></a>
-    <a href="#r2"><span class="n">2</span><span>#3-1 Excitatory → passive<small>EPSP、疊加、ISI、#1 vs #5</small></span></a>
-    <a href="#r3"><span class="n">3</span><span>#3-2 Excitatory → active<small>多個 EPSP 觸發 Post AP</small></span></a>
-    <a href="#r4"><span class="n">4</span><span>#3-3 Inhibitory → passive<small>IPSP、疊加、ISI、#1 vs #5</small></span></a>
-    <a href="#r5"><span class="n">5</span><span>#3-4 Inhibitory → active<small>抑制 Post AP、拔電池</small></span></a>
+    <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small>三種電路對照、注意、背景、紀錄</small></span></a>
     <a href="#r6"><span class="n">6</span><span>補充與紀錄<small>規定、節點、手算、方法</small></span></a>
   </nav>
+  <div class="navsw">
+    <div class="navh">電路類型（只影響下面的模擬）</div>
+    <div class="mode" role="group" aria-label="電路類型">
+      <button type="button" data-ct="kit" aria-pressed="false">原版<small>老師指定</small></button>
+      <button type="button" data-ct="mine" aria-pressed="true">我的<small>實際做的</small></button>
+      <button type="button" data-ct="ideal" aria-pressed="false">理想<small>模擬最好</small></button>
+    </div>
+    <p class="mode-note" data-ctdesc style="margin:4px 2px 4px"></p>
+    <nav class="regions simnav" aria-label="模擬">
+      <a href="#r2"><span class="n">2</span><span>#3-1 Excitatory → passive<small>EPSP、疊加、ISI、#1 vs #5</small></span></a>
+      <a href="#r3"><span class="n">3</span><span>#3-2 Excitatory → active<small>多個 EPSP 觸發 Post AP</small></span></a>
+      <a href="#r4"><span class="n">4</span><span>#3-3 Inhibitory → passive<small>IPSP、疊加、ISI、#1 vs #5</small></span></a>
+      <a href="#r5"><span class="n">5</span><span>#3-4 Inhibitory → active<small>抑制 Post AP、拔電池</small></span></a>
+    </nav>
+  </div>
   <div class="foot">
     <p style="margin:0 0 4px"><a href="../hw2-lab/">HW2 實驗台</a>（active membrane 的來源）</p>
     <p style="margin:0">空白鍵或 <kbd>A</kbd> = 按住 SW A，<kbd>B</kbd> = 按住 SW B。每張圖右上角 ⤢ 可全螢幕。</p>
@@ -343,35 +390,11 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 
 <!-- ======================= 1 摘要 ======================= -->
 <section class="region textreg" id="r1">
-  <div data-show="basic">
-    <h2>1 摘要與注意事項（基礎目標）</h2>
-    <p class="lede">照助教給的電路量完每一題。突觸板照 PCB 實際接法建模，Pre／Post 的 active membrane 就是 HW2 的板子。下面的數字都是模擬，還沒實測。</p>
-    <div class="cards">
-      <details class="card" open><summary>基礎模型＝助教給的電路<span class="hint">所有模擬區域都用這個</span></summary><div class="body">
-        <ul>
-          <li><b>突觸板照 PCB 實際接法</b>（從講義 PCB 圖追線）。<b>Excitatory 的 D2 後面沒有 100 kΩ</b>：講義電路圖畫了，PCB 上 D2 的負極直接走線到 PostSynapse 排針。Inhibitory 的 100 kΩ（R5）PCB 上有。</li>
-          <li>Excitatory：820 kΩ → 1N4148 → 2N3904（基極 10 nF ∥ 100 kΩ，射極 30 kΩ）→ 2N4403（射極 1 kΩ 接 V+）→ S（4.7 µF ∥ 200 kΩ）→ 1N4148 → Post。</li>
-          <li>Inhibitory：輸入級相同；2N4403 的射極接 1.5 V 電池的 +、電池 − 接 S，集極 15 kΩ 到 GND；S（4.7 µF ∥ 200 kΩ）→ 100 kΩ → Post。</li>
-          <li><span class="tag t-inf">推測</span>Excitatory 的 V+ 從 2×2 排針來（= Stimulator 的電池；本頁預設 8.44 V，是我們 10-21 用電表量的；HW2 的 7.8 V 是別組的板子）。講義畫成獨立的 9 V；如果你另外接 9 V 電池，Q1 開的時候 S 會高一點，其他不變。</li>
-          <li><b>Pre／Post active membrane = HW2 的板子</b>，預設原版（Slow out 的 R2 = 1 MΩ，大家都已換好）。各區右側「Active membrane」可以改成 HW2 真正的 AP。</li>
-          <li>Passive unit：1 µF ∥ 100 kΩ，上排 10 kΩ；細胞外照講義圖直接接 GND（HW2 的 100 Ω 影響可忽略）。Stimulator A、B 都是 HW2 的 Stimulator（放開時漏約 6 µA）。×1 探棒（1 MΩ，和 HW2 一樣），CH1、CH2 各接一支。</li>
-        </ul>
-      </div></details>
-
-      <details class="card" open><summary>我認為可能有問題的地方<span class="hint">模擬預測，會影響基礎目標的量測</span></summary><div class="body">
-        <ol>
-          <li><b>原版 Pre 的「AP」推不動突觸</b>：原版 active membrane 按 SW A 20 ms 只到約 1.5–2.2 V（模擬，V+ 8.44 V，看按下時碰到小峰的哪個時候；10-21 實測約 1.9 V），按住則被 Slow out 拉回約 0.8 V；突觸的 Q2 要 Pre 到約 6 V 才導通。所以 #3-1–#3-4 怎麼按都沒有 EPSP／IPSP（S 不到 1 mV；10-21 實測 Q2 基極約 0.17 V、#1 沒有 EPSP）。照實記錄「沒有 PSP」，並附 Pre 和 Q2 基極的波形。</li>
-          <li><b>原版 Pre 會不會自己冒小峰：模擬和實測不同</b>：Stimulator A 放開時漏約 6 µA，把 Pre 墊高。模擬：V+ 7.0 V 時 Pre 安靜停在約 0.45 V；7.8 V 以上墊到 FI 門檻附近，不按也每秒冒 1.5 V 小峰（8.44 V 時約 7 個；HW2 第三輪在別組 7.8 V 的板子上量到過）。實測：我們 10-21 的截圖（V+ 8.44 V）在兩次按壓之間 Pre 是平的（約 0.5–0.64 V），沒有看到自己冒峰；差在哪裡還沒查（推測是實際電晶體、電阻和模型不同）。觸發用 CH1 上升緣，準位約 0.7–1.0 V（10-21 用 0.72 V 可以）。</li>
-          <li><b>HW2 真正的 AP 也不夠</b>：峰值約 5.4 V 只讓 S 升到 0.23 V（V+ 8.44 V），沒有 EPSP（見進階目標）。</li>
-          <li><b>原版 Post（#3-2、#3-4）</b>：不會鎖住，但也不會連續發放。#3-2 的 Post（模擬，V+ 8.44 V）不按 B 也每秒冒約 8 個 1.5 V 小峰（和 Pre 一樣，實體板還沒量）；按 B 10 ms 到約 1.5–2.1 V；#3-4 的 Post 被突觸的 100 kΩ + 200 kΩ 拉成 leak，安靜停在 0.46 V，按 B 10 ms 到約 1.85 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.78 V。#3-4 Q3 的「頻率變化」量不到。</li>
-          <li><b>#3-3、#3-4「拔掉 1.5 V 電池」</b>：只拔掉的話 Q1 到 S 是開路，突觸完全沒有輸出。要用一條線把電池的兩個夾點接起來，才是「改變驅動力」。模擬兩種都可以選。</li>
-          <li><b>#3-3 Passive 的 Post 靜止約 0 V</b>：拔掉電池後 IPSP 的反轉電位約 0 V，和靜止差不多，所以 IPSP 消失（沒有驅動力）。</li>
-          <li><b>基線不是 0</b>：Stimulator B 放開時漏約 6 µA，#1 的基線約 0.18–0.20 V（V+ 8.44 V）；模擬中 Stimulator A 漏電讓 Pre 在 0.53–1.52 V 之間自己冒小峰（實測沒看到，見第 2 點）。振幅一律用「波峰 − 基線」。</li>
-          <li><b>講義的小錯</b>：#3-4 Q4 說重做「#3-4-5 and #3-4-6」，這兩題不存在，應該是 Q2、Q3；檔名寫 <code>HW02_…</code>，應該是 HW03（交之前問助教）。</li>
-        </ol>
-      </div></details>
-
-      <details class="card"><summary>量測注意事項<span class="hint">五參數、延遲、示波器</span></summary><div class="body">
+  <div>
+  <h2>1 摘要與注意事項</h2>
+  <div class="cmp"><p class="small" style="margin:0 0 6px">我的電路只有 #3-1 不同：820 kΩ 兩端並了 100 kΩ。其他三個電路和原版相同。左邊的「原版／我的／理想」切換只影響下面的模擬區；這張表三種一起看。</p><div class="tbl"><table><tr><th>項目</th><th class="k">原版</th><th class="m">我的</th><th class="i">理想：真正的突觸（預設）</th><th class="i">理想：只改 FI</th><th class="i">理想：HW2 真 AP</th></tr><tr><td><b>Pre active membrane</b></td><td>原版（AP 約 1.9 V）</td><td class="same">同原版</td><td>HW2 真 AP（約 5.4 V）</td><td>R13 換 1 kΩ（AP 約 7.6 V）</td><td>HW2 真 AP</td></tr><tr><td><b>突觸 820 kΩ</b></td><td>原樣</td><td><b>並 100 kΩ</b>（#3-1，2026-10-21）</td><td>並 1.5 MΩ</td><td>原樣</td><td>原樣</td></tr><tr><td><b>Post active membrane（#3-2、#3-4）</b></td><td>原版</td><td class="same">同原版</td><td>HW2 真 AP</td><td>原版</td><td>HW2 真 AP</td></tr><tr><td><b>D2 → Post、Q1 電源</b></td><td>PCB：D2 直接接、Q1 用排針 V+</td><td class="same">同原版</td><td>同原版</td><td>同原版</td><td>同原版</td></tr><tr><td><b>結果（#3-1 #1 EPSP）</b></td><td>沒有（Q2 不導通）</td><td>約 6.5 V，飽和（實測）</td><td>約 0.91 V，能疊加</td><td>約 0.07–0.22 V</td><td>沒有</td></tr></table></div></div>
+  <details class="r1row"><summary>量測注意<span class="hint">2 項 · 怎麼量、量哪裡</span></summary><div class="cards">
+<details id="t3" class="card"><summary>量測注意事項<span class="hint">五參數、延遲、示波器</span></summary><div class="body">
         <ul>
           <li><b>五參數</b>：stimulation current／condition、peak amplitude（波峰 − 基線；IPSP 是負的）、half-width（50 % 高度的寬度）、rise τ、decay τ（波峰到剩 37 %）。“decade” 理解成 decay。</li>
           <li><b>rise τ</b>：AP 照 HW2，從刺激開始到 63 %；EPSP／IPSP 從它的起始點到 63 %。<b>起始點</b> = 振幅 10 % 的時間。延遲 = CH2 − CH1（起始點、波峰各一個）。模擬區右側會自動算，報告裡要寫清楚用哪個定義。</li>
@@ -384,14 +407,41 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <li><b>可變電阻 0–10 kΩ 是照絲印</b>：照 10 kΩ 算，Stimulator 最小約 44 µA。但 HW2 我們組的板子記到 15.6 µA（#2-2 Q3），實際的電位器可能大於 10 kΩ（沒量）。本頁滑桿只到 10 kΩ。</li>
         </ul>
       </div></details>
-    </div>
-  </div>
-
-  <div data-show="adv">
-    <h2>1 摘要：真正的突觸（進階目標）</h2>
-    <p class="lede">目標：一個 Pre AP 就有看得到的 EPSP／IPSP，而且不飽和、能疊加；在 #3-2 一個 EPSP 不到門檻、兩個就觸發；在 #3-4 IPSP 能擋住或減慢 Post AP。全部用只加、可拆的元件。數字都是模擬（本頁的 engine.js），還沒實測。</p>
-    <div class="cards">
-      <details class="card" open><summary>問題：突觸的門檻在 6 V<span class="hint">為什麼原版和 HW2 真 AP 都沒反應</span></summary><div class="body">
+<details id="t10" class="card"><summary>加上之後要量的<span class="hint">確認夾對</span></summary><div class="body">
+        <div class="tbl"><table>
+          <tr><th>量</th><th>條件</th><th class="num">預期</th></tr>
+          <tr><td>Pre Vm</td><td>放開</td><td class="num">約 0.97 V（突觸的 820k ∥ 1.5M 也拉一點）</td></tr>
+          <tr><td>Q2.B</td><td>放開／AP 時</td><td class="num">約 0.11 V／約 0.71 V</td></tr>
+          <tr><td>S（Excitatory）</td><td>放開／一個 AP 後</td><td class="num">0 V／約 1.4 V，約 1 秒內放掉</td></tr>
+          <tr><td>S（Inhibitory、Passive）</td><td>放開／一個 AP 後</td><td class="num">約 0.10 V／約 −0.18 V</td></tr>
+          <tr><td>#1（Passive）</td><td>放開</td><td class="num">約 0.15–0.16 V（Stimulator B 漏電）</td></tr>
+        </table></div>
+      </div></details>
+  </div></details>
+  <details class="r1row"><summary>背景知識<span class="hint">8 項 · 電路為什麼這樣、理想電路怎麼來的</span></summary><div class="cards">
+<details id="t1" class="card"><summary>基礎模型＝助教給的電路<span class="hint">所有模擬區域都用這個</span></summary><div class="body">
+        <ul>
+          <li><b>突觸板照 PCB 實際接法</b>（從講義 PCB 圖追線）。<b>Excitatory 的 D2 後面沒有 100 kΩ</b>：講義電路圖畫了，PCB 上 D2 的負極直接走線到 PostSynapse 排針。Inhibitory 的 100 kΩ（R5）PCB 上有。</li>
+          <li>Excitatory：820 kΩ → 1N4148 → 2N3904（基極 10 nF ∥ 100 kΩ，射極 30 kΩ）→ 2N4403（射極 1 kΩ 接 V+）→ S（4.7 µF ∥ 200 kΩ）→ 1N4148 → Post。</li>
+          <li>Inhibitory：輸入級相同；2N4403 的射極接 1.5 V 電池的 +、電池 − 接 S，集極 15 kΩ 到 GND；S（4.7 µF ∥ 200 kΩ）→ 100 kΩ → Post。</li>
+          <li><span class="tag t-inf">推測</span>Excitatory 的 V+ 從 2×2 排針來（= Stimulator 的電池；本頁預設 8.44 V，是我們 10-21 用電表量的；HW2 的 7.8 V 是別組的板子）。講義畫成獨立的 9 V；如果你另外接 9 V 電池，Q1 開的時候 S 會高一點，其他不變。</li>
+          <li><b>Pre／Post active membrane = HW2 的板子</b>，預設原版（Slow out 的 R2 = 1 MΩ，大家都已換好）。各區右側「Active membrane」可以改成 HW2 真正的 AP。</li>
+          <li>Passive unit：1 µF ∥ 100 kΩ，上排 10 kΩ；細胞外照講義圖直接接 GND（HW2 的 100 Ω 影響可忽略）。Stimulator A、B 都是 HW2 的 Stimulator（放開時漏約 6 µA）。×1 探棒（1 MΩ，和 HW2 一樣），CH1、CH2 各接一支。</li>
+        </ul>
+      </div></details>
+<details id="t2" class="card"><summary>我認為可能有問題的地方<span class="hint">模擬預測，會影響基礎目標的量測</span></summary><div class="body">
+        <ol>
+          <li><b>原版 Pre 的「AP」推不動突觸</b>：原版 active membrane 按 SW A 20 ms 只到約 1.5–2.2 V（模擬，V+ 8.44 V，看按下時碰到小峰的哪個時候；10-21 實測約 1.9 V），按住則被 Slow out 拉回約 0.8 V；突觸的 Q2 要 Pre 到約 6 V 才導通。所以 #3-1–#3-4 怎麼按都沒有 EPSP／IPSP（S 不到 1 mV；10-21 實測 Q2 基極約 0.17 V、#1 沒有 EPSP）。照實記錄「沒有 PSP」，並附 Pre 和 Q2 基極的波形。</li>
+          <li><b>原版 Pre 會不會自己冒小峰：模擬和實測不同</b>：Stimulator A 放開時漏約 6 µA，把 Pre 墊高。模擬：V+ 7.0 V 時 Pre 安靜停在約 0.45 V；7.8 V 以上墊到 FI 門檻附近，不按也每秒冒 1.5 V 小峰（8.44 V 時約 7 個；HW2 第三輪在別組 7.8 V 的板子上量到過）。實測：我們 10-21 的截圖（V+ 8.44 V）在兩次按壓之間 Pre 是平的（約 0.5–0.64 V），沒有看到自己冒峰；差在哪裡還沒查（推測是實際電晶體、電阻和模型不同）。觸發用 CH1 上升緣，準位約 0.7–1.0 V（10-21 用 0.72 V 可以）。</li>
+          <li><b>HW2 真正的 AP 也不夠</b>：峰值約 5.4 V 只讓 S 升到 0.23 V（V+ 8.44 V），沒有 EPSP（見進階目標）。</li>
+          <li><b>原版 Post（#3-2、#3-4）</b>：不會鎖住，但也不會連續發放。#3-2 的 Post（模擬，V+ 8.44 V）不按 B 也每秒冒約 8 個 1.5 V 小峰（和 Pre 一樣，實體板還沒量）；按 B 10 ms 到約 1.5–2.1 V；#3-4 的 Post 被突觸的 100 kΩ + 200 kΩ 拉成 leak，安靜停在 0.46 V，按 B 10 ms 到約 1.85 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.78 V。#3-4 Q3 的「頻率變化」量不到。</li>
+          <li><b>#3-3、#3-4「拔掉 1.5 V 電池」</b>：只拔掉的話 Q1 到 S 是開路，突觸完全沒有輸出。要用一條線把電池的兩個夾點接起來，才是「改變驅動力」。模擬兩種都可以選。</li>
+          <li><b>#3-3 Passive 的 Post 靜止約 0 V</b>：拔掉電池後 IPSP 的反轉電位約 0 V，和靜止差不多，所以 IPSP 消失（沒有驅動力）。</li>
+          <li><b>基線不是 0</b>：Stimulator B 放開時漏約 6 µA，#1 的基線約 0.18–0.20 V（V+ 8.44 V）；模擬中 Stimulator A 漏電讓 Pre 在 0.53–1.52 V 之間自己冒小峰（實測沒看到，見第 2 點）。振幅一律用「波峰 − 基線」。</li>
+          <li><b>講義的小錯</b>：#3-4 Q4 說重做「#3-4-5 and #3-4-6」，這兩題不存在，應該是 Q2、Q3；檔名寫 <code>HW02_…</code>，應該是 HW03（交之前問助教）。</li>
+        </ol>
+      </div></details>
+<details id="t4" class="card"><summary>問題：突觸的門檻在 6 V<span class="hint">為什麼原版和 HW2 真 AP 都沒反應</span></summary><div class="body">
         <p class="small">Q2 的基極被 820 kΩ 和 100 kΩ 分壓，還要先過 D1：</p>
 <div class="calc">Q2.B ≈ (V_pre − V_D1) × 100k / (100k + R1)        （10 nF 只決定速度）
 820 kΩ、Pre 5.4 V（HW2 真 AP，V+ 8.44 V）：(5.4 − 0.45) × 100/920 = 0.54 V → Q2 幾乎不導通，S 只到 0.23 V
@@ -399,8 +449,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 原版 AP 約 1.5–2.2 V（10-21 實測約 1.9 V）：遠低於 6 V</div>
         <p class="small"><span class="tag t-inf">推測</span>突觸是照講義的 active membrane 設計的：講義的 FI 是 1 kΩ（PCB 是 R13 = 100 kΩ），AP 會接近 V+，就能過 6 V。PCB 版的 AP 最高約 5.4 V（HW2 真 AP，V+ 8.44 V），差一截，而 Q2 是指數關係，所以幾乎沒有輸出。把原版的 R13 換成講義的 1 kΩ 可以讓 AP 到約 7.6 V（見「只改 FI」）。</p>
       </div></details>
-
-      <details class="card wide" open><summary>只改 FI：把 Pre 的 R13 換成 1 kΩ<span class="hint">突觸不動，原版 membrane</span></summary><div class="body">
+<details id="t5" class="card wide"><summary>只改 FI：把 Pre 的 R13 換成 1 kΩ<span class="hint">突觸不動，原版 membrane</span></summary><div class="body">
         <p class="small">講義的 FI 畫 1 kΩ，PCB 的 R13 是 100 kΩ。R13 限制內向電流，所以原版 AP 只到約 1.9 V。只把 Pre 的 R13 換小（或在 R13 兩端並一顆），突觸板完全不動（模擬，原版 membrane，按 SW A 20 ms）：</p>
         <div class="tbl"><table>
           <tr><th>Pre 的 R13</th><th class="num">AP 峰值</th><th class="num">Q2 基極</th><th class="num">S 峰值</th><th class="num">#1 EPSP</th></tr>
@@ -411,8 +460,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         </table></div>
         <p class="small">V+ 8.44 V；括號是 V+ 7.0 V。8.44 V 時模型的 Pre 每秒自己冒約 7 個小峰，所以 8.44 V 的 EPSP 可能包含自發峰的疊加；7.0 V 的 73 mV 是單一 AP 的。和「820 kΩ 並 100 kΩ」（EPSP 約 6.5 V、飽和）比，只改 FI 的 EPSP 小很多、不會飽和，比較像真的突觸；但 #3-2 一個或兩個 EPSP 可能推不動 Post（沒算）。R13 = 1 kΩ 時 FI 峰值電流約 7 mA，4403 和 1/4 W 電阻都撐得住（推測）。</p>
       </div></details>
-
-      <details class="card wide" open><summary>改法：820 kΩ 兩端並 1.5 MΩ<span class="hint">兩塊突觸板都一樣</span></summary><div class="body">
+<details id="t6" class="card wide"><summary>改法：820 kΩ 兩端並 1.5 MΩ<span class="hint">兩塊突觸板都一樣</span></summary><div class="body">
         <div class="tbl"><table>
           <tr><th>加什麼</th><th>夾在哪</th><th>為什麼</th></tr>
           <tr><td>HW2 真 AP 的 6 顆</td><td>Pre（和 #3-2、#3-4 的 Post）active membrane</td><td>有門檻、all-or-none、再極化、後過極化（見 HW2 實驗台）</td></tr>
@@ -431,8 +479,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         </table></div>
         <p class="small">Q2 是指數關係，實際電晶體的 I<sub>S</sub> 差兩三倍就差一級：<b>一個 AP 看不到 EPSP → 改 1 MΩ；一個 EPSP 就觸發 Post → 改 2.2 MΩ</b>。IPSP 被 15 kΩ 和 1.5 V 電池限制（Q1 最多約 90 µA），換電阻幾乎不變。</p>
       </div></details>
-
-      <details class="card wide" open><summary>驗證：每一題（真正的突觸）<span class="hint">模擬，按 15 ms、可變電阻 0</span></summary><div class="body">
+<details id="t7" class="card wide"><summary>驗證：每一題（真正的突觸）<span class="hint">模擬，按 15 ms、可變電阻 0</span></summary><div class="body">
         <div class="tbl"><table>
           <tr><th>題目</th><th>結果</th></tr>
           <tr class="grp"><td colspan="2">#3-1 Excitatory → passive</td></tr>
@@ -452,8 +499,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         </table></div>
         <p class="small muted">「Post 先」沒有幫助的原因：D2 只有在 S 比 Post 高約 0.45 V 時才導通，Post 被 B 墊高時 EPSP 反而變小，像接近反轉電位時驅動力變小。</p>
       </div></details>
-
-      <details class="card"><summary>助教電路的問題<span class="hint">原版為什麼量不出題目要的東西</span></summary><div class="body">
+<details id="t8" class="card"><summary>助教電路的問題<span class="hint">原版為什麼量不出題目要的東西</span></summary><div class="body">
         <ol class="small">
           <li><b>突觸門檻約 6 V</b>，原版 AP 約 1.5–2.2 V（10-21 實測約 1.9 V；R13 = 100 kΩ 的結果），HW2 真 AP 約 5.4 V 也不到（V+ 8.44 V）。</li>
           <li><b>原版 active membrane 的靜止要看電池</b>：模擬：V+ 7.0 V 時安靜停在約 0.45 V；7.8 V 以上（含我們的 8.44 V）Stimulator 漏電讓它自己冒小峰，但 10-21 實測沒看到。按住時被 Slow out 拉在約 0.8 V，不會連續發放，#3-4 Q3 量不到頻率變化。</li>
@@ -463,8 +509,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <li><b>Stimulator 漏電</b>（HW2 的 Q<sub>sense</sub> 接在 SW 前）：#1 基線約 0.15–0.16 V；模擬中 V+ 7.8 V 以上 Pre 會自己冒小峰（10-21 實測沒看到）。HW2 真 AP 的 22 kΩ 已消掉 Pre 這邊的；Post 是 Passive 時 Stimulator B 沒有修正。</li>
         </ol>
       </div></details>
-
-      <details class="card"><summary>電路和生理的對應</summary><div class="body">
+<details id="t9" class="card"><summary>電路和生理的對應</summary><div class="body">
         <div class="tbl"><table>
           <tr><th>電路</th><th>生理</th></tr>
           <tr><td>820 kΩ + D1 + Q2 的門檻</td><td>突觸前末梢：AP 夠大才打開電壓門控 Ca²⁺ 通道、釋放神經傳導物質</td></tr>
@@ -477,18 +522,10 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <tr><td>#1 → #5</td><td>近端 vs 遠端樹突：被動纜線的衰減與延遲</td></tr>
         </table></div>
       </div></details>
-
-      <details class="card"><summary>加上之後要量的<span class="hint">確認夾對</span></summary><div class="body">
-        <div class="tbl"><table>
-          <tr><th>量</th><th>條件</th><th class="num">預期</th></tr>
-          <tr><td>Pre Vm</td><td>放開</td><td class="num">約 0.97 V（突觸的 820k ∥ 1.5M 也拉一點）</td></tr>
-          <tr><td>Q2.B</td><td>放開／AP 時</td><td class="num">約 0.11 V／約 0.71 V</td></tr>
-          <tr><td>S（Excitatory）</td><td>放開／一個 AP 後</td><td class="num">0 V／約 1.4 V，約 1 秒內放掉</td></tr>
-          <tr><td>S（Inhibitory、Passive）</td><td>放開／一個 AP 後</td><td class="num">約 0.10 V／約 −0.18 V</td></tr>
-          <tr><td>#1（Passive）</td><td>放開</td><td class="num">約 0.15–0.16 V（Stimulator B 漏電）</td></tr>
-        </table></div>
-      </div></details>
-    </div>
+  </div></details>
+  <details class="r1row"><summary>紀錄<span class="hint">0 項 · 過去的討論和量測</span></summary><div class="cards">
+<p class="small muted">（目前沒有）</p>  </div></details>
+  <p class="small muted">更多紀錄在 <a href="#r6">6 補充與紀錄</a>。</p>
   </div>
 </section>
 
@@ -503,7 +540,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <p class="sub" data-show="basic">Stimulator A → Pre → excitatory 突觸 → 5 個 Passive unit。CH1 = Pre Vm，CH2 = #1。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
     <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
-      <div class="grp" data-show="adv"><div class="gt">情境</div>
+      <div class="grp" data-show="adv"><div class="gt">理想版本</div>
         <div class="btns" data-presets></div>
         <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
@@ -586,7 +623,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <p class="sub" data-show="basic">Post 換成 active membrane 2，Stimulator B 刺激 Post。CH1 = Pre Vm，CH2 = Post Vm。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
     <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
-      <div class="grp" data-show="adv"><div class="gt">情境</div>
+      <div class="grp" data-show="adv"><div class="gt">理想版本</div>
         <div class="btns" data-presets></div>
         <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
@@ -676,7 +713,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <p class="sub" data-show="basic">Stimulator A → Pre → inhibitory 突觸 → 5 個 Passive unit。CH1 = Pre Vm，CH2 = #1（IPSP 是負的）。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
     <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
-      <div class="grp" data-show="adv"><div class="gt">情境</div>
+      <div class="grp" data-show="adv"><div class="gt">理想版本</div>
         <div class="btns" data-presets></div>
         <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
@@ -755,7 +792,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <p class="sub" data-show="basic">Post 換成 active membrane 2。CH1 = Pre Vm，CH2 = Post Vm。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
     <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
-      <div class="grp" data-show="adv"><div class="gt">情境</div>
+      <div class="grp" data-show="adv"><div class="gt">理想版本</div>
         <div class="btns" data-presets></div>
         <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
@@ -880,9 +917,10 @@ S 的放電：τ ≈ 4.7 µF × 200 kΩ ≈ 0.94 s；Post（Passive）τ = 1 µF
 
 </main>
 </div>
-<script src="engine.js?v=20261022a"></script>
-<script src="schematic.js?v=20261022a"></script>
-<script src="inspect.js?v=20261022a"></script>
-<script src="app.js?v=20261022a"></script>
+<script src="engine.js?v=20261022b"></script>
+<script src="schematic.js?v=20261022b"></script>
+<script src="inspect.js?v=20261022b"></script>
+<script src="../circuits/circuits.js?v=20261022b"></script>
+<script src="app.js?v=20261022b"></script>
 </body>
 </html>
