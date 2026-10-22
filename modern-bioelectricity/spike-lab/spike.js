@@ -880,31 +880,74 @@ function win(){
   }));
 }
 
-/* tutorial */
+/* tutorial: one spotlight at a time.  Everything outside the lit hole is dimmed and blocks input; the hole
+   lets taps through to exactly the thing the step asks for.  Placing is two taps (card, then table), which
+   works the same with a mouse and on a phone. */
 const TUT = [
-  {t:'Drag the <b>9 V Battery</b> card onto the table (or tap it, then tap the table). It goes to the POWER DOCK.', el:'.part[data-type="battery"]', ok:() => !!A.battery},
-  {t:'Now a <b>Leak</b> board: drop it on any numbered spot.', el:'.part[data-type="leak"]', ok:() => A.spots.some(s => s.stack.some(p => p.type === 'leak'))},
-  {t:'Drop the <b>Stimulator</b> on the same spot. It always climbs to the top of the stack.', el:'.part[data-type="stim"]', ok:() => !!(R && R.ok && R.mem && R.mem.lk)},
-  {t:'<b>Hold</b> the red SW button (or the red stem on the 3D Stimulator).', el:'#swA', ok:() => lvState.tutPressed},
-  {t:'Watch the <b>scope</b>: the yellow trace is Vm. It rises while you push current in, and decays back through the Leak (τ = 100 ms). You just built a membrane!', el:'#scopefit', ok:() => lvState.tutT > 3.5}
+  {t:'Tap the <b>9 V Battery</b> card in the <b>PARTS</b> panel on the left.', el:() => $('.part[data-type="battery"]'), panel:'drawer', ok:() => (holding && holding.type === 'battery') || !!A.battery},
+  {t:'Now tap anywhere on the <b>table</b>. A battery always goes to the <b>POWER DOCK</b> at the left end.', el:() => $('#stage'), ok:() => !!A.battery},
+  {t:'Tap the <b>Leak</b> card in the PARTS panel.', el:() => $('.part[data-type="leak"]'), panel:'drawer', ok:() => (holding && holding.type === 'leak') || A.spots.some(s => s.stack.some(p => p.type === 'leak'))},
+  {t:'Tap the glowing <b>spot 4</b> on the table (the dashed box with the number 4).', el:() => $('#stage'), mark:3, ok:() => A.spots.some(s => s.stack.some(p => p.type === 'leak'))},
+  {t:'Tap the <b>Stimulator</b> card in the PARTS panel.', el:() => $('.part[data-type="stim"]'), panel:'drawer', ok:() => (holding && holding.type === 'stim') || !!(R && R.ok)},
+  {t:'Tap the <b>same spot</b> again. The Stimulator always lands on <b>top</b> of the stack.', el:() => $('#stage'), mark:'leak', ok:() => !!(R && R.ok)},
+  {t:'Press and <b>hold</b> the big red <b>SW</b> button at the bottom of the table for about a second, then let go.', el:() => $('#swA'), ok:() => lvState.tutPressed && !sw.A},
+  {t:'This is the <b>oscilloscope</b>. The yellow trace is <b>Vm</b>: it rose while you pushed current in, then decayed back through the Leak (τ = 100 ms). You just built a membrane!', el:() => $('#scopefit'), panel:'bay', next:true, ok:() => lvState.tutNext}
 ];
-let tutOn = false;
-function startTutorial(){ tutOn = true; $('#tut').hidden = false; tutRender(); }
-function endTutorial(){ tutOn = false; $('#tut').hidden = true; $$('.tut-target').forEach(e => e.classList.remove('tut-target')); }
+let tutOn = false, tutMark = null;
+function startTutorial(){ tutOn = true; lvState.tutStep = 0; lvState.tutNext = false; $('#tut').hidden = false; tutRender(); }
+function endTutorial(){
+  tutOn = false; $('#tut').hidden = true;
+  if(tutMark){ scene.remove(tutMark); tutMark = null; }
+}
+function openPanel(which){
+  if(which === 'drawer' && document.body.classList.contains('dclosed')){ document.body.classList.remove('dclosed'); $('#tab-drawer').textContent = '◀'; }
+  if(which === 'bay' && document.body.classList.contains('bclosed')){ document.body.classList.remove('bclosed'); $('#tab-bay').textContent = '▶'; }
+  if(innerWidth < 860){                                   /* a phone: only one side panel at a time */
+    if(which === 'drawer' && !document.body.classList.contains('bclosed')){ document.body.classList.add('bclosed'); $('#tab-bay').textContent = '◀'; }
+    if(which === 'bay' && !document.body.classList.contains('dclosed')){ document.body.classList.add('dclosed'); $('#tab-drawer').textContent = '▶'; }
+    if(!which){ document.body.classList.add('dclosed', 'bclosed'); $('#tab-drawer').textContent = '▶'; $('#tab-bay').textContent = '◀'; }
+  }
+  setTimeout(() => { resize3D(); fitScope(); }, 420);
+}
 function tutRender(){
   const s = TUT[lvState.tutStep];
-  $$('.tut-target').forEach(e => e.classList.remove('tut-target'));
   if(!s){ endTutorial(); win(); return; }
-  $('#tutbox').innerHTML = '<b>STEP ' + (lvState.tutStep + 1) + '/' + TUT.length + '</b>' + s.t;
-  const el = $(s.el); if(el) el.classList.add('tut-target');
+  openPanel(s.panel || null);
+  $('#tutbox').innerHTML = '<div class="tut-h"><b>STEP ' + (lvState.tutStep + 1) + ' / ' + TUT.length + '</b><button type="button" class="tut-x" title="Leave the tutorial">✕</button></div><p>' + s.t + '</p>' +
+    (s.next ? '<button type="button" class="chip" id="tut-next">GOT IT ▶</button>' : '');
+  $('.tut-x', $('#tutbox')).addEventListener('click', () => { endTutorial(); renderMap(); show('scr-map'); });
+  const n = $('#tut-next'); if(n) n.addEventListener('click', () => { lvState.tutNext = true; });
+  if(tutMark){ scene.remove(tutMark); tutMark = null; }
+  let spot = s.mark === 'leak' ? A.spots.findIndex(x => x.stack.some(p => p.type === 'leak')) : s.mark;
+  if(spot !== undefined && spot !== null && spot >= 0){
+    tutMark = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.04, 2.5), new THREE.MeshBasicMaterial({color:0xffe066, transparent:true, opacity:.55, depthWrite:false}));
+    tutMark.position.set(SPX(spot), 0.03 + (A.spots[spot].stack.length ? boardY(spot, A.spots[spot].stack.length) - PITCH : 0), 0); scene.add(tutMark);
+  }
+  tutPlace();
+}
+/* put the hole over the target, the four blockers around it, and the text box beside it */
+function tutPlace(){
+  const s = TUT[lvState.tutStep]; if(!s) return;
+  const el = s.el(); if(!el) return;
+  const r = el.getBoundingClientRect(), pad = 6, W = innerWidth, H = innerHeight;
+  const x0 = Math.max(0, r.left - pad), y0 = Math.max(0, r.top - pad), x1 = Math.min(W, r.right + pad), y1 = Math.min(H, r.bottom + pad);
+  const set = (id, x, y, w, h) => { const e = $(id); e.style.left = x + 'px'; e.style.top = y + 'px'; e.style.width = Math.max(0, w) + 'px'; e.style.height = Math.max(0, h) + 'px'; };
+  set('#tb-t', 0, 0, W, y0); set('#tb-b', 0, y1, W, H - y1); set('#tb-l', 0, y0, x0, y1 - y0); set('#tb-r', x1, y0, W - x1, y1 - y0);
+  set('#tut-hole', x0, y0, x1 - x0, y1 - y0);
+  const box = $('#tutbox'), bw = Math.min(380, W - 24), bh = box.offsetHeight || 120;
+  let bx = Math.min(Math.max(12, (x0 + x1) / 2 - bw / 2), W - bw - 12), by;
+  if(H - y1 > bh + 20) by = y1 + 12; else if(y0 > bh + 20) by = y0 - bh - 12; else { by = Math.max(12, H / 2 - bh / 2); bx = x1 + 12 + bw < W ? x1 + 12 : Math.max(12, x0 - bw - 12); }
+  if(el.id === 'stage' && H - y1 < bh + 20){ by = Math.max(12, y0 + 64); bx = Math.max(12, x1 - bw - 16); }
+  box.style.left = bx + 'px'; box.style.top = by + 'px'; box.style.width = bw + 'px';
 }
 function tutTick(real){
   if(!tutOn || !lvState) return;
   const s = TUT[lvState.tutStep]; if(!s) return;
-  if(lvState.tutStep === TUT.length - 1) lvState.tutT += real;
-  if(!$(s.el) || !$(s.el).classList.contains('tut-target')) tutRender();
+  tutPlace();
+  if(tutMark) tutMark.material.opacity = 0.35 + 0.25 * Math.sin(performance.now() / 160);
   if(s.ok()){ lvState.tutStep++; tutRender(); }
 }
+window.addEventListener('resize', () => { if(tutOn) tutPlace(); });
 
 /* ================================================================ main loop */
 let last = performance.now(), carry = 0, lastUI = 0, lastSch = 0;
