@@ -50,7 +50,7 @@ $('#chapters').addEventListener('click', e => { const b = e.target.closest('[dat
 function startFree(){
   endTutorial();
   MODE = 'free'; LV = null; document.body.classList.remove('campaign');
-  $('#goal').hidden = true; $('#bpwrap').hidden = false; $('#btn-clear').hidden = false; $('#vtoggle').hidden = false;
+  $('#goal').hidden = true; $('#bpwrap').hidden = false; $('#btn-clear').hidden = true;   /* free build: Clear is a blueprint option */ $('#vtoggle').hidden = false;
   $('#btn-back').textContent = '◀ TITLE';
   A = SL.build('c22'); CT = 'mine'; IDEAL = null; markFresh();
   applyType(false);
@@ -408,11 +408,11 @@ $('#sp-left').addEventListener('click', () => { const m = selId && SL.move(A, se
 $('#sp-right').addEventListener('click', () => { const m = selId && SL.move(A, selId, 1); if(m) toast(m); else { fresh.add(selId); changed(true); } });
 
 /* blueprint + clear (free build) */
-const BP = [['c22', '#2-2 Active'], ['c21', '#2-1 Passive'], ['c23:1', '#2-3 n = 1'], ['c23:2', '#2-3 n = 2'], ['c23:4', '#2-3 n = 4'], ['c31', '#3-1 Excitatory → passive'], ['c32', '#3-2 Excitatory → active'], ['c33', '#3-3 Inhibitory → passive'], ['c34', '#3-4 Inhibitory → active'], ['empty', 'Empty table']];
-$('#blueprint').innerHTML = '<option value="">Load…</option>' + BP.map(b => '<option value="' + b[0] + '">' + b[1] + '</option>').join('');
+const BP = [['clear', 'Clear table'], ['c22', '#2-2 Active'], ['c21', '#2-1 Passive'], ['c23:1', '#2-3 n = 1'], ['c23:2', '#2-3 n = 2'], ['c23:4', '#2-3 n = 4'], ['c31', '#3-1 Excitatory → passive'], ['c32', '#3-2 Excitatory → active'], ['c33', '#3-3 Inhibitory → passive'], ['c34', '#3-4 Inhibitory → active']];
+$('#blueprint').innerHTML = '<option value="">Blueprint…</option>' + BP.map(b => '<option value="' + b[0] + '">' + b[1] + '</option>').join('');
 $('#blueprint').addEventListener('change', e => {
   const v = e.target.value; e.target.value = ''; if(!v) return;
-  if(v === 'empty') A = SL.empty();
+  if(v === 'clear'){ A = SL.empty(); selId = null; changed(true); toast('Table cleared'); return; }
   else { const [cid, n] = v.split(':'); A = SL.build(cid, {n:n === undefined ? 4 : +n}); }
   markFresh(); selId = null; R = SL.analyze(A); applyType(false); changed(true); toast(BP.find(b => b[0] === v)[1]);
 });
@@ -435,27 +435,21 @@ if(innerWidth < 860){ document.body.classList.add('dclosed', 'bclosed'); $('#tab
 /* ---------------- phones: landscape only, a game HUD ----------------
    portrait -> a full-screen "rotate" card (plus a fullscreen + landscape-lock button where the browser allows it).
    landscape: the bench fills the screen; parts = a tray at the bottom left; SW pad at the bottom right;
-   the scope = a mini screen top right (tap to enlarge); view / blueprint / clear in the ⚙ menu. */
+   the scope = a mini screen top right (tap to enlarge; its ▶ tab folds it away to the right);
+   the top bar ends with the blueprint menu (it holds Clear table) and the 3D / SCHEMA switch. */
 const FORCE_PHONE = /[?&]phone=1/.test(location.search);
 function isPhone(){ return FORCE_PHONE || (Math.min(innerWidth, innerHeight) <= 540 && matchMedia('(pointer:coarse)').matches); }
-const menu = document.createElement('div'); menu.className = 'phonemenu'; menu.id = 'phonemenu'; menu.hidden = true; $('#scr-game').appendChild(menu);
-const homeOf = new Map();
+let wasPhone = false;
 function setPhone(){
   const ph = isPhone(), portrait = innerHeight > innerWidth;
   document.body.classList.toggle('phone', ph);
   document.body.classList.toggle('phone-portrait', ph && portrait);
-  const movers = [$('.seg[role="tablist"]'), $('#bpwrap'), $('#btn-clear')];
-  movers.forEach(el => {
-    if(!homeOf.has(el)) homeOf.set(el, {parent:el.parentNode, next:el.nextSibling});
-    if(ph && el.parentNode !== menu) menu.appendChild(el);
-    if(!ph && el.parentNode === menu){ const h = homeOf.get(el); h.parent.insertBefore(el, h.next); }
-  });
-  if(!ph){ menu.hidden = true; document.body.classList.remove('scopebig'); }
+  if(ph && !wasPhone){ document.body.classList.remove('bclosed'); $('#tab-bay').textContent = '▶'; }   /* the mini scope starts open */
+  wasPhone = ph;
+  if(!ph) document.body.classList.remove('scopebig');
   if(ph && !$('#goal').hidden && !lvState?.phoneGoalOpen) $('#goal').classList.add('mini');
   setTimeout(() => { resize3D(true); fitScope(); }, 60);
 }
-$('#btn-menu').addEventListener('click', () => { menu.hidden = !menu.hidden; });
-menu.addEventListener('click', e => { if(e.target.closest('button') && !e.target.closest('.seg')) menu.hidden = true; });
 $('#scope-catch').addEventListener('click', () => { document.body.classList.add('scopebig'); setTimeout(fitScope, 30); });
 $('#scope-close').addEventListener('click', () => { document.body.classList.remove('scopebig'); setTimeout(fitScope, 30); });
 $('#btn-rotate').addEventListener('click', async () => {
@@ -533,7 +527,9 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 200);
 camera.position.set(0.4, 9.5, 9.0);
 const controls = new OrbitControls(camera, canvas);
-controls.target.set(-0.2, 0.7, 0); controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 4; controls.maxDistance = 46; controls.update();
+controls.target.set(-0.2, 0.7, 0); controls.enableDamping = true;
+/* touch: one finger moves the view, two fingers zoom and rotate (the mouse keeps OrbitControls' defaults) */
+controls.touches = {ONE:THREE.TOUCH.PAN, TWO:THREE.TOUCH.DOLLY_ROTATE}; controls.screenSpacePanning = false; controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 4; controls.maxDistance = 46; controls.update();
 scene.add(new THREE.HemisphereLight(0xeaf4ff, 0x4a3420, 1.15));
 const sun = new THREE.DirectionalLight(0xffffff, 2.1);
 sun.position.set(4, 13, 7); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
@@ -951,7 +947,10 @@ function endTutorial(){
   if(tutMark){ scene.remove(tutMark); tutMark = null; }
 }
 function openPanel(which){
-  if(document.body.classList.contains('phone')) return;
+  if(document.body.classList.contains('phone')){
+    if(which === 'bay' && document.body.classList.contains('bclosed')){ document.body.classList.remove('bclosed'); $('#tab-bay').textContent = '▶'; setTimeout(fitScope, 420); }
+    return;
+  }
   if(which === 'drawer' && document.body.classList.contains('dclosed')){ document.body.classList.remove('dclosed'); $('#tab-drawer').textContent = '◀'; }
   if(which === 'bay' && document.body.classList.contains('bclosed')){ document.body.classList.remove('bclosed'); $('#tab-bay').textContent = '▶'; }
   if(innerWidth < 860){                                   /* a phone: only one side panel at a time */

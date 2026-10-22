@@ -315,10 +315,6 @@ body.campaign .status{top:auto;bottom:132px}
 @media (max-width:860px){.padrow{flex-wrap:wrap;justify-content:center}}
 
 /* =================== phones (landscape game HUD) =================== */
-.chip.menu{display:none;font-size:18px;padding:4px 10px}
-.phonemenu{position:absolute;top:50px;right:8px;z-index:60;display:flex;flex-direction:column;gap:8px;align-items:stretch;border:3px solid var(--line);border-radius:14px;
-  background:linear-gradient(var(--panel2),var(--panel));padding:10px;box-shadow:0 5px 0 var(--line)}
-.phonemenu .seg{justify-content:center}
 .scope-catch{display:none}
 .scope-close{display:none}
 .rotate{display:none}
@@ -331,12 +327,22 @@ body.phone-portrait .rotate{display:grid;position:fixed;inset:0;z-index:200;plac
 body.phone{--top:46px}
 body.phone .hud{height:46px;gap:6px;padding:0 8px;overflow:visible}
 body.phone .hud .chip{font-size:13px;padding:4px 9px;box-shadow:0 3px 0 var(--line)}
-body.phone .hud .logo,body.phone .hud .grow{display:none}
-body.phone .hud .chip.menu{display:inline-flex;margin-left:auto}
+body.phone .hud .logo{display:none}
+/* top bar, right end: [blueprint (incl. Clear table)] [CLEAR in build levels] [3D | SCHEMA] */
+body.phone .hud .seg[role="tablist"]{order:10}
+body.phone .hud .seg[role="tablist"] button{padding:5px 8px;font-size:12px}
+body.phone .chip.bp{padding:3px}
+body.phone .chip.bp .bpl{display:none}
+body.phone .chip.bp select{font-size:12px;padding:2px 4px;max-width:150px}
 body.phone .hud .seg.ctype button{padding:5px 8px;font-size:12px}
 body.phone .idealsel{font-size:11px;padding:3px}
 body.phone .stage{left:0!important;right:0!important;top:var(--top);bottom:0;border-radius:12px 12px 0 0}
 body.phone .tab{display:none}
+/* the scope folds away to the right; its tab stays at the screen edge */
+body.phone .tab-r{display:block;top:0;margin-top:0;left:-26px;width:26px;height:52px;font-size:13px;border-width:2px;border-right:0;border-radius:10px 0 0 10px;box-shadow:0 3px 0 var(--line)}
+body.phone.bclosed .bay{transform:translateX(calc(100% + 6px))!important}
+body.phone.scopebig .tab-r{display:none}
+body.phone.bclosed .status{right:36px}
 /* parts: a tray of icons at the bottom left */
 body.phone .drawer{transform:none!important;left:6px;right:auto;top:auto;bottom:6px;width:calc(100% - 360px);min-width:180px;height:78px;flex-direction:row;border-radius:14px;z-index:20;padding:0}
 body.phone .drawer .panel-head,body.phone .drawer .vtoggle{display:none}
