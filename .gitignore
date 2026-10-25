@@ -1,2 +1,5 @@
 # course handouts (not ours to publish)
 modern-bioelectricity/*.docx
+
+# Claude Code per-machine settings
+.claude/settings.local.json
