@@ -1,0 +1,50 @@
+<!-- Shared background cards for hw2-lab and hw3-lab (decided 2026-10-26, project card MB-0103).
+     Edit this file, then run: python3 common/sync.py  (copies it into both pages between the markers). -->
+<details id="c-rules" class="card"><summary>電晶體與電路的基本規則<span class="hint">後面每個推導都用到</span></summary><div class="body">
+        <ol class="small">
+          <li><b>導通門檻</b>：矽電晶體的 B–E（PNP 是 E–B）接面要約 0.5–0.65 V 才有明顯電流。1N4148 二極體也一樣，電流小時約 0.3–0.5 V。這是矽 PN 接面的性質，不是這套板子特有的。</li>
+          <li><b>指數關係</b>：電晶體的電流 I<sub>C</sub> ≈ I<sub>S</sub> · e<sup>V<sub>BE</sub>/V<sub>T</sub></sup>，V<sub>T</sub> = kT/q ≈ 25.85 mV（室溫）。換算：<b>V<sub>BE</sub> 每少約 60 mV，電流少 10 倍</b>（25.85 mV × ln 10 = 59.5 mV）。所以差 0.4 V 不是少一點，而是少約 10<sup>6.6</sup> 倍。</li>
+          <li><b>放大倍數 β</b>：I<sub>C</sub> = β · I<sub>B</sub>。模擬用 2N4403 β = 150、2N3904 β = 200（模型參數；2N4403 規格書的範圍約 100–300，每顆不同）。</li>
+          <li><b>歐姆定律與 KCL</b>：I = V／R；流進一個節點的電流 = 流出的電流。靜止時沒有電容電流，只看電阻。</li>
+          <li><b>電容</b>：電壓不能瞬間改變，dV/dt = I／C；和電阻並聯時，放電的時間常數 τ = R·C（過 τ 剩 37 %）。</li>
+          <li><b>分壓</b>：兩顆電阻串在 V 和地之間，中點 = V × R<sub>下</sub>／(R<sub>上</sub> + R<sub>下</sub>)（中點沒有其他電流時才成立）。</li>
+        </ol>
+      </div></details>
+<details class="card wide" id="leak"><summary>Stimulator 的 6 µA 漏電（靜止 0.6 V）：意外還是刻意？<span class="hint">判斷：意外（PCB 走線錯），把握高但不是確定</span></summary><div class="body">
+        <p class="small">去年的 FI、SO 和今年一樣，今年重新設計的是 Stimulator：Q<sub>pass</sub> + Q<sub>sense</sub> 組成定電流源，I ≈ V<sub>EB</sub>(Q<sub>sense</sub>)／(pot + 7 kΩ)，電流不隨 Vm 改變。漏電來自 Q<sub>sense</sub> 的射極接在 SW 之前（V+），不是 SW 之後（ST.P）。</p>
+        <div class="tbl"><table>
+          <tr><th>Q<sub>sense</sub> 射極</th><th class="num">SW 放開：輸出</th><th class="num">SW 放開：耗電</th><th class="num">SW 按下：輸出（pot 0.7 kΩ）</th></tr>
+          <tr><td>SW 之後（講義電路圖）</td><td class="num">0</td><td class="num">0</td><td class="num">約 90 µA</td></tr>
+          <tr><td>SW 之前（PCB 實際）</td><td class="num">6.3 µA → Vm 0.62 V</td><td class="num">0.95 mA</td><td class="num">約 90 µA（一樣）</td></tr>
+        </table></div>
+        <p class="small"><b>認為是意外的理由</b>：</p>
+        <ol class="small">
+          <li><b>設計者自己的電路圖沒有漏電</b>：講義上 Q<sub>sense</sub> 的射極畫在 SW 之後，這也是兩顆電晶體限流電路的標準接法。PCB 把它接到旁邊的 V+，只差 SW 的一腳。</li>
+          <li><b>SW 放開時一直耗 0.95 mA</b>：Q<sub>sense</sub> 在放開時全開，電流經 7 kΩ 到地。電池扣著、沒有開關，只要沒拔電池 Stimulator 就一直在耗電（9 V 電池約 500 mAh，三週左右就用完）。你們量到 7.8 V 而不是 9 V 也符合這點（只是符合，不是證明）。沒有人會設計一個「關掉」時還耗 1 mA 的電流源。</li>
+          <li><b>漏電大小由 β 決定，不是設計值</b>：漏電 = I<sub>C</sub>(Q<sub>sense</sub>)／β。β 100／150／200／300 時是 9.4／6.3／4.7／3.1 µA，靜止 0.93／0.62／0.47／0.31 V；電池從 9 V 掉到 7 V，漏電也從 7.4 掉到 5.5 µA。刻意的偏壓會用一顆固定電阻（像真正的 AP 用的 V+ → Vm 330 kΩ），不會靠一個差三倍的 β。</li>
+          <li><b>它讓作業量不了</b>：#2-2 不按也自己冒小峰，Q5 的「靜止電位」沒有定義，五參數要用觸發準位去挑；#2-1 的被動鏈也多了約 0.2 V 的基線。重新設計 Stimulator 的目的是乾淨的電流源，「放開 = 0」是電流源最基本的性質。</li>
+          <li><b>PCB 和電路圖還有別的不一致</b>：R13 100 kΩ（圖 1 kΩ）、FI 沒有自己的電池、R2 的位置附的是 100 Ω（圖 3 MΩ）、Passive PCB 底板沒串 V+。表示板子沒有逐一對照電路圖檢查過，一處接錯並不意外。</li>
+        </ol>
+        <p class="small"><b>刻意的可能</b>：有人可能想讓 Vm 靜止時有一點去極化、離門檻近一點，讓弱的 FI（R13 100 kΩ）比較容易觸發。但 0.62 V 剛好落在 FI 門檻（約 0.6 V）和 Slow out 的極限（約 0.6 V）上，結果是自發放電、沒有穩定靜止，和這個目的相反；三個約 0.6 V 撞在一起比較像巧合。</p>
+        <p class="small"><b>怎麼查（不用三用電表）</b>：SW 放開時用示波器量 ST.R（Q<sub>sense</sub> 集極、7 kΩ 上端）。約 6.6 V 就表示 Q<sub>sense</sub> 正在耗 6.6／7k ≈ 0.95 mA；照講義接法應該是 0 V。也可以問助教去年的 Stimulator 和今年的 PCB 檔，看 Q<sub>sense</sub> 射極原本接哪。</p>
+      </div></details>
+<details id="apdef" class="card"><summary>AP 的定義（文獻）<span class="hint">換成這個電路的判準</span></summary><div class="body">
+        <p class="small">Barnett &amp; Larkman（2007）把 AP 描述成膜電位短暫反轉、分三個主要階段：去極化、再極化、慢慢恢復的後過極化；Na⁺ 通道的招募是再生性的，所以一過門檻就是完整的 AP（all-or-nothing），去極化會越過 0 mV 但停在 E<sub>Na</sub> 之前；Na⁺ 通道失活造成絕對不反應期，K⁺ 通道關得慢造成後過極化與相對不反應期。Purves 等人的教科書（第 2–3 章）也用門檻、自我增強的 Na⁺ 通透度上升、較慢的 K⁺ 通透度上升來描述 AP；這個電路的 FI／Slow out 就對應 Hodgkin &amp; Huxley（1952）模型裡的 Na⁺／K⁺ 電流。</p>
+        <div class="tbl"><table>
+          <tr><th>判準</th><th>文獻</th><th>這個電路怎麼驗</th></tr>
+          <tr><td>C1 門檻</td><td>過門檻才有 AP，之下只有局部反應</td><td>按壓長度由短到長：未觸發時和拔掉 FI 一樣；超過某長度就觸發</td></tr>
+          <tr><td>C2 all-or-none、再生性</td><td>一過門檻就是完整 AP，大小不隨刺激變</td><td>不同按壓長度、電流的峰值幾乎相同；上升 dV/dt 遠大於被動充電</td></tr>
+          <tr><td>C3 峰值</td><td>越過 0 mV、停在 E<sub>Na</sub> 之前</td><td>峰值遠高於門檻、低於 V+（內向電流的反轉電位）。「越過 0 mV」在這裡沒有意義：Vm 對 GND 量，靜止本來就是正的</td></tr>
+          <tr><td>C4 再極化</td><td>K⁺ 外向電流拉回</td><td>Slow out 拉回，比被動放電快</td></tr>
+          <tr><td>C5 後過極化</td><td>低於靜止電位、慢慢恢復</td><td>AP 後 Vm 低於靜止再回來</td></tr>
+          <tr><td>C6 不反應期</td><td>剛發完 AP 不能（或較難）再發</td><td>AP 後不同間隔再按一次</td></tr>
+        </table></div>
+        <p class="small muted">來源：M. W. Barnett, P. M. Larkman, “The action potential,” <i>Practical Neurology</i> 7:192–197 (2007)；D. Purves et al., <i>Neuroscience</i> 2nd ed., ch. 2–3（NCBI Bookshelf）；A. L. Hodgkin, A. F. Huxley, <i>J Physiol</i> 117:500 (1952)。</p>
+      </details>
+<details id="simm" class="card"><summary>模擬方法<span class="hint">和 Python 版相同</span></summary><div class="body"><ul>
+      <li>修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton、Ebers–Moll 電晶體與二極體模型；DC 不收斂時 gmin stepping。</li>
+      <li>10-12 起每個節點加 10 pF 雜散電容（配線；×1 探棒約 100 pF 只接在量測點，和 1 µF 比可忽略）：拔掉 Leak 時 Vm 節點沒有電容，FI 自鎖在數值上沒有唯一解（S+FI 會卡住）。時間常數約 1 µs，波形幾乎不變（重跑所有檢查，差 ≤ 0.07 V；R2 = 1 MΩ 時「按下的第一個峰」看落在小峰的哪個階段，1.75–2.06 V）。另外 Newton 在 20 次迭代後、各節點 KCL 誤差 &lt; 10 pA 也算收斂。</li>
+      <li>參數：2N3904 I<sub>S</sub> 6.7 fA、β 200；2N4403 I<sub>S</sub> 10 fA、β 150；1N4148 I<sub>S</sub> 2.52 nA、n 1.752。</li>
+      <li>HW3 實驗台的引擎是 <a href="../hw3-lab/engine.js">hw3-lab/engine.js</a>：同樣的元件模型，接成 Pre → 突觸 → Post 的電路。</li>
+      <li>HW2 網頁引擎 <a href="../active-membrane-sim/engine.js">engine.js</a>、電路圖 <a href="../active-membrane-sim/schematic.js">schematic.js</a>；Python 在 <a href="../hw2-debug/sim/">hw2-debug/sim/</a>（<code>check_ap.py</code>、<code>check_23.py</code> 等）。</li>
+    </ul></div></details>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>HW3 實驗台</title>
-<meta name="description" content="近代生醫電學 HW3 的介面：基礎目標（照助教的突觸電路量完每一題）與進階目標（做出真正的突觸），#3-1 到 #3-4 的即時電路模擬與示波器。">
+<meta name="description" content="近代生醫電學 HW3 的介面：原版、我的、理想三種電路（照助教的突觸電路量完每一題；做出真正的突觸），#3-1 到 #3-4 的即時電路模擬與示波器。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -302,7 +302,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 <!-- ======================= 0 電路圖與 PCB 的差別 ======================= -->
 <section class="region textreg" id="r0">
   <h2>0 電路圖與 PCB 的差別</h2>
-  <p class="r0-one">底圖：講義的 #3-1 電路圖。<span class="k-p">紅色</span>＝PCB 實際的接法。<b>點紅色標記</b>看這個差別造成什麼問題。兩處都在 excitatory 突觸板上（#3-1、#3-2 用同一塊）；inhibitory 突觸板和電路圖一致。基礎目標的 #3-1、#3-2 可以切換這兩處。</p>
+  <p class="r0-one">底圖：講義的 #3-1 電路圖。<span class="k-p">紅色</span>＝PCB 實際的接法。<b>點紅色標記</b>看這個差別造成什麼問題。兩處都在 excitatory 突觸板上（#3-1、#3-2 用同一塊）；inhibitory 突觸板和電路圖一致。選「理想」電路時，#3-1、#3-2 的「D2 → Post」和「突觸 Q1 電源」可以改成講義的接法。</p>
   <figure class="r0-big">
     <svg class="r0-ov" viewBox="0 0 1345 340" role="group" aria-label="講義 #3-1 電路圖，紅色標出 PCB 實際的接法">
       <rect x="0" y="0" width="1345" height="340" fill="#fff"/>
@@ -336,12 +336,12 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
   <details class="card r0-more" open><summary>數字對照：照電路圖 vs 照 PCB<span class="hint">模擬，V+ 8.44 V（10-21 實測），Pre 按 15–20 ms</span></summary><div class="body">
     <div class="tbl score"><table>
       <tr><th></th><th class="num">照電路圖（100 kΩ、9 V）</th><th class="num">照 PCB（直接、排針 V+）</th></tr>
-      <tr><td>#3-1 原版 active membrane（基礎目標）：#1 的 EPSP</td><td class="num">0 mV</td><td class="num">0 mV</td></tr>
+      <tr><td>#3-1 原版 active membrane：#1 的 EPSP</td><td class="num">0 mV</td><td class="num">0 mV</td></tr>
       <tr><td>#3-1 HW2 真正的 AP、突觸不加東西：#1 的 EPSP</td><td class="num">0 mV（S 0.23 V）</td><td class="num">0 mV（S 0.23 V）</td></tr>
       <tr><td>#3-1 真正的突觸（820 kΩ 並 1.5 MΩ）：#1／#5 的 EPSP</td><td class="num t-warn">186／80 mV，#1 比 AP 晚 102 ms 到峰</td><td class="num t-ok">911／236 mV，#1 晚 4 ms</td></tr>
       <tr><td>#3-2 真正的突觸：觸發 Post AP 要幾個 EPSP（間隔 50／100／500 ms）</td><td class="num t-warn">3／2／6 個也不夠</td><td class="num t-ok">2／2／2</td></tr>
     </table></div>
-    <p class="small muted">原版 membrane 推不動突觸（Pre 只到約 1.5–2.2 V，10-21 實測約 1.9 V；Q2 要約 6 V），所以兩處差別在基礎目標看不出來；突觸打開之後，差別 1 讓 EPSP 小約 5 倍、慢約 100 ms。差別 2 在所有情況下都沒有影響：S 最多只到約 2.4 V（並 1 MΩ），離電池電壓很遠。兩欄的 active membrane 都是 PCB 版。模擬用本頁的 engine.js（×1 探棒）。</p>
+    <p class="small muted">原版 membrane 推不動突觸（Pre 只到約 1.5–2.2 V，10-21 實測約 1.9 V；Q2 要約 6 V），所以兩處差別在原版電路看不出來；突觸打開之後，差別 1 讓 EPSP 小約 5 倍、慢約 100 ms。差別 2 在所有情況下都沒有影響：S 最多只到約 2.4 V（並 1 MΩ），離電池電壓很遠。兩欄的 active membrane 都是 PCB 版。模擬用本頁的 engine.js（×1 探棒）。</p>
   </div></details>
 
   <details class="card r0-more"><summary>和電路圖一樣的地方<span class="hint">inhibitory 突觸板、1.5 V 電池</span></summary><div class="body">
@@ -420,38 +420,89 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         </table></div>
       </div></details>
   </div></details>
-  <details class="r1row"><summary>背景知識<span class="hint">8 項 · 電路為什麼這樣、理想電路怎麼來的</span></summary><div class="cards">
-<details id="t1" class="card"><summary>基礎模型＝助教給的電路<span class="hint">所有模擬區域都用這個</span></summary><div class="body">
+  <details class="r1row"><summary>共同背景<span class="hint">4 項 · HW2、HW3 共用：電晶體規則、Stimulator 漏電、AP 的定義、模擬方法</span></summary><div class="cards">
+<!-- common-background:begin -->
+<details id="c-rules" class="card"><summary>電晶體與電路的基本規則<span class="hint">後面每個推導都用到</span></summary><div class="body">
+        <ol class="small">
+          <li><b>導通門檻</b>：矽電晶體的 B–E（PNP 是 E–B）接面要約 0.5–0.65 V 才有明顯電流。1N4148 二極體也一樣，電流小時約 0.3–0.5 V。這是矽 PN 接面的性質，不是這套板子特有的。</li>
+          <li><b>指數關係</b>：電晶體的電流 I<sub>C</sub> ≈ I<sub>S</sub> · e<sup>V<sub>BE</sub>/V<sub>T</sub></sup>，V<sub>T</sub> = kT/q ≈ 25.85 mV（室溫）。換算：<b>V<sub>BE</sub> 每少約 60 mV，電流少 10 倍</b>（25.85 mV × ln 10 = 59.5 mV）。所以差 0.4 V 不是少一點，而是少約 10<sup>6.6</sup> 倍。</li>
+          <li><b>放大倍數 β</b>：I<sub>C</sub> = β · I<sub>B</sub>。模擬用 2N4403 β = 150、2N3904 β = 200（模型參數；2N4403 規格書的範圍約 100–300，每顆不同）。</li>
+          <li><b>歐姆定律與 KCL</b>：I = V／R；流進一個節點的電流 = 流出的電流。靜止時沒有電容電流，只看電阻。</li>
+          <li><b>電容</b>：電壓不能瞬間改變，dV/dt = I／C；和電阻並聯時，放電的時間常數 τ = R·C（過 τ 剩 37 %）。</li>
+          <li><b>分壓</b>：兩顆電阻串在 V 和地之間，中點 = V × R<sub>下</sub>／(R<sub>上</sub> + R<sub>下</sub>)（中點沒有其他電流時才成立）。</li>
+        </ol>
+      </div></details>
+<details class="card wide" id="leak"><summary>Stimulator 的 6 µA 漏電（靜止 0.6 V）：意外還是刻意？<span class="hint">判斷：意外（PCB 走線錯），把握高但不是確定</span></summary><div class="body">
+        <p class="small">去年的 FI、SO 和今年一樣，今年重新設計的是 Stimulator：Q<sub>pass</sub> + Q<sub>sense</sub> 組成定電流源，I ≈ V<sub>EB</sub>(Q<sub>sense</sub>)／(pot + 7 kΩ)，電流不隨 Vm 改變。漏電來自 Q<sub>sense</sub> 的射極接在 SW 之前（V+），不是 SW 之後（ST.P）。</p>
+        <div class="tbl"><table>
+          <tr><th>Q<sub>sense</sub> 射極</th><th class="num">SW 放開：輸出</th><th class="num">SW 放開：耗電</th><th class="num">SW 按下：輸出（pot 0.7 kΩ）</th></tr>
+          <tr><td>SW 之後（講義電路圖）</td><td class="num">0</td><td class="num">0</td><td class="num">約 90 µA</td></tr>
+          <tr><td>SW 之前（PCB 實際）</td><td class="num">6.3 µA → Vm 0.62 V</td><td class="num">0.95 mA</td><td class="num">約 90 µA（一樣）</td></tr>
+        </table></div>
+        <p class="small"><b>認為是意外的理由</b>：</p>
+        <ol class="small">
+          <li><b>設計者自己的電路圖沒有漏電</b>：講義上 Q<sub>sense</sub> 的射極畫在 SW 之後，這也是兩顆電晶體限流電路的標準接法。PCB 把它接到旁邊的 V+，只差 SW 的一腳。</li>
+          <li><b>SW 放開時一直耗 0.95 mA</b>：Q<sub>sense</sub> 在放開時全開，電流經 7 kΩ 到地。電池扣著、沒有開關，只要沒拔電池 Stimulator 就一直在耗電（9 V 電池約 500 mAh，三週左右就用完）。你們量到 7.8 V 而不是 9 V 也符合這點（只是符合，不是證明）。沒有人會設計一個「關掉」時還耗 1 mA 的電流源。</li>
+          <li><b>漏電大小由 β 決定，不是設計值</b>：漏電 = I<sub>C</sub>(Q<sub>sense</sub>)／β。β 100／150／200／300 時是 9.4／6.3／4.7／3.1 µA，靜止 0.93／0.62／0.47／0.31 V；電池從 9 V 掉到 7 V，漏電也從 7.4 掉到 5.5 µA。刻意的偏壓會用一顆固定電阻（像真正的 AP 用的 V+ → Vm 330 kΩ），不會靠一個差三倍的 β。</li>
+          <li><b>它讓作業量不了</b>：#2-2 不按也自己冒小峰，Q5 的「靜止電位」沒有定義，五參數要用觸發準位去挑；#2-1 的被動鏈也多了約 0.2 V 的基線。重新設計 Stimulator 的目的是乾淨的電流源，「放開 = 0」是電流源最基本的性質。</li>
+          <li><b>PCB 和電路圖還有別的不一致</b>：R13 100 kΩ（圖 1 kΩ）、FI 沒有自己的電池、R2 的位置附的是 100 Ω（圖 3 MΩ）、Passive PCB 底板沒串 V+。表示板子沒有逐一對照電路圖檢查過，一處接錯並不意外。</li>
+        </ol>
+        <p class="small"><b>刻意的可能</b>：有人可能想讓 Vm 靜止時有一點去極化、離門檻近一點，讓弱的 FI（R13 100 kΩ）比較容易觸發。但 0.62 V 剛好落在 FI 門檻（約 0.6 V）和 Slow out 的極限（約 0.6 V）上，結果是自發放電、沒有穩定靜止，和這個目的相反；三個約 0.6 V 撞在一起比較像巧合。</p>
+        <p class="small"><b>怎麼查（不用三用電表）</b>：SW 放開時用示波器量 ST.R（Q<sub>sense</sub> 集極、7 kΩ 上端）。約 6.6 V 就表示 Q<sub>sense</sub> 正在耗 6.6／7k ≈ 0.95 mA；照講義接法應該是 0 V。也可以問助教去年的 Stimulator 和今年的 PCB 檔，看 Q<sub>sense</sub> 射極原本接哪。</p>
+      </div></details>
+<details id="apdef" class="card"><summary>AP 的定義（文獻）<span class="hint">換成這個電路的判準</span></summary><div class="body">
+        <p class="small">Barnett &amp; Larkman（2007）把 AP 描述成膜電位短暫反轉、分三個主要階段：去極化、再極化、慢慢恢復的後過極化；Na⁺ 通道的招募是再生性的，所以一過門檻就是完整的 AP（all-or-nothing），去極化會越過 0 mV 但停在 E<sub>Na</sub> 之前；Na⁺ 通道失活造成絕對不反應期，K⁺ 通道關得慢造成後過極化與相對不反應期。Purves 等人的教科書（第 2–3 章）也用門檻、自我增強的 Na⁺ 通透度上升、較慢的 K⁺ 通透度上升來描述 AP；這個電路的 FI／Slow out 就對應 Hodgkin &amp; Huxley（1952）模型裡的 Na⁺／K⁺ 電流。</p>
+        <div class="tbl"><table>
+          <tr><th>判準</th><th>文獻</th><th>這個電路怎麼驗</th></tr>
+          <tr><td>C1 門檻</td><td>過門檻才有 AP，之下只有局部反應</td><td>按壓長度由短到長：未觸發時和拔掉 FI 一樣；超過某長度就觸發</td></tr>
+          <tr><td>C2 all-or-none、再生性</td><td>一過門檻就是完整 AP，大小不隨刺激變</td><td>不同按壓長度、電流的峰值幾乎相同；上升 dV/dt 遠大於被動充電</td></tr>
+          <tr><td>C3 峰值</td><td>越過 0 mV、停在 E<sub>Na</sub> 之前</td><td>峰值遠高於門檻、低於 V+（內向電流的反轉電位）。「越過 0 mV」在這裡沒有意義：Vm 對 GND 量，靜止本來就是正的</td></tr>
+          <tr><td>C4 再極化</td><td>K⁺ 外向電流拉回</td><td>Slow out 拉回，比被動放電快</td></tr>
+          <tr><td>C5 後過極化</td><td>低於靜止電位、慢慢恢復</td><td>AP 後 Vm 低於靜止再回來</td></tr>
+          <tr><td>C6 不反應期</td><td>剛發完 AP 不能（或較難）再發</td><td>AP 後不同間隔再按一次</td></tr>
+        </table></div>
+        <p class="small muted">來源：M. W. Barnett, P. M. Larkman, “The action potential,” <i>Practical Neurology</i> 7:192–197 (2007)；D. Purves et al., <i>Neuroscience</i> 2nd ed., ch. 2–3（NCBI Bookshelf）；A. L. Hodgkin, A. F. Huxley, <i>J Physiol</i> 117:500 (1952)。</p>
+      </details>
+<details id="simm" class="card"><summary>模擬方法<span class="hint">和 Python 版相同</span></summary><div class="body"><ul>
+      <li>修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton、Ebers–Moll 電晶體與二極體模型；DC 不收斂時 gmin stepping。</li>
+      <li>10-12 起每個節點加 10 pF 雜散電容（配線；×1 探棒約 100 pF 只接在量測點，和 1 µF 比可忽略）：拔掉 Leak 時 Vm 節點沒有電容，FI 自鎖在數值上沒有唯一解（S+FI 會卡住）。時間常數約 1 µs，波形幾乎不變（重跑所有檢查，差 ≤ 0.07 V；R2 = 1 MΩ 時「按下的第一個峰」看落在小峰的哪個階段，1.75–2.06 V）。另外 Newton 在 20 次迭代後、各節點 KCL 誤差 &lt; 10 pA 也算收斂。</li>
+      <li>參數：2N3904 I<sub>S</sub> 6.7 fA、β 200；2N4403 I<sub>S</sub> 10 fA、β 150；1N4148 I<sub>S</sub> 2.52 nA、n 1.752。</li>
+      <li>HW3 實驗台的引擎是 <a href="../hw3-lab/engine.js">hw3-lab/engine.js</a>：同樣的元件模型，接成 Pre → 突觸 → Post 的電路。</li>
+      <li>HW2 網頁引擎 <a href="../active-membrane-sim/engine.js">engine.js</a>、電路圖 <a href="../active-membrane-sim/schematic.js">schematic.js</a>；Python 在 <a href="../hw2-debug/sim/">hw2-debug/sim/</a>（<code>check_ap.py</code>、<code>check_23.py</code> 等）。</li>
+    </ul></div></details>
+<!-- common-background:end -->
+  </div></details>
+  <details class="r1row"><summary>原版電路<span class="hint">4 項 · 老師指定的接法：模型、問題、#3-1 為什麼沒有 EPSP、和生理的對應</span></summary><div class="cards">
+<details id="t1" class="card"><summary>基礎模型＝助教給的電路<span class="hint">原版＝老師對全班指定的接法</span></summary><div class="body">
         <ul>
           <li><b>突觸板照 PCB 實際接法</b>（從講義 PCB 圖追線）。<b>Excitatory 的 D2 後面沒有 100 kΩ</b>：講義電路圖畫了，PCB 上 D2 的負極直接走線到 PostSynapse 排針。Inhibitory 的 100 kΩ（R5）PCB 上有。</li>
-          <li>Excitatory：820 kΩ → 1N4148 → 2N3904（基極 10 nF ∥ 100 kΩ，射極 30 kΩ）→ 2N4403（射極 1 kΩ 接 V+）→ S（4.7 µF ∥ 200 kΩ）→ 1N4148 → Post。</li>
+          <li>Excitatory：820 kΩ → 1N4148 → 2N3904（基極 10 nF ∥ 100 kΩ，射極 30 kΩ）→ 2N4403（射極 1 kΩ 接 V+）→ S（4.7 µF ∥ 200 kΩ）→ 1N4148 → Post。S 到地那顆：講義電路圖與 PCB 圖都是 200 kΩ（R5），我們拿到的板子絲印是 100K-R15（照片，2026-10-26，阻值沒量）。</li>
           <li>Inhibitory：輸入級相同；2N4403 的射極接 1.5 V 電池的 +、電池 − 接 S，集極 15 kΩ 到 GND；S（4.7 µF ∥ 200 kΩ）→ 100 kΩ → Post。</li>
           <li><span class="tag t-inf">推測</span>Excitatory 的 V+ 從 2×2 排針來（= Stimulator 的電池；本頁預設 8.44 V，是我們 10-21 用電表量的；HW2 的 7.8 V 是別組的板子）。講義畫成獨立的 9 V；如果你另外接 9 V 電池，Q1 開的時候 S 會高一點，其他不變。</li>
-          <li><b>Pre／Post active membrane = HW2 的板子</b>，預設原版（Slow out 的 R2 = 1 MΩ，大家都已換好）。各區右側「Active membrane」可以改成 HW2 真正的 AP。</li>
+          <li><b>Pre／Post active membrane = HW2 的板子</b>，預設原版（Slow out 的 R2 = 1 MΩ，大家都已換好）。選「理想」電路時可以把 Pre、Post 改成 HW2 真正的 AP，電阻值可以直接輸入。</li>
           <li>Passive unit：1 µF ∥ 100 kΩ，上排 10 kΩ；細胞外照講義圖直接接 GND（HW2 的 100 Ω 影響可忽略）。Stimulator A、B 都是 HW2 的 Stimulator（放開時漏約 6 µA）。×1 探棒（1 MΩ，和 HW2 一樣），CH1、CH2 各接一支。</li>
         </ul>
       </div></details>
-<details id="t2" class="card"><summary>我認為可能有問題的地方<span class="hint">模擬預測，會影響基礎目標的量測</span></summary><div class="body">
-        <ol>
-          <li><b>原版 Pre 的「AP」推不動突觸</b>：原版 active membrane 按 SW A 20 ms 只到約 1.5–2.2 V（模擬，V+ 8.44 V，看按下時碰到小峰的哪個時候；10-21 實測約 1.9 V），按住則被 Slow out 拉回約 0.8 V；突觸的 Q2 要 Pre 到約 6 V 才導通。所以 #3-1–#3-4 怎麼按都沒有 EPSP／IPSP（S 不到 1 mV；10-21 實測 Q2 基極約 0.17 V、#1 沒有 EPSP）。照實記錄「沒有 PSP」，並附 Pre 和 Q2 基極的波形。</li>
-          <li><b>原版 Pre 會不會自己冒小峰：模擬和實測不同</b>：Stimulator A 放開時漏約 6 µA，把 Pre 墊高。模擬：V+ 7.0 V 時 Pre 安靜停在約 0.45 V；7.8 V 以上墊到 FI 門檻附近，不按也每秒冒 1.5 V 小峰（8.44 V 時約 7 個；HW2 第三輪在別組 7.8 V 的板子上量到過）。實測：我們 10-21 的截圖（V+ 8.44 V）在兩次按壓之間 Pre 是平的（約 0.5–0.64 V），沒有看到自己冒峰；差在哪裡還沒查（推測是實際電晶體、電阻和模型不同）。觸發用 CH1 上升緣，準位約 0.7–1.0 V（10-21 用 0.72 V 可以）。</li>
-          <li><b>HW2 真正的 AP 也不夠</b>：峰值約 5.4 V 只讓 S 升到 0.23 V（V+ 8.44 V），沒有 EPSP（見進階目標）。</li>
-          <li><b>原版 Post（#3-2、#3-4）</b>：不會鎖住，但也不會連續發放。#3-2 的 Post（模擬，V+ 8.44 V）不按 B 也每秒冒約 8 個 1.5 V 小峰（和 Pre 一樣，實體板還沒量）；按 B 10 ms 到約 1.5–2.1 V；#3-4 的 Post 被突觸的 100 kΩ + 200 kΩ 拉成 leak，安靜停在 0.46 V，按 B 10 ms 到約 1.85 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.78 V。#3-4 Q3 的「頻率變化」量不到。</li>
-          <li><b>#3-3、#3-4「拔掉 1.5 V 電池」</b>：只拔掉的話 Q1 到 S 是開路，突觸完全沒有輸出。要用一條線把電池的兩個夾點接起來，才是「改變驅動力」。模擬兩種都可以選。</li>
-          <li><b>#3-3 Passive 的 Post 靜止約 0 V</b>：拔掉電池後 IPSP 的反轉電位約 0 V，和靜止差不多，所以 IPSP 消失（沒有驅動力）。</li>
-          <li><b>基線不是 0</b>：Stimulator B 放開時漏約 6 µA，#1 的基線約 0.18–0.20 V（V+ 8.44 V）；模擬中 Stimulator A 漏電讓 Pre 在 0.53–1.52 V 之間自己冒小峰（實測沒看到，見第 2 點）。振幅一律用「波峰 − 基線」。</li>
+<details id="t2" class="card wide"><summary>原版電路的問題與量測時會看到的現象<span class="hint">為什麼量不出題目要的東西；量的時候要注意什麼</span></summary><div class="body">
+        <p class="small"><b>A　為什麼原版量不出題目要的東西</b></p>
+        <ol class="small">
+          <li><b>突觸的門檻約 6 V，原版 Pre 的 AP 約 1.5–2.2 V</b>（10-21 實測約 1.9 V；R13 = 100 kΩ 的結果）：Q2 不導通，#3-1–#3-4 怎麼按都沒有 EPSP／IPSP（模擬 S 不到 1 mV；10-21 實測 Q2 基極約 0.17 V、#1 沒有 EPSP）。HW2 真正的 AP（約 5.4 V）也不到。照實記錄「沒有 PSP」，並附 Pre 和 Q2 基極的波形。推導見「#3-1 為什麼沒有 EPSP」。</li>
+          <li><b>Excitatory 的 D2 後面沒有 100 kΩ</b>（PCB 和講義電路圖不同）：S 經 D2 直接灌進 Post，EPSP 很快、很大；有 100 kΩ 時（真正的突觸）#1 的 EPSP 小約 5 倍（0.91 → 0.19 V）、到峰晚約 100 ms。原版因為 Q2 不導通，有沒有這顆都一樣沒有 EPSP。選「理想」時「D2 → Post」可以輸入 100 kΩ 對照。</li>
+          <li><b>Inhibitory 接在 active membrane 上會變成 leak</b>：S 的 200 kΩ 經 100 kΩ 接到 Post，靜止從 1.23 降到 1.06 V，門檻變遠。</li>
+          <li><b>原版 Post（#3-2、#3-4）不會連續發放</b>：#3-2 的 Post（模擬，V+ 8.44 V）不按 B 也每秒冒約 8 個 1.5 V 小峰（實體板還沒量）；按 B 10 ms 到約 1.5–2.1 V。#3-4 的 Post 被突觸的 100 kΩ + 200 kΩ 拉成 leak，安靜停在 0.46 V，按 B 10 ms 到約 1.85 V，按住 B 只有一個 2.6 V 的峰、之後停在 0.78 V。#3-4 Q3 的「頻率變化」量不到。</li>
+          <li><b>「拔掉 1.5 V 電池」照字面是開路</b>（#3-3、#3-4）：Q1 到 S 斷開，突觸完全沒有輸出，變成「沒有突觸」而不是「改變驅動力」。要用一條線把電池的兩個夾點接起來。模擬兩種都可以選。</li>
+        </ol>
+        <p class="small"><b>B　量的時候會看到的現象</b></p>
+        <ol class="small">
+          <li><b>原版 Pre 會不會自己冒小峰：模擬和實測不同</b>。Stimulator A 放開時漏約 6 µA，把 Pre 墊高。模擬：V+ 7.0 V 時 Pre 安靜停在約 0.45 V；7.8 V 以上墊到 FI 門檻附近，不按也每秒冒 1.5 V 小峰（8.44 V 時約 7 個）。實測：我們 10-21 的截圖（V+ 8.44 V）在兩次按壓之間 Pre 是平的（約 0.5–0.64 V）；差在哪裡還沒查。觸發用 CH1 上升緣，準位約 0.7–1.0 V（10-21 用 0.72 V 可以）。</li>
+          <li><b>基線不是 0</b>：Stimulator B 放開時漏約 6 µA，#1 的基線約 0.15–0.20 V。振幅一律用「波峰 − 基線」。</li>
+          <li><b>#3-3 Passive 拔掉電池（接跳線）後 IPSP 消失</b>：Post 靜止約 0 V，反轉電位也約 0 V，沒有驅動力。</li>
           <li><b>講義的小錯</b>：#3-4 Q4 說重做「#3-4-5 and #3-4-6」，這兩題不存在，應該是 Q2、Q3；檔名寫 <code>HW02_…</code>，應該是 HW03（交之前問助教）。</li>
         </ol>
       </div></details>
 <details id="t4" class="card wide"><summary>問題：#3-1 為什麼沒有 EPSP（從假設一步一步算）<span class="hint">突觸的門檻約 6 V；改法要多少；R15 100k／200k 有沒有關係</span></summary><div class="body">
         <p class="small"><b>一句話</b>：Pre 的 AP 經過 820 kΩ : 100 kΩ 分壓後，只剩約 0.17 V 到 Q2 基極，遠低於 Q2 導通要的約 0.6 V；Q2 不開，後面全部不動。要讓 Q2 開，Pre 的 AP 要約 6 V，而我們的 Pre 只有約 1.9 V。</p>
-        <details class="more"><summary>0　背景：三條電晶體規則（和 HW2 實驗台「真正的 AP 電路」第 0 條相同）</summary>
-          <ol class="small">
-            <li><b>導通門檻</b>：矽電晶體 B–E 接面要約 0.55–0.65 V 才有明顯電流；1N4148 二極體在幾十 µA 時約 0.45 V。</li>
-            <li><b>指數關係</b>：I<sub>C</sub> ≈ I<sub>S</sub> · e<sup>V<sub>BE</sub>/V<sub>T</sub></sup>，V<sub>T</sub> ≈ 25.85 mV。<b>V<sub>BE</sub> 每少約 60 mV，電流少 10 倍</b>。所以基極差 0.4 V，電流差約一千萬倍，不是「小一點」。</li>
-            <li><b>β</b>：I<sub>C</sub> = β · I<sub>B</sub>（模擬：2N3904 200、2N4403 150）。</li>
-          </ol>
-        </details>
+        <p class="small">用到的電晶體規則（導通門檻、每 60 mV 差 10 倍、β）見共同背景「<a href="#c-rules">電晶體與電路的基本規則</a>」。</p>
         <details class="more"><summary>1　訊號怎麼走：為什麼先算 Q2 的基極</summary>
           <p class="small">Excitatory 突觸板（照 PCB 追線，MB-0064）：Pre Vm → R1 820 kΩ → D1 → <b>Q2 基極</b>（10 nF ∥ 100 kΩ 到地）→ Q2（2N3904，射極 30 kΩ 到地）→ Q2 集極拉 Q1 基極 → Q1（2N4403，射極經 1 kΩ 接 V+）把電流灌進 <b>S</b>（4.7 µF ∥ R15 到地）→ D2 → Post #1。</p>
           <p class="small">這是一串開關：Q2 不開 → Q1 沒有基極電流 → S 不充電 → D2 不導通 → #1 沒有 EPSP。所以第一個要檢查的變數是 <b>AP 時 Q2 基極的電壓</b>：它過不了約 0.6 V，後面的元件值（包括 R15）都不用看。</p>
@@ -499,6 +550,21 @@ V_pre = 1.9 V：R1_eff ≤ 100k × (1.45/0.6 − 1) = 142 kΩ → Rp ≤ 1/(1/14
           <p class="small">「#1 最高」是絕對值，含 Stimulator B 漏電墊起來的基線（原版約 0.2 V；並 100 kΩ 時模型的 Pre 會自己冒小峰，基線約 0.5–0.6 V）。模擬並 100 kΩ 的 EPSP（約 3.6 V）比 10-21 實測的約 6.5 V 小，差在哪裡還沒查。可以在「理想」裡把 S → GND 改成 100 kΩ 自己看。</p>
         </details>
       </div></details>
+<details id="t9" class="card"><summary>電路和生理的對應</summary><div class="body">
+        <div class="tbl"><table>
+          <tr><th>電路</th><th>生理</th></tr>
+          <tr><td>820 kΩ + D1 + Q2 的門檻</td><td>突觸前末梢：AP 夠大才打開電壓門控 Ca²⁺ 通道、釋放神經傳導物質</td></tr>
+          <tr><td>10 nF ∥ 100 kΩ（τ ≈ 1 ms）</td><td>Ca²⁺ 進入與釋放的時間</td></tr>
+          <tr><td>Q1 把 S（4.7 µF）充電／放電</td><td>突觸間隙裡的神經傳導物質濃度、受體打開</td></tr>
+          <tr><td>200 kΩ（τ ≈ 1 s）</td><td>傳導物質的清除（回收、分解）；τ 長所以疊加窗很長</td></tr>
+          <tr><td>D2 → Post（Excitatory）</td><td>陽離子通道（AMPA、nicotinic AChR）：內向電流、去極化</td></tr>
+          <tr><td>1.5 V 電池 → Post（Inhibitory）</td><td>Cl⁻ 通道（GABA<sub>A</sub>、glycine）：E<sub>Cl</sub> 低於靜止，過極化</td></tr>
+          <tr><td>拔掉電池（跳線）</td><td>E<sub>Cl</sub> 接近靜止：shunting inhibition，電位變化小但仍會降低興奮性</td></tr>
+          <tr><td>#1 → #5</td><td>近端 vs 遠端樹突：被動纜線的衰減與延遲</td></tr>
+        </table></div>
+      </div></details>
+  </div></details>
+  <details class="r1row"><summary>非原版電路（我的、理想）<span class="hint">3 項 · 「我的」＝已經做出來的理想電路；改法和驗證</span></summary><div class="cards">
 <details id="t5" class="card wide"><summary>只改 FI：把 Pre 的 R13 換成 1 kΩ<span class="hint">突觸不動，原版 membrane</span></summary><div class="body">
         <p class="small">講義的 FI 畫 1 kΩ，PCB 的 R13 是 100 kΩ。R13 限制內向電流，所以原版 AP 只到約 1.9 V。只把 Pre 的 R13 換小（或在 R13 兩端並一顆），突觸板完全不動（模擬，原版 membrane，按 SW A 20 ms）：</p>
         <div class="tbl"><table>
@@ -548,29 +614,6 @@ V_pre = 1.9 V：R1_eff ≤ 100k × (1.45/0.6 − 1) = 142 kΩ → Rp ≤ 1/(1/14
           <tr><td>Q4 拔電池</td><td>跳線：6 kΩ 時 16.0 → 13.7 Hz，8 kΩ 時 12.9 → 9.9 Hz（反轉電位從約 −1.4 V 變成約 0 V，仍低於靜止，抑制變弱）；開路：沒有變化</td></tr>
         </table></div>
         <p class="small muted">「Post 先」沒有幫助的原因：D2 只有在 S 比 Post 高約 0.45 V 時才導通，Post 被 B 墊高時 EPSP 反而變小，像接近反轉電位時驅動力變小。</p>
-      </div></details>
-<details id="t8" class="card"><summary>助教電路的問題<span class="hint">原版為什麼量不出題目要的東西</span></summary><div class="body">
-        <ol class="small">
-          <li><b>突觸門檻約 6 V</b>，原版 AP 約 1.5–2.2 V（10-21 實測約 1.9 V；R13 = 100 kΩ 的結果），HW2 真 AP 約 5.4 V 也不到（V+ 8.44 V）。</li>
-          <li><b>原版 active membrane 的靜止要看電池</b>：模擬：V+ 7.0 V 時安靜停在約 0.45 V；7.8 V 以上（含我們的 8.44 V）Stimulator 漏電讓它自己冒小峰，但 10-21 實測沒看到。按住時被 Slow out 拉在約 0.8 V，不會連續發放，#3-4 Q3 量不到頻率變化。</li>
-          <li><b>Excitatory 沒有 100 kΩ</b>（PCB 和講義電路圖不同）：S 經 D2 直接灌進 Post，EPSP 很快、很大；有 100 kΩ 時 #1 的 EPSP 小約 5 倍（0.91 → 0.19 V）、到峰晚約 100 ms。進階區可以切換。</li>
-          <li><b>Inhibitory 接在 active membrane 上會變成 leak</b>：S 的 200 kΩ 經 100 kΩ 接到 Post，靜止從 1.23 降到 1.06 V，門檻變遠。</li>
-          <li><b>拔電池 = 開路</b>：沒有說要接回導線，照字面做會變成「沒有突觸」，不是「改變驅動力」。</li>
-          <li><b>Stimulator 漏電</b>（HW2 的 Q<sub>sense</sub> 接在 SW 前）：#1 基線約 0.15–0.16 V；模擬中 V+ 7.8 V 以上 Pre 會自己冒小峰（10-21 實測沒看到）。HW2 真 AP 的 22 kΩ 已消掉 Pre 這邊的；Post 是 Passive 時 Stimulator B 沒有修正。</li>
-        </ol>
-      </div></details>
-<details id="t9" class="card"><summary>電路和生理的對應</summary><div class="body">
-        <div class="tbl"><table>
-          <tr><th>電路</th><th>生理</th></tr>
-          <tr><td>820 kΩ + D1 + Q2 的門檻</td><td>突觸前末梢：AP 夠大才打開電壓門控 Ca²⁺ 通道、釋放神經傳導物質</td></tr>
-          <tr><td>10 nF ∥ 100 kΩ（τ ≈ 1 ms）</td><td>Ca²⁺ 進入與釋放的時間</td></tr>
-          <tr><td>Q1 把 S（4.7 µF）充電／放電</td><td>突觸間隙裡的神經傳導物質濃度、受體打開</td></tr>
-          <tr><td>200 kΩ（τ ≈ 1 s）</td><td>傳導物質的清除（回收、分解）；τ 長所以疊加窗很長</td></tr>
-          <tr><td>D2 → Post（Excitatory）</td><td>陽離子通道（AMPA、nicotinic AChR）：內向電流、去極化</td></tr>
-          <tr><td>1.5 V 電池 → Post（Inhibitory）</td><td>Cl⁻ 通道（GABA<sub>A</sub>、glycine）：E<sub>Cl</sub> 低於靜止，過極化</td></tr>
-          <tr><td>拔掉電池（跳線）</td><td>E<sub>Cl</sub> 接近靜止：shunting inhibition，電位變化小但仍會降低興奮性</td></tr>
-          <tr><td>#1 → #5</td><td>近端 vs 遠端樹突：被動纜線的衰減與延遲</td></tr>
-        </table></div>
       </div></details>
   </div></details>
   <details class="r1row"><summary>紀錄<span class="hint">0 項 · 過去的討論和量測</span></summary><div class="cards">
@@ -975,10 +1018,10 @@ S 的放電：τ ≈ 4.7 µF × 200 kΩ ≈ 0.94 s；Post（Passive）τ = 1 µF
 
 </main>
 </div>
-<script src="engine.js?v=20261026a"></script>
-<script src="schematic.js?v=20261026a"></script>
-<script src="inspect.js?v=20261026a"></script>
-<script src="../circuits/circuits.js?v=20261026a"></script>
-<script src="app.js?v=20261026a"></script>
+<script src="engine.js?v=20261026b"></script>
+<script src="schematic.js?v=20261026b"></script>
+<script src="inspect.js?v=20261026b"></script>
+<script src="../circuits/circuits.js?v=20261026b"></script>
+<script src="app.js?v=20261026b"></script>
 </body>
 </html>
