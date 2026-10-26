@@ -257,13 +257,44 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 .r0dlg h4{font-size:12.5px;color:var(--accent);margin:12px 0 2px}
 .r0dlg ul{padding-left:1.2em;font-size:13.5px;margin:4px 0}
 .r0dlg li{margin:4px 0}
+.r0imgs img{max-height:260px;width:auto;max-width:100%}
 .r0dlg .ev{font-size:12.5px;color:var(--muted);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:6px}
+/* ---------- 1 摘要：卡片排成磚，點開看內容（不用捲動就看得到全部） ---------- */
+#r1 .cards{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+#r1 .card,#r1 .card.wide{grid-column:auto}
+#r1 .card > .body{display:none}
+#r1 .card > summary{display:block;padding:9px 12px 10px;min-height:58px;border-radius:8px;transition:background .12s}
+#r1 .card > summary::before{content:none}
+#r1 .card > summary .hint{display:block;margin:2px 0 0;text-align:left;font-size:12px;line-height:1.4}
+#r1 .card:hover{border-color:var(--accent)}
+#r1 .card > summary:hover{background:var(--tint)}
+#r1 .lede{margin-bottom:10px}
+.tdlg .body{padding:0}
+.tdlg .body p,.tdlg .body li{max-width:72em}
+.tdlg .body ul,.tdlg .body ol{padding-left:1.25em;margin:6px 0}
+.tdlg .body li{margin:3px 0}
 .r0imgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .r0imgs figure{margin:0;background:#fff;border:1px solid var(--rule);border-radius:6px;padding:4px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
 .r0imgs img{display:block;max-width:100%;max-height:50vh;height:auto}
 .r0imgs figcaption{font-size:12px;color:#5F6B72;font-weight:700;margin-top:2px}
 @media (max-width:640px){.r0imgs{grid-template-columns:1fr}}
+
+/* ---------- 算式：MathJax 排版，每行附 claim ledger ---------- */
+.eqs{display:flex;flex-direction:column;gap:2px;background:var(--tint);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:6px 12px;margin:8px 0;max-width:100%;overflow-x:auto}
+.eq{display:flex;flex-wrap:wrap;align-items:center;column-gap:16px}
+.eq .m{min-width:0;max-width:100%;overflow-x:auto;font-size:15px}
+.eq .m mjx-container[display="true"]{margin:.25em 0 !important;text-align:left !important}
+.eq .note{font-size:12.5px;color:var(--muted);flex:1 1 14em}
+.eqa{font-size:12.5px;color:var(--muted);margin:4px 0}
+.cl{display:inline-block;font:600 10px/1.5 "IBM Plex Mono",monospace;letter-spacing:.04em;border:1px solid currentColor;border-radius:3px;padding:0 4px;margin:0 2px;vertical-align:1px}
+.cl-ai{color:#a86a00} .cl-obs{color:#1c7fa6} .cl-ref{color:#2f7a4a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cl-ai{color:#e7b33a}:root:not([data-theme="light"]) .cl-obs{color:#5bc2ea}:root:not([data-theme="light"]) .cl-ref{color:#6fcb92}}
+:root[data-theme="dark"] .cl-ai{color:#e7b33a} :root[data-theme="dark"] .cl-obs{color:#5bc2ea} :root[data-theme="dark"] .cl-ref{color:#6fcb92}
+.card h4.mh{font-size:14px;margin:14px 0 4px;padding-top:8px;border-top:1px solid var(--rule);color:var(--accent)}
+.card h4.mh:first-child{border-top:0;padding-top:0;margin-top:0}
 </style>
+<script>window.MathJax = {tex:{inlineMath:[['\\(','\\)']], displayMath:[['\\[','\\]']]}, svg:{fontCache:'global'}, startup:{typeset:true}};</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
 </head>
 <body data-mode="basic">
 <div class="app">
@@ -272,9 +303,8 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
   <h1>HW3 實驗台</h1>
   <div class="navh">電路說明（共用，不受切換影響）</div>
   <nav class="regions" aria-label="電路說明">
-    <a href="#r0"><span class="n">0</span><span>電路圖與 PCB 的差別<small>excitatory 突觸板 2 處</small></span></a>
+    <a href="#r0"><span class="n">0</span><span>電路圖與 PCB 的差別<small>excitatory 突觸板 3 處</small></span></a>
     <a href="#r1"><span class="n">1</span><span>摘要與注意事項<small>三種電路對照、注意、背景、紀錄</small></span></a>
-    <a href="#r6"><span class="n">6</span><span>補充與紀錄<small>規定、節點、手算、方法</small></span></a>
   </nav>
   <div class="navsw">
     <div class="navh">電路類型（只影響下面的模擬）</div>
@@ -302,7 +332,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 <!-- ======================= 0 電路圖與 PCB 的差別 ======================= -->
 <section class="region textreg" id="r0">
   <h2>0 電路圖與 PCB 的差別</h2>
-  <p class="r0-one">底圖：講義的 #3-1 電路圖。<span class="k-p">紅色</span>＝PCB 實際的接法。<b>點紅色標記</b>看這個差別造成什麼問題。兩處都在 excitatory 突觸板上（#3-1、#3-2 用同一塊）；inhibitory 突觸板和電路圖一致。選「理想」電路時，#3-1、#3-2 的「D2 → Post」和「突觸 Q1 電源」可以改成講義的接法。</p>
+  <p class="r0-one">底圖：講義的 #3-1 電路圖。<span class="k-p">紅色</span>＝PCB 實際的接法。<b>點紅色標記</b>看這個差別造成什麼問題。三處都在 excitatory 突觸板上（#3-1、#3-2 用同一塊）：1、2 是講義 PCB 圖就和電路圖不同；3 是我們拿到的板子和講義（電路圖、PCB 圖都是 200 kΩ）不同。Inhibitory 突觸板和電路圖一致。三處都在 Q2 之後，原版電路有沒有這些差別都一樣沒有 EPSP。選「理想」電路時，「D2 → Post」「突觸 Q1 電源」「S → GND」都可以改。</p>
   <figure class="r0-big">
     <svg class="r0-ov" viewBox="0 0 1345 340" role="group" aria-label="講義 #3-1 電路圖，紅色標出 PCB 實際的接法">
       <rect x="0" y="0" width="1345" height="340" fill="#fff"/>
@@ -328,6 +358,15 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <text class="pl" x="88" y="328">PCB：沒有 9 V 電池；1 kΩ 經排針接 Stimulator A 的電池（V+）</text>
         </g>
         <g class="badge"><circle cx="482" cy="210" r="13"/><text x="482" y="215.5">2</text></g>
+      </g>
+
+      <g class="hot" data-d="3" tabindex="0" role="button" aria-label="差別 3：S 到地的電阻（R15）">
+        <rect class="hit" x="536" y="138" width="64" height="100"/>
+        <g class="ink">
+          <path class="x" d="M548,160 L584,200 M584,160 L548,200"/>
+          <text class="pl" x="606" y="262">板子：100 kΩ（R15）</text>
+        </g>
+        <g class="badge"><circle cx="596" cy="146" r="13"/><text x="596" y="151.5">3</text></g>
       </g>
     </svg>
     <figcaption>Pre／Post 的 active membrane、Stimulator、Passive unit 都是 HW2 的板子，它們的電路圖與 PCB 差別（Q<sub>sense</sub> 接在 SW 前、R13 = 100 kΩ、FI 的電源）見 <a href="../hw2-lab/#r0">HW2 實驗台 0</a>。</figcaption>
@@ -388,6 +427,21 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     </ul>
     <p class="ev">PCB 佈線圖：1K-R4 下端走紅線到左下 2×2 排針、方形焊墊對角那支（HW2 追出來是 V+）。板上沒有電池座。</p>
   </template>
+  <template id="r0d-3">
+    <h3>3　S 到地的電阻：講義是 200 kΩ，我們的板子是 100 kΩ（R15）</h3>
+    <div class="r0imgs">
+      <figure><img src="img/r15-sch.png" alt="講義電路圖：S 到地 200 kΩ"><figcaption>講義電路圖</figcaption></figure>
+      <figure><img src="img/r15-pcb.png" alt="講義 PCB：200K-R5"><figcaption>講義 PCB（200K-R5）</figcaption></figure>
+      <figure><img src="img/r15-board.jpg" alt="我們的板子：絲印 100K-R15"><figcaption>我們的板子（絲印 100K-R15，2026-10-26 照片）</figcaption></figure>
+    </div>
+    <h4>造成的問題</h4>
+    <ul>
+      <li><b>原版看不出來</b>：R15 在 Q2 之後，Q2 沒打開時 S 是 0，100 kΩ 或 200 kΩ 都沒有 EPSP（模擬 Q2 基極兩種都約 0.2 V）。</li>
+      <li><b>突觸打開後，S 退得快一倍</b>：τ = 4.7 µF × R15，200 kΩ 時 0.94 s，100 kΩ 時 0.47 s。EPSP 小 1–10 %，疊加窗變短（模擬，V+ 7.0 V：820 kΩ 並 100 kΩ、D2 後串 100 kΩ 時，一個 AP 0.91 → 0.84 V，間隔 300 ms 兩個 AP 1.09 → 1.00 V）。</li>
+      <li>阻值照絲印當 100 kΩ，沒有用電表量（2026-10-26 決定）。</li>
+    </ul>
+    <p class="ev">講義的電路圖和 PCB 圖在這個位置都是 200 kΩ（PCB 圖標 200K-R5）；我們拿到的板子同一位置絲印是 100K-R15，元件編號也不同，可能是另一版 PCB（推測）。</p>
+  </template>
 </section>
 
 <!-- ======================= 1 摘要 ======================= -->
@@ -395,7 +449,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
   <div>
   <h2>1 摘要與注意事項</h2>
   <div class="cmp"><p class="small" style="margin:0 0 6px">我的電路只有 #3-1 不同：820 kΩ 兩端並了 100 kΩ。其他三個電路和原版相同。左邊的「原版／我的／理想」切換只影響下面的模擬區；這張表三種一起看。</p><div class="tbl"><table><tr><th>項目</th><th class="k">原版</th><th class="m">我的</th><th class="i">理想：真正的突觸（預設）</th><th class="i">理想：只改 FI</th><th class="i">理想：HW2 真 AP</th></tr><tr><td><b>Pre active membrane</b></td><td>原版（AP 約 1.9 V）</td><td class="same">同原版</td><td>HW2 真 AP（約 5.4 V）</td><td>R13 換 1 kΩ（AP 約 7.6 V）</td><td>HW2 真 AP</td></tr><tr><td><b>突觸 820 kΩ</b></td><td>原樣</td><td><b>並 100 kΩ</b>（#3-1，2026-10-21）</td><td>並 1.5 MΩ</td><td>原樣</td><td>原樣</td></tr><tr><td><b>Post active membrane（#3-2、#3-4）</b></td><td>原版</td><td class="same">同原版</td><td>HW2 真 AP</td><td>原版</td><td>HW2 真 AP</td></tr><tr><td><b>D2 → Post、Q1 電源</b></td><td>PCB：D2 直接接、Q1 用排針 V+</td><td class="same">同原版</td><td>同原版</td><td>同原版</td><td>同原版</td></tr><tr><td><b>結果（#3-1 #1 EPSP）</b></td><td>沒有（Q2 不導通）</td><td>約 6.5 V，飽和（實測）</td><td>約 0.91 V，能疊加</td><td>約 0.07–0.22 V</td><td>沒有</td></tr></table></div></div>
-  <details class="r1row"><summary>量測注意<span class="hint">2 項 · 怎麼量、量哪裡</span></summary><div class="cards">
+  <details class="r1row"><summary>量測注意<span class="hint">4 項 · 怎麼量、量哪裡、繳交規定、節點</span></summary><div class="cards">
 <details id="t3" class="card"><summary>量測注意事項<span class="hint">五參數、延遲、示波器</span></summary><div class="body">
         <ul>
           <li><b>五參數</b>：stimulation current／condition、peak amplitude（波峰 − 基線；IPSP 是負的）、half-width（50 % 高度的寬度）、rise τ、decay τ（波峰到剩 37 %）。“decade” 理解成 decay。</li>
@@ -419,6 +473,16 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <tr><td>#1（Passive）</td><td>放開</td><td class="num">約 0.15–0.16 V（Stimulator B 漏電）</td></tr>
         </table></div>
       </div></details>
+<details id="submit" class="card"><summary>繳交規定<span class="hint">英文、檔名、字型</span></summary><div class="body"><ul>
+      <li>全英文；Times New Roman 12；檔名照講義寫 <code>HW02_學號_姓名.pdf</code>（應該是 HW03，問助教）；不可抄襲。</li>
+      <li>每題都要附標註過的圖；示波器截圖標格子大小；波形上標出量測點。</li>
+    </ul></div></details>
+<details id="nodes" class="card"><summary>節點速查<span class="hint">回報量測時用</span></summary><div class="body"><ul>
+      <li><b>Pre Vm</b>：Stimulator A 輸出 = Pre active membrane 的 Vm（CH1）。<b>Post Vm</b>：active membrane 2 的 Vm。</li>
+      <li><b>Q2 B</b>：2N3904 的基極（D1 負極、10 nF、100 kΩ 上端）。<b>S</b>：4.7 µF 上腳（excitatory 也是 D2 正極；inhibitory 也是電池 − 端）。</li>
+      <li><b>#1–#5</b>：Passive unit 的 Vm；突觸和 Stimulator B 都接 #1。</li>
+      <li>電壓都對 GND（Extracellular）量。</li>
+    </ul></div></details>
   </div></details>
   <details class="r1row"><summary>共同背景<span class="hint">4 項 · HW2、HW3 共用：電晶體規則、Stimulator 漏電、AP 的定義、模擬方法</span></summary><div class="cards">
 <!-- common-background:begin -->
@@ -467,24 +531,24 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
       <li>修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton、Ebers–Moll 電晶體與二極體模型；DC 不收斂時 gmin stepping。</li>
       <li>10-12 起每個節點加 10 pF 雜散電容（配線；×1 探棒約 100 pF 只接在量測點，和 1 µF 比可忽略）：拔掉 Leak 時 Vm 節點沒有電容，FI 自鎖在數值上沒有唯一解（S+FI 會卡住）。時間常數約 1 µs，波形幾乎不變（重跑所有檢查，差 ≤ 0.07 V；R2 = 1 MΩ 時「按下的第一個峰」看落在小峰的哪個階段，1.75–2.06 V）。另外 Newton 在 20 次迭代後、各節點 KCL 誤差 &lt; 10 pA 也算收斂。</li>
       <li>參數：2N3904 I<sub>S</sub> 6.7 fA、β 200；2N4403 I<sub>S</sub> 10 fA、β 150；1N4148 I<sub>S</sub> 2.52 nA、n 1.752。</li>
-      <li>HW3 實驗台的引擎是 <a href="../hw3-lab/engine.js">hw3-lab/engine.js</a>：同樣的元件模型，接成 Pre → 突觸 → Post 的電路。</li>
+      <li>HW3 實驗台的引擎是 <a href="../hw3-lab/engine.js">hw3-lab/engine.js</a>：同樣的元件模型，接成 Pre → 突觸 → Post 的電路。電池用 1 Ω Norton 等效；active membrane 的排針接點合併（Leak、FI、SO 直接在 Vm 上）；每次進入區域先讓電路靜置 2 秒（不畫）。HW3 的電路圖 <a href="../hw3-lab/schematic.js">schematic.js</a>、操作 <a href="../hw3-lab/app.js">app.js</a>；頁面上的模擬數字可以用 <a href="../hw3-lab/check_numbers.js">check_numbers.js</a> 重算（在 HW3 頁的 console 貼上後跑 <code>HW3CHK.all(1e6, null, 8.44)</code>，第三個數字是電池 V+）。</li>
       <li>HW2 網頁引擎 <a href="../active-membrane-sim/engine.js">engine.js</a>、電路圖 <a href="../active-membrane-sim/schematic.js">schematic.js</a>；Python 在 <a href="../hw2-debug/sim/">hw2-debug/sim/</a>（<code>check_ap.py</code>、<code>check_23.py</code> 等）。</li>
     </ul></div></details>
 <!-- common-background:end -->
   </div></details>
-  <details class="r1row"><summary>原版電路<span class="hint">4 項 · 老師指定的接法：模型、問題、#3-1 為什麼沒有 EPSP、和生理的對應</span></summary><div class="cards">
-<details id="t1" class="card"><summary>基礎模型＝助教給的電路<span class="hint">原版＝老師對全班指定的接法</span></summary><div class="body">
-        <ul>
+  <details class="r1row"><summary>原版電路<span class="hint">3 項 · 老師指定的接法：模型、問題、手算；#3-1 為什麼沒有 EPSP；和生理的對應</span></summary><div class="cards">
+<details id="t1" class="card wide"><summary>原版電路：模型、問題、手算<span class="hint">助教給的接法；為什麼量不出題目要的東西；量的時候會看到什麼</span></summary><div class="body">
+<h4 class="mh">模型（照 PCB 實際接法）</h4>
+<ul>
           <li><b>突觸板照 PCB 實際接法</b>（從講義 PCB 圖追線）。<b>Excitatory 的 D2 後面沒有 100 kΩ</b>：講義電路圖畫了，PCB 上 D2 的負極直接走線到 PostSynapse 排針。Inhibitory 的 100 kΩ（R5）PCB 上有。</li>
           <li>Excitatory：820 kΩ → 1N4148 → 2N3904（基極 10 nF ∥ 100 kΩ，射極 30 kΩ）→ 2N4403（射極 1 kΩ 接 V+）→ S（4.7 µF ∥ 200 kΩ）→ 1N4148 → Post。S 到地那顆：講義電路圖與 PCB 圖都是 200 kΩ（R5），我們拿到的板子絲印是 100K-R15（照片，2026-10-26，阻值沒量）。</li>
           <li>Inhibitory：輸入級相同；2N4403 的射極接 1.5 V 電池的 +、電池 − 接 S，集極 15 kΩ 到 GND；S（4.7 µF ∥ 200 kΩ）→ 100 kΩ → Post。</li>
-          <li><span class="tag t-inf">推測</span>Excitatory 的 V+ 從 2×2 排針來（= Stimulator 的電池；本頁預設 8.44 V，是我們 10-21 用電表量的；HW2 的 7.8 V 是別組的板子）。講義畫成獨立的 9 V；如果你另外接 9 V 電池，Q1 開的時候 S 會高一點，其他不變。</li>
+          <li><span class="cl cl-ai">AI</span> Excitatory 的 V+ 從 2×2 排針來（= Stimulator 的電池；本頁預設 8.44 V，是我們 10-21 用電表量的；HW2 的 7.8 V 是別組的板子）。講義畫成獨立的 9 V；如果你另外接 9 V 電池，Q1 開的時候 S 會高一點，其他不變。</li>
           <li><b>Pre／Post active membrane = HW2 的板子</b>，預設原版（Slow out 的 R2 = 1 MΩ，大家都已換好）。選「理想」電路時可以把 Pre、Post 改成 HW2 真正的 AP，電阻值可以直接輸入。</li>
           <li>Passive unit：1 µF ∥ 100 kΩ，上排 10 kΩ；細胞外照講義圖直接接 GND（HW2 的 100 Ω 影響可忽略）。Stimulator A、B 都是 HW2 的 Stimulator（放開時漏約 6 µA）。×1 探棒（1 MΩ，和 HW2 一樣），CH1、CH2 各接一支。</li>
         </ul>
-      </div></details>
-<details id="t2" class="card wide"><summary>原版電路的問題與量測時會看到的現象<span class="hint">為什麼量不出題目要的東西；量的時候要注意什麼</span></summary><div class="body">
-        <p class="small"><b>A　為什麼原版量不出題目要的東西</b></p>
+<h4 class="mh">問題與量測時會看到的現象</h4>
+<p class="small"><b>A　為什麼原版量不出題目要的東西</b></p>
         <ol class="small">
           <li><b>突觸的門檻約 6 V，原版 Pre 的 AP 約 1.5–2.2 V</b>（10-21 實測約 1.9 V；R13 = 100 kΩ 的結果）：Q2 不導通，#3-1–#3-4 怎麼按都沒有 EPSP／IPSP（模擬 S 不到 1 mV；10-21 實測 Q2 基極約 0.17 V、#1 沒有 EPSP）。HW2 真正的 AP（約 5.4 V）也不到。照實記錄「沒有 PSP」，並附 Pre 和 Q2 基極的波形。推導見「#3-1 為什麼沒有 EPSP」。</li>
           <li><b>Excitatory 的 D2 後面沒有 100 kΩ</b>（PCB 和講義電路圖不同）：S 經 D2 直接灌進 Post，EPSP 很快、很大；有 100 kΩ 時（真正的突觸）#1 的 EPSP 小約 5 倍（0.91 → 0.19 V）、到峰晚約 100 ms。原版因為 Q2 不導通，有沒有這顆都一樣沒有 EPSP。選「理想」時「D2 → Post」可以輸入 100 kΩ 對照。</li>
@@ -499,7 +563,18 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <li><b>#3-3 Passive 拔掉電池（接跳線）後 IPSP 消失</b>：Post 靜止約 0 V，反轉電位也約 0 V，沒有驅動力。</li>
           <li><b>講義的小錯</b>：#3-4 Q4 說重做「#3-4-5 and #3-4-6」，這兩題不存在，應該是 Q2、Q3；檔名寫 <code>HW02_…</code>，應該是 HW03（交之前問助教）。</li>
         </ol>
+<h4 class="mh">手算重點</h4>
+<div class="eqs">
+<div class="eq"><div class="m">\[V_{pre} \approx 0.6 \cdot \frac{100\,\mathrm{k} + R_1}{100\,\mathrm{k}} + V_{D1}\]</div><div class="note">Q2 開始導通 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+<div class="eq"><div class="m">\[R_1 = 820\,\mathrm{k}: \approx 6\,\mathrm{V}; \qquad R_1 = 820\,\mathrm{k} \parallel 1.5\,\mathrm{M} = 530\,\mathrm{k}: \approx 4.2\,\mathrm{V}\]</div><div class="note">HW2 真 AP 約 4.8 V 過得去，靜止約 1.0 V 不會 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+<div class="eq"><div class="m">\[S_{max} \approx V_+ - V_{EC,Q1} - I \times 1\,\mathrm{k\Omega} \approx 7\,\mathrm{V}, \qquad V_{\#1} \approx S - V_{D2}\]</div><div class="note">Excitatory S 上限（V+ 8.44 V、I 約 1 mA）<span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；10-21 並 100 kΩ 實測 EPSP 頂在約 6.5 V，連發時不再升高 <span class="cl cl-obs" title="OBS：實測">OBS</span></div></div>
+<div class="eq"><div class="m">\[I_{D2} \gt 0 \iff S \gt V_{post} + 0.45\,\mathrm{V}\]</div><div class="note">Excitatory 進 Post 的條件 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+<div class="eq"><div class="m">\[S_{min} \approx -1.5 + V_{CE,sat} + 15\,\mathrm{k} \times I \approx -1.4\,\mathrm{V}, \qquad I_{max} \approx \frac{S + 1.5 - 0.1}{15\,\mathrm{k}} \approx 90\,\mu\mathrm{A}\]</div><div class="note">Inhibitory S 下限（E_rev）與 Q1 最大電流（S = 0 V 時）<span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+<div class="eq"><div class="m">\[S \approx V_{CE,sat} + 15\,\mathrm{k} \times I \approx 0.1\,\mathrm{V}\]</div><div class="note">拔掉電池（跳線）：E_rev ≈ 0 V <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+<div class="eq"><div class="m">\[\tau_S \approx 4.7\,\mu\mathrm{F} \times 200\,\mathrm{k\Omega} \approx 0.94\,\mathrm{s}\ (R15 = 100\,\mathrm{k}:\ 0.47\,\mathrm{s}), \qquad \tau_{post} = 1\,\mu\mathrm{F} \times 100\,\mathrm{k\Omega} = 100\,\mathrm{ms}\]</div><div class="note">S 的放電與 Post（Passive）<span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+</div>
       </div></details>
+
 <details id="t4" class="card wide"><summary>問題：#3-1 為什麼沒有 EPSP（從假設一步一步算）<span class="hint">突觸的門檻約 6 V；改法要多少；R15 100k／200k 有沒有關係</span></summary><div class="body">
         <p class="small"><b>一句話</b>：Pre 的 AP 經過 820 kΩ : 100 kΩ 分壓後，只剩約 0.17 V 到 Q2 基極，遠低於 Q2 導通要的約 0.6 V；Q2 不開，後面全部不動。要讓 Q2 開，Pre 的 AP 要約 6 V，而我們的 Pre 只有約 1.9 V。</p>
         <p class="small">用到的電晶體規則（導通門檻、每 60 mV 差 10 倍、β）見共同背景「<a href="#c-rules">電晶體與電路的基本規則</a>」。</p>
@@ -508,31 +583,41 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <p class="small">這是一串開關：Q2 不開 → Q1 沒有基極電流 → S 不充電 → D2 不導通 → #1 沒有 EPSP。所以第一個要檢查的變數是 <b>AP 時 Q2 基極的電壓</b>：它過不了約 0.6 V，後面的元件值（包括 R15）都不用看。</p>
         </details>
         <details class="more"><summary>2　算 Q2 基極：原版電路（和 10-21 實測對照）</summary>
-<div class="calc">假設 ① Q2 幾乎不導通 → 基極電流可忽略，R1 和 100 kΩ 是單純分壓
-假設 ② AP 比 10 nF 的時間常數長：τ = 10 nF × (820k ∥ 100k) = 10 nF × 89 kΩ ≈ 0.9 ms
-       （AP 約 10–20 ms，所以 10 nF 已充飽，只影響速度）
-假設 ③ D1 導通時壓降 V_D1 ≈ 0.45 V
-Q2.B ≈ (V_pre − V_D1) × 100k / (820k + 100k) = (V_pre − 0.45) × 0.109
-原版 Pre（10-21 實測 AP 約 1.9 V）：(1.9 − 0.45) × 0.109 = 0.16 V
-實測（10-21，示波器）：Q2 基極約 0.17 V ✓   模擬（V+ 8.44 V）：AP 2.17 V、Q2.B 0.20 V</div>
-          <p class="small">0.17 V 比 0.6 V 少約 0.43 V。用第 0 條規則：Q2 的電流比剛導通時少約 10<sup>0.43/0.06</sup> ≈ 10<sup>7</sup> 倍，等於沒有。模擬裡 S 最高 0.001 V、#1 沒有任何變化。</p>
+<div class="eqs">
+<p class="eqa"><b>假設</b>：① Q2 幾乎不導通 → 基極電流可忽略，R1 和 100 kΩ 是單純分壓。② AP（約 10–20 ms）比 10 nF 的時間常數長，10 nF 只影響速度。③ D1 導通時壓降 V<sub>D1</sub> ≈ 0.45 V。<span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></p>
+<div class="eq"><div class="m">\[\tau = 10\,\mathrm{nF} \times (820\,\mathrm{k} \parallel 100\,\mathrm{k}) = 10\,\mathrm{nF} \times 89\,\mathrm{k\Omega} \approx 0.9\,\mathrm{ms}\]</div><div class="note">假設 ② 的根據 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+<div class="eq"><div class="m">\[V_{B,Q2} \approx (V_{pre} - V_{D1}) \cdot \frac{100\,\mathrm{k}}{820\,\mathrm{k} + 100\,\mathrm{k}} = (V_{pre} - 0.45) \times 0.109\]</div><div class="note"><span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+<div class="eq"><div class="m">\[V_{pre} = 1.9\,\mathrm{V}: \quad V_{B,Q2} \approx 1.45 \times 0.109 = 0.16\,\mathrm{V}\]</div><div class="note">Pre AP 1.9 V 是 10-21 實測 <span class="cl cl-obs" title="OBS：實測">OBS</span>；Q2 基極實測約 0.17 V <span class="cl cl-obs" title="OBS：實測">OBS</span>；模擬（V+ 8.44 V）AP 2.17 V、Q2.B 0.20 V <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+</div>
+          <div class="eqs">
+<div class="eq"><div class="m">\[\frac{I_{C}(0.17\,\mathrm{V})}{I_{C}(0.6\,\mathrm{V})} = 10^{-\frac{0.43}{0.06}} \approx 10^{-7}\]</div><div class="note">0.17 V 比 0.6 V 少約 0.43 V，等於沒有電流 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；模擬 S 最高 0.001 V、#1 沒有變化 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+</div>
         </details>
         <details class="more"><summary>3　反推：Pre 的 AP 要多大，Q2 才會開</summary>
-<div class="calc">要 Q2.B ≥ 約 0.6 V：
-V_pre ≥ 0.6 × (820k + 100k)/100k + 0.45 = 0.6 × 9.2 + 0.45 ≈ 6.0 V
-原版 Pre：約 1.9 V（實測）     HW2 真 AP：約 5.4 V（模擬，V+ 8.44 V）→ 兩者都不夠</div>
-          <p class="small"><span class="tag t-inf">推測</span>突觸板是照講義的 active membrane 設計的：講義的 FI 畫 R13 = 1 kΩ，AP 會接近 V+，就過得了 6 V。PCB 的 R13 是 100 kΩ，FI 最多只送約 70 µA，AP 只到約 1.9 V（HW2 已量過）。所以問題不是突觸板接錯，而是<b>突觸板的門檻和 PCB 版 active membrane 的 AP 大小對不上</b>。</p>
+<div class="eqs">
+<div class="eq"><div class="m">\[V_{B,Q2} \ge 0.6\,\mathrm{V} \;\Rightarrow\; V_{pre} \ge 0.6 \times \frac{820\,\mathrm{k} + 100\,\mathrm{k}}{100\,\mathrm{k}} + 0.45 = 0.6 \times 9.2 + 0.45 \approx 6.0\,\mathrm{V}\]</div><div class="note"><span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+<p class="eqa">原版 Pre 約 1.9 V <span class="cl cl-obs" title="OBS：實測">OBS</span>；HW2 真 AP 約 5.4 V（模擬，V+ 8.44 V）<span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span> → 兩者都不夠</p>
+</div>
+          <p class="small"><span class="cl cl-ai">AI</span> 突觸板是照講義的 active membrane 設計的：講義的 FI 畫 R13 = 1 kΩ，AP 會接近 V+，就過得了 6 V。PCB 的 R13 是 100 kΩ，FI 最多只送約 70 µA，AP 只到約 1.9 V（HW2 已量過）。所以問題不是突觸板接錯，而是<b>突觸板的門檻和 PCB 版 active membrane 的 AP 大小對不上</b>。</p>
         </details>
         <details class="more"><summary>4　改法要多少：三種方向的算式</summary>
           <p class="small"><b>方向 A：820 kΩ 兩端並一顆 R<sub>p</sub></b>（降低 R1，讓分壓比變大；Pre 不動）。要算的是 R<sub>p</sub> 的上限：</p>
-<div class="calc">R1_eff = 820k ∥ Rp，要 (V_pre − 0.45) × 100k / (R1_eff + 100k) ≥ 0.6
-→ R1_eff ≤ 100k × ((V_pre − 0.45)/0.6 − 1)
-V_pre = 1.9 V：R1_eff ≤ 100k × (1.45/0.6 − 1) = 142 kΩ → Rp ≤ 1/(1/142k − 1/820k) = 171 kΩ
-並 100 kΩ：R1_eff = 89 kΩ → Q2.B ≈ 1.45 × 100/189 = 0.77 V（實測 10-21 約 0.93 V；模擬 1.02 V）
-並 200 kΩ：R1_eff = 161 kΩ → Q2.B ≈ 1.45 × 100/261 = 0.56 V（模擬 0.71 V，#1 EPSP 約 0.84 V）</div>
+<div class="eqs">
+<div class="eq"><div class="m">\[R_{1,eff} = 820\,\mathrm{k} \parallel R_p, \qquad (V_{pre} - 0.45) \cdot \frac{100\,\mathrm{k}}{R_{1,eff} + 100\,\mathrm{k}} \ge 0.6\]</div><div class="note">要的條件</div></div>
+<div class="eq"><div class="m">\[\Rightarrow\; R_{1,eff} \le 100\,\mathrm{k} \times \left(\frac{V_{pre} - 0.45}{0.6} - 1\right)\]</div></div>
+<div class="eq"><div class="m">\[V_{pre} = 1.9\,\mathrm{V}: \; R_{1,eff} \le 142\,\mathrm{k\Omega} \;\Rightarrow\; R_p \le \frac{1}{\frac{1}{142\,\mathrm{k}} - \frac{1}{820\,\mathrm{k}}} = 171\,\mathrm{k\Omega}\]</div><div class="note"><span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+<div class="eq"><div class="m">\[R_p = 100\,\mathrm{k}: \; R_{1,eff} = 89\,\mathrm{k\Omega} \;\Rightarrow\; V_{B,Q2} \approx 1.45 \times \tfrac{100}{189} = 0.77\,\mathrm{V}\]</div><div class="note"><span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；實測 10-21 約 0.93 V <span class="cl cl-obs" title="OBS：實測">OBS</span>；模擬 1.02 V <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+<div class="eq"><div class="m">\[R_p = 200\,\mathrm{k}: \; R_{1,eff} = 161\,\mathrm{k\Omega} \;\Rightarrow\; V_{B,Q2} \approx 1.45 \times \tfrac{100}{261} = 0.56\,\mathrm{V}\]</div><div class="note"><span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；模擬 0.71 V、#1 EPSP 約 0.84 V <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+</div>
           <p class="small">並 100 kΩ 時 Q2.B 比門檻高約 0.2–0.3 V，Q2 電流大 10<sup>3</sup>–10<sup>5</sup> 倍，Q1 全開，S 一下就充到天花板（約 V+ 減掉 Q1 的壓降）。這就是 10-21 量到的約 6.5 V、<b>飽和</b>的 EPSP：大小由天花板決定，不由輸入決定，所以第二個 AP 加不上去（MB-0075）。要看疊加，R<sub>p</sub> 要選在門檻附近（150–200 kΩ）。</p>
-          <p class="small"><b>方向 B：Pre 的 R13 換成講義的 1 kΩ</b>（加大 AP；突觸不動）：FI 能送 mA 級電流，AP 約 7.6 V（模擬）→ Q2.B ≈ (7.6 − 0.45) × 0.109 ≈ 0.78 V（模擬 0.72 V）→ #1 EPSP 約 0.07–0.2 V，不飽和、能疊加。見下一張「只改 FI」。</p>
-          <p class="small"><b>方向 C：兩邊都改</b>（HW2 真 AP ＋ 820 kΩ 並 1.5 MΩ）：R1_eff = 530 kΩ → Q2.B = (5.42 − 0.45) × 100/630 ≈ 0.79 V（模擬 0.79 V）→ #1 EPSP 約 0.91 V。見「改法：820 kΩ 兩端並 1.5 MΩ」。</p>
+          <p class="small"><b>方向 B：Pre 的 R13 換成講義的 1 kΩ</b>（加大 AP；突觸不動）。FI 能送 mA 級電流。見下一張「只改 FI」。</p>
+          <div class="eqs">
+<div class="eq"><div class="m">\[V_{pre} \approx 7.6\,\mathrm{V} \;\Rightarrow\; V_{B,Q2} \approx (7.6 - 0.45) \times 0.109 \approx 0.78\,\mathrm{V}\]</div><div class="note">AP 7.6 V 是模擬 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；手算 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；模擬 Q2.B 0.72 V、#1 EPSP 約 0.07–0.2 V，不飽和、能疊加 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+</div>
+          <p class="small"><b>方向 C：兩邊都改</b>（HW2 真 AP ＋ 820 kΩ 並 1.5 MΩ）。見「改法：820 kΩ 兩端並 1.5 MΩ」。</p>
+          <div class="eqs">
+<div class="eq"><div class="m">\[R_{1,eff} = 820\,\mathrm{k} \parallel 1.5\,\mathrm{M} = 530\,\mathrm{k\Omega} \;\Rightarrow\; V_{B,Q2} = (5.42 - 0.45) \times \tfrac{100}{630} \approx 0.79\,\mathrm{V}\]</div><div class="note"><span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；模擬 0.79 V、#1 EPSP 約 0.91 V <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
+</div>
           <p class="small muted">三個方向的模擬都可以在 #3-1 區域選「理想」→「從原版開始」，再到「1 電路焊接」直接輸入電阻值試。</p>
         </details>
         <details class="more"><summary>5　R15（S → GND）是 100 kΩ 還是 200 kΩ：和「沒有 EPSP」無關</summary>
@@ -596,6 +681,7 @@ V_pre = 1.9 V：R1_eff ≤ 100k × (1.45/0.6 − 1) = 142 kΩ → Rp ≤ 1/(1/14
         <p class="small">Q2 是指數關係，實際電晶體的 I<sub>S</sub> 差兩三倍就差一級：<b>一個 AP 看不到 EPSP → 改 1 MΩ；一個 EPSP 就觸發 Post → 改 2.2 MΩ</b>。IPSP 被 15 kΩ 和 1.5 V 電池限制（Q1 最多約 90 µA），換電阻幾乎不變。</p>
       </div></details>
 <details id="t7" class="card wide"><summary>驗證：每一題（真正的突觸）<span class="hint">模擬，按 15 ms、可變電阻 0</span></summary><div class="body">
+        <p class="small">這張全部是<b>模擬</b> <span class="cl cl-ai">AI</span>（本頁引擎 engine.js），不是量測紀錄。</p>
         <div class="tbl"><table>
           <tr><th>題目</th><th>結果</th></tr>
           <tr class="grp"><td colspan="2">#3-1 Excitatory → passive</td></tr>
@@ -616,9 +702,19 @@ V_pre = 1.9 V：R1_eff ≤ 100k × (1.45/0.6 − 1) = 142 kΩ → Rp ≤ 1/(1/14
         <p class="small muted">「Post 先」沒有幫助的原因：D2 只有在 S 比 Post 高約 0.45 V 時才導通，Post 被 B 墊高時 EPSP 反而變小，像接近反轉電位時驅動力變小。</p>
       </div></details>
   </div></details>
-  <details class="r1row"><summary>紀錄<span class="hint">0 項 · 過去的討論和量測</span></summary><div class="cards">
+  <details class="r1row"><summary>紀錄<span class="hint">1 項 · 這一頁的版本；工作紀錄在 log</span></summary><div class="cards">
+<details class="card wide" id="history"><summary>History／Log<span class="hint">這一頁的版本</span></summary><div class="body">
+      <div class="tbl"><table>
+        <tr><th>日期</th><th>內容</th></tr>
+        <tr><td>10-13</td><td>建立 HW3 實驗台：四個電路的即時模擬、基礎／進階目標、真正的突觸（820 kΩ 並 1.5 MΩ）、ISI 散佈圖。全部是模擬，尚未實測。</td></tr>
+        <tr><td>10-21</td><td>探棒改 ×1（1 MΩ）。拿掉作業題目與狀態表和答案性質的句子。電池 V+ 改成兩個目標都有 0–12 V 滑桿，預設 7.0 V（從 HW2 #2-2 推的估計，沒量過）；頁面上的模擬數字照 7.0 V 重算。7.0 V 時原版 Pre、Post 不會自己冒小峰，7.8 V 時會。加上削頂、電池來源、可變電阻照絲印的說明。</td></tr>
+        <tr><td>10-21</td><td>新增「0 電路圖與 PCB 的差別」：excitatory 突觸板 2 處（D2 後面沒有 100 kΩ；Q1 沒有獨立 9 V，用排針的 V+），點紅色標記看截圖和影響。基礎目標 #3-1、#3-2 可以切換這兩處。Inhibitory 突觸板和電路圖一致。</td></tr>
+        <tr><td>10-21</td><td>電子流動、點元件／導線看方程式和 KCL（和 HW2 一樣，<a href="inspect.js">inspect.js</a>）；基礎目標「820k 並聯」（不加／200k／100k），進階加「原版＋並 100 kΩ」情境；元件的點擊範圍縮小（HW2 一起改）。</td></tr>
+        <tr><td>10-22</td><td>電池預設改成 8.44 V（我們 10-21 用電表量的），頁面上的模擬數字照 8.44 V 重算（<code>check_numbers.js</code> 預設也是 8.44）。模擬在 8.44 V 時原版 Pre、#3-2 的 Post 會自己冒小峰；10-21 實測的 Pre 沒有。新增「只改 FI」：進階目標可以換 Pre 的 R13（100k／10k／2.2k／1k）。</td></tr>
+      </table></div>
+      <p class="small muted">HW2 的紀錄在 <a href="../log/">工作紀錄</a>。</p>
+    </div></details>
 <p class="small muted">（目前沒有）</p>  </div></details>
-  <p class="small muted">更多紀錄在 <a href="#r6">6 補充與紀錄</a>。</p>
   </div>
 </section>
 
@@ -972,56 +1068,14 @@ V_pre = 1.9 V：R1_eff ≤ 100k × (1.45/0.6 − 1) = 142 kΩ → Rp ≤ 1/(1/14
 </section>
 
 <!-- ======================= 6 補充 ======================= -->
-<section class="region textreg" id="r6">
-  <h2>6 補充與紀錄</h2>
-  <div class="cards">
-    <details class="card" open><summary>繳交規定<span class="hint">英文、檔名、字型</span></summary><div class="body"><ul>
-      <li>全英文；Times New Roman 12；檔名照講義寫 <code>HW02_學號_姓名.pdf</code>（應該是 HW03，問助教）；不可抄襲。</li>
-      <li>每題都要附標註過的圖；示波器截圖標格子大小；波形上標出量測點。</li>
-    </ul></div></details>
-    <details class="card"><summary>節點速查<span class="hint">回報量測時用</span></summary><div class="body"><ul>
-      <li><b>Pre Vm</b>：Stimulator A 輸出 = Pre active membrane 的 Vm（CH1）。<b>Post Vm</b>：active membrane 2 的 Vm。</li>
-      <li><b>Q2 B</b>：2N3904 的基極（D1 負極、10 nF、100 kΩ 上端）。<b>S</b>：4.7 µF 上腳（excitatory 也是 D2 正極；inhibitory 也是電池 − 端）。</li>
-      <li><b>#1–#5</b>：Passive unit 的 Vm；突觸和 Stimulator B 都接 #1。</li>
-      <li>電壓都對 GND（Extracellular）量。</li>
-    </ul></div></details>
-    <details class="card" data-show="adv"><summary>手算重點<span class="hint">門檻、IPSP 的極限</span></summary><div class="body">
-<div class="calc">Q2 開始導通：Q2.B ≈ 0.6 V → V_pre ≈ 0.6 × (100k + R1)/100k + V_D1
-    R1 = 820k：≈ 6 V；820k ∥ 1.5M = 530k：≈ 4.2 V（HW2 真 AP 約 4.8 V 過得去，靜止約 1.0 V 不會）
-Excitatory S 上限：S ≈ V+ − V_EC(Q1) − I × 1k（V+ 8.44 V、I 約 1 mA 時約 7 V）；#1 再少 D2 約 0.5 V
-           10-21 實測（820k 並 100k）：EPSP 頂在約 6.5 V，連發時峰值不再升高＝飽和
-Excitatory 進 Post：只有 S > V_post + 0.45 V 才有電流（D2）
-Inhibitory S 下限：Q1 飽和 → S ≈ −1.5 + V_CE(sat) + 15k × I ≈ −1.4 V（E_rev）
-           Q1 最大電流 ≈ (S + 1.5 − 0.1)/15k ≈ 90 µA（S = 0 V 時）
-拔掉電池（跳線）：S ≈ V_CE(sat) + 15k × I ≈ 0.1 V 起（E_rev ≈ 0 V）
-S 的放電：τ ≈ 4.7 µF × 200 kΩ ≈ 0.94 s；Post（Passive）τ = 1 µF × 100 kΩ = 100 ms</div>
-    </div></details>
-    <details class="card" data-show="adv"><summary>模擬方法<span class="hint">和 HW2 相同的模型</span></summary><div class="body"><ul>
-      <li>引擎 <a href="engine.js">engine.js</a>：和 HW2（<a href="../active-membrane-sim/engine.js">active-membrane-sim/engine.js</a>、hw2-debug/sim/sim.py）一樣的修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton、Ebers–Moll；每個節點 10 pF 雜散電容。電池用 1 Ω Norton 等效。</li>
-      <li>參數：2N3904 I<sub>S</sub> 6.7 fA、β 200；2N4403 I<sub>S</sub> 10 fA、β 150；1N4148 I<sub>S</sub> 2.52 nA、n 1.752。V+ 預設 8.44 V（10-21 實測，滑桿 0–12 V）。</li>
-      <li>Active membrane 的排針接點合併（沒有可拔的接點）；Leak、FI、SO 直接在 Vm 上。每次進入區域先讓電路靜置 2 秒（不畫），示波器從靜止開始。</li>
-      <li>電路圖 <a href="schematic.js">schematic.js</a>：每塊板子都畫出完整電路，上列 Stimulator A → Pre → 突觸，下列 Stimulator B → Post；Stimulator、active membrane、passive unit 沿用 HW2 的排法（<a href="../active-membrane-sim/schematic.js">HW2 schematic.js</a>）。圖太小時按左下角 ＋／－ 或 Ctrl＋滾輪放大、拖曳平移。操作 <a href="app.js">app.js</a>。頁面上的模擬數字可以用 <a href="check_numbers.js">check_numbers.js</a> 重算（在這頁的 console 貼上後跑 <code>HW3CHK.all(1e6, null, 8.44)</code>，第三個數字是電池 V+）。</li>
-    </ul></div></details>
-    <details class="card wide" id="history" open><summary>History／Log<span class="hint">這一頁的版本</span></summary><div class="body">
-      <div class="tbl"><table>
-        <tr><th>日期</th><th>內容</th></tr>
-        <tr><td>10-13</td><td>建立 HW3 實驗台：四個電路的即時模擬、基礎／進階目標、真正的突觸（820 kΩ 並 1.5 MΩ）、ISI 散佈圖。全部是模擬，尚未實測。</td></tr>
-        <tr><td>10-21</td><td>探棒改 ×1（1 MΩ）。拿掉作業題目與狀態表和答案性質的句子。電池 V+ 改成兩個目標都有 0–12 V 滑桿，預設 7.0 V（從 HW2 #2-2 推的估計，沒量過）；頁面上的模擬數字照 7.0 V 重算。7.0 V 時原版 Pre、Post 不會自己冒小峰，7.8 V 時會。加上削頂、電池來源、可變電阻照絲印的說明。</td></tr>
-        <tr><td>10-21</td><td>新增「0 電路圖與 PCB 的差別」：excitatory 突觸板 2 處（D2 後面沒有 100 kΩ；Q1 沒有獨立 9 V，用排針的 V+），點紅色標記看截圖和影響。基礎目標 #3-1、#3-2 可以切換這兩處。Inhibitory 突觸板和電路圖一致。</td></tr>
-        <tr><td>10-21</td><td>電子流動、點元件／導線看方程式和 KCL（和 HW2 一樣，<a href="inspect.js">inspect.js</a>）；基礎目標「820k 並聯」（不加／200k／100k），進階加「原版＋並 100 kΩ」情境；元件的點擊範圍縮小（HW2 一起改）。</td></tr>
-        <tr><td>10-22</td><td>電池預設改成 8.44 V（我們 10-21 用電表量的），頁面上的模擬數字照 8.44 V 重算（<code>check_numbers.js</code> 預設也是 8.44）。模擬在 8.44 V 時原版 Pre、#3-2 的 Post 會自己冒小峰；10-21 實測的 Pre 沒有。新增「只改 FI」：進階目標可以換 Pre 的 R13（100k／10k／2.2k／1k）。</td></tr>
-      </table></div>
-      <p class="small muted">HW2 的紀錄在 <a href="../hw2-lab/#history">HW2 實驗台 History</a>。</p>
-    </div></details>
-  </div>
-</section>
+
 
 </main>
 </div>
-<script src="engine.js?v=20261026b"></script>
-<script src="schematic.js?v=20261026b"></script>
-<script src="inspect.js?v=20261026b"></script>
-<script src="../circuits/circuits.js?v=20261026b"></script>
-<script src="app.js?v=20261026b"></script>
+<script src="engine.js?v=20261026c"></script>
+<script src="schematic.js?v=20261026c"></script>
+<script src="inspect.js?v=20261026c"></script>
+<script src="../circuits/circuits.js?v=20261026c"></script>
+<script src="app.js?v=20261026c"></script>
 </body>
 </html>

@@ -45,6 +45,6 @@
       <li>修正節點分析、backward Euler（Δt = 0.2 ms）、阻尼 Newton、Ebers–Moll 電晶體與二極體模型；DC 不收斂時 gmin stepping。</li>
       <li>10-12 起每個節點加 10 pF 雜散電容（配線；×1 探棒約 100 pF 只接在量測點，和 1 µF 比可忽略）：拔掉 Leak 時 Vm 節點沒有電容，FI 自鎖在數值上沒有唯一解（S+FI 會卡住）。時間常數約 1 µs，波形幾乎不變（重跑所有檢查，差 ≤ 0.07 V；R2 = 1 MΩ 時「按下的第一個峰」看落在小峰的哪個階段，1.75–2.06 V）。另外 Newton 在 20 次迭代後、各節點 KCL 誤差 &lt; 10 pA 也算收斂。</li>
       <li>參數：2N3904 I<sub>S</sub> 6.7 fA、β 200；2N4403 I<sub>S</sub> 10 fA、β 150；1N4148 I<sub>S</sub> 2.52 nA、n 1.752。</li>
-      <li>HW3 實驗台的引擎是 <a href="../hw3-lab/engine.js">hw3-lab/engine.js</a>：同樣的元件模型，接成 Pre → 突觸 → Post 的電路。</li>
+      <li>HW3 實驗台的引擎是 <a href="../hw3-lab/engine.js">hw3-lab/engine.js</a>：同樣的元件模型，接成 Pre → 突觸 → Post 的電路。電池用 1 Ω Norton 等效；active membrane 的排針接點合併（Leak、FI、SO 直接在 Vm 上）；每次進入區域先讓電路靜置 2 秒（不畫）。HW3 的電路圖 <a href="../hw3-lab/schematic.js">schematic.js</a>、操作 <a href="../hw3-lab/app.js">app.js</a>；頁面上的模擬數字可以用 <a href="../hw3-lab/check_numbers.js">check_numbers.js</a> 重算（在 HW3 頁的 console 貼上後跑 <code>HW3CHK.all(1e6, null, 8.44)</code>，第三個數字是電池 V+）。</li>
       <li>HW2 網頁引擎 <a href="../active-membrane-sim/engine.js">engine.js</a>、電路圖 <a href="../active-membrane-sim/schematic.js">schematic.js</a>；Python 在 <a href="../hw2-debug/sim/">hw2-debug/sim/</a>（<code>check_ap.py</code>、<code>check_23.py</code> 等）。</li>
     </ul></div></details>

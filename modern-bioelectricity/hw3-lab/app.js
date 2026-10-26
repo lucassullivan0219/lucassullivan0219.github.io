@@ -646,7 +646,7 @@
   var dlg = $('#r0dlg');
   function openDiff(n){
     var t = $('#r0d-' + n); if(!dlg || !t) return;
-    $('#r0dlg-t').textContent = '差別 ' + n + '／2';
+    $('#r0dlg-t').textContent = '差別 ' + n + '／3';
     var b = $('.r0dlg-b', dlg); b.innerHTML = ''; b.appendChild(t.content.cloneNode(true));
     if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
     dlg.scrollTop = 0;
@@ -704,4 +704,45 @@
   /* run(s, T): advance region s by T seconds without the animation loop (console checks) */
   function run(s, T){ activate(s); for(var k = Math.round(T / DT); k > 0; k--){ runEvents(s); s.E.step(DT); sample(s); } drawScope(s); updateUI(s); }
   window.HW3 = {SIMS:SIMS, activate:activate, setMode:setMode, press:press, trainA:trainA, combo:combo, setHold:setHold, engineState:engineState, isiSweep:isiSweep, run:run};
+
+  /* 1 摘要: every card is a tile; clicking one opens it in a window, so the whole list fits on one screen.
+     The card's body moves into the window and back, so drawings already rendered inside it are kept. */
+  var tdlg = document.createElement('dialog'), tileOpen = null;
+  tdlg.className = 'r0dlg tdlg';
+  tdlg.innerHTML = '<div class="r0dlg-h"><b></b><button type="button" class="r0dlg-x" aria-label="關閉">✕</button></div><div class="r0dlg-b"></div>';
+  document.body.appendChild(tdlg);
+  /* put the body back right away (the dialog's close event can arrive late, or not at all in a page that isn't painting) */
+  function closeTile(){
+    if(tileOpen){ tileOpen.d.appendChild(tileOpen.body); tileOpen = null; }
+    if(tdlg.open) tdlg.close();
+  }
+  function openTile(d){
+    closeTile();
+    var sum = d.querySelector('summary').cloneNode(true), hint = sum.querySelector('.hint'), body = d.querySelector(':scope > .body');
+    if(hint) hint.remove();
+    $('b', tdlg).textContent = sum.textContent.trim();
+    $('.r0dlg-b', tdlg).appendChild(body);
+    tileOpen = {d:d, body:body};
+    if(tdlg.showModal) tdlg.showModal(); else tdlg.setAttribute('open', '');
+    tdlg.scrollTop = 0;
+  }
+  tdlg.addEventListener('close', closeTile);
+  tdlg.addEventListener('cancel', function(e){ e.preventDefault(); closeTile(); });   /* Esc */
+  $('.r0dlg-x', tdlg).addEventListener('click', closeTile);
+  tdlg.addEventListener('click', function(e){ if(e.target === tdlg) closeTile(); });
+  $$('#r1 details.card').forEach(function(d){
+    d.open = false;
+    d.querySelector('summary').addEventListener('click', function(e){ e.preventDefault(); openTile(d); });
+  });
+  /* links to a card (e.g. #hold23, #leak) open it */
+  function openFromHash(id){
+    var d = id && document.getElementById(id);
+    if(d && d.matches('#r1 details.card')){ openTile(d); return true; }
+    return false;
+  }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if(a && !a.closest('nav') && openFromHash(a.getAttribute('href').slice(1))) e.preventDefault();
+  });
+  if(location.hash) openFromHash(location.hash.slice(1));
 })();
