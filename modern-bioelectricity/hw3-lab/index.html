@@ -123,6 +123,8 @@ th,td{text-align:left;padding:5px 7px;border-bottom:1px solid var(--rule);vertic
 th{background:var(--tint);color:var(--muted);font-size:12px}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 tr.grp td{background:var(--tint);font-weight:700}
+details.more{border-top:1px dashed var(--rule);margin-top:6px;padding-top:4px}
+details.more > summary{cursor:pointer;font-size:12.5px;color:var(--link)}
 .calc{font-family:"IBM Plex Mono",monospace;font-size:12.5px;white-space:pre;overflow-x:auto;background:var(--tint);border-left:3px solid var(--accent);padding:8px 10px;margin:6px 0}
 .fsbox{position:relative;background:var(--surface)}
 .fsbox .fsbtn{position:absolute;top:6px;right:6px;z-index:3}
@@ -441,13 +443,61 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <li><b>講義的小錯</b>：#3-4 Q4 說重做「#3-4-5 and #3-4-6」，這兩題不存在，應該是 Q2、Q3；檔名寫 <code>HW02_…</code>，應該是 HW03（交之前問助教）。</li>
         </ol>
       </div></details>
-<details id="t4" class="card"><summary>問題：突觸的門檻在 6 V<span class="hint">為什麼原版和 HW2 真 AP 都沒反應</span></summary><div class="body">
-        <p class="small">Q2 的基極被 820 kΩ 和 100 kΩ 分壓，還要先過 D1：</p>
-<div class="calc">Q2.B ≈ (V_pre − V_D1) × 100k / (100k + R1)        （10 nF 只決定速度）
-820 kΩ、Pre 5.4 V（HW2 真 AP，V+ 8.44 V）：(5.4 − 0.45) × 100/920 = 0.54 V → Q2 幾乎不導通，S 只到 0.23 V
-要 Q2.B ≈ 0.6 V：V_pre ≈ 0.6 × 920/100 + 0.45 ≈ 6 V
-原版 AP 約 1.5–2.2 V（10-21 實測約 1.9 V）：遠低於 6 V</div>
-        <p class="small"><span class="tag t-inf">推測</span>突觸是照講義的 active membrane 設計的：講義的 FI 是 1 kΩ（PCB 是 R13 = 100 kΩ），AP 會接近 V+，就能過 6 V。PCB 版的 AP 最高約 5.4 V（HW2 真 AP，V+ 8.44 V），差一截，而 Q2 是指數關係，所以幾乎沒有輸出。把原版的 R13 換成講義的 1 kΩ 可以讓 AP 到約 7.6 V（見「只改 FI」）。</p>
+<details id="t4" class="card wide"><summary>問題：#3-1 為什麼沒有 EPSP（從假設一步一步算）<span class="hint">突觸的門檻約 6 V；改法要多少；R15 100k／200k 有沒有關係</span></summary><div class="body">
+        <p class="small"><b>一句話</b>：Pre 的 AP 經過 820 kΩ : 100 kΩ 分壓後，只剩約 0.17 V 到 Q2 基極，遠低於 Q2 導通要的約 0.6 V；Q2 不開，後面全部不動。要讓 Q2 開，Pre 的 AP 要約 6 V，而我們的 Pre 只有約 1.9 V。</p>
+        <details class="more"><summary>0　背景：三條電晶體規則（和 HW2 實驗台「真正的 AP 電路」第 0 條相同）</summary>
+          <ol class="small">
+            <li><b>導通門檻</b>：矽電晶體 B–E 接面要約 0.55–0.65 V 才有明顯電流；1N4148 二極體在幾十 µA 時約 0.45 V。</li>
+            <li><b>指數關係</b>：I<sub>C</sub> ≈ I<sub>S</sub> · e<sup>V<sub>BE</sub>/V<sub>T</sub></sup>，V<sub>T</sub> ≈ 25.85 mV。<b>V<sub>BE</sub> 每少約 60 mV，電流少 10 倍</b>。所以基極差 0.4 V，電流差約一千萬倍，不是「小一點」。</li>
+            <li><b>β</b>：I<sub>C</sub> = β · I<sub>B</sub>（模擬：2N3904 200、2N4403 150）。</li>
+          </ol>
+        </details>
+        <details class="more"><summary>1　訊號怎麼走：為什麼先算 Q2 的基極</summary>
+          <p class="small">Excitatory 突觸板（照 PCB 追線，MB-0064）：Pre Vm → R1 820 kΩ → D1 → <b>Q2 基極</b>（10 nF ∥ 100 kΩ 到地）→ Q2（2N3904，射極 30 kΩ 到地）→ Q2 集極拉 Q1 基極 → Q1（2N4403，射極經 1 kΩ 接 V+）把電流灌進 <b>S</b>（4.7 µF ∥ R15 到地）→ D2 → Post #1。</p>
+          <p class="small">這是一串開關：Q2 不開 → Q1 沒有基極電流 → S 不充電 → D2 不導通 → #1 沒有 EPSP。所以第一個要檢查的變數是 <b>AP 時 Q2 基極的電壓</b>：它過不了約 0.6 V，後面的元件值（包括 R15）都不用看。</p>
+        </details>
+        <details class="more"><summary>2　算 Q2 基極：原版電路（和 10-21 實測對照）</summary>
+<div class="calc">假設 ① Q2 幾乎不導通 → 基極電流可忽略，R1 和 100 kΩ 是單純分壓
+假設 ② AP 比 10 nF 的時間常數長：τ = 10 nF × (820k ∥ 100k) = 10 nF × 89 kΩ ≈ 0.9 ms
+       （AP 約 10–20 ms，所以 10 nF 已充飽，只影響速度）
+假設 ③ D1 導通時壓降 V_D1 ≈ 0.45 V
+Q2.B ≈ (V_pre − V_D1) × 100k / (820k + 100k) = (V_pre − 0.45) × 0.109
+原版 Pre（10-21 實測 AP 約 1.9 V）：(1.9 − 0.45) × 0.109 = 0.16 V
+實測（10-21，示波器）：Q2 基極約 0.17 V ✓   模擬（V+ 8.44 V）：AP 2.17 V、Q2.B 0.20 V</div>
+          <p class="small">0.17 V 比 0.6 V 少約 0.43 V。用第 0 條規則：Q2 的電流比剛導通時少約 10<sup>0.43/0.06</sup> ≈ 10<sup>7</sup> 倍，等於沒有。模擬裡 S 最高 0.001 V、#1 沒有任何變化。</p>
+        </details>
+        <details class="more"><summary>3　反推：Pre 的 AP 要多大，Q2 才會開</summary>
+<div class="calc">要 Q2.B ≥ 約 0.6 V：
+V_pre ≥ 0.6 × (820k + 100k)/100k + 0.45 = 0.6 × 9.2 + 0.45 ≈ 6.0 V
+原版 Pre：約 1.9 V（實測）     HW2 真 AP：約 5.4 V（模擬，V+ 8.44 V）→ 兩者都不夠</div>
+          <p class="small"><span class="tag t-inf">推測</span>突觸板是照講義的 active membrane 設計的：講義的 FI 畫 R13 = 1 kΩ，AP 會接近 V+，就過得了 6 V。PCB 的 R13 是 100 kΩ，FI 最多只送約 70 µA，AP 只到約 1.9 V（HW2 已量過）。所以問題不是突觸板接錯，而是<b>突觸板的門檻和 PCB 版 active membrane 的 AP 大小對不上</b>。</p>
+        </details>
+        <details class="more"><summary>4　改法要多少：三種方向的算式</summary>
+          <p class="small"><b>方向 A：820 kΩ 兩端並一顆 R<sub>p</sub></b>（降低 R1，讓分壓比變大；Pre 不動）。要算的是 R<sub>p</sub> 的上限：</p>
+<div class="calc">R1_eff = 820k ∥ Rp，要 (V_pre − 0.45) × 100k / (R1_eff + 100k) ≥ 0.6
+→ R1_eff ≤ 100k × ((V_pre − 0.45)/0.6 − 1)
+V_pre = 1.9 V：R1_eff ≤ 100k × (1.45/0.6 − 1) = 142 kΩ → Rp ≤ 1/(1/142k − 1/820k) = 171 kΩ
+並 100 kΩ：R1_eff = 89 kΩ → Q2.B ≈ 1.45 × 100/189 = 0.77 V（實測 10-21 約 0.93 V；模擬 1.02 V）
+並 200 kΩ：R1_eff = 161 kΩ → Q2.B ≈ 1.45 × 100/261 = 0.56 V（模擬 0.71 V，#1 EPSP 約 0.84 V）</div>
+          <p class="small">並 100 kΩ 時 Q2.B 比門檻高約 0.2–0.3 V，Q2 電流大 10<sup>3</sup>–10<sup>5</sup> 倍，Q1 全開，S 一下就充到天花板（約 V+ 減掉 Q1 的壓降）。這就是 10-21 量到的約 6.5 V、<b>飽和</b>的 EPSP：大小由天花板決定，不由輸入決定，所以第二個 AP 加不上去（MB-0075）。要看疊加，R<sub>p</sub> 要選在門檻附近（150–200 kΩ）。</p>
+          <p class="small"><b>方向 B：Pre 的 R13 換成講義的 1 kΩ</b>（加大 AP；突觸不動）：FI 能送 mA 級電流，AP 約 7.6 V（模擬）→ Q2.B ≈ (7.6 − 0.45) × 0.109 ≈ 0.78 V（模擬 0.72 V）→ #1 EPSP 約 0.07–0.2 V，不飽和、能疊加。見下一張「只改 FI」。</p>
+          <p class="small"><b>方向 C：兩邊都改</b>（HW2 真 AP ＋ 820 kΩ 並 1.5 MΩ）：R1_eff = 530 kΩ → Q2.B = (5.42 − 0.45) × 100/630 ≈ 0.79 V（模擬 0.79 V）→ #1 EPSP 約 0.91 V。見「改法：820 kΩ 兩端並 1.5 MΩ」。</p>
+          <p class="small muted">三個方向的模擬都可以在 #3-1 區域選「理想」→「從原版開始」，再到「1 電路焊接」直接輸入電阻值試。</p>
+        </details>
+        <details class="more"><summary>5　R15（S → GND）是 100 kΩ 還是 200 kΩ：和「沒有 EPSP」無關</summary>
+          <p class="small"><b>三個來源不一致</b>：講義 #3-1 電路圖在 S 到地畫 200 kΩ，D2 後面另外畫一顆 100 kΩ（串到 Post）；講義的 PCB 圖在同一個位置標 <b>200K-R5</b>，D2 後面沒有電阻；我們實際拿到的板子（照片，2026-10-26）那個位置的絲印寫 <b>100K-R15</b>。板子上電阻的色環從照片看不清，阻值沒量。</p>
+          <p class="small"><b>它在電路裡做什麼</b>：R15 和 4.7 µF 並聯，是 S 的放電路徑（傳導物質的清除）。它只在 S 已經被 Q1 充電之後才有作用：決定 S 退回去的快慢 τ = 4.7 µF × R15（200 kΩ：0.94 s；100 kΩ：0.47 s），也讓 S 的最高點低一點。它不在 Q2 前面，所以<b>不會影響 Q2 開不開</b>。</p>
+          <div class="tbl"><table>
+            <tr><th>情境（模擬，V+ 8.44 V，按 SW A 20 ms）</th><th class="num">Q2 基極</th><th class="num">S 峰值</th><th class="num">#1 最高</th><th class="num">0.5 s 後 S</th></tr>
+            <tr><td>原版，R15 200 kΩ</td><td class="num">0.20 V</td><td class="num">0.001 V</td><td class="num">沒有 EPSP</td><td class="num">0</td></tr>
+            <tr><td>原版，R15 100 kΩ</td><td class="num">0.20 V</td><td class="num">0.000 V</td><td class="num">沒有 EPSP</td><td class="num">0</td></tr>
+            <tr><td>並 100 kΩ，R15 200 kΩ</td><td class="num">1.02 V</td><td class="num">4.72 V</td><td class="num">4.19 V</td><td class="num">1.95 V</td></tr>
+            <tr><td>並 100 kΩ，R15 100 kΩ</td><td class="num">1.02 V</td><td class="num">4.55 V</td><td class="num">4.02 V</td><td class="num">1.73 V</td></tr>
+            <tr><td>R13 1 kΩ，R15 200 kΩ</td><td class="num">0.72 V</td><td class="num">1.13 V</td><td class="num">0.69 V</td><td class="num">1.05 V</td></tr>
+            <tr><td>R13 1 kΩ，R15 100 kΩ</td><td class="num">0.72 V</td><td class="num">1.02 V</td><td class="num">0.58 V</td><td class="num">0.93 V</td></tr>
+          </table></div>
+          <p class="small">「#1 最高」是絕對值，含 Stimulator B 漏電墊起來的基線（原版約 0.2 V；並 100 kΩ 時模型的 Pre 會自己冒小峰，基線約 0.5–0.6 V）。模擬並 100 kΩ 的 EPSP（約 3.6 V）比 10-21 實測的約 6.5 V 小，差在哪裡還沒查。可以在「理想」裡把 S → GND 改成 100 kΩ 自己看。</p>
+        </details>
       </div></details>
 <details id="t5" class="card wide"><summary>只改 FI：把 Pre 的 R13 換成 1 kΩ<span class="hint">突觸不動，原版 membrane</span></summary><div class="body">
         <p class="small">講義的 FI 畫 1 kΩ，PCB 的 R13 是 100 kΩ。R13 限制內向電流，所以原版 AP 只到約 1.9 V。只把 Pre 的 R13 換小（或在 R13 兩端並一顆），突觸板完全不動（模擬，原版 membrane，按 SW A 20 ms）：</p>
@@ -540,7 +590,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <p class="sub" data-show="basic">Stimulator A → Pre → excitatory 突觸 → 5 個 Passive unit。CH1 = Pre Vm，CH2 = #1。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
     <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
-      <div class="grp" data-show="adv"><div class="gt">理想版本</div>
+      <div class="grp" data-show="adv"><div class="gt">起點（原版、我的或理想版本）</div>
         <div class="btns" data-presets></div>
         <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
@@ -556,9 +606,11 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
         <div class="row" data-show="basic"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
         <div class="row" data-show="adv"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row" data-show="adv"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
-        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
-        <div class="row" data-show="adv"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
+        <div class="row" data-show="adv"><label>Pre 的 R13</label><span><input type="number" data-k="r13A" data-scale="1000" data-zero="100000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><span><input type="number" data-k="r1p" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row" data-show="adv"><label>D2 → Post</label><span><input type="number" data-k="r6" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row" data-show="adv"><label>S → GND（R15）</label><span><input type="number" data-k="r5" data-scale="1000" data-zero="200000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <p class="small muted" data-show="adv" style="margin:2px 0 0">直接輸入電阻值（kΩ）。參考值：R13 PCB 100、講義 1；820 kΩ 並聯 0 = 不加、真突觸 1500、我們 10-21 用 100；D2 → Post 0 = 直接（PCB）、講義 100；S → GND 講義與 PCB 圖 200、我們板子絲印 100（R15）。</p>
       </div>
     </details>
     <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">板子怎麼接、電源</span></summary>
@@ -623,7 +675,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <p class="sub" data-show="basic">Post 換成 active membrane 2，Stimulator B 刺激 Post。CH1 = Pre Vm，CH2 = Post Vm。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
     <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
-      <div class="grp" data-show="adv"><div class="gt">理想版本</div>
+      <div class="grp" data-show="adv"><div class="gt">起點（原版、我的或理想版本）</div>
         <div class="btns" data-presets></div>
         <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
@@ -639,10 +691,12 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
         <div class="row" data-show="basic"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
         <div class="row" data-show="adv"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row" data-show="adv"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
+        <div class="row" data-show="adv"><label>Pre 的 R13</label><span><input type="number" data-k="r13A" data-scale="1000" data-zero="100000" min="0" step="any" style="width:6em"> kΩ</span></div>
         <div class="row" data-show="adv"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
-        <div class="row" data-show="adv"><label>D2 → Post</label><select data-k="r6" data-num><option value="0">直接（PCB）</option><option value="1e5">100 kΩ（講義圖）</option></select></div>
+        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><span><input type="number" data-k="r1p" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row" data-show="adv"><label>D2 → Post</label><span><input type="number" data-k="r6" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row" data-show="adv"><label>S → GND（R15）</label><span><input type="number" data-k="r5" data-scale="1000" data-zero="200000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <p class="small muted" data-show="adv" style="margin:2px 0 0">直接輸入電阻值（kΩ）。參考值：R13 PCB 100、講義 1；820 kΩ 並聯 0 = 不加、真突觸 1500、我們 10-21 用 100；D2 → Post 0 = 直接（PCB）、講義 100；S → GND 講義與 PCB 圖 200、我們板子絲印 100（R15）。</p>
       </div>
     </details>
     <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">板子怎麼接、電源</span></summary>
@@ -713,7 +767,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <p class="sub" data-show="basic">Stimulator A → Pre → inhibitory 突觸 → 5 個 Passive unit。CH1 = Pre Vm，CH2 = #1（IPSP 是負的）。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
     <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
-      <div class="grp" data-show="adv"><div class="gt">理想版本</div>
+      <div class="grp" data-show="adv"><div class="gt">起點（原版、我的或理想版本）</div>
         <div class="btns" data-presets></div>
         <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
@@ -728,8 +782,10 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
         <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
         <div class="row" data-show="adv"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row" data-show="adv"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
-        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
+        <div class="row" data-show="adv"><label>Pre 的 R13</label><span><input type="number" data-k="r13A" data-scale="1000" data-zero="100000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><span><input type="number" data-k="r1p" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row" data-show="adv"><label>S → GND（R15）</label><span><input type="number" data-k="r5" data-scale="1000" data-zero="200000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <p class="small muted" data-show="adv" style="margin:2px 0 0">直接輸入電阻值（kΩ）。參考值：R13 PCB 100、講義 1；820 kΩ 並聯 0 = 不加、真突觸 1500；S → GND 講義與 PCB 圖 200。</p>
       </div>
     </details>
     <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">板子怎麼接、電源</span></summary>
@@ -792,7 +848,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <p class="sub" data-show="basic">Post 換成 active membrane 2。CH1 = Pre Vm，CH2 = Post Vm。</p>
     <p class="sub" data-show="adv">自由調整；預設「真正的突觸」。</p>
     <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
-      <div class="grp" data-show="adv"><div class="gt">理想版本</div>
+      <div class="grp" data-show="adv"><div class="gt">起點（原版、我的或理想版本）</div>
         <div class="btns" data-presets></div>
         <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
@@ -807,9 +863,11 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
         <div class="row" data-show="basic"><label>Active membrane</label><select data-k="mem"><option value="kit">原版</option><option value="true">HW2 真正的 AP</option></select></div>
         <div class="row" data-show="basic"><label>820k 並聯</label><select data-k="r1p" data-num><option value="0">不加（原版）</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21 的改法）</option></select></div>
         <div class="row" data-show="adv"><label>Pre</label><select data-k="pre"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row" data-show="adv"><label>Pre 的 R13</label><select data-k="r13A" data-num><option value="0">100 kΩ（PCB）</option><option value="1e4">10 kΩ</option><option value="2.2e3">2.2 kΩ</option><option value="1e3">1 kΩ（講義 FI）</option></select></div>
+        <div class="row" data-show="adv"><label>Pre 的 R13</label><span><input type="number" data-k="r13A" data-scale="1000" data-zero="100000" min="0" step="any" style="width:6em"> kΩ</span></div>
         <div class="row" data-show="adv"><label>Post</label><select data-k="postMem"><option value="kit">原版</option><option value="true">HW2 真 AP</option></select></div>
-        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><select data-k="r1p" data-num><option value="0">不加</option><option value="4.7e6">4.7 MΩ</option><option value="2.2e6">2.2 MΩ</option><option value="1.5e6">1.5 MΩ（真突觸）</option><option value="1e6">1 MΩ</option><option value="2.2e5">220 kΩ</option><option value="2e5">200 kΩ（兩顆 100k 串聯）</option><option value="1e5">100 kΩ（我們 10-21）</option></select></div>
+        <div class="row" data-show="adv"><label>820 kΩ 兩端並</label><span><input type="number" data-k="r1p" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row" data-show="adv"><label>S → GND（R15）</label><span><input type="number" data-k="r5" data-scale="1000" data-zero="200000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <p class="small muted" data-show="adv" style="margin:2px 0 0">直接輸入電阻值（kΩ）。參考值：R13 PCB 100、講義 1；820 kΩ 並聯 0 = 不加、真突觸 1500；S → GND 講義與 PCB 圖 200。</p>
       </div>
     </details>
     <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">板子怎麼接、電源</span></summary>
@@ -917,10 +975,10 @@ S 的放電：τ ≈ 4.7 µF × 200 kΩ ≈ 0.94 s；Post（Passive）τ = 1 µF
 
 </main>
 </div>
-<script src="engine.js?v=20261022b"></script>
-<script src="schematic.js?v=20261022b"></script>
-<script src="inspect.js?v=20261022b"></script>
-<script src="../circuits/circuits.js?v=20261022b"></script>
-<script src="app.js?v=20261022b"></script>
+<script src="engine.js?v=20261026a"></script>
+<script src="schematic.js?v=20261026a"></script>
+<script src="inspect.js?v=20261026a"></script>
+<script src="../circuits/circuits.js?v=20261026a"></script>
+<script src="app.js?v=20261026a"></script>
 </body>
 </html>

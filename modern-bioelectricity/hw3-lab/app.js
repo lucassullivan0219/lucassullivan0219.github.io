@@ -16,7 +16,7 @@
   /* the basic controls use mem (both membranes) instead of pre / postMem */
   function basicOf(st){ return {mem:st.pre, r1p:st.r1p || 0, r6:st.r6 || 0, vsyn:st.vsyn || 0, r13A:st.r13A || 0}; }
 
-  var BASE = {vplus:8.44, vsyn:0, r13A:0, rpotA:700, rpotB:700, pre:'kit', postMem:'kit', mem:'kit', r1p:0, r6:0, bat:'on',
+  var BASE = {vplus:8.44, vsyn:0, r13A:0, rpotA:700, rpotB:700, pre:'kit', postMem:'kit', mem:'kit', r1p:0, r6:0, r5:0, bat:'on',
     wA:20, nA:3, isiA:100, wB:10, offB:-50, ch1:'A.Vm', ch2:'P1'};
   /* the 'true synapse' set: HW2 true-AP add-ons on both membranes, 1.5 Mohm across the synapse's 820k */
   var TRUE_SYN = {pre:'true', postMem:'true', r1p:1.5e6, rpotA:0, rpotB:0, wA:15};
@@ -46,7 +46,10 @@
     s.id = k; s.el = $('[data-sim="' + k + '"]'); s.svg = $('svg.sch', s.el); s.cv = $('canvas', s.el);
     var C = CIRCUITS[s.circuit];
     s.C = C;
-    s.presets = C.ideal.map(function(i){ return [i.id, i.zh, Object.assign({rpotA:0, rpotB:0, wA:15}, i.st), i.note]; });
+    /* ideal starts from any of: the kit, our build, or an ideal circuit; every value can then be typed in */
+    s.presets = [['kit', '從原版開始', Object.assign({rpotA:700, rpotB:700, wA:20, r5:0}, C.kit.st), '原版：' + C.kit.zh + ' 下面的值可以直接改。'],
+                 ['mine', '從我的開始', Object.assign({rpotA:700, rpotB:700, wA:20, r5:0}, C.mine.st), '我的：' + C.mine.zh + ' 下面的值可以直接改。']]
+      .concat(C.ideal.map(function(i){ return [i.id, i.zh, Object.assign({rpotA:0, rpotB:0, wA:15}, i.st), i.note]; }));
     s.state = {kit:Object.assign({}, BASE, s.def.basic, basicOf(C.kit.st)), mine:Object.assign({}, BASE, s.def.basic, basicOf(C.mine.st)),
                ideal:Object.assign({}, BASE, s.def.adv)};
     var di = C.ideal.filter(function(i){ return i.def; })[0] || C.ideal[C.ideal.length - 1];
@@ -69,7 +72,7 @@
   }
   function applyEngine(s){
     var st = engineState(s), E = s.E;
-    ['vplus', 'vsyn', 'pre', 'postMem', 'r1p', 'r13A', 'r6', 'bat', 'syn', 'post', 'rpotA', 'rpotB', 'ch1', 'ch2'].forEach(function(k){ E.st[k] = st[k]; });
+    ['vplus', 'vsyn', 'pre', 'postMem', 'r1p', 'r13A', 'r6', 'r5', 'bat', 'syn', 'post', 'rpotA', 'rpotB', 'ch1', 'ch2'].forEach(function(k){ E.st[k] = st[k]; });
     E.st.swA = s.hold.A || s.on.A; E.st.swB = s.hold.B || s.on.B;
     E.build();
     if(INSP && inspSim === s) INSP.rerender();
@@ -196,13 +199,15 @@
   function ctlValue(el){
     var sc = el.dataset.scale ? +el.dataset.scale : 1;
     if(el.type === 'checkbox') return el.checked;
-    if(el.type === 'range' || el.type === 'number') return +el.value * sc;
+    /* data-zero: the board's own value, stored as 0 (= unchanged) */
+    if(el.type === 'range' || el.type === 'number'){ var x = +el.value * sc; return el.dataset.zero && Math.abs(x - +el.dataset.zero) < 1e-6 ? 0 : x; }
     if(el.hasAttribute('data-num')) return +el.value;
     return el.value;
   }
   function setCtl(el, v){
     var sc = el.dataset.scale ? +el.dataset.scale : 1;
     if(v === undefined) return;
+    if(el.dataset.zero && !v) v = +el.dataset.zero;
     if(el.type === 'checkbox') el.checked = !!v;
     else if(el.type === 'range' || el.type === 'number') el.value = +(v / sc).toFixed(6);
     else el.value = String(v);
@@ -227,7 +232,7 @@
     });
     $$('[data-out]', s.el).forEach(function(o){ o.textContent = outText(o.dataset.out, u[o.dataset.out] !== undefined ? u[o.dataset.out] : st[o.dataset.out]); });
     $$('[data-presets] button', s.el).forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.p === u._preset ? 'true' : 'false'); });
-    $$('[data-ctnote]', s.el).forEach(function(n){ n.innerHTML = '<b>' + CTNAME[CT] + '電路</b>：' + (CT === 'ideal' ? '在「0 參數檢查」選理想版本，說明在按鈕下面。' : s.C[CT].zh); });
+    $$('[data-ctnote]', s.el).forEach(function(n){ n.innerHTML = '<b>' + CTNAME[CT] + '電路</b>：' + (CT === 'ideal' ? '在「0 參數檢查」選起點（從原版、從我的，或一個理想版本），再到「1 電路焊接」直接輸入電阻值。' : s.C[CT].zh); });
     var pn = $('[data-preset-note]', s.el); if(pn) pn.textContent = u._note || '';
     var sc = s.sc;
     $$('[data-sc]', s.el).forEach(function(el){ el.value = String(sc[el.dataset.sc]); });
@@ -245,7 +250,7 @@
     if(k === 'ch1' || k === 'ch2') clearBuf(s);
     var tl = $('[data-train-label]', s.el); if(tl) tl.textContent = trainText(u);
     if(active === s) applyEngine(s);
-    if(k === 'mem' || k === 'pre' || k === 'postMem' || k === 'r1p' || k === 'r13A' || k === 'bat' || k === 'r6' || k === 'vplus' || k === 'vsyn'){ u._preset = null; u._note = ''; syncControls(s); if(active === s) powerOn(s); }
+    if(k === 'mem' || k === 'pre' || k === 'postMem' || k === 'r1p' || k === 'r13A' || k === 'bat' || k === 'r6' || k === 'r5' || k === 'vplus' || k === 'vsyn'){ u._preset = null; u._note = ''; syncControls(s); if(active === s) powerOn(s); }
     syncSchematic(s);
   }
   function buildPanels(s){
@@ -563,7 +568,7 @@
     if(btn.disabled) return;
     var node = /^(P\d|SY\.S)$/.test(st.ch2) ? st.ch2 : 'P1', w = u.wA / 1e3;
     var list = ISIS.filter(function(x){ return x / 1e3 > w + 0.02; });
-    var E = SynEngine(); ['vplus', 'vsyn', 'pre', 'postMem', 'r1p', 'r13A', 'r6', 'bat', 'syn', 'post', 'rpotA', 'rpotB'].forEach(function(k){ E.st[k] = st[k]; });
+    var E = SynEngine(); ['vplus', 'vsyn', 'pre', 'postMem', 'r1p', 'r13A', 'r6', 'r5', 'bat', 'syn', 'post', 'rpotA', 'rpotB'].forEach(function(k){ E.st[k] = st[k]; });
     E.st.ch1 = 'A.Vm'; E.st.ch2 = node; E.st.swA = false; E.st.swB = false; E.build(); E.powerOn(); E.settle(2.0);
     var snap = E.snapshot(), pts = [], one = null;
     function run(isi){

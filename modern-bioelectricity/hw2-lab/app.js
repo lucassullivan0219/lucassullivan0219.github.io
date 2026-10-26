@@ -18,7 +18,7 @@
 
   /* the board as built (PCB), with the TA's 1 Mohm in the Slow out R2 position (every board has it now) */
   var BASE_ST = {vplus:7.8, rpot:700, r13:1e5, rfe:1e5, qs:'pcb', so_r2:1e6, rprobe:1e6, ch1:'Vm', ch2:'',
-    r13p:0, rf:0, rb:0, rs:0, rl:0, ru:0, chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',
+    r13p:0, rf:0, rb:0, rs:0, rl:0, ru:0, rxv:22e3, chain:0, src:'stim', isrc:50e-6, fi_supply:'stim',
     leak:true, fi_vm:true, fi_vplus:true, fi_gnd:true, so_vm:true, so_gnd:true, fi_on:true, so_on:true, lk2:false, leak2:true,
     stdiode:false};
 
@@ -73,7 +73,11 @@
     /* three buckets: kit and mine start from the basic defaults plus circuits.js, ideal from its default ideal */
     var C = CIRCUITS[s.circuit];
     s.C = C;
-    s.presets = C.ideal.map(function(i){ return [i.id, i.zh, i.st, i.note]; });
+    /* ideal starts from any of: the kit, our build, or an ideal circuit; every value can then be typed in */
+    var bp0 = s.presetsBasic ? s.presetsBasic.filter(function(p){ return p[0] === s.basicPreset; })[0][2] : {};
+    s.presets = [['kit', '從原版開始', Object.assign({}, bp0, C.kit.st), '原版：' + C.kit.zh + ' 下面的值可以直接改。'],
+                 ['mine', '從我的開始', Object.assign({}, bp0, C.mine.st), '我的：' + C.mine.zh + ' 下面的值可以直接改。']]
+      .concat(C.ideal.map(function(i){ return [i.id, i.zh, i.st, i.note]; }));
     s.state = {kit:Object.assign({}, s.def.basic), mine:Object.assign({}, s.def.basic), ideal:Object.assign({}, s.def.adv)};
     if(s.presetsBasic){ var bp = s.presetsBasic.filter(function(p){ return p[0] === s.basicPreset; })[0];
       ['kit', 'mine'].forEach(function(b){ Object.assign(s.state[b], bp[2], {_preset:bp[0], _note:bp[3]}); }); }
@@ -159,7 +163,7 @@
     if(!s.SCH) return;
     var st = engineState(s);
     st.sw = AM.st.sw && active === s;
-    s.SCH.setContacts(st); s.SCH.setQsense(st.qs); s.SCH.setResistors(st.r13, st.rfe, st.so_r2); s.SCH.setAddons(st);
+    s.SCH.setContacts(st); s.SCH.setQsense(st.qs, st.rxv); s.SCH.setResistors(st.r13, st.rfe, st.so_r2); s.SCH.setAddons(st);
     s.SCH.setSupply(supplyMode(s)); s.SCH.setSource(st.src); s.SCH.setBoards({lk:st.leak, fi:st.fi_on, so:st.so_on});
     s.SCH.setProbes([st.ch1, st.ch2]);
   }
@@ -176,13 +180,15 @@
   function ctlValue(el){
     var sc = el.dataset.scale ? +el.dataset.scale : 1;
     if(el.type === 'checkbox') return el.checked;
-    if(el.type === 'range' || el.type === 'number') return +el.value * sc;
+    /* data-zero: the board's own value, stored as 0 (= unchanged) */
+    if(el.type === 'range' || el.type === 'number'){ var x = +el.value * sc; return el.dataset.zero && Math.abs(x - +el.dataset.zero) < 1e-6 ? 0 : x; }
     if(el.hasAttribute('data-num')) return +el.value;
     return el.value;
   }
   function setCtl(el, v){
     var sc = el.dataset.scale ? +el.dataset.scale : 1;
     if(v === undefined) return;
+    if(el.dataset.zero && !v) v = +el.dataset.zero;
     if(el.type === 'checkbox') el.checked = !!v;
     else if(el.type === 'range' || el.type === 'number') el.value = +(v / sc).toFixed(6);
     else el.value = String(v);
@@ -217,7 +223,7 @@
     $$('[data-nseg] button', s.el).forEach(function(b){ b.setAttribute('aria-pressed', +b.dataset.n === (u.chain || 0) ? 'true' : 'false'); });
     $$('[data-presets] button', s.el).forEach(function(b){ if(boxMode(b) === MODE) b.setAttribute('aria-pressed', b.dataset.p === u._preset ? 'true' : 'false'); });
     $$('[data-preset-note]', s.el).forEach(function(pn){ if(boxMode(pn) === MODE) pn.textContent = u._note || ''; });
-    $$('[data-ctnote]', s.el).forEach(function(n){ n.innerHTML = '<b>' + CTNAME[CT] + '電路</b>：' + (CT === 'ideal' ? '在「0 參數檢查」選理想版本，說明在按鈕下面。' : s.C[CT].zh); });
+    $$('[data-ctnote]', s.el).forEach(function(n){ n.innerHTML = '<b>' + CTNAME[CT] + '電路</b>：' + (CT === 'ideal' ? '在「0 參數檢查」選起點（從原版、從我的，或一個理想版本），再到「1 電路焊接」直接輸入電阻值。' : s.C[CT].zh); });
     var sc = s.sc;
     $$('[data-sc]', s.el).forEach(function(el){ el.value = String(sc[el.dataset.sc]); });
     $$('[data-scmode]', s.el).forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.scmode === sc.mode ? 'true' : 'false'); });
@@ -568,7 +574,7 @@
   $$('svg[data-trueap]').forEach(function(svg){
     var nn = +svg.dataset.trueap, st = Object.assign({}, BASE_ST, TRUE_AP, nn ? {chain:nn, ru:560e3} : {});
     var sch = MembraneSchematic(svg, {chain:nn});
-    sch.setContacts(st); sch.setQsense(st.qs); sch.setResistors(st.r13, st.rfe, st.so_r2); sch.setAddons(st); sch.setSupply('stim');
+    sch.setContacts(st); sch.setQsense(st.qs, st.rxv); sch.setResistors(st.r13, st.rfe, st.so_r2); sch.setAddons(st); sch.setSupply('stim');
   });
 
   /* section 0: click a red mark on the handout schematic -> a window on what that difference breaks */

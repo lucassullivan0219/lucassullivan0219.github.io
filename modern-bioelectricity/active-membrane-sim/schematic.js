@@ -404,8 +404,8 @@
     svg.innerHTML = out.join('');
 
     var tags = Array.prototype.slice.call(svg.querySelectorAll('[data-node]'));
-    function fmtR(x){ return x >= 1e6 ? (x / 1e6) + ' MΩ' : x >= 1e3 ? (x / 1e3) + ' kΩ' : x + ' Ω'; }
-    function fmtS(x){ return x >= 1e6 ? (x / 1e6) + 'M' : x >= 1e3 ? (x / 1e3) + 'k' : x + 'Ω'; }
+    function fmtR(x){ return x >= 1e6 ? +(x / 1e6).toPrecision(4) + ' MΩ' : x >= 1e3 ? +(x / 1e3).toPrecision(4) + ' kΩ' : +x.toPrecision(4) + ' Ω'; }
+    function fmtS(x){ return x >= 1e6 ? +(x / 1e6).toPrecision(4) + 'M' : x >= 1e3 ? +(x / 1e3).toPrecision(4) + 'k' : +x.toPrecision(4) + 'Ω'; }
 
     /* ---------------- show / hide, rail ---------------- */
     var dirty = true;
@@ -663,9 +663,9 @@
         });
       },
       /* 'pcb' as built, 'sw' Qsense emitter moved after SW, 'rx*' a resistor across Qpass E-B */
-      setQsense: function(mode){
+      setQsense: function(mode, rxv){
         setKey('qspcb', mode !== 'sw'); setKey('qssw', mode === 'sw'); setKey('rx', /^rx/.test(mode));
-        var t = svg.querySelector('[data-v="rx"]'); if(t) t.textContent = ({rx:'22k', rx10:'10k', rx12:'12k'})[mode] || '';
+        var t = svg.querySelector('[data-v="rx"]'); if(t) t.textContent = mode === 'rx' && rxv ? fmtS(rxv) : ({rx:'22k', rx10:'10k', rx12:'12k'})[mode] || '';
       },
       /* add-on resistors clipped onto existing legs */
       setAddons: function(st){

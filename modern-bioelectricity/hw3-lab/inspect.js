@@ -50,7 +50,7 @@
     q1:['Q1 2N4403', 'Q2 的電流把它打開，對 S 充電（Excitatory）或放電（Inhibitory）。'],
     r4:['Q1 的 1 kΩ／15 kΩ', 'Excitatory：Q1 射極經 1 kΩ 接 V+，限制充電電流。Inhibitory：Q1 集極經 15 kΩ 到地。'],
     c2:['4.7 µF（S → GND）', '突觸輸出電容：傳導物質濃度。'],
-    r5:['200 kΩ（S → GND）', '和 4.7 µF 的 τ ≈ 0.94 s：傳導物質清除。'],
+    r5:['S → GND 電阻（講義圖、PCB 圖 200 kΩ；我們的 excitatory 板絲印 100K-R15）', '和 4.7 µF 決定 S 放電的 τ（200 kΩ 時 0.94 s，100 kΩ 時 0.47 s）：傳導物質清除。'],
     d2:['D2 1N4148', 'S → Post：只送正向電流（陽離子通道）。'],
     r6:['D2 → Post／S → Post 的電阻', 'Excitatory：PCB 沒有這顆（直線），講義圖畫 100 kΩ。Inhibitory：100 kΩ。'],
     bat:['1.5 V 電池', 'Inhibitory：− 接 S、+ 接 Q1 射極，讓 Q1 能把 S 拉到 0 V 以下（E_Cl 低於靜止）。']
@@ -285,7 +285,7 @@
           '反推：Pre 的 AP 至少要 0.55 V × (R1<sub>eff</sub> + 100 kΩ)/100 kΩ + 0.45 V = ' + L(function(){ return fV(0.55 * (r1() + 1e5) / 1e5 + 0.45); }));
       }
       if(/^sy\.(q1|r4|c2|r5|d2|r6|bat)$/.test(name)){
-        h.push('S 的時間常數：τ = 4.7 µF × 200 kΩ = 0.94 s（Post 也接在 S 上時會再快一點）',
+        h.push('S 的時間常數：τ = 4.7 µF × ' + fR(AM.st.r5 || 200e3) + ' = ' + (4.7e-6 * (AM.st.r5 || 200e3)).toFixed(2) + ' s（Post 也接在 S 上時會再快一點）',
           'Q1 電流 ≈ β × I<sub>C</sub>(Q2)，上限由 Q1 那顆 1 kΩ（Excitatory）決定',
           '現在 Q1 集極電流：' + L(function(){ var c = CUR['sy.q1']; return c ? fI(-c[0]) : '—'; }) + '；' + vn('SY.S') + ' = ' + L(function(){ return fV(V('SY.S')); }));
         if(st.syn === 'exc') h.push('S 的天花板 ≈ V+ − V<sub>EC,sat</sub>(Q1) − I·1 kΩ；P1 ≈ S − V<sub>D2</sub>（PCB 沒有 100 kΩ）。10-21 我們的板子：EPSP 頂在約 6.5 V＝飽和');

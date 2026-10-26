@@ -535,7 +535,8 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
         <div class="fsbox schbox"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><p class="small" style="margin:0"><b>#2-2</b>（n = 0）</p><svg data-trueap="0" role="img" aria-label="#2-2 真正的 AP 完整電路圖"></svg></div>
         <div class="fsbox schbox" style="margin-top:10px"><button class="fsbtn" type="button" data-fs>⤢ 全螢幕</button><p class="small" style="margin:0"><b>#2-3</b>（以 n = 2 為例）</p><svg data-trueap="2" role="img" aria-label="#2-3 真正的 AP 完整電路圖，n = 2"></svg></div>
       </div></details>
-<details id="t10" class="card"><summary>真正的 AP 電路（只加、可拆）<span class="hint">每顆的用途</span></summary><div class="body">
+<details id="t10" class="card wide"><summary>真正的 AP 電路（只加、可拆）<span class="hint">每顆的用途；點開每一顆看從假設開始的推導</span></summary><div class="body">
+        <p class="small"><b>怎麼讀</b>：上面的表是總覽。下面每一顆都可以點開，順序都是：要解決什麼問題 → 先假設什麼 → 為什麼算這個變數 → 算式（參數從哪來）→ 模擬對照。數字預設 V+ = 7.8 V（HW2 用的別組電池；我們的電池 10-21 量到 8.44 V，結論一樣，數字差約 10 %）。模擬對照用的是本頁的引擎（engine.js），只接 Stimulator + Leak，不夾探棒。</p>
         <div class="tbl"><table>
           <tr><th>加什麼</th><th>夾在哪</th><th>為什麼</th></tr>
           <tr><td>22 kΩ</td><td>ST.Q ↔ ST.R（Q<sub>pass</sub> E–B）</td><td>消除 6 µA 漏電，靜止點不隨 n 改變</td></tr>
@@ -546,13 +547,117 @@ svg .bb-part:hover{filter:drop-shadow(0 0 2px #1e5e8c)}
           <tr><td>560 kΩ × n</td><td>V+ → 每個 Passive unit（#2-3）</td><td>每段膜的靜止都是 1.19 V，被動鏈不會把 active 端拉低</td></tr>
           <tr><td>V+ 線</td><td>Stimulator V+ → FI.V+（#2-3）</td><td>Passive PCB 底板沒串 V+</td></tr>
         </table></div>
-<div class="calc">靜止：(7.8 − Vm)/330k = Vm/100k + Vm/156k + 約 0.2 µA → Vm ≈ 1.19 V
+
+        <details class="more"><summary>0　共同的背景：三條電晶體規則（後面每一顆都用到）</summary>
+          <ol class="small">
+            <li><b>導通門檻</b>：矽電晶體的 B–E（或 PNP 的 E–B）接面要約 0.5–0.65 V 才有明顯電流。二極體 1N4148 也一樣，電流小時約 0.3–0.5 V。這是矽 PN 接面的性質，不是這塊板子特有的。</li>
+            <li><b>指數關係</b>：電晶體的電流 I<sub>C</sub> ≈ I<sub>S</sub> · e<sup>V<sub>BE</sub>/V<sub>T</sub></sup>，V<sub>T</sub> = kT/q ≈ 25.85 mV（室溫）。換算：<b>V<sub>BE</sub> 每少約 60 mV，電流少 10 倍</b>（25.85 mV × ln 10 = 59.5 mV）。所以「差 0.4 V」不是少一點，而是少約 10<sup>6.6</sup> 倍。</li>
+            <li><b>放大倍數 β</b>：I<sub>C</sub> = β · I<sub>B</sub>。模擬用 2N4403 β = 150、2N3904 β = 200（模型參數；2N4403 規格書的範圍約 100–300，每顆不同）。</li>
+          </ol>
+          <p class="small">另外兩條電路規則：歐姆定律 I = V／R；KCL（流進一個節點的電流 = 流出的電流）。電容的電壓不能瞬間改變：dV/dt = I／C。</p>
+        </details>
+
+        <details class="more"><summary>22 kΩ（Q<sub>pass</sub> E–B）：為什麼一顆電阻就能消掉 6 µA 漏電</summary>
+          <p class="small"><b>要解決的問題</b>：SW 放開時，Stimulator 還是一直送約 6 µA 進 Vm。Vm 被墊到約 0.63 V，剛好在 FI 門檻附近，所以不按也會自己冒小峰，沒有穩定的靜止電位。</p>
+          <p class="small"><b>先看 Stimulator 怎麼接</b>（照 PCB 追線，引擎 engine.js 就是照這個接）：</p>
+          <ul class="small">
+            <li>V+ → SW → 可變電阻 pot → 7 kΩ → ST.Q。</li>
+            <li>Q<sub>pass</sub>（PNP）：射極 ST.Q、基極 ST.R、集極 = 輸出（接 Vm）。</li>
+            <li>Q<sub>sense</sub>（PNP）：射極 <b>V+（SW 之前，PCB 實際）</b>、基極 ST.Q、集極 ST.R。講義電路圖畫在 SW 之後。</li>
+            <li>ST.R → 7 kΩ → GND。</li>
+          </ul>
+          <p class="small"><b>按下時它怎麼當電流源</b>：電流走 pot + 7 kΩ 進 ST.Q，再從 Q<sub>pass</sub> 流到 Vm。pot + 7 kΩ 上的壓降一到約 0.65 V，Q<sub>sense</sub> 就打開，把 Q<sub>pass</sub> 的基極往上拉、限制它。所以電流被鎖在 I ≈ 0.65 V／(pot + 7 kΩ)，和 Vm 無關。</p>
+          <p class="small"><b>放開時漏電從哪來</b>（為什麼要算 Q<sub>sense</sub> 的基極電流）：SW 放開後 pot 那條斷了，但 Q<sub>sense</sub> 的射極接在 V+，不經過 SW，所以它還是可以打開。它打開需要基極電流，這個基極電流從 ST.Q 流出去。ST.Q 只接三個東西：斷掉的 pot、Q<sub>sense</sub> 的基極、Q<sub>pass</sub> 的射極。所以<b>這個基極電流唯一的出口是 Q<sub>pass</sub></b>，而 Q<sub>pass</sub> 的集極就是 Stimulator 的輸出。漏電 = Q<sub>sense</sub> 的基極電流。要知道它多大，先算 Q<sub>sense</sub> 的集極電流，再除以 β：</p>
+<div class="calc">假設：V_EB(Q_sense) ≈ 0.65 V，V_EB(Q_pass) ≈ 0.53 V（電流只有幾 µA，比按下時小），β = 150
+ST.Q = V+ − V_EB(sense)        = 7.8 − 0.65 = 7.15 V
+ST.R = ST.Q − V_EB(pass)       = 7.15 − 0.53 = 6.62 V
+I_C(sense) = ST.R / 7 kΩ       = 6.62 / 7k  = 0.946 mA   （Q_sense 集極經 ST.R 的 7 kΩ 到地）
+I_B(sense) = I_C / β           = 0.946 mA / 150 = 6.3 µA  ← 這就是漏電
+Vm（只接 Leak 100 kΩ）= 6.3 µA × 100 kΩ = 0.63 V
+模擬：漏電 6.27 µA、Vm 0.627 V、ST.R 6.623 V、V_EB(pass) 0.524 V</div>
+          <p class="small"><b>22 kΩ 做了什麼</b>：把 22 kΩ 夾在 Q<sub>pass</sub> 的 E–B（ST.Q ↔ ST.R），等於替這 6.3 µA 開了第二個出口：ST.Q → 22 kΩ → ST.R → 7 kΩ → GND，不經過輸出。問題是電流會走哪一條？兩條並聯，電壓一樣，都是 Q<sub>pass</sub> 的 V<sub>EB</sub>。所以要算的變數是：<b>這 6.3 µA 全部走 22 kΩ 時，V<sub>EB</sub> 會是多少？那個 V<sub>EB</sub> 下 Q<sub>pass</sub> 還能漏多少？</b></p>
+<div class="calc">全部走 22 kΩ：V_EB(pass) = 6.6 µA × 22 kΩ = 0.146 V        （模擬 0.146 V）
+原本漏電時：  V_EB(pass) = 0.524 V，電流 6.27 µA
+差 0.524 − 0.146 = 0.378 V → 電流少 10^(0.378 / 0.0595) ≈ 10^6.4 倍
+Q_pass 剩下的漏電 ≈ 6.27 µA / 2.5×10^6 ≈ 2.5 pA  → Vm ≈ 0.25 µV ≈ 0
+模擬：Vm 0.000 V，Q_pass 電流 0.00 µA</div>
+          <p class="small">換句話說：22 kΩ 沒有讓漏電消失（Q<sub>sense</sub> 一樣耗約 1 mA 的電池電流，基極電流也還在），它只是<b>改道</b>，讓漏電走 ST.R → 地，不進細胞。電阻夠小，Q<sub>pass</sub> 的 V<sub>EB</sub> 就被壓在門檻以下，Q<sub>pass</sub> 關掉。</p>
+          <p class="small"><b>為什麼是 22 kΩ，不是更大或更小</b>：按下時這顆也會分走電流：V<sub>EB</sub>(pass) ≈ 0.58 V，0.58 V／22 kΩ ≈ 26 µA 不進細胞。所以電阻越小，消漏電越乾淨，但能送出的刺激電流越少。模擬（V+ 7.8 V，只接 Leak）：</p>
+          <div class="tbl"><table>
+            <tr><th>E–B 電阻</th><th class="num">放開：V<sub>EB</sub>(pass)</th><th class="num">按下時分走</th><th class="num">pot 0 → 10 kΩ 的輸出電流</th></tr>
+            <tr><td>不加（PCB）</td><td class="num">0.524 V（漏 6.3 µA）</td><td class="num">0</td><td class="num">99 → 45 µA（含 6 µA 漏電）</td></tr>
+            <tr><td>47 kΩ</td><td class="num">約 0.31 V</td><td class="num">約 13 µA</td><td class="num">86 → 33 µA</td></tr>
+            <tr><td class="t-ok">22 kΩ</td><td class="num">0.146 V</td><td class="num">約 26 µA</td><td class="num">72 → 19 µA</td></tr>
+            <tr><td>12 kΩ</td><td class="num">約 0.08 V</td><td class="num">約 48 µA</td><td class="num">51 → 2.6 µA</td></tr>
+          </table></div>
+          <p class="small">22 kΩ 在兩邊取中間：漏電已經是 pA 級，刺激電流還有 19–72 µA。#2-3 要量很小的 I<sub>min</sub> 時改 12 kΩ，最小可以到 2.6 µA。47 kΩ 時漏電仍然約 nA 級（0.31 V 比 0.524 V 低 0.21 V，少約 3000 倍），也能用。</p>
+          <p class="small muted">表中「輸出電流」的上限在 pot 0、只接 Leak 時被 Stimulator 的最高輸出電壓（約 7.1 V）削掉，所以 pot 0 的數字偏低。漏電、V<sub>EB</sub> 是模擬值；手算假設的 0.65 V、0.53 V 是矽接面在這個電流下的典型值。</p>
+        </details>
+
+        <details class="more"><summary>11 kΩ（R13 兩端）：為什麼 FI 要能送 0.6 mA</summary>
+          <p class="small"><b>要解決的問題</b>：原版的「AP」上升速度和被動充電差不多（C2 不成立：看不出再生性）。</p>
+          <p class="small"><b>FI 怎麼接</b>：Vm → 二極體 → 2N3904 基極（FI.B3，經 3 MΩ 到地）；3904 射極 FI.E3 經 100 kΩ 到地；3904 集極拉 2N4403 的基極（FI.B4）；4403 射極 FI.E4 經 R13 接 V+，集極接回 Vm。Vm 升高 → 3904 開 → 4403 開 → 從 V+ 灌電流進 Vm → Vm 更高：這是正回饋，相當於 Na⁺ 通道。</p>
+          <p class="small"><b>為什麼算「最大電流」</b>：4403 全開時，限制電流的只剩 R13。上升速度由電流和膜電容決定（dV/dt = I／C，C = Leak 板的 1 µF）。要算的就是 R13 允許的最大電流：</p>
+<div class="calc">假設：4403 全開時 V_EB + V_CE ≈ 0.6 V；Vm 在門檻附近約 1.2 V；膜電容 C = 1 µF（Leak 板）
+原版 R13 = 100 kΩ： I_max ≈ (7.8 − 1.2 − 0.6) / 100k = 60 µA → dV/dt ≈ 60 V/s
+並 11 kΩ：R13_eff = 100k ∥ 11k = 1/(1/100k + 1/11k) = 9.9 kΩ
+          I_max ≈ (7.8 − 1.2 − 0.6) / 9.9k = 0.61 mA → dV/dt ≈ 610 V/s
+對照：Stimulator 約 90 µA → 被動充電約 90 V/s
+模擬：上升 dV/dt 601 V/s（有 FI）vs 72 V/s（拔掉 FI）</div>
+          <p class="small">有 11 kΩ 時，FI 一打開，上升就比刺激本身快約 8 倍：這就是「過門檻後自己衝上去」。R13 是 PCB 標的 100 kΩ；講義電路圖畫 1 kΩ，所以講義的設計本來就是大電流。</p>
+        </details>
+
+        <details class="more"><summary>680 kΩ（R13 下端 → FI.E3）：為什麼門檻會變成約 1.66 V</summary>
+          <p class="small"><b>要解決的問題</b>：靜止要抬到 1.19 V（見 330 kΩ）。原版 FI 的門檻只有約 0.6 V，靜止一抬高 FI 就一直開著。所以門檻要抬到靜止以上。</p>
+          <p class="small"><b>門檻怎麼決定</b>：FI 由 3904 開關。3904 的射極 FI.E3 原本經 100 kΩ 接地，電位約 0 V。基極要比射極高約 0.5 V 才開，基極又比 Vm 低一個二極體壓降（電流很小，約 0.2 V）。所以門檻 ≈ FI.E3 + 0.5 + 0.2 V。<b>要抬門檻，就要抬 FI.E3</b>。680 kΩ 從 FI.V+（R13 下端，= V+）接到 FI.E3，和原本的 100 kΩ 組成分壓：</p>
+<div class="calc">假設：3904 關著時 FI.E3 只由兩顆電阻分壓決定（沒有其他電流）
+FI.E3 = V+ × 100k / (680k + 100k) = 7.8 × 100/780 = 1.0 V
+門檻 Vm ≈ FI.E3 + V_BE(3904, 剛開始導通 ≈ 0.5) + V_D(二極體, 小電流 ≈ 0.2) ≈ 1.7 V
+原版：FI.E3 ≈ 0 → 門檻 ≈ 0.5 + 0.2 ≈ 0.6–0.7 V
+模擬門檻 1.66 V</div>
+          <p class="small">1.66 V 在靜止 1.19 V 之上 0.47 V：不按不會自己發，按夠久才發（C1 門檻成立）。</p>
+        </details>
+
+        <details class="more"><summary>330 kΩ（V+ → Vm）：靜止電位怎麼算出 1.19 V，為什麼要高於 0.6 V</summary>
+          <p class="small"><b>要解決的問題</b>：AP 之後要有後過極化（C5：低於靜止再慢慢回來）。Slow out 是外向電流（像 K⁺），但它最多只能把 Vm 拉到約 0.6 V：它的 4403 射極接 Vm，要 V<sub>EB</sub> 約 0.55 V 才有電流，再加上 3904 飽和的約 0.05 V。原版靜止電位約 0 V（Leak 是接地的 100 kΩ，E<sub>leak</sub> = 0）。<b>靜止比 Slow out 的極限還低，所以不可能出現「拉到靜止以下」</b>。生理上 E<sub>K</sub> 要比靜止電位更負，才有後過極化，這裡是同一件事。</p>
+          <p class="small"><b>為什麼算靜止電位</b>：要確認抬上去的位置在 Slow out 極限（0.6 V）和 FI 門檻（1.66 V）之間。靜止時沒有電容電流，KCL 只看電阻：從 V+ 經 330 kΩ 流進 Vm 的電流 = 從 Vm 流出去的電流。</p>
+<div class="calc">假設：靜止時 FI、Slow out 的電晶體都關著；22 kΩ 已消掉 Stimulator 漏電
+Vm 往外的路：Leak 100 kΩ 到地；Slow out 的 100 kΩ → SO.S → 56 kΩ 到地（共 156 kΩ）
+KCL：(V+ − Vm)/330k = Vm/100k + Vm/156k  （+ FI 3 MΩ 等小路徑約 0.2 µA）
+Vm = 7.8 × (1/330) / (1/330 + 1/100 + 1/156) = 7.8 × 0.00303 / 0.01944 ≈ 1.22 V
+扣掉小路徑 → 約 1.19 V（模擬 1.19 V；夾 ×1 探棒再多一條 1 MΩ，約 1.14 V）
+後過極化底部 ≈ Slow out 極限 0.05 + 0.54 ≈ 0.59 V（模擬 0.61 V）< 1.19 V ✓</div>
+          <p class="small">這顆就是「把 E<sub>leak</sub> 從 0 V 改成約 1.2 V」：在 Leak 旁邊多一條往 V+ 的路。330 kΩ 怎麼來：把要的 Vm 代回上面的 KCL 反解 R。</p>
+        </details>
+
+        <details class="more"><summary>56 kΩ（SO 的 C1 兩腳）：為什麼 SO.S = 0.36 Vm 能讓 Slow out 靜止時關、AP 時開</summary>
+          <p class="small"><b>要解決的問題</b>：靜止抬到 1.19 V 後，Slow out 會在靜止時就打開，把 Vm 拉回 0.6 V，等於抵銷了 330 kΩ。</p>
+          <p class="small"><b>Slow out 怎麼開</b>：Vm → 100 kΩ → SO.S（C1 1 µF 到地）→ 二極體 → 3904 基極。SO.S 到約 0.62 V（二極體 + V<sub>BE</sub>）時 3904 開，再打開 4403 把 Vm 往下拉。原版 C1 沒有並電阻，靜止時 SO.S 會慢慢充到和 Vm 一樣（1.19 V），超過 0.62 V，所以一直開著。</p>
+          <p class="small"><b>為什麼算 SO.S 的穩態</b>：並 56 kΩ 後，SO.S 是 Vm 的分壓，要確認靜止時低於 0.62 V、AP 時高於 0.62 V：</p>
+<div class="calc">假設：Slow out 關著時，SO.S 只由 100 kΩ 和 56 kΩ 分壓
+SO.S = Vm × 56 / (100 + 56) = 0.36 × Vm
+靜止：0.36 × 1.19 = 0.43 V < 0.62 V → 關 ✓
+AP（Vm ≈ 5 V）：目標 0.36 × 5 = 1.8 V > 0.62 V → 開 ✓
+開的速度：τ = C1 × (100k ∥ 56k) = 1 µF × 36 kΩ = 36 ms → 比 FI 慢，像 K⁺ 通道的延遲</div>
+          <p class="small muted">試過 47 kΩ：n = 4、長按後，8 組隨機參數中有 3 組 FI 和 Slow out 互相抵住，鎖在約 2.9 V；改 56 kΩ 後全部正常。</p>
+        </details>
+
+        <details class="more"><summary>560 kΩ × n（#2-3，V+ → 每個 Passive unit）與 V+ 線</summary>
+          <p class="small"><b>要解決的問題</b>：Passive unit 的靜止是 0 V（100 kΩ 接地）。接在 active 端旁邊，它就是一條拉向 0 V 的 leak，會把 active 端的 1.19 V 拉低（見「為什麼 #2-3 不能用方案 3」）。</p>
+<div class="calc">要的條件：每個 unit 的靜止 = active 端的靜止 → 兩者之間的 10 kΩ 沒有電流
+unit 自己的分壓：V+ × 100k / (100k + R) = 1.19 V
+→ R = 100k × (7.8/1.19 − 1) = 555 kΩ → 用常見值 560 kΩ
+檢查：7.8 × 100/(100 + 560) = 1.18 V ≈ 1.19 V ✓</div>
+          <p class="small"><b>V+ 線</b>：Passive unit 的 PCB 底板沒有把 V+ 那支排針接上去，所以只要 active membrane 疊在 Passive unit 之後，FI 就沒有電源（HW2 #2-3）。要從 Stimulator 的 V+ 拉一條飛線到 FI.V+。</p>
+        </details>
+
+<div class="calc">總表（V+ 7.8 V）
+靜止：(7.8 − Vm)/330k = Vm/100k + Vm/156k + 約 0.2 µA → Vm ≈ 1.19 V
 FI 門檻：FI.E3 = 7.8 × 100/780 = 1.0 V → Vm ≈ 1.0 + 0.5 + 0.2 ≈ 1.7 V（模擬 1.66 V）
 Slow out：SO.S = 1.19 × 56/156 = 0.43 V（要約 0.62 V 才開）→ 靜止時關著
 AP 後最低：Vm ≈ SO.B4 + V_EB ≈ 0.05 + 0.54 = 0.59 V → 後過極化 ≈ 0.6 V
 Passive unit：7.8 × 100/(100 + 560) = 1.18 V ≈ active 端 → 被動鏈靜止時沒有電流</div>
         <p class="small">#2-3 量 Q3 的 I<sub>min</sub> 時，把 22 kΩ 換成 12 kΩ：可變電阻 0–10 kΩ 變成約 51–2.6 µA，涵蓋 n = 0–4 的 I<sub>min</sub>（7.6–44.8 µA）。12 kΩ 一樣消除漏電，靜止不變。</p>
-        <p class="small muted">試過 47 kΩ：n = 4、長按後，8 組隨機參數中有 3 組 FI 和 Slow out 互相抵住，鎖在約 2.9 V；改 56 kΩ 後全部正常。</p>
       </div></details>
 <details id="t11" class="card wide"><summary>驗證：每個應該有 AP 的情境<span class="hint">C1–C6</span></summary><div class="body">
         <div class="tbl"><table>
@@ -719,7 +824,7 @@ void loop(){
     <h2>#2-1 Passive</h2>
     <p class="sub">Stimulator → 5 個 Passive unit（1 µF ∥ 100 kΩ，隔 10 kΩ）。CH1 = 第 1 個，CH2 = 最後一個（或中間）。</p>
     <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">電池電壓、理想版本</span></summary>
-      <div class="grp" data-show="adv"><div class="gt">理想版本</div>
+      <div class="grp" data-show="adv"><div class="gt">起點（原版、我的或理想版本）</div>
         <div class="btns" data-presets="s21"></div>
         <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
@@ -731,7 +836,9 @@ void loop(){
     <details class="sec"><summary><span class="secn">1</span>電路焊接<span class="hint">外加或更換電阻</span></summary>
       <div class="grp">
         <p class="small muted" data-show="basic" style="margin:0">原版電路，這裡沒有要改的。</p>
-        <div class="row" data-show="adv"><label>Stimulator 漏電</label><select data-k="qs"><option value="pcb">原樣</option><option value="rx">並 22 kΩ</option></select></div>
+        <div data-show="adv"><div class="row"><label>Q_pass E–B</label><select data-k="qs"><option value="pcb">不加（原樣）</option><option value="rx">並電阻（下一列的值）</option></select></div>
+          <div class="row"><label>Q_pass E–B 電阻</label><span><input type="number" data-k="rxv" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+          <p class="small muted" style="margin:2px 0 0">直接輸入電阻值（kΩ）。參考值：真 AP 22；量 I<sub>min</sub> 12。</p></div>
       </div>
     </details>
     <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">板子怎麼接</span></summary>
@@ -790,7 +897,7 @@ void loop(){
     <p class="sub" data-show="basic">助教給的電路：R2 = 1 MΩ、R13 = 100 kΩ。CH1 = Vm。</p>
     <p class="sub" data-show="adv">自由調整。點電路圖上的紅色接點可以斷開排針。</p>
     <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
-      <div class="grp" data-show="adv"><div class="gt">理想版本</div>
+      <div class="grp" data-show="adv"><div class="gt">起點（原版、我的或理想版本）</div>
         <div class="btns" data-presets="s22"></div>
         <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
@@ -801,15 +908,19 @@ void loop(){
     </details>
     <details class="sec"><summary><span class="secn">1</span>電路焊接<span class="hint">外加或更換電阻</span></summary>
       <div class="grp"><div class="gt">電阻</div>
-        <div class="row"><label>R13（Q4）</label><select data-k="r13" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option><option value="1e4" data-show="adv">10 kΩ</option><option value="1e3" data-show="adv">1 kΩ</option></select></div>
+        <div class="row" data-show="basic"><label>R13（Q4）</label><select data-k="r13" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option><option value="1e4" data-show="adv">10 kΩ</option><option value="1e3" data-show="adv">1 kΩ</option></select></div>
         <div data-show="adv">
-          <div class="row"><label>FI 3904 E 電阻</label><select data-k="rfe" data-num><option value="5e4">50 kΩ</option><option value="1e5">100 kΩ</option><option value="3e5">300 kΩ</option><option value="8.2e5">820 kΩ</option><option value="3e6">3 MΩ</option></select></div>
-          <div class="row"><label>Q_pass E–B 並</label><select data-k="qs"><option value="pcb">不加</option><option value="rx">22 kΩ（真 AP）</option><option value="rx10">10 kΩ</option><option value="sw">Q_sense 改接（對照）</option></select></div>
-          <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="11e3">11 kΩ（真 AP）</option><option value="1e5">100 kΩ</option><option value="1e3">1 kΩ</option></select></div>
-          <div class="row"><label>R13 下端→FI.E3</label><select data-k="rf" data-num><option value="0">不加</option><option value="680e3">680 kΩ（真 AP）</option><option value="1e6">1 MΩ</option><option value="470e3">470 kΩ</option></select></div>
-          <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="330e3">330 kΩ（真 AP）</option><option value="470e3">470 kΩ</option></select></div>
-          <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="56e3">56 kΩ（真 AP）</option><option value="47e3">47 kΩ</option></select></div>
-          <div class="row"><label>Vm → GND（多加 leak）</label><select data-k="rl" data-num><option value="0">不加</option><option value="1e6">1 MΩ</option><option value="220e3">220 kΩ</option><option value="47e3">47 kΩ</option></select></div>
+          <div class="row"><label>R13（Q4）</label><span><input type="number" data-k="r13" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+          <div class="row"><label>FI 3904 E 電阻</label><span><input type="number" data-k="rfe" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+          <div class="row"><label>Slow out R2</label><span><input type="number" data-k="so_r2" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+          <div class="row"><label>Q_pass E–B</label><select data-k="qs"><option value="pcb">不加（原樣）</option><option value="rx">並電阻（下一列的值）</option><option value="sw">Q_sense 改接（對照）</option></select></div>
+          <div class="row"><label>Q_pass E–B 電阻</label><span><input type="number" data-k="rxv" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+          <div class="row"><label>R13 兩端並</label><span><input type="number" data-k="r13p" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+          <div class="row"><label>R13 下端 → FI.E3</label><span><input type="number" data-k="rf" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+          <div class="row"><label>V+ → Vm</label><span><input type="number" data-k="rb" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+          <div class="row"><label>SO C1 並</label><span><input type="number" data-k="rs" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+          <div class="row"><label>Vm → GND（多加 leak）</label><span><input type="number" data-k="rl" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+          <p class="small muted" style="margin:2px 0 0">直接輸入電阻值（kΩ），外加電阻 0 = 不加。參考值：R13 PCB 100、講義 1；FI E 電阻 100；Slow out R2 1000（助教指定 1 MΩ）；真 AP 的外加：Q_pass 22、R13 並 11、R13 下端 680、V+ → Vm 330、SO C1 並 56。</p>
         </div>
       </div>
     </details>
@@ -870,7 +981,7 @@ void loop(){
     <p class="sub" data-show="basic">底板沒串 V+，n ≥ 1 時 FI 要拉飛線才有電。預設「有 V+ 飛線」；「照實：沒飛線」只剩被動反應。CH1 = active 端 Vm。</p>
     <p class="sub" data-show="adv">可以補 V+ 線、換電流源、套用修正。</p>
     <details class="sec" open><summary><span class="secn">0</span>參數檢查<span class="hint">情境、電池電壓</span></summary>
-      <div class="grp" data-show="adv"><div class="gt">理想版本</div>
+      <div class="grp" data-show="adv"><div class="gt">起點（原版、我的或理想版本）</div>
         <div class="btns" data-presets="s23"></div>
         <p class="small muted" data-preset-note style="margin:4px 0 0"></p>
       </div>
@@ -884,12 +995,16 @@ void loop(){
         <p class="small muted" data-show="basic" style="margin:0">原版電路，這裡沒有要改的。</p>
       </div>
       <div class="grp" data-show="adv"><div class="gt">外加電阻</div>
-        <div class="row"><label>Q_pass E–B 並</label><select data-k="qs"><option value="pcb">不加</option><option value="rx">22 kΩ（真 AP）</option><option value="rx12">12 kΩ（量 I_min）</option></select></div>
-        <div class="row"><label>R13 兩端並</label><select data-k="r13p" data-num><option value="0">不加</option><option value="11e3">11 kΩ（真 AP）</option></select></div>
-        <div class="row"><label>R13 下端→FI.E3</label><select data-k="rf" data-num><option value="0">不加</option><option value="680e3">680 kΩ（真 AP）</option></select></div>
-        <div class="row"><label>V+ → Vm</label><select data-k="rb" data-num><option value="0">不加</option><option value="330e3">330 kΩ（真 AP）</option></select></div>
-        <div class="row"><label>SO C1 並</label><select data-k="rs" data-num><option value="0">不加</option><option value="56e3">56 kΩ（真 AP）</option></select></div>
-        <div class="row"><label>V+ → 每個 unit</label><select data-k="ru" data-num><option value="0">不加</option><option value="560e3">560 kΩ（真 AP）</option></select></div>
+        <div class="row"><label>R13</label><span><input type="number" data-k="r13" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row"><label>Slow out R2</label><span><input type="number" data-k="so_r2" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row"><label>Q_pass E–B</label><select data-k="qs"><option value="pcb">不加（原樣）</option><option value="rx">並電阻（下一列的值）</option></select></div>
+          <div class="row"><label>Q_pass E–B 電阻</label><span><input type="number" data-k="rxv" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row"><label>R13 兩端並</label><span><input type="number" data-k="r13p" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row"><label>R13 下端 → FI.E3</label><span><input type="number" data-k="rf" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row"><label>V+ → Vm</label><span><input type="number" data-k="rb" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row"><label>SO C1 並</label><span><input type="number" data-k="rs" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <div class="row"><label>V+ → 每個 unit</label><span><input type="number" data-k="ru" data-scale="1000" min="0" step="any" style="width:6em"> kΩ</span></div>
+        <p class="small muted" style="margin:2px 0 0">直接輸入電阻值（kΩ），外加電阻 0 = 不加。參考值：R13 PCB 100；Slow out R2 1000；真 AP：Q_pass 22（量 I<sub>min</sub> 用 12）、R13 並 11、R13 下端 680、V+ → Vm 330、SO C1 並 56、每個 unit 560。</p>
       </div>
     </details>
     <details class="sec"><summary><span class="secn">2</span>模塊組合<span class="hint">unit 數、飛線、拔板子</span></summary>
@@ -946,11 +1061,11 @@ void loop(){
 
 </main>
 </div>
-<script src="../active-membrane-sim/schematic.js?v=20261022c"></script>
-<script src="../active-membrane-sim/engine.js?v=20261022c"></script>
-<script src="inspect.js?v=20261022c"></script>
-<script src="../circuits/circuits.js?v=20261022c"></script>
-<script src="app.js?v=20261022c"></script>
-<script src="stimulator.js?v=20261022c"></script>
+<script src="../active-membrane-sim/schematic.js?v=20261026a"></script>
+<script src="../active-membrane-sim/engine.js?v=20261026a"></script>
+<script src="inspect.js?v=20261026a"></script>
+<script src="../circuits/circuits.js?v=20261026a"></script>
+<script src="app.js?v=20261026a"></script>
+<script src="stimulator.js?v=20261026a"></script>
 </body>
 </html>

@@ -5,7 +5,7 @@
    the same coordinates); HW3 has no pluggable contacts, so those are plain wires here.
 
    var s = SynSchematic(svg, {syn:'exc'|'inh', post:'passive'|'active'});
-   s.setState(st)     engine state: pre / postMem variants, MEM (engine variant table), r1p, r6, bat, vbat, swA, swB, vplus
+   s.setState(st)     engine state: pre / postMem variants, MEM (engine variant table), r1p, r6, r5, bat, vbat, swA, swB, vplus
                       (everything that differs from the kit circuit is drawn in --mod)
    s.setValues(fn)    fn(code) -> volts for every tagged node (engine node codes: SA.P, A.FI.B3, SY.S, P1, ...)
    s.setCurrents({A, B})  Stimulator output currents (A)
@@ -329,10 +329,10 @@
         txt(520, YT - 10, 'S', 'btk', 'middle'); nv('SY.S', 530, YT - 24);
         L([[520, YT], [640, YT]]);
         dot(560, YT); capV(560, YT, YG, 175, 'sy.c2'); txt(548, 172, '4.7 µF', 'lab', 'end'); dot(560, YG);
-        dot(615, YT); resV(615, YT, YG, 150, 210, 'sy.r5'); txt(625, 196, '200 kΩ', 'lab'); dot(615, YG);
+        dot(615, YT); resV(615, YT, YG, 150, 210, 'sy.r5'); out.push('<text class="lab" data-r5 x="625" y="196">200 kΩ</text>'); dot(615, YG);
         diodeH(YT, 640, 662, 646, 662, 'sy.d2'); txt(640, YT + 24, 'D2', 'lab'); tag('SY.D', 'D', 668, YT + 24);
         L([[662, YT], [670, YT]]);
-        g('data-mod="r6" class="mod"'); resH(YT, 670, 720, 675, 705, 'sy.r6'); txt(690, YT - 12, '100 kΩ', 'lab', 'middle'); eg();
+        g('data-mod="r6" class="mod"'); resH(YT, 670, 720, 675, 705, 'sy.r6'); out.push('<text class="lab" data-r6t x="690" y="' + (YT - 12) + '" text-anchor="middle">100 kΩ</text>'); eg();
         g('data-mod="r6w"'); L([[670, YT], [720, YT]]); eg();
       } else {
         bjt(474, yq1, 'p', 0, true, 'sy.q1'); txt(500, yq1 + 30, 'Q1 4403', 'lab');     /* emitter at the top */
@@ -343,7 +343,7 @@
         resV(488, yq1 + 30, YG, 230, 276, 'sy.r4'); txt(498, 266, '15 kΩ', 'lab'); dot(488, YG); tag('SY.C1', 'C1', 494, 196);
         L([[540, YT], [650, YT]]);
         dot(580, YT); capV(580, YT, YG, 175, 'sy.c2'); txt(568, 172, '4.7 µF', 'lab', 'end'); dot(580, YG);
-        dot(630, YT); resV(630, YT, YG, 150, 210, 'sy.r5'); txt(640, 196, '200 kΩ', 'lab'); dot(630, YG);
+        dot(630, YT); resV(630, YT, YG, 150, 210, 'sy.r5'); out.push('<text class="lab" data-r5 x="640" y="196">200 kΩ</text>'); dot(630, YG);
         resH(YT, 650, 720, 662, 702, 'sy.r6'); txt(682, YT - 12, '100 kΩ', 'lab', 'middle');
       }
       eg();
@@ -403,7 +403,7 @@
     function qa(s){ return Array.prototype.slice.call(svg.querySelectorAll(s)); }
     function show(sel, on){ qa(sel).forEach(function(e){ e.style.display = on ? '' : 'none'; }); }
     function fmt(v){ if(v == null || isNaN(v)) return ''; return Math.abs(v) < 0.1 ? (v * 1e3).toFixed(1) + ' mV' : v.toFixed(2) + ' V'; }
-    function fmtR(x){ return x >= 1e6 ? (x / 1e6) + ' MΩ' : (x / 1e3) + ' kΩ'; }
+    function fmtR(x){ return x >= 1e6 ? +(x / 1e6).toPrecision(4) + ' MΩ' : +(x / 1e3).toPrecision(4) + ' kΩ'; }
     function fmtS(x){ return x >= 1e6 ? (x / 1e6) + 'M' : x >= 1e3 ? (x / 1e3) + 'k' : x + 'Ω'; }
     var VAR = {kit:'active membrane：原版', true:'active membrane：HW2 真正的 AP'};
     /* add-on parts of a membrane variant: Stimulator rx when qs = 'rx', the membrane's r13p / rf / rs / rb */
@@ -637,6 +637,8 @@
         });
         show('[data-mod="r1p"]', !!st.r1p); var t = q('[data-r1p]'); if(t) t.textContent = st.r1p ? '並 ' + fmtR(st.r1p) : '';
         show('[data-mod="r6"]', !!st.r6); show('[data-mod="r6w"]', !st.r6);
+        var r6t = q('[data-r6t]'); if(r6t && st.r6){ r6t.textContent = fmtR(st.r6); r6t.setAttribute('class', st.r6 === 1e5 ? 'lab' : 'modt'); }
+        qa('[data-r5]').forEach(function(e){ e.textContent = fmtR(st.r5 || 200e3); e.setAttribute('class', st.r5 && st.r5 !== 200e3 ? 'modt' : 'lab'); });
         var b = q('[data-mod="bat"]');
         if(b){ show('[data-mod="bat"]', st.bat !== 'short'); b.setAttribute('class', st.bat === 'open' ? 'ghost' : ''); show('[data-mod="batshort"]', st.bat === 'short');
           q('[data-vbat]').textContent = st.bat === 'on' ? (st.vbat || 1.5) + ' V' : st.bat === 'open' ? '拔掉（開路）' : '拔掉'; q('[data-vbat]').setAttribute('class', st.bat === 'on' ? 'lab' : 'modt'); }

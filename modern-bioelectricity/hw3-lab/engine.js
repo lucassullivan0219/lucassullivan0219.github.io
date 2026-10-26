@@ -31,6 +31,7 @@ var SynEngine = function(){
     r1p:0,                   /* add-on across the synapse's 820k input resistor (0 = none) */
     r13A:0,                  /* Pre's FI emitter resistor R13 (0 = the PCB's 100k; the handout FI draws 1k) */
     r6:0,                    /* excitatory: resistor between D2 and the post cell; PCB = 0 (straight trace), handout 100k */
+    r5:0,                    /* S -> GND resistor next to the 4.7 uF (0 = 200k: handout schematic and PCB image R5; our excitatory board's silkscreen says 100K-R15, photo 2026-10-26) */
     stimA:true, stimB:true,  /* Stimulator B plugged in */
     rprobe:1e6, ch1:'A.Vm', ch2:'P1'
   };
@@ -108,7 +109,7 @@ var SynEngine = function(){
       C.push([IDX['SY.B'], -1, 10e-9, 'sy.c1']); r('SY.B', 'GND', 1e5, 'sy.r2');
       Q.push(['n', IDX['SY.C2'], IDX['SY.B'], IDX['SY.E2'], M3904, 'sy.q2']); r('SY.E2', 'GND', 30e3, 'sy.r3');
       Q.push(['p', IDX['SY.S'], IDX['SY.C2'], IDX['SY.E1'], M4403, 'sy.q1']); r('SY.E1', vs, 1e3, 'sy.r4');
-      C.push([IDX['SY.S'], -1, 4.7e-6, 'sy.c2']); r('SY.S', 'GND', 200e3, 'sy.r5');
+      C.push([IDX['SY.S'], -1, 4.7e-6, 'sy.c2']); r('SY.S', 'GND', st.r5 || 200e3, 'sy.r5');
       D.push([IDX['SY.S'], IDX['SY.D'], 'sy.d2']); r('SY.D', post, st.r6 || 0.05, 'sy.r6');
     } else if(st.syn === 'inh'){
       /* inhibitory synapse PCB: same input stage; Q1 E -> 1.5 V battery (+ at E, - at S), Q1 C -> 15k -> GND,
@@ -120,7 +121,7 @@ var SynEngine = function(){
       Q.push(['p', IDX['SY.C1'], IDX['SY.C2'], IDX['SY.E1'], M4403, 'sy.q1']); r('SY.C1', 'GND', 15e3, 'sy.r4');
       if(st.bat === 'on') BAT.push([IDX['SY.S'], IDX['SY.E1'], st.vbat, 1, 'sy.bat']);   /* - at S, + at Q1 E */
       else if(st.bat === 'short') r('SY.S', 'SY.E1', 0.05, 'sy.bat');
-      C.push([IDX['SY.S'], -1, 4.7e-6, 'sy.c2']); r('SY.S', 'GND', 200e3, 'sy.r5');
+      C.push([IDX['SY.S'], -1, 4.7e-6, 'sy.c2']); r('SY.S', 'GND', st.r5 || 200e3, 'sy.r5');
       r('SY.S', post, 100e3, 'sy.r6');
     }
     if(st.post === 'passive'){
