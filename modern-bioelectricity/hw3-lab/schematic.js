@@ -219,8 +219,8 @@
       box(332, 86, 86, 362, 'LK', 'Leak', 370, 210, true);
       L([[370, YT], [370, 130]]); dot(370, YT);
       L([[344, 130], [396, 130]]); dot(370, 130);
-      capV(344, 130, YG, 290, p + '.lkc'); txt(370, 302, '1µF', 'lab', 'middle');
-      resV(396, 130, YG, 250, 330, p + '.lkr'); txt(370, 345, '100k', 'lab', 'middle');
+      capV(344, 130, YG, 290, p + '.lkc'); txt(370, 302, '1µF', 'lab', 'middle', ' data-lkc="' + p + '"');
+      resV(396, 130, YG, 250, 330, p + '.lkr'); txt(370, 345, '100k', 'lab', 'middle', ' data-lkr="' + p + '"');
       dot(344, YG); dot(396, YG);
       /* Fast inward */
       box(428, 86, 262, 362, 'FI', 'Fast inward', 600, 439);
@@ -406,10 +406,15 @@
     function fmtR(x){ return x >= 1e6 ? +(x / 1e6).toPrecision(4) + ' MΩ' : +(x / 1e3).toPrecision(4) + ' kΩ'; }
     function fmtS(x){ return x >= 1e6 ? (x / 1e6) + 'M' : x >= 1e3 ? (x / 1e3) + 'k' : x + 'Ω'; }
     var VAR = {kit:'active membrane：原版', true:'active membrane：HW2 真正的 AP'};
-    /* add-on parts of a membrane variant: Stimulator rx when qs = 'rx', the membrane's r13p / rf / rs / rb */
-    function variant(p, sp, m, on){
+    /* add-on parts of a membrane variant: Stimulator rx when qs = 'rx' (qs = the engine's qsA / qsB override),
+       the membrane's r13p / rf / rs / rb, and the leak of nlk stacked Passive Units */
+    function variant(p, sp, m, on, qs, nlk){
       m = m || {};
-      show('[data-mod="' + sp + '-rx"]', on && m.qs === 'rx'); var t = q('[data-mv="' + sp + '-rx"]'); if(t) t.textContent = '22k';
+      show('[data-mod="' + sp + '-rx"]', on && (qs || m.qs) === 'rx'); var t = q('[data-mv="' + sp + '-rx"]'); if(t) t.textContent = '22k';
+      nlk = nlk || m.nlk || 1;
+      var lc = q('[data-lkc="' + p + '"]'), lr = q('[data-lkr="' + p + '"]');
+      if(lc){ lc.textContent = nlk > 1 ? nlk + 'µF' : '1µF'; lc.setAttribute('class', nlk > 1 ? 'modt' : 'lab'); }
+      if(lr){ lr.textContent = nlk > 1 ? +(100 / nlk).toPrecision(3) + 'k' : '100k'; lr.setAttribute('class', nlk > 1 ? 'modt' : 'lab'); }
       ['r13p', 'rf', 'rs', 'rb'].forEach(function(k){
         show('[data-mod="' + p + '-' + k + '"]', on && !!m[k]);
         var e = q('[data-mv="' + p + '-' + k + '"]'); if(e) e.textContent = m[k] ? fmtS(m[k]) : '';
@@ -629,8 +634,8 @@
       flow:flow, hitAt:hitAt, netOf:netOf, highlight:highlight,
       setState:function(st){
         var MEM = st.MEM || {};
-        variant('A', 'SA', MEM[st.pre], true);
-        variant('B', 'SB', MEM[st.postMem], !passive);
+        variant('A', 'SA', MEM[st.pre], true, st.qsA);
+        variant('B', 'SB', MEM[st.postMem], !passive, st.qsB, st.nlkB);
         ['A', 'B'].forEach(function(p){
           var e = q('[data-var="' + p + '"]'), v = p === 'A' ? st.pre : st.postMem; if(!e) return;
           e.textContent = VAR[v] || ''; e.setAttribute('class', v === 'kit' ? 'lab' : 'modt');
@@ -652,7 +657,10 @@
           var bl = q('#' + p[0] + '-blade'); if(!bl) return;
           bl.setAttribute('x2', p[1] ? 74 : 88); bl.setAttribute('y2', p[1] ? 58 : 62);
         });
-        var r13 = q('[data-r13="A"]'); if(r13){ r13.textContent = 'R13 ' + (st.r13A ? fmtS(st.r13A) : '100k'); r13.setAttribute('class', st.r13A ? 'modt' : 'lab'); r13.setAttribute('text-anchor', 'end'); }
+        [['A', st.r13A], ['B', st.r13B]].forEach(function(p){
+          var r13 = q('[data-r13="' + p[0] + '"]'); if(!r13) return;
+          r13.textContent = 'R13 ' + (p[1] ? fmtS(p[1]) : '100k'); r13.setAttribute('class', p[1] ? 'modt' : 'lab'); r13.setAttribute('text-anchor', 'end');
+        });
         readVis();
       },
       setValues:function(fn){

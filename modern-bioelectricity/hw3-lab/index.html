@@ -422,7 +422,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
     <h4>造成的問題</h4>
     <ul>
       <li><b>電壓是 Stimulator A 的電池</b>：V+ 經 Pre 那一疊板子的排針送到突觸板。本頁預設 8.44 V（我們 10-21 用電表量的）；HW2 別組的板子量到 7.8 V。電路圖是 9 V。</li>
-      <li><b>模擬中看不出差別</b>：S 的上限從約 9 V 變成約 V+，但 S 最多只到約 2.4 V（820 kΩ 並 1 MΩ），Q1 的電流由 Q2 決定，不是由電池決定。只有 S 接近電池電壓時才會有影響：10-21 我們並 100 kΩ 時 EPSP 頂在約 6.5 V，這時天花板就是 V+ 減掉 Q1、1 kΩ 和 D2 的壓降，換成 9 V 電池會高約 0.5 V（推測）。</li>
+      <li><b>模擬中看不出差別</b>：S 的上限從約 9 V 變成約 V+，但 S 最多只到約 2.4 V（820 kΩ 並 1 MΩ），Q1 的電流由 Q2 決定，不是由電池決定。只有 S 接近電池電壓時才會有影響：10-21 我們試過並 100 kΩ（後來不用）時 EPSP 頂在約 6.5 V，這時天花板就是 V+ 減掉 Q1、1 kΩ 和 D2 的壓降，換成 9 V 電池會高約 0.5 V（推測）。</li>
       <li>突觸板和 Stimulator A 共用一顆電池，突觸 Q1 的電流也從這顆電池出。</li>
     </ul>
     <p class="ev">PCB 佈線圖：1K-R4 下端走紅線到左下 2×2 排針、方形焊墊對角那支（HW2 追出來是 V+）。板上沒有電池座。</p>
@@ -448,7 +448,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 <section class="region textreg" id="r1">
   <div>
   <h2>1 摘要與注意事項</h2>
-  <div class="cmp"><p class="small" style="margin:0 0 6px">我的電路只有 #3-1 不同：820 kΩ 兩端並了 100 kΩ。其他三個電路和原版相同。左邊的「原版／我的／理想」切換只影響下面的模擬區；這張表三種一起看。</p><div class="tbl"><table><tr><th>項目</th><th class="k">原版</th><th class="m">我的</th><th class="i">理想：真正的突觸（預設）</th><th class="i">理想：只改 FI</th><th class="i">理想：HW2 真 AP</th></tr><tr><td><b>Pre active membrane</b></td><td>原版（AP 約 1.9 V）</td><td class="same">同原版</td><td>HW2 真 AP（約 5.4 V）</td><td>R13 換 1 kΩ（AP 約 7.6 V）</td><td>HW2 真 AP</td></tr><tr><td><b>突觸 820 kΩ</b></td><td>原樣</td><td><b>並 100 kΩ</b>（#3-1，2026-10-21）</td><td>並 1.5 MΩ</td><td>原樣</td><td>原樣</td></tr><tr><td><b>Post active membrane（#3-2、#3-4）</b></td><td>原版</td><td class="same">同原版</td><td>HW2 真 AP</td><td>原版</td><td>HW2 真 AP</td></tr><tr><td><b>D2 → Post、Q1 電源</b></td><td>PCB：D2 直接接、Q1 用排針 V+</td><td class="same">同原版</td><td>同原版</td><td>同原版</td><td>同原版</td></tr><tr><td><b>結果（#3-1 #1 EPSP）</b></td><td>沒有（Q2 不導通）</td><td>約 6.5 V，飽和（實測）</td><td>約 0.91 V，能疊加</td><td>約 0.07–0.22 V</td><td>沒有</td></tr></table></div></div>
+  <div class="cmp"><p class="small" style="margin:0 0 6px">我的電路 = 實際量的那一版。<b>#3-1、#3-3（2026-10-27）</b>：Pre 的 FI R13 換成 1 kΩ，其他和原版相同。<b>#3-2、#3-4（2026-10-28）</b>：兩塊 FI 的 R13 都是 1 kΩ；Stimulator A、B 的 Q<sub>sense</sub> 基極到 Q<sub>pass</sub> 基極夾 22 kΩ；#3-2 的 excitatory 突觸 D2 後面串 100 kΩ；#3-4 的 Post 疊 2 塊 Passive unit。10-21 試過的「820 kΩ 並 100 kΩ」已經不用。左邊的「原版／我的／理想」切換只影響下面的模擬區；這張表三種一起看。</p><div class="tbl"><table><tr><th>項目</th><th class="k">原版</th><th class="m">我的</th><th class="i">理想：真正的突觸（預設）</th><th class="i">理想：只改 FI</th><th class="i">理想：HW2 真 AP</th></tr><tr><td><b>Pre active membrane</b></td><td>原版（AP 約 1.9 V）</td><td><b>R13 換 1 kΩ</b>（AP 實測約 6.8 V）</td><td>HW2 真 AP（約 5.4 V）</td><td>R13 換 1 kΩ（AP 約 7.6 V）</td><td>HW2 真 AP</td></tr><tr><td><b>Stimulator A、B</b></td><td>PCB（放開時漏約 6 µA）</td><td><b>#3-2、#3-4 夾 22 kΩ</b>；#3-1、#3-3 同原版</td><td>夾 22 kΩ（HW2 真 AP 的一部分；#3-1、#3-3 的 B 除外）</td><td>原版</td><td>同左</td></tr><tr><td><b>突觸 820 kΩ</b></td><td>原樣</td><td class="same">同原版</td><td>並 1.5 MΩ</td><td>原樣</td><td>原樣</td></tr><tr><td><b>Post active membrane（#3-2、#3-4）</b></td><td>原版</td><td><b>R13 換 1 kΩ</b>；#3-4 疊 2 塊 Passive unit</td><td>HW2 真 AP</td><td>原版</td><td>HW2 真 AP</td></tr><tr><td><b>Post Passive unit（#3-1、#3-3）</b></td><td>5 塊</td><td>#3-1 4 塊（模擬仍是 5 塊）；#3-3 沒記錄</td><td>5 塊</td><td>5 塊</td><td>5 塊</td></tr><tr><td><b>D2 → Post、Q1 電源</b></td><td>PCB：D2 直接接、Q1 用排針 V+</td><td><b>#3-2 D2 後串 100 kΩ</b>；Q1 用排針 V+</td><td>同原版</td><td>同原版</td><td>同原版</td></tr><tr><td><b>結果（#3-1 #1 EPSP）</b></td><td>沒有（Q2 不導通）</td><td>0.88 V，能疊加（10-27 實測；模擬約 0.07–0.22 V）</td><td>約 0.91 V，能疊加</td><td>約 0.07–0.22 V</td><td>沒有</td></tr></table></div></div>
   <details class="r1row"><summary>量測注意<span class="hint">4 項 · 怎麼量、量哪裡、繳交規定、節點</span></summary><div class="cards">
 <details id="t3" class="card"><summary>量測注意事項<span class="hint">五參數、延遲、示波器</span></summary><div class="body">
         <ul>
@@ -567,7 +567,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 <div class="eqs">
 <div class="eq"><div class="m">\[V_{pre} \approx 0.6 \cdot \frac{100\,\mathrm{k} + R_1}{100\,\mathrm{k}} + V_{D1}\]</div><div class="note">Q2 開始導通 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
 <div class="eq"><div class="m">\[R_1 = 820\,\mathrm{k}: \approx 6\,\mathrm{V}; \qquad R_1 = 820\,\mathrm{k} \parallel 1.5\,\mathrm{M} = 530\,\mathrm{k}: \approx 4.2\,\mathrm{V}\]</div><div class="note">HW2 真 AP 約 4.8 V 過得去，靜止約 1.0 V 不會 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
-<div class="eq"><div class="m">\[S_{max} \approx V_+ - V_{EC,Q1} - I \times 1\,\mathrm{k\Omega} \approx 7\,\mathrm{V}, \qquad V_{\#1} \approx S - V_{D2}\]</div><div class="note">Excitatory S 上限（V+ 8.44 V、I 約 1 mA）<span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；10-21 並 100 kΩ 實測 EPSP 頂在約 6.5 V，連發時不再升高 <span class="cl cl-obs" title="OBS：實測">OBS</span></div></div>
+<div class="eq"><div class="m">\[S_{max} \approx V_+ - V_{EC,Q1} - I \times 1\,\mathrm{k\Omega} \approx 7\,\mathrm{V}, \qquad V_{\#1} \approx S - V_{D2}\]</div><div class="note">Excitatory S 上限（V+ 8.44 V、I 約 1 mA）<span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；10-21 試過並 100 kΩ（後來不用），實測 EPSP 頂在約 6.5 V，連發時不再升高<span class="cl cl-obs" title="OBS：實測">OBS</span></div></div>
 <div class="eq"><div class="m">\[I_{D2} \gt 0 \iff S \gt V_{post} + 0.45\,\mathrm{V}\]</div><div class="note">Excitatory 進 Post 的條件 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
 <div class="eq"><div class="m">\[S_{min} \approx -1.5 + V_{CE,sat} + 15\,\mathrm{k} \times I \approx -1.4\,\mathrm{V}, \qquad I_{max} \approx \frac{S + 1.5 - 0.1}{15\,\mathrm{k}} \approx 90\,\mu\mathrm{A}\]</div><div class="note">Inhibitory S 下限（E_rev）與 Q1 最大電流（S = 0 V 時）<span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
 <div class="eq"><div class="m">\[S \approx V_{CE,sat} + 15\,\mathrm{k} \times I \approx 0.1\,\mathrm{V}\]</div><div class="note">拔掉電池（跳線）：E_rev ≈ 0 V <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
@@ -609,11 +609,12 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 <div class="eq"><div class="m">\[R_p = 100\,\mathrm{k}: \; R_{1,eff} = 89\,\mathrm{k\Omega} \;\Rightarrow\; V_{B,Q2} \approx 1.45 \times \tfrac{100}{189} = 0.77\,\mathrm{V}\]</div><div class="note"><span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；實測 10-21 約 0.93 V <span class="cl cl-obs" title="OBS：實測">OBS</span>；模擬 1.02 V <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
 <div class="eq"><div class="m">\[R_p = 200\,\mathrm{k}: \; R_{1,eff} = 161\,\mathrm{k\Omega} \;\Rightarrow\; V_{B,Q2} \approx 1.45 \times \tfrac{100}{261} = 0.56\,\mathrm{V}\]</div><div class="note"><span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；模擬 0.71 V、#1 EPSP 約 0.84 V <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
 </div>
-          <p class="small">並 100 kΩ 時 Q2.B 比門檻高約 0.2–0.3 V，Q2 電流大 10<sup>3</sup>–10<sup>5</sup> 倍，Q1 全開，S 一下就充到天花板（約 V+ 減掉 Q1 的壓降）。這就是 10-21 量到的約 6.5 V、<b>飽和</b>的 EPSP：大小由天花板決定，不由輸入決定，所以第二個 AP 加不上去（MB-0075）。要看疊加，R<sub>p</sub> 要選在門檻附近（150–200 kΩ）。</p>
+          <p class="small">並 100 kΩ 時 Q2.B 比門檻高約 0.2–0.3 V，Q2 電流大 10<sup>3</sup>–10<sup>5</sup> 倍，Q1 全開，S 一下就充到天花板（約 V+ 減掉 Q1 的壓降）。這就是 10-21 試並 100 kΩ（後來不用）時量到的約 6.5 V、<b>飽和</b>的 EPSP：大小由天花板決定，不由輸入決定，所以第二個 AP 加不上去（MB-0075）。要看疊加，R<sub>p</sub> 要選在門檻附近（150–200 kΩ）。</p>
           <p class="small"><b>方向 B：Pre 的 R13 換成講義的 1 kΩ</b>（加大 AP；突觸不動）。FI 能送 mA 級電流。見下一張「只改 FI」。</p>
           <div class="eqs">
 <div class="eq"><div class="m">\[V_{pre} \approx 7.6\,\mathrm{V} \;\Rightarrow\; V_{B,Q2} \approx (7.6 - 0.45) \times 0.109 \approx 0.78\,\mathrm{V}\]</div><div class="note">AP 7.6 V 是模擬 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；手算 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；模擬 Q2.B 0.72 V、#1 EPSP 約 0.07–0.2 V，不飽和、能疊加 <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
 </div>
+          <p class="small"><b>最後用的是方向 B</b>（2026-10-27 起）：實測 Pre AP 約 6.8 V、#1 EPSP 約 0.88 V，連發會疊加，但小於線性相加 <span class="cl cl-obs" title="OBS：實測">OBS</span>。實測比模擬的 0.07–0.2 V 大很多，原因還沒查清。</p>
           <p class="small"><b>方向 C：兩邊都改</b>（HW2 真 AP ＋ 820 kΩ 並 1.5 MΩ）。見「改法：820 kΩ 兩端並 1.5 MΩ」。</p>
           <div class="eqs">
 <div class="eq"><div class="m">\[R_{1,eff} = 820\,\mathrm{k} \parallel 1.5\,\mathrm{M} = 530\,\mathrm{k\Omega} \;\Rightarrow\; V_{B,Q2} = (5.42 - 0.45) \times \tfrac{100}{630} \approx 0.79\,\mathrm{V}\]</div><div class="note"><span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span>；模擬 0.79 V、#1 EPSP 約 0.91 V <span class="cl cl-ai" title="AI：推論、手算或模擬">AI</span></div></div>
@@ -627,12 +628,12 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
             <tr><th>情境（模擬，V+ 8.44 V，按 SW A 20 ms）</th><th class="num">Q2 基極</th><th class="num">S 峰值</th><th class="num">#1 最高</th><th class="num">0.5 s 後 S</th></tr>
             <tr><td>原版，R15 200 kΩ</td><td class="num">0.20 V</td><td class="num">0.001 V</td><td class="num">沒有 EPSP</td><td class="num">0</td></tr>
             <tr><td>原版，R15 100 kΩ</td><td class="num">0.20 V</td><td class="num">0.000 V</td><td class="num">沒有 EPSP</td><td class="num">0</td></tr>
-            <tr><td>並 100 kΩ，R15 200 kΩ</td><td class="num">1.02 V</td><td class="num">4.72 V</td><td class="num">4.19 V</td><td class="num">1.95 V</td></tr>
-            <tr><td>並 100 kΩ，R15 100 kΩ</td><td class="num">1.02 V</td><td class="num">4.55 V</td><td class="num">4.02 V</td><td class="num">1.73 V</td></tr>
+            <tr><td>並 100 kΩ（10-21 試法），R15 200 kΩ</td><td class="num">1.02 V</td><td class="num">4.72 V</td><td class="num">4.19 V</td><td class="num">1.95 V</td></tr>
+            <tr><td>並 100 kΩ（10-21 試法），R15 100 kΩ</td><td class="num">1.02 V</td><td class="num">4.55 V</td><td class="num">4.02 V</td><td class="num">1.73 V</td></tr>
             <tr><td>R13 1 kΩ，R15 200 kΩ</td><td class="num">0.72 V</td><td class="num">1.13 V</td><td class="num">0.69 V</td><td class="num">1.05 V</td></tr>
             <tr><td>R13 1 kΩ，R15 100 kΩ</td><td class="num">0.72 V</td><td class="num">1.02 V</td><td class="num">0.58 V</td><td class="num">0.93 V</td></tr>
           </table></div>
-          <p class="small">「#1 最高」是絕對值，含 Stimulator B 漏電墊起來的基線（原版約 0.2 V；並 100 kΩ 時模型的 Pre 會自己冒小峰，基線約 0.5–0.6 V）。模擬並 100 kΩ 的 EPSP（約 3.6 V）比 10-21 實測的約 6.5 V 小，差在哪裡還沒查。可以在「理想」裡把 S → GND 改成 100 kΩ 自己看。</p>
+          <p class="small">「#1 最高」是絕對值，含 Stimulator B 漏電墊起來的基線（原版約 0.2 V；並 100 kΩ 時模型的 Pre 會自己冒小峰，基線約 0.5–0.6 V）。模擬並 100 kΩ 的 EPSP（約 3.6 V）比 10-21 實測的約 6.5 V 小，差在哪裡沒查（這個試法後來不用）。可以在「理想」裡把 S → GND 改成 100 kΩ 自己看。</p>
         </details>
       </div></details>
 <details id="t9" class="card"><summary>電路和生理的對應</summary><div class="body">
@@ -659,7 +660,7 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
           <tr><td>2.2 kΩ</td><td class="num">6.56 V（6.34）</td><td class="num">0.63 V</td><td class="num">0.79 V</td><td class="num">約 0（7.0 V：16 mV）</td></tr>
           <tr><td class="t-ok">1 kΩ（講義）</td><td class="num">7.57 V（6.37）</td><td class="num">0.72 V</td><td class="num">1.13 V</td><td class="num">221 mV（7.0 V：73 mV）</td></tr>
         </table></div>
-        <p class="small">V+ 8.44 V；括號是 V+ 7.0 V。8.44 V 時模型的 Pre 每秒自己冒約 7 個小峰，所以 8.44 V 的 EPSP 可能包含自發峰的疊加；7.0 V 的 73 mV 是單一 AP 的。和「820 kΩ 並 100 kΩ」（EPSP 約 6.5 V、飽和）比，只改 FI 的 EPSP 小很多、不會飽和，比較像真的突觸；但 #3-2 一個或兩個 EPSP 可能推不動 Post（沒算）。R13 = 1 kΩ 時 FI 峰值電流約 7 mA，4403 和 1/4 W 電阻都撐得住（推測）。</p>
+        <p class="small">V+ 8.44 V；括號是 V+ 7.0 V。8.44 V 時模型的 Pre 每秒自己冒約 7 個小峰，所以 8.44 V 的 EPSP 可能包含自發峰的疊加；7.0 V 的 73 mV 是單一 AP 的。這就是我們實際做的：#3-1、#3-3 從 2026-10-27 起只換 Pre，#3-2、#3-4（10-28）Post 也換。實測 #1 EPSP 約 0.88 V，比模擬大很多；#3-2 要第 4 個 EPSP 才觸發 Post。和 10-21 試過的「820 kΩ 並 100 kΩ」（EPSP 約 6.5 V、飽和，後來不用）比，只改 FI 的 EPSP 不會飽和、會疊加。R13 = 1 kΩ 時 FI 峰值電流約 7 mA，4403 和 1/4 W 電阻都撐得住（推測）。</p>
       </div></details>
 <details id="t6" class="card wide"><summary>改法：820 kΩ 兩端並 1.5 MΩ<span class="hint">兩塊突觸板都一樣</span></summary><div class="body">
         <div class="tbl"><table>
@@ -1072,10 +1073,10 @@ kbd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(
 
 </main>
 </div>
-<script src="engine.js?v=20261026c"></script>
-<script src="schematic.js?v=20261026c"></script>
-<script src="inspect.js?v=20261026c"></script>
-<script src="../circuits/circuits.js?v=20261026c"></script>
-<script src="app.js?v=20261026c"></script>
+<script src="engine.js?v=20261029a"></script>
+<script src="schematic.js?v=20261029a"></script>
+<script src="inspect.js?v=20261029a"></script>
+<script src="../circuits/circuits.js?v=20261029a"></script>
+<script src="app.js?v=20261029a"></script>
 </body>
 </html>

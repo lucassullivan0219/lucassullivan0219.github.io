@@ -14,9 +14,11 @@
   var CTNAME = {kit:'原版', mine:'我的', ideal:'理想'};
   var CTDESC = {kit:'老師現行對全班指定的接法（只有一種）。', mine:'我們組實際做的電路（只有一種）。', ideal:'模擬出最符合科學證據或我的要求的電路（可以有很多種，不一定會做）。'};
   /* the basic controls use mem (both membranes) instead of pre / postMem */
-  function basicOf(st){ return {mem:st.pre, r1p:st.r1p || 0, r6:st.r6 || 0, vsyn:st.vsyn || 0, r13A:st.r13A || 0}; }
+  function basicOf(st){ return {mem:st.pre, r1p:st.r1p || 0, r6:st.r6 || 0, vsyn:st.vsyn || 0, r13A:st.r13A || 0, r13B:st.r13B || 0, qsA:st.qsA || '', qsB:st.qsB || '', nlkB:st.nlkB || 0}; }
+  /* engine keys copied from a region's state (r13B, qsA, qsB, nlkB: our 10-28 build, no control of their own) */
+  var EKEYS = ['vplus', 'vsyn', 'pre', 'postMem', 'r1p', 'r13A', 'r13B', 'qsA', 'qsB', 'nlkB', 'r6', 'r5', 'bat', 'syn', 'post', 'rpotA', 'rpotB'];
 
-  var BASE = {vplus:8.44, vsyn:0, r13A:0, rpotA:700, rpotB:700, pre:'kit', postMem:'kit', mem:'kit', r1p:0, r6:0, r5:0, bat:'on',
+  var BASE = {vplus:8.44, vsyn:0, r13A:0, r13B:0, qsA:'', qsB:'', nlkB:0, rpotA:700, rpotB:700, pre:'kit', postMem:'kit', mem:'kit', r1p:0, r6:0, r5:0, bat:'on',
     wA:20, nA:3, isiA:100, wB:10, offB:-50, ch1:'A.Vm', ch2:'P1'};
   /* the 'true synapse' set: HW2 true-AP add-ons on both membranes, 1.5 Mohm across the synapse's 820k */
   var TRUE_SYN = {pre:'true', postMem:'true', r1p:1.5e6, rpotA:0, rpotB:0, wA:15};
@@ -72,7 +74,7 @@
   }
   function applyEngine(s){
     var st = engineState(s), E = s.E;
-    ['vplus', 'vsyn', 'pre', 'postMem', 'r1p', 'r13A', 'r6', 'r5', 'bat', 'syn', 'post', 'rpotA', 'rpotB', 'ch1', 'ch2'].forEach(function(k){ E.st[k] = st[k]; });
+    EKEYS.concat(['ch1', 'ch2']).forEach(function(k){ E.st[k] = st[k]; });
     E.st.swA = s.hold.A || s.on.A; E.st.swB = s.hold.B || s.on.B;
     E.build();
     if(INSP && inspSim === s) INSP.rerender();
@@ -568,7 +570,7 @@
     if(btn.disabled) return;
     var node = /^(P\d|SY\.S)$/.test(st.ch2) ? st.ch2 : 'P1', w = u.wA / 1e3;
     var list = ISIS.filter(function(x){ return x / 1e3 > w + 0.02; });
-    var E = SynEngine(); ['vplus', 'vsyn', 'pre', 'postMem', 'r1p', 'r13A', 'r6', 'r5', 'bat', 'syn', 'post', 'rpotA', 'rpotB'].forEach(function(k){ E.st[k] = st[k]; });
+    var E = SynEngine(); EKEYS.forEach(function(k){ E.st[k] = st[k]; });
     E.st.ch1 = 'A.Vm'; E.st.ch2 = node; E.st.swA = false; E.st.swB = false; E.build(); E.powerOn(); E.settle(2.0);
     var snap = E.snapshot(), pts = [], one = null;
     function run(isi){

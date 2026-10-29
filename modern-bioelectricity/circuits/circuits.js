@@ -35,10 +35,14 @@ var CIRCUITS = (function(){
   function tune(){ return Array.prototype.slice.call(arguments).map(function(k){ return T[k]; }); }
   var KIT3 = {pre:'kit', postMem:'kit', r1p:0, r13A:0, r6:0, vsyn:0};
   var TRUE_SYN = {pre:'true', postMem:'true', r1p:1.5e6, r13A:0};
+  /* our HW3 boards as measured: Pre FI R13 = 1 kohm on 2026-10-27 (#3-1, #3-3); on 2026-10-28 (#3-2, #3-4) also the Post FI R13,
+     and 22 kohm from Q_sense base to Q_pass base on Stimulators A and B */
+  var MINE27 = Object.assign({}, KIT3, {r13A:1e3});
+  var MINE28 = Object.assign({}, KIT3, {r13A:1e3, r13B:1e3, qsA:'rx', qsB:'rx', rxv:22e3});
 
   return {
     TUNE:T,                                                           /* tunable values with their purpose (SPIKE LAB) */
-    updated:'2026-10-22',
+    updated:'2026-10-29',
     battery:{mine:8.44, note:'我們的 9 V 電池，2026-10-21 電表量 8.44 V'},
     c21:{hw:2, title:'#2-1 Passive',
       kit:{st:{}, zh:'助教給的電路：Stimulator → 5 個 Passive unit。'},
@@ -70,7 +74,7 @@ var CIRCUITS = (function(){
          note:'真正的 AP 外加元件，加上每個 Passive unit 一顆 560 kΩ 接 V+、FI 拉 V+ 線：n = 0–4 靜止都是 1.19 V，都有門檻、all-or-none、後過極化。I_min = 7.6／13.4／20.9／31.0／44.8 µA；量 I_min 時把 Q_pass E–B 改成 12 kΩ。'}]},
     c31:{hw:3, title:'#3-1 Excitatory → passive',
       kit:{st:KIT3, zh:'助教的電路：Pre 是原版 active membrane；820 kΩ : 100 kΩ 分壓讓 Q2 不導通，沒有 EPSP。'},
-      mine:{st:Object.assign({}, KIT3, {r1p:1e5}), zh:'我們 2026-10-21 的改法：820 kΩ 兩端並 100 kΩ。實測 EPSP 約 6.5 V（飽和）。'},
+      mine:{st:MINE27, zh:'我們 2026-10-27 量的：Pre 的 FI R13 換成講義畫的 1 kΩ，突觸是原 PCB（沒加電阻），Post 接 4 塊 Passive unit（模擬固定 5 塊）。實測 Pre AP 約 6.8 V，#1 EPSP 約 0.88 V，第 4 塊約 0.22 V。'},
       ideal:[
         {id:'fi1k', zh:'只改 FI（R13 1 kΩ）', en:'FI only (R13 1 kΩ)', st:Object.assign({}, KIT3, {r13A:1e3}), tune:[],
          note:'Pre 的 R13 從 100 kΩ 換成講義畫的 1 kΩ，突觸不動：AP 約 1.8 → 7.6 V，#1 EPSP 約 0.07–0.22 V（不飽和，能疊加）。'},
@@ -80,7 +84,7 @@ var CIRCUITS = (function(){
          note:'HW2 真正的 AP ＋ 820 kΩ 兩端並 1.5 MΩ：一個 AP 在 #1 產生約 0.91 V、#5 約 0.24 V 的 EPSP；多個 AP 會疊加。'}]},
     c32:{hw:3, title:'#3-2 Excitatory → active',
       kit:{st:KIT3, zh:'助教的電路：兩塊 active membrane 都是原版，Pre 推不動突觸，沒有 EPSP。'},
-      mine:{st:KIT3, zh:'和原版相同。'},
+      mine:{st:Object.assign({}, MINE28, {r6:1e5}), zh:'我們 2026-10-28 量的：兩塊 FI 的 R13 都換 1 kΩ；Stimulator A、B 的 Q_sense 基極到 Q_pass 基極夾 22 kΩ；excitatory 突觸 D2 後面串 100 kΩ（講義畫的）。實測第 4 個 EPSP 才觸發 Post AP；先按 B 時第 2 個就觸發。'},
       ideal:[
         {id:'hw2', zh:'HW2 真 AP', en:'HW2 true AP', st:Object.assign({}, KIT3, {pre:'true', postMem:'true'}), tune:[],
          note:'兩塊都用 HW2 真正的 AP、突觸板不加東西：EPSP 傳不到 Post。'},
@@ -88,7 +92,7 @@ var CIRCUITS = (function(){
          note:'加 1.5 MΩ：一個 EPSP 讓 Post 從 1.23 V 升到 1.43 V（不到門檻），兩個 EPSP（間隔 50 ms–1.2 s）就觸發 Post AP。'}]},
     c33:{hw:3, title:'#3-3 Inhibitory → passive',
       kit:{st:KIT3, zh:'助教的電路：Pre 只到約 1.5–2.2 V，突觸不導通，沒有 IPSP。'},
-      mine:{st:KIT3, zh:'和原版相同。'},
+      mine:{st:MINE27, zh:'我們 2026-10-27 量的：Pre 的 FI R13 換 1 kΩ，突觸是原 PCB。實測 Pre AP 約 6.5 V，#1 IPSP 約 −28 mV（decay 約 0.33 s）；連續放電疊到約 −36 mV。'},
       ideal:[
         {id:'hw2', zh:'HW2 真 AP', en:'HW2 true AP', st:Object.assign({}, KIT3, {pre:'true', postMem:'true'}), tune:[],
          note:'Pre 用 HW2 真正的 AP：一個 AP 只有約 −20 mV。'},
@@ -96,7 +100,7 @@ var CIRCUITS = (function(){
          note:'加 1.5 MΩ：一個 AP 在 #1 約 −37 mV，多個 AP 疊加；拔掉電池 IPSP 就消失。'}]},
     c34:{hw:3, title:'#3-4 Inhibitory → active',
       kit:{st:KIT3, zh:'助教的電路：沒有 IPSP；按住 B 只有一個峰，量不到頻率變化。'},
-      mine:{st:KIT3, zh:'和原版相同。'},
+      mine:{st:Object.assign({}, MINE28, {nlkB:2}), zh:'我們 2026-10-28 量的：兩塊 FI 的 R13 換 1 kΩ；Stimulator A、B 夾 22 kΩ；Post 那疊插 2 塊 Passive unit（leak 變 50 kΩ ∥ 2 µF）。實測 1 個 IPSP 擋掉 1 個 Post AP；Pre 連發時 Post 6.6 → 6.0 Hz；電池換跳線後兩種效果都沒有了。'},
       ideal:[
         {id:'hw2', zh:'HW2 真 AP', en:'HW2 true AP', st:Object.assign({}, KIT3, {pre:'true', postMem:'true'}), tune:[],
          note:'兩塊都用 HW2 真正的 AP、突觸板不加東西。'},

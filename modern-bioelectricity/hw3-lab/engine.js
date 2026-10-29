@@ -30,6 +30,9 @@ var SynEngine = function(){
     vbat:1.5,
     r1p:0,                   /* add-on across the synapse's 820k input resistor (0 = none) */
     r13A:0,                  /* Pre's FI emitter resistor R13 (0 = the PCB's 100k; the handout FI draws 1k) */
+    r13B:0,                  /* Post's FI R13, as r13A (our #3-2 / #3-4 boards: 1k, 2026-10-28) */
+    qsA:'', qsB:'',          /* Stimulator A / B: '' = as the membrane variant says; 'rx' = rxv from Q_sense base to Q_pass base (= Q_pass E-B) */
+    nlkB:0,                  /* Post leak: Passive Units stacked on the Post membrane (0 = the variant's, 1) */
     r6:0,                    /* excitatory: resistor between D2 and the post cell; PCB = 0 (straight trace), handout 100k */
     r5:0,                    /* S -> GND resistor next to the 4.7 uF (0 = 200k: handout schematic and PCB image R5; our excitatory board's silkscreen says 100K-R15, photo 2026-10-26) */
     stimA:true, stimB:true,  /* Stimulator B plugged in */
@@ -83,7 +86,7 @@ var SynEngine = function(){
       Q.push(['n', IDX[p + '.FI.B4'], IDX[p + '.FI.B3'], IDX[p + '.FI.E3'], M3904, p + '.fi3904']);
       r(p + '.FI.E3', 'GND', 1e5, p + '.fire');
       Q.push(['p', IDX[vm], IDX[p + '.FI.B4'], IDX[p + '.FI.E4'], M4403, p + '.fi4403']);
-      r(p + '.FI.E4', 'V+', p === 'A' && st.r13A ? st.r13A : 1e5, p + '.r13');
+      r(p + '.FI.E4', 'V+', (p === 'A' ? st.r13A : st.r13B) || 1e5, p + '.r13');
       r(vm, p + '.SO.S', 1e5, p + '.sor1');                                                /* Slow out */
       C.push([IDX[p + '.SO.S'], -1, 1e-6, p + '.soc']);
       D.push([IDX[p + '.SO.S'], IDX[p + '.SO.B3'], p + '.sod']);
@@ -97,9 +100,10 @@ var SynEngine = function(){
       if(m.rs) r(p + '.SO.S', 'GND', m.rs, p + '.rs');
     }
     var mA = memOf(st.pre), mB = memOf(st.postMem);
+    if(st.nlkB) mB = Object.assign({}, mB, {nlk:st.nlkB});
     var post = st.post === 'passive' ? 'P1' : 'B.Vm';
     var vs = st.vsyn ? 'VS' : 'V+';
-    stim('SA', 'A.Vm', st.swA && st.stimA, st.rpotA, mA.qs);
+    stim('SA', 'A.Vm', st.swA && st.stimA, st.rpotA, st.qsA || mA.qs);
     membrane('A', mA);
     if(st.syn === 'exc'){
       /* excitatory synapse PCB: 820k, D1, Q2 2N3904 (10 nF || 100k at B, 30k at E), Q1 2N4403 (1k to V+),
@@ -130,7 +134,7 @@ var SynEngine = function(){
         if(k < 5) r('P' + k, 'P' + (k + 1), 1e4, 'ps' + k);
       }
     } else membrane('B', mB);
-    if(st.stimB) stim('SB', post, st.swB, st.rpotB, st.post === 'passive' ? 'pcb' : mB.qs);
+    if(st.stimB) stim('SB', post, st.swB, st.rpotB, st.qsB || (st.post === 'passive' ? 'pcb' : mB.qs));
     r(st.ch1 || 'A.Vm', 'GND', st.rprobe, 'p1');
     if(st.ch2 && IDX[st.ch2] !== undefined) r(st.ch2, 'GND', st.rprobe, 'p2');
   }

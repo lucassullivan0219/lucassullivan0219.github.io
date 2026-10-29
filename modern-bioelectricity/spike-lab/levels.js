@@ -83,7 +83,7 @@ var LEVELS = [
    hints:['The synapse board takes two spots: left = Pre, right = Post.', 'The Base Board must start right next to the synapse’s right side.']},
   {id:'31q3', ch:'HW3', code:'#3-1 Q3', title:'Find the EPSP', kind:'measure', cid:'c31', probes:['A.Vm', 'P1'],
    goal:'Fire one Pre AP (SW A, 20 ms). How big is the EPSP at the first unit (CH2 peak minus baseline)?', measure:{ch:1, metric:'amp', unit:'V'},
-   hints:['KIT shows no EPSP at all; MY BUILD has the 100 kΩ fix and saturates at ~6.5 V.', 'Amplitude = peak − the level before the press.']},
+   hints:['KIT shows no EPSP at all. MY BUILD has Pre R13 = 1 kΩ and the plain synapse PCB: the model gives about 0.07–0.22 V, our real board 0.88 V (2026-10-27).', 'Amplitude = peak − the level before the press.']},
   {id:'31q4', ch:'HW3', code:'#3-1 Q4', title:'Two in a row', kind:'explain', cid:'c31',
    quiz:{q:'Two Pre APs close together give a bigger EPSP than two far apart. Why?',
      opts:['The synapse capacitor (4.7 µF ∥ 200 kΩ, τ ≈ 1 s) has not discharged yet when the second AP arrives: temporal summation.', 'The second AP is bigger.', 'The Base Board stores charge.', 'The Stimulator remembers the last press.'], ans:0,

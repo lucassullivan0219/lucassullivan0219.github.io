@@ -31,13 +31,13 @@ var SL = (function(){
             {id:'mine', grp:'KIT', my:true, label:'8.44 V', st:{vplus:8.44}, desc:'Our cell: 8.44 V on the multimeter, 2026-10-21.'}]},
     stim:{name:'Stimulator', silk:'Neuron Stimulator', color:'#ff5a4f', kind:'board', blurb:'Current source. Hold SW to inject current; the pot sets how much. Always the top board.',
       vers:[{id:'kit', grp:'KIT', my:true, label:'Kit', desc:'As built: Q_sense sits before SW, so it leaks ~6 µA while SW is released.'},
-            {id:'add', grp:'IDEAL', label:'+22 kΩ', tune:['rxv'], desc:'22 kΩ clipped across Q_pass E–B: no leak, no trace cut.'},
+            {id:'add', grp:'IDEAL', label:'+22 kΩ', tune:['rxv'], desc:'22 kΩ clipped across Q_pass E–B (Q_sense base to Q_pass base): no leak, no trace cut. Our Stimulators A and B in #3-2 / #3-4 (2026-10-28).'},
             {id:'bb', grp:'IDEAL', label:'Breadboard', desc:'Rebuilt on a breadboard: Q_sense after SW, a 1N4148 at the output, its own 9 V.'},
             {id:'src', grp:'IDEAL', label:'Ideal source', tune:['isrc'], desc:'An ideal current source while SW is held (no leak, pot ignored).'}]},
     fi:{name:'Fast Inward', silk:'Fast Inward', color:'#ffd23f', kind:'board', blurb:'Na⁺-like: a regenerative inward current above threshold.',
       vers:[{id:'kit', grp:'KIT', my:true, label:'Kit', desc:'R13 = 100 kΩ: too weak, the "AP" only reaches ~2 V.'},
             {id:'true', grp:'IDEAL', label:'True AP', tune:['r13p', 'rf'], desc:'A resistor across R13 and one from R13 to FI.E3: strong, with a real threshold.'},
-            {id:'r13', grp:'IDEAL', label:'R13 1 kΩ', desc:'R13 swapped for the 1 kΩ the handout draws.'}]},
+            {id:'r13', grp:'IDEAL', label:'R13 1 kΩ', desc:'R13 swapped for the 1 kΩ the handout draws. Our HW3 boards: Pre on 2026-10-27, Pre and Post on 10-28.'}]},
     so:{name:'Slow Out', silk:'Slow Out.', color:'#b98cff', kind:'board', blurb:'K⁺-like: a slow outward current that repolarizes.',
       vers:[{id:'kit', grp:'KIT', my:true, label:'Kit', desc:'R2 = 1 MΩ (the TA’s part on every board).'},
             {id:'true', grp:'IDEAL', label:'True AP', tune:['rs'], desc:'A resistor across C1: Slow Out stays off at rest and opens during the AP.'}]},
@@ -48,7 +48,7 @@ var SL = (function(){
       vers:[{id:'kit', grp:'KIT', my:true, label:'Kit', desc:'Used in #2-1, #2-3, #3-1 and #3-3.'}]},
     syne:{name:'Excitatory Synapse', silk:'Excitatory Synapse', color:'#ff8fa3', kind:'base', span:2, blurb:'Pre plugs into its left side, Post into its right side.',
       vers:[{id:'kit', grp:'KIT', label:'Kit', desc:'820 kΩ : 100 kΩ divider: with the kit Pre, Q2 never turns on.'},
-            {id:'mine', grp:'KIT', my:true, label:'+100 kΩ', st:{r1p:1e5}, desc:'Our fix of 2026-10-21: 100 kΩ across the 820 kΩ. The EPSP saturates at ~6.5 V.'},
+            {id:'mine', grp:'KIT', my:true, label:'+100 kΩ after D2', st:{r6:1e5}, desc:'Our board in #3-2 (2026-10-28): 100 kΩ in series after D2, as the handout draws. #3-1 (10-27) used the plain PCB.'},
             {id:'true', grp:'IDEAL', label:'True synapse', tune:['r1p'], st:{r1p:1.5e6}, desc:'A resistor across the 820 kΩ, sized so the EPSP passes without saturating.'}]},
     syni:{name:'Inhibitory Synapse', silk:'Inhibitory Synapse', color:'#7fd1ff', kind:'base', span:2, blurb:'Pre on the left, Post on the right. Clip the 1.5 V cell on for an IPSP.',
       vers:[{id:'kit', grp:'KIT', my:true, label:'Kit', desc:'Same input stage as the excitatory board; Q1 drives S through the 1.5 V cell.'},
@@ -266,14 +266,14 @@ var SL = (function(){
     R.hw = 3; R.used[syn.id] = true;
     var stimA = pre.length && pre[pre.length - 1].type === 'stim' ? pre[pre.length - 1] : null;
     var MEM3 = {passive:1, fi:1, so:1}, preM = pre.filter(function(x){ return MEM3[x.type]; });
-    var st = {vplus:vbat, syn:syn.type === 'syne' ? 'exc' : 'inh', r1p:0, r13A:0, r6:0, vsyn:0, stimA:!!stimA, stimB:false,
+    var st = {vplus:vbat, syn:syn.type === 'syne' ? 'exc' : 'inh', r1p:0, r13A:0, r13B:0, r6:0, vsyn:0, stimA:!!stimA, stimB:false,
               post:'passive', pre:'cusA', postMem:'cusB', bat:A.cell ? 'on' : A.jumper ? 'short' : 'open', rxv:22e3, ch1:'A.Vm', ch2:'P1'};
     R.st = st;
     if(!stimA) msgs.push(['bad', 'Put Stimulator A on top of the Pre stack (left side of the synapse).']);
     var NM = {passive:'Passive Unit (leak)', fi:'Fast Inward', so:'Slow Out'};
     var need = ['passive', 'fi', 'so'].filter(function(t){ return !preM.some(function(x){ return x.type === t; }); });
     if(need.length) msgs.push(['tip', 'The HW3 model always has a full Pre membrane (Passive Unit as leak + FI + SO); missing here: ' + need.map(function(t){ return NM[t]; }).join(', ') + '.']);
-    var sv = verOf(syn); if(syn.ver !== 'kit') st.r1p = syn.ver === 'true' ? tv(syn, 'r1p') : sv.st.r1p;
+    var sv = verOf(syn); if(syn.ver === 'true') st.r1p = tv(syn, 'r1p'); else if(sv.st){ st.r1p = sv.st.r1p || 0; st.r6 = sv.st.r6 || 0; }
     if(A.wire) msgs.push(['tip', 'HW3 does not use the V+ Flywire: every membrane gets V+ through its own stack. Tap the red wire, then REMOVE.']);
     if(st.syn === 'inh' && st.bat === 'open') msgs.push(['tip', 'No 1.5 V cell (or jumper) on the Inhibitory Synapse: the synapse is open.']);
     var fiA = preM.filter(function(x){ return x.type === 'fi'; })[0];
@@ -286,6 +286,8 @@ var SL = (function(){
     if(postM.some(function(x){ return MEMB[x.type]; })){
       st.post = 'active'; st.stimB = !!stimB; st.ch2 = 'B.Vm';
       R.memB = memSt(postM, stimB);
+      var fiB = postM.filter(function(x){ return x.type === 'fi'; })[0];
+      if(fiB && fiB.ver === 'r13') st.r13B = 1e3;
       mark(R, postM.concat(stimB ? [stimB] : []), 'B.Vm'); postM.forEach(function(x){ if(x.type === 'so') R.boardNode[x.id] = 'B.SO.S'; });
       nodes.push('B.Vm');
       var needB = ['passive', 'fi', 'so'].filter(function(t){ return !postM.some(function(x){ return x.type === t; }); });
@@ -328,12 +330,12 @@ var SL = (function(){
       p.tune = {};
       switch(p.type){
         case 'stim':
-          if(hw3) p.ver = trueMem ? 'add' : 'kit';
+          if(hw3) p.ver = (trueMem || (onPre ? cst.qsA : cst.qsB) === 'rx') ? 'add' : 'kit';
           else p.ver = cst.stdiode ? 'bb' : cst.qs === 'rx' ? 'add' : 'kit';
           if(p.ver === 'add' && cst.rxv) p.tune.rxv = cst.rxv;
           break;
         case 'fi':
-          if(hw3) p.ver = trueMem ? 'true' : (onPre && cst.r13A ? 'r13' : 'kit');
+          if(hw3) p.ver = trueMem ? 'true' : ((onPre ? cst.r13A : cst.r13B) ? 'r13' : 'kit');
           else p.ver = cst.r13p ? 'true' : cst.r13 === 1e3 ? 'r13' : 'kit';
           break;
         case 'so': p.ver = hw3 ? (trueMem ? 'true' : 'kit') : (cst.rs ? 'true' : 'kit'); break;
@@ -342,7 +344,7 @@ var SL = (function(){
           else { p.ver = !hw3 && cst.ru ? 'true' : 'kit'; if(!hw3 && cst.ru) p.tune.ru = cst.ru; }
           break;
         case 'syne': case 'syni':
-          p.ver = !cst.r1p ? 'kit' : cst.r1p === 1e5 && p.type === 'syne' ? 'mine' : 'true';
+          p.ver = p.type === 'syne' && cst.r6 === 1e5 ? 'mine' : !cst.r1p ? 'kit' : 'true';
           if(p.ver === 'true') p.tune.r1p = cst.r1p;
           break;
         case 'battery': p.ver = 'mine'; break;
