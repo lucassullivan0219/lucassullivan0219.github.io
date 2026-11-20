@@ -104,6 +104,7 @@ pre#log{margin:0;max-height:320px;overflow:auto;font-family:var(--mono);font-siz
 .sidebar .actions{display:grid;grid-template-columns:1fr auto;gap:8px}
 .sidebar .actions .pill{grid-column:1/-1;justify-self:start}
 .sidebar .stats{grid-template-columns:1fr 1fr}
+.sidebar>*{flex-shrink:0}
 .tabs{display:flex;flex-direction:column;gap:4px}
 .tabs button{text-align:left;border-radius:6px;padding:.5rem .7rem;font-weight:500;border-color:transparent;background:transparent}
 .tabs button:hover{background:var(--grid)}
@@ -331,14 +332,15 @@ const P = {
   namePrefix: 'STEEG',
   fs: 1000, nch: 8,
   uvPerCount: 4500000 / 100663284,
-  deviceLabels: ['Fp1', 'Fp2', 'T7', 'T8', 'O1', 'O2', 'Fz', 'Pz'],
-  rename: { T7: 'C3', T8: 'C4' },
+  // Channel order measured on the headset by the user, 2026-11-20.
+  deviceLabels: ['Fp1', 'Fp2', 'Fz', 'C3', 'C4', 'Pz', 'O1', 'O2'],
+  rename: {},
 };
 const LABELS = P.deviceLabels.map(l => P.rename[l] || l);
 const CMD = { start: 1, stop: 2 };
 const cmdBytes = code => new Uint8Array([0x01, 0x08, 0x02, code, 0x00]);
 const RAIL_UV = 374000;
-const BUILD = '2026-11-20.class2';
+const BUILD = '2026-11-20.class3';
 
 const $ = id => document.getElementById(id);
 const hex = b => Array.from(b, x => x.toString(16).padStart(2, '0').toUpperCase()).join(' ');
@@ -1017,7 +1019,7 @@ function drawTopo() {
 $('topoBand').onchange = $('topoMode').onchange = drawTopo;
 
 // ---------- time-frequency (spectrogram) ----------
-const TF = { cols: [], max: 300, ch: 4, src: null };
+const TF = { cols: [], max: 300, ch: Math.max(0, LABELS.indexOf('O1')), src: null };
 LABELS.forEach((name, k) => { const o = document.createElement('option'); o.value = k; o.textContent = name; $('tfCh').append(o); });
 $('tfCh').value = TF.ch;
 $('tfCh').onchange = () => { TF.ch = +$('tfCh').value; TF.cols = []; drawTF(); };
