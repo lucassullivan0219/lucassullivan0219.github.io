@@ -53,7 +53,6 @@ select{border:1px solid var(--line);background:var(--panel);border-radius:6px;pa
 .actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .pill{font-family:var(--mono);font-size:.8rem;font-weight:600;padding:.25rem .6rem;border-radius:99px;background:var(--grid);color:var(--muted);white-space:nowrap}
 .pill[data-s="live"]{background:var(--ok-bg);color:var(--ok)}
-.pill[data-s="sim"]{background:var(--accent-soft);color:var(--accent)}
 .pill[data-s="connecting"],.pill[data-s="reconnecting"],.pill[data-s="stalled"]{background:var(--warn-bg);color:var(--warn)}
 .pill[data-s="error"]{background:var(--bad-bg);color:var(--bad)}
 .note{border:1px solid var(--line);border-left:3px solid var(--warn);background:var(--panel);border-radius:6px;padding:.55rem .8rem;font-size:.9rem}
@@ -99,11 +98,30 @@ pre#log{margin:0;max-height:320px;overflow:auto;font-family:var(--mono);font-siz
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .muted{color:var(--muted)}
 @media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:480px){#wave{height:440px}h1{font-size:1.25rem}.stats{grid-template-columns:repeat(3,1fr)}.stat b{font-size:.92rem}}
-.tabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;background:var(--bg);padding:8px 0;margin:-6px 0;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tabs button{flex:0 0 auto;border-radius:99px;padding:.42rem .95rem;font-weight:500}
+@media (max-width:480px){#wave{height:clamp(380px,68vh,560px)}h1{font-size:1.25rem}.stat b{font-size:.92rem}}
+.app{display:grid;grid-template-columns:280px minmax(0,1fr);min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);padding:16px 14px;display:flex;flex-direction:column;gap:12px}
+.sidebar .actions{display:grid;grid-template-columns:1fr auto;gap:8px}
+.sidebar .actions .pill{grid-column:1/-1;justify-self:start}
+.sidebar .stats{grid-template-columns:1fr 1fr}
+.tabs{display:flex;flex-direction:column;gap:4px}
+.tabs button{text-align:left;border-radius:6px;padding:.5rem .7rem;font-weight:500;border-color:transparent;background:transparent}
+.tabs button:hover{background:var(--grid)}
 .tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.wrap{max-width:none;width:100%}
+.topbar{display:none}
+.scrim{display:none}
+@media (max-width:900px){
+  .app{display:block}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;height:auto;width:min(86vw,320px);z-index:30;transform:translateX(-105%);box-shadow:0 0 24px rgba(0,0,0,.35)}
+  .app.open .sidebar{transform:none}
+  .app.open .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:25}
+  .topbar{display:flex;position:sticky;top:0;z-index:10;align-items:center;gap:10px;background:var(--bg);padding:8px 0;margin:-8px 0 -4px;border-bottom:1px solid var(--line)}
+  .topbar #btnMenu{font-size:1.15rem;line-height:1;padding:.4rem .65rem}
+  .topbar b{font-family:var(--display);font-size:1rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar .mono{font-size:.8rem}
+}
+@media (max-width:900px) and (prefers-reduced-motion:no-preference){.sidebar{transition:transform .2s ease}}
 .page[hidden]{display:none!important}
 .page{display:flex;flex-direction:column;gap:14px}
 #specBig{height:clamp(240px,45vh,420px)}
@@ -121,19 +139,17 @@ ul.ev li{padding:.2rem 0;border-bottom:1px solid var(--line)}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <div class="brand">
-      <h1>NYCU BCI Web</h1>
-      <small>手機瀏覽器直接用藍牙連 STEEG 8 通道腦波帽。沒有腦波帽也能用「模擬資料」練習全部功能。（Cygnus 的網頁替代品，非原廠程式）</small>
-    </div>
-    <div class="actions">
-      <span id="state" class="pill" data-s="idle">未連線</span>
-      <button id="btnBle" class="primary" type="button">連線腦波帽</button>
-      <button id="btnSim" type="button">模擬資料</button>
-      <button id="btnStop" type="button" disabled>中斷</button>
-    </div>
-  </header>
+<div class="app" id="app">
+<aside class="sidebar" id="sidebar" aria-label="連線與功能選單">
+  <div class="brand">
+    <h1>NYCU BCI Web</h1>
+    <small>手機瀏覽器用藍牙直連 STEEG 8 通道腦波帽（Cygnus 的網頁替代品，非原廠程式）</small>
+  </div>
+  <div class="actions">
+    <span id="state" class="pill" data-s="idle">未連線</span>
+    <button id="btnBle" class="primary" type="button">連線腦波帽</button>
+    <button id="btnStop" type="button" disabled>中斷</button>
+  </div>
 
   <p id="bleNote" class="note" hidden></p>
 
@@ -142,7 +158,7 @@ ul.ev li{padding:.2rem 0;border-bottom:1px solid var(--line)}
     <div class="stat"><span>取樣率</span><b id="stRate">—</b></div>
     <div class="stat"><span>掉包（樣本）</span><b id="stLost">0</b></div>
     <div class="stat"><span>壞封包</span><b id="stBad">0</b></div>
-    <div class="stat"><span>電量（推論）</span><b id="stBat">—</b></div>
+    <div class="stat"><span>電量</span><b id="stBat">—</b></div>
     <div class="stat"><span>封包</span><b id="stPkt">—</b></div>
   </section>
 
@@ -155,6 +171,15 @@ ul.ev li{padding:.2rem 0;border-bottom:1px solid var(--line)}
     <button type="button" data-tab="tf">時頻 Time-Freq</button>
     <button type="button" data-tab="rec">錄製 / 事件</button>
   </nav>
+</aside>
+<div class="scrim" id="scrim"></div>
+<main class="wrap">
+  <div class="topbar">
+    <button id="btnMenu" type="button" aria-label="打開選單" aria-controls="sidebar" aria-expanded="false">☰</button>
+    <b id="tabName">訊號 Signals</b>
+    <span id="miniRate" class="mono muted"></span>
+    <span id="state2" class="pill" data-s="idle">未連線</span>
+  </div>
 
   <p id="impBanner" class="banner" hidden>正在量測阻抗：電極上有約 8 Hz 的測試訊號，這段時間的波形不能拿來分析。量完請到「阻抗」頁按「停止」。</p>
 
@@ -282,50 +307,17 @@ ul.ev li{padding:.2rem 0;border-bottom:1px solid var(--line)}
     <summary>怎麼用（第一次看這裡）</summary>
     <div class="prose">
       <ol>
-        <li><b>沒有腦波帽的人：</b>打開就會自動跑「模擬資料」（Fp1/Fp2 有眨眼、O1/O2 每 8 秒切換閉眼 α 波、Pz 模擬電極沒接），每個分頁都能操作。</li>
         <li><b>有腦波帽的人：</b>先<b>拔掉 USB dongle</b>、打開腦波帽。一頂腦波帽同一時間只能連一支手機。</li>
         <li><b>Android</b>：用 Chrome，開啟藍牙和定位，允許 Chrome 使用「鄰近裝置」。<b>iPhone / iPad</b>：Safari 不支援藍牙網頁，請到 App Store 安裝免費的 <b>Bluefy</b> 瀏覽器，用它開這個網址。</li>
-        <li>按「連線腦波帽」，在跳出的清單選 <code>STEEG_…</code>。連上後取樣率應接近 1000 Hz。</li>
+        <li>按「連線腦波帽」，在跳出的清單選 <code>STEEG_…</code>。連上後取樣率應接近 1000 Hz。清單裡沒有 STEEG：確認腦波帽已開機、USB dongle 已拔掉、沒有被別人的手機連走，再按一次。</li>
         <li>建議順序：<b>阻抗</b>（調到 &lt; 100 kΩ）→ <b>訊號</b>（眨眼、咬牙看波形）→ <b>頻譜 / 頻帶 / 腦地形 / 時頻</b>（閉眼看 α 波）→ <b>錄製</b>（可下 marker，再下載 CSV）。</li>
       </ol>
       <p class="muted">資料只留在你的瀏覽器，錄製檔直接存到你的裝置，不會上傳。手機螢幕關掉時瀏覽器會暫停，錄製時請保持螢幕亮著（連線時本頁會嘗試讓螢幕保持常亮）。</p>
     </div>
   </details>
 
-  <details>
-    <summary>這頁用的藍牙協定，以及每一條的來源</summary>
-    <div class="prose">
-      <p><span class="tag t-ref">REF</span> = 原廠 PC 端軟體的做法；<span class="tag t-obs">OBS</span> = 2026-10-18 用手機 nRF Connect 實測；<span class="tag t-ai">AI</span> = 推論，尚未驗證；<span class="tag t-open">OPEN</span> = 待確認。</p>
-      <ul>
-        <li><span class="tag t-obs">OBS</span> Service <code>04831523-6c9d-6ca9-5d41-03ad4fff4abb</code>；<code>1524</code> NOTIFY = 資料、<code>1525</code> READ = <code>47 47 99 F0</code>、<code>1526</code> WRITE = 指令。不需配對。</li>
-        <li><span class="tag t-obs">OBS</span> 先開 1524 的 notify，再寫入啟動指令 <code>01 08 02 01 00</code>（dongle 用的 COBS 解碼後內容）。</li>
-        <li><span class="tag t-obs">OBS</span> 一包 212 B = <code>[n=5][len=42]</code> + 5 筆紀錄；紀錄 = 序號 u32 LE、8 × int24 BE、12 B、1 B、1 B。只驗證過 1 包。</li>
-        <li><span class="tag t-ref">REF</span> µV = raw × 4 500 000 / 100 663 284（ADS1299，Vref 4.5 V，增益 12）。8 通道時 1000 Hz。</li>
-        <li><span class="tag t-ref">REF</span> 通道順序 Fp1 Fp2 T7 T8 O1 O2 Fz Pz；實體電極在 C3/C4，所以 T7→C3、T8→C4（同 Pentagram <code>config.LABEL_RENAME</code>）。</li>
-        <li><span class="tag t-ai">AI</span> 停止指令 <code>01 08 02 02 00</code>；阻抗 5/6/7 也套同樣格式。本頁「中斷」時會送停止指令。</li>
-        <li><span class="tag t-ai">AI</span> 第 40 byte 是電量 %、第 41 byte 是 event、12 B 是 IMU（目前全 0）。本頁若看到 12 B 不是 0，會寫進 log。</li>
-        <li><span class="tag t-open">OPEN</span> 每秒 200 包、42 kB/s，ATT MTU 需 ≥ 215。電腦藍牙 MTU 不夠時會出現「壞封包：封包被截斷」。</li>
-      </ul>
-      <p class="muted">品質判斷的門檻是 <span class="tag t-ai">AI</span> 預設值：飽和 = |x| ≥ 374 000 µV；平線 = 1–50 Hz RMS &lt; 0.5 µV；振幅大 = RMS &gt; 100 µV；市電多 = 市電頻率 ±2 Hz 佔 1–100 Hz 功率一半以上。CSV 的時間欄用裝置序號換算（掉包時時間會跳）。阻抗：送 AC 導聯偵測指令後，每 1.2 秒取最後 1000 筆，算 8 Hz 振幅，套原廠 PC 端軟體的校正多項式換成 kΩ，取最近 5 次中位數 <span class="tag t-ref">REF</span>；在藍牙直連下是否和原廠數值一致尚未實測 <span class="tag t-open">OPEN</span>。</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>實驗指令與 log（回報問題時把 log 複製貼上）</summary>
-    <div class="row">
-      <label class="row muted"><input id="allDev" type="checkbox"> 列出所有裝置</label>
-      <button type="button" data-cmd="5">阻抗 DC (5)</button>
-      <button type="button" data-cmd="6">阻抗 AC (6)</button>
-      <button type="button" data-cmd="7">阻抗關 (7)</button>
-      <button type="button" data-cmd="18">連線狀態 (18)</button>
-      <button type="button" data-cmd="46">機器資訊 (46)</button>
-      <button type="button" data-cmd="2">停止串流 (2)</button>
-      <button type="button" data-cmd="1">重送啟動 (1)</button>
-    </div>
-    <p class="muted" style="font-size:.85rem">這些指令在藍牙端的格式都是推論（<code>01 08 02 &lt;code&gt; 00</code>）。送出後如果收到格式不同的封包，log 會列出前 48 bytes。</p>
-    <div class="row"><button id="btnCopy" type="button">複製 log</button><span id="copyMsg" class="muted"></span></div>
-    <pre id="log"></pre>
-  </details>
+  <div hidden><input id="allDev" type="checkbox"><button id="btnCopy" type="button"></button><span id="copyMsg"></span><pre id="log"></pre></div>
+</main>
 </div>
 
 <script>
@@ -346,7 +338,7 @@ const LABELS = P.deviceLabels.map(l => P.rename[l] || l);
 const CMD = { start: 1, stop: 2 };
 const cmdBytes = code => new Uint8Array([0x01, 0x08, 0x02, code, 0x00]);
 const RAIL_UV = 374000;
-const BUILD = '2026-11-20.class';
+const BUILD = '2026-11-20.class2';
 
 const $ = id => document.getElementById(id);
 const hex = b => Array.from(b, x => x.toString(16).padStart(2, '0').toUpperCase()).join(' ');
@@ -483,13 +475,13 @@ function handlePacket(dv) {
 }
 
 // ---------- connection state ----------
-let source = null; // 'ble' | 'sim' | null
-const STATE_TEXT = { idle: '未連線', sim: '模擬資料', connecting: '連線中…', live: '已連線', reconnecting: '重新連線…', stalled: '超過 2 秒沒有資料', error: '連線失敗' };
+let source = null; // 'ble' | null
+const STATE_TEXT = { idle: '未連線', connecting: '連線中…', live: '已連線', reconnecting: '重新連線…', stalled: '超過 2 秒沒有資料', error: '連線失敗' };
 function setState(s, extra = '') {
   $('state').dataset.s = s;
   $('state').textContent = STATE_TEXT[s] + (extra ? ' ' + extra : '');
-  $('btnStop').disabled = !(s === 'live' || s === 'sim' || s === 'reconnecting' || s === 'stalled' || s === 'connecting');
-  $('stSrc').textContent = source === 'ble' ? (ble.device?.name || 'BLE') : source === 'sim' ? '模擬' : '—';
+  $('btnStop').disabled = !(s === 'live' || s === 'reconnecting' || s === 'stalled' || s === 'connecting');
+  $('stSrc').textContent = source === 'ble' ? (ble.device?.name || 'BLE') : '—';
 }
 
 // ---------- Web Bluetooth ----------
@@ -497,7 +489,7 @@ function bleAvailability() {
   if (!('bluetooth' in navigator)) return '這個瀏覽器沒有 Web Bluetooth。請用 Chrome 或 Edge（桌機或 Android）。';
   if (!window.isSecureContext) return '藍牙只能在 https 或 localhost 頁面使用。';
   const pp = document.permissionsPolicy || document.featurePolicy;
-  try { if (pp && pp.allowsFeature && !pp.allowsFeature('bluetooth')) return '這個頁面嵌在不允許藍牙的框架裡，只能看模擬資料。請直接開啟這個網址，不要透過其他網頁嵌入。'; } catch {}
+  try { if (pp && pp.allowsFeature && !pp.allowsFeature('bluetooth')) return '這個頁面嵌在不允許藍牙的框架裡，無法連線。請直接開啟這個網址，不要透過其他網頁嵌入。'; } catch {}
   return null;
 }
 const ble = { device: null, dataChar: null, cmdChar: null, user: false, opening: false, reconnecting: false };
@@ -515,7 +507,6 @@ async function sendCmd(code) {
 async function bleConnect() {
   const why = bleAvailability();
   if (why) { showNote(why); log(why); return; }
-  stopSim();
   const all = $('allDev').checked;
   const opts = all ? { acceptAllDevices: true, optionalServices: [P.service] }
     : { filters: [{ namePrefix: P.namePrefix }, { services: [P.service] }], optionalServices: [P.service] };
@@ -585,54 +576,6 @@ async function onDrop() {
   source = null; setState(ble.user ? 'idle' : 'error');
 }
 
-// ---------- simulator: builds real 212-byte packets and feeds them through the same parser ----------
-const sim = { timer: 0, seq: 0, last: 0, carry: 0, t: 0, drift: new Float64Array(P.nch) };
-const OFFSETS = [-31200, -28750, -24100, -26600, -22900, -25300, -29800, 0];
-function gauss() { return (Math.random() + Math.random() + Math.random() + Math.random() - 2) * 1.73; }
-function simSample(k, t) {
-  if (k === 7) return 375000; // Pz unplugged: railed
-  sim.drift[k] = 0.9995 * sim.drift[k] + gauss() * 0.9;
-  let v = OFFSETS[k] + sim.drift[k] * 6 + gauss() * 3.5 + 7 * Math.sin(2 * Math.PI * 60 * t + k);
-  const eyesClosed = Math.floor(t / 8) % 2 === 1;
-  const alphaAmp = (k === 4 || k === 5) ? 18 : k === 6 ? 6 : 4;
-  v += (eyesClosed ? alphaAmp : alphaAmp * 0.25) * Math.sin(2 * Math.PI * 10.2 * t + k * 0.4);
-  v += 3 * Math.sin(2 * Math.PI * 21 * t + k);
-  if (k <= 1) { const ph = t % 5.3; v += 160 * Math.exp(-((ph - 0.6) ** 2) / (2 * 0.06 ** 2)); }
-  if (sim.imp) v += SIM_A[k] * Math.sin(2 * Math.PI * 8 * t);
-  return v;
-}
-function simTick() {
-  const now = performance.now();
-  sim.carry += (now - sim.last) * P.fs / 1000; sim.last = now;
-  let n = Math.floor(sim.carry / 5) * 5; sim.carry -= n;
-  if (n > 2000) n = 2000;
-  for (let p = 0; p < n / 5; p++) {
-    const buf = new Uint8Array(2 + 5 * 42), dv = new DataView(buf.buffer);
-    buf[0] = 5; buf[1] = 42;
-    for (let i = 0; i < 5; i++) {
-      const o = 2 + i * 42;
-      dv.setUint32(o, sim.seq++ >>> 0, true);
-      sim.t += 1 / P.fs;
-      for (let k = 0; k < P.nch; k++) {
-        let c = Math.round(simSample(k, sim.t) / P.uvPerCount);
-        c = Math.max(-0x800000, Math.min(0x7FFFFF, c)) & 0xFFFFFF;
-        buf[o + 4 + 3 * k] = c >> 16; buf[o + 5 + 3 * k] = (c >> 8) & 255; buf[o + 6 + 3 * k] = c & 255;
-      }
-      buf[o + 40] = 59; buf[o + 41] = 0;
-    }
-    handlePacket(dv);
-  }
-}
-function startSim() {
-  if (source === 'ble') return;
-  stopSim();
-  source = 'sim'; resetStats(); sim.last = performance.now(); sim.carry = 0;
-  sim.timer = setInterval(simTick, 40);
-  log('模擬資料開始：Fp1/Fp2 有眨眼、O1/O2 每 8 秒切換閉眼 α 波、Pz 模擬電極未接');
-  setState('sim');
-}
-function stopSim() { if (sim.timer) { clearInterval(sim.timer); sim.timer = 0; log('模擬資料停止'); } if (source === 'sim') source = null; }
-
 // ---------- recording ----------
 const rec_ = { on: false, seq: [], data: [], n: 0, start: 0, seq0: null, blob: null, name: '', ev: new Map() };
 const RCH = 65536;
@@ -649,7 +592,7 @@ function stamp(d) { const z = n => String(n).padStart(2, '0'); return `${d.getFu
 function recStart() {
   Object.assign(rec_, { on: true, seq: [], data: [], n: 0, start: Date.now(), seq0: null, blob: null, name: stamp(new Date()) + '.csv', ev: new Map() });
   $('btnRec').textContent = '停止錄製'; $('recDot').classList.add('on'); $('btnSave').disabled = true;
-  log(`開始錄製 ${rec_.name}（來源：${source === 'sim' ? '模擬' : 'BLE'}）`);
+  log(`開始錄製 ${rec_.name}`);
 }
 function recStop() {
   rec_.on = false;
@@ -765,7 +708,7 @@ function drawWave() {
     ctx.fillStyle = colors.bad; ctx.fillText(m.label, x + 3, 11);
   }
   ctx.setLineDash([]);
-  if (!avail) { ctx.fillStyle = colors.muted; ctx.textAlign = 'center'; ctx.font = '14px system-ui, "Microsoft JhengHei", sans-serif'; ctx.fillText('尚無資料：按「連線腦波帽」或「模擬資料」', gutter + plotW / 2, h / 2); }
+  if (!avail) { ctx.fillStyle = colors.muted; ctx.textAlign = 'center'; ctx.font = '14px system-ui, "Microsoft JhengHei", sans-serif'; ctx.fillText('尚無資料：先按「連線腦波帽」', gutter + plotW / 2, h / 2); }
 }
 
 function fft(re, im) {
@@ -894,7 +837,7 @@ const TABS = [...document.querySelectorAll('.tabs button')];
 function showTab(t) {
   if (!TABS.some(b => b.dataset.tab === t)) t = 'sig';
   tab = t;
-  TABS.forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  TABS.forEach(b => { b.setAttribute('aria-selected', String(b.dataset.tab === t)); if (b.dataset.tab === t) $('tabName').textContent = b.textContent; });
   document.querySelectorAll('.page').forEach(p => { p.hidden = p.id !== 'pg-' + t; });
   pref('tab', t);
   requestAnimationFrame(drawActive);
@@ -934,9 +877,6 @@ const IMP = { on: false, n: 0, buf: Array.from({ length: P.nch }, () => new Floa
 const COS8 = new Float64Array(1000), SIN8 = new Float64Array(1000);
 for (let n = 0; n < 1000; n++) { COS8[n] = Math.cos(2 * Math.PI * 8 * n / 1000); SIN8[n] = Math.sin(2 * Math.PI * 8 * n / 1000); }
 const impPoly = a => (5e-11 * a ** 4 - 1e-6 * a ** 3 + 0.0129 * a * a + 129.73 * a + 5520.2) * 0.001;
-// simulator: amplitude of an 8 Hz test signal that gives these impedances (null = electrode off)
-const SIM_R = [42, 58, 76, 160, 390, 880, 51, null];
-const SIM_A = SIM_R.map(R => { if (R === null) return 0; let lo = 1, hi = 5000; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (impPoly(m) < R) lo = m; else hi = m; } return lo; });
 function impFeed(uv) {
   for (let k = 0; k < P.nch; k++) IMP.buf[k][IMP.n] = uv[k];
   if (++IMP.n === 1200) { impCompute(); IMP.n = 0; }
@@ -970,17 +910,16 @@ function renderImpTable() {
   }).join('');
 }
 async function impStart() {
-  if (!source) { log('沒有資料來源：先連線腦波帽或開模擬資料'); return; }
+  if (!source) { log('還沒連線腦波帽'); $('impInfo').textContent = '還沒連線腦波帽：先按「連線腦波帽」。'; return; }
   Object.assign(IMP, { on: true, n: 0, rounds: 0, hist: Array.from({ length: P.nch }, () => []), kohm: new Array(P.nch).fill(null) });
-  if (source === 'ble') { try { await sendCmd(6); } catch (e) { log(`阻抗指令失敗：${e.message}`); } }
-  else sim.imp = true;
+  try { await sendCmd(6); } catch (e) { log(`阻抗指令失敗：${e.message}`); }
   $('btnImp').textContent = '停止量測'; $('impBanner').hidden = false;
   $('impInfo').textContent = '量測中，約 1.2 秒後出現第一筆…';
   renderImpTable(); drawImp(); log('開始量測阻抗');
 }
 async function impStop(silent) {
   if (!IMP.on) return;
-  IMP.on = false; sim.imp = false;
+  IMP.on = false;
   if (source === 'ble' && !silent) { try { await sendCmd(7); } catch (e) { log(`阻抗關閉指令失敗：${e.message}`); } }
   $('btnImp').textContent = '開始量測阻抗'; $('impBanner').hidden = true; log('停止量測阻抗');
 }
@@ -1138,6 +1077,15 @@ $('mkAdd').onclick = () => { addMarker($('mkText').value); $('mkText').value = '
 $('mkText').addEventListener('keydown', e => { if (e.key === 'Enter') $('mkAdd').click(); });
 addEventListener('keydown', e => { if (e.target.closest && e.target.closest('input,select,textarea')) return; if (/^[1-9]$/.test(e.key)) addMarker(e.key); });
 
+// ---------- sidebar drawer (phones) and top-bar mirrors ----------
+function setMenu(open) { $('app').classList.toggle('open', open); $('btnMenu').setAttribute('aria-expanded', String(open)); }
+$('btnMenu').onclick = () => setMenu(!$('app').classList.contains('open'));
+$('scrim').onclick = () => setMenu(false);
+$('state2').onclick = () => setMenu(true);
+addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
+TABS.forEach(b => b.addEventListener('click', () => { $('tabName').textContent = b.textContent; setMenu(false); }));
+setInterval(() => { $('miniRate').textContent = source ? $('stRate').textContent : ''; }, 1000);
+
 // ---------- keep the phone screen on while streaming; stop impedance when the link goes away ----------
 let wakeLock = null;
 async function wantWake(on) {
@@ -1149,12 +1097,11 @@ async function wantWake(on) {
 const _setState = setState;
 setState = function (s, extra) {
   _setState(s, extra);
-  wantWake(s === 'live' || s === 'sim' || s === 'stalled' || s === 'reconnecting');
+  $('state2').dataset.s = s; $('state2').textContent = $('state').textContent;
+  wantWake(s === 'live' || s === 'stalled' || s === 'reconnecting');
   if ((s === 'idle' || s === 'error') && IMP.on) impStop(true);
 };
-document.addEventListener('visibilitychange', () => { const s = $('state').dataset.s; if (!document.hidden) wantWake(s === 'live' || s === 'sim'); });
-const _startSim = startSim;
-startSim = function () { if (IMP.on) impStop(true); _startSim(); };
+document.addEventListener('visibilitychange', () => { const s = $('state').dataset.s; if (!document.hidden) wantWake(s === 'live'); });
 renderImpTable();
 
 // ---------- wiring ----------
@@ -1167,8 +1114,7 @@ $('win').onchange = () => { pref('win', $('win').value); drawWave(); };
 $('span').onchange = () => { pref('span', $('span').value); drawWave(); };
 $('btnPause').onclick = () => { paused = !paused; $('btnPause').textContent = paused ? '繼續畫面' : '暫停畫面'; };
 $('btnBle').onclick = bleConnect;
-$('btnSim').onclick = () => { if (source === 'ble') { log('先中斷藍牙再開模擬'); return; } startSim(); };
-$('btnStop').onclick = () => { if (source === 'ble' || ble.reconnecting) bleDisconnect(); else { stopSim(); setState('idle'); } };
+$('btnStop').onclick = () => { if (source === 'ble' || ble.reconnecting) bleDisconnect(); else setState('idle'); };
 document.querySelectorAll('[data-cmd]').forEach(b => b.onclick = () => sendCmd(+b.dataset.cmd).catch(e => log(`指令失敗：${e.message}`)));
 LABELS.forEach((name, i) => { const s = document.createElement('span'); s.innerHTML = `<i style="background:var(--s${i + 1})"></i>`; s.append(name); $('legend').append(s); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) drawAll(); });
@@ -1179,8 +1125,7 @@ log(`NYCU-BCI Web ${BUILD}；${navigator.userAgent}`);
 const why = bleAvailability();
 if (why) { showNote(why); $('btnBle').disabled = !('bluetooth' in navigator) || !window.isSecureContext ? true : false; log(why); }
 else if (navigator.bluetooth.getAvailability) navigator.bluetooth.getAvailability().then(ok => { if (!ok) { showNote('找不到藍牙介面卡，或藍牙已關閉。'); log('getAvailability = false'); } });
-// Open in a working state: the simulator runs until a headset is connected.
-startSim();
+setState('idle');
 showTab(pref('tab') || 'sig');
 updateQuality();
 drawAll();
