@@ -1,0 +1,1189 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<title>NYCU BCI Web</title>
+<meta name="theme-color" content="#17607a">
+<style>
+/* Layout: an instrument panel. Status strip on top, the scope (8 stacked traces) takes the wide column,
+   spectrum / channel quality / recording stack in a side column; everything long lives in toggles below. */
+:root{
+  --bg:#edf1f0; --panel:#fbfcfc; --ink:#15201d; --muted:#586864; --line:#d2dbd8; --grid:#e2e8e6;
+  --accent:#17607a; --accent-ink:#ffffff; --accent-soft:#dcebf0;
+  --ok:#1d7647; --ok-bg:#dff1e6; --warn:#9a5f00; --warn-bg:#f8ecd2; --bad:#b0362a; --bad-bg:#f8e1dd;
+  --s1:#2459a6; --s2:#0d8080; --s3:#7a4bb5; --s4:#b04f22; --s5:#2d7a30; --s6:#a2386f; --s7:#86690a; --s8:#4b5b8c;
+  --ref:#0f6b5a; --ref-bg:#e2f3ee; --obs:#8a5a00; --obs-bg:#fbefd6; --ai:#7a2f8f; --ai-bg:#f3e4f7; --open:#b3361b; --open-bg:#fbe6e0;
+  --display:"Bahnschrift","Segoe UI","Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1413; --panel:#151d1b; --ink:#e2eae7; --muted:#93a39f; --line:#28332f; --grid:#1d2725;
+  --accent:#62b6d2; --accent-ink:#04212b; --accent-soft:#163039;
+  --ok:#5fcb8f; --ok-bg:#12301f; --warn:#e8ac3e; --warn-bg:#33270f; --bad:#ff7b6a; --bad-bg:#3a1a15;
+  --s1:#79a8f2; --s2:#4fc9c4; --s3:#b597f0; --s4:#f09466; --s5:#7fd07f; --s6:#ef86b8; --s7:#e0c25a; --s8:#9fb0e6;
+  --ref:#5fd0b6; --ref-bg:#123029; --obs:#f0b54a; --obs-bg:#33270f; --ai:#d79be8; --ai-bg:#33193b; --open:#ff8a6b; --open-bg:#3a1a12;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1413; --panel:#151d1b; --ink:#e2eae7; --muted:#93a39f; --line:#28332f; --grid:#1d2725;
+  --accent:#62b6d2; --accent-ink:#04212b; --accent-soft:#163039;
+  --ok:#5fcb8f; --ok-bg:#12301f; --warn:#e8ac3e; --warn-bg:#33270f; --bad:#ff7b6a; --bad-bg:#3a1a15;
+  --s1:#79a8f2; --s2:#4fc9c4; --s3:#b597f0; --s4:#f09466; --s5:#7fd07f; --s6:#ef86b8; --s7:#e0c25a; --s8:#9fb0e6;
+  --ref:#5fd0b6; --ref-bg:#123029; --obs:#f0b54a; --obs-bg:#33270f; --ai:#d79be8; --ai-bg:#33193b; --open:#ff8a6b; --open-bg:#3a1a12;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 40px;display:flex;flex-direction:column;gap:14px}
+h1,h2{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}
+h1{font-size:1.5rem;font-weight:600;letter-spacing:.01em}
+h2{font-size:.82rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+p{margin:0}
+button,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:.38rem .8rem}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:not-allowed}
+select{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:.3rem .4rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.brand small{color:var(--muted);font-size:.85rem}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pill{font-family:var(--mono);font-size:.8rem;font-weight:600;padding:.25rem .6rem;border-radius:99px;background:var(--grid);color:var(--muted);white-space:nowrap}
+.pill[data-s="live"]{background:var(--ok-bg);color:var(--ok)}
+.pill[data-s="sim"]{background:var(--accent-soft);color:var(--accent)}
+.pill[data-s="connecting"],.pill[data-s="reconnecting"],.pill[data-s="stalled"]{background:var(--warn-bg);color:var(--warn)}
+.pill[data-s="error"]{background:var(--bad-bg);color:var(--bad)}
+.note{border:1px solid var(--line);border-left:3px solid var(--warn);background:var(--panel);border-radius:6px;padding:.55rem .8rem;font-size:.9rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.stat{background:var(--panel);padding:.45rem .7rem;display:flex;flex-direction:column;min-width:0}
+.stat span{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stat b{font-family:var(--mono);font-size:1.05rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat b.warn{color:var(--warn)} .stat b.bad{color:var(--bad)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:.88rem}
+.controls label{display:flex;gap:6px;align-items:center;color:var(--muted)}
+canvas{display:block;width:100%}
+#wave{height:clamp(340px,62vh,600px)}
+#spec{height:210px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.legend i,.q i{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+table{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
+th,td{padding:.28rem .35rem;border-bottom:1px solid var(--line);text-align:left}
+th{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.num{font-family:var(--mono);text-align:right}
+.chip{font-family:var(--mono);font-size:.72rem;font-weight:600;padding:.05rem .4rem;border-radius:4px;white-space:nowrap}
+.chip.good{background:var(--ok-bg);color:var(--ok)} .chip.check{background:var(--warn-bg);color:var(--warn)} .chip.poor{background:var(--bad-bg);color:var(--bad)}
+.rec{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rec .time{font-family:var(--mono);font-size:1.25rem;font-variant-numeric:tabular-nums;min-width:4.5ch}
+.rec small{color:var(--muted);width:100%}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block}
+.dot.on{background:var(--bad)}
+@media (prefers-reduced-motion:no-preference){.dot.on{animation:blink 1s steps(2) infinite}}
+@keyframes blink{50%{opacity:.25}}
+details{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.15rem .9rem}
+details[open]{padding-bottom:.9rem}
+summary{cursor:pointer;font-weight:500;padding:.55rem 0}
+details>*+*{margin-top:.6rem}
+.prose{max-width:72ch;display:flex;flex-direction:column;gap:.6rem}
+.prose ul,.prose ol{margin:0;padding-left:1.3rem}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.tag{display:inline-block;font-family:var(--mono);font-size:.7rem;font-weight:600;padding:.02rem .38rem;border-radius:4px;vertical-align:.08em;white-space:nowrap}
+.t-ref{color:var(--ref);background:var(--ref-bg)} .t-obs{color:var(--obs);background:var(--obs-bg)} .t-ai{color:var(--ai);background:var(--ai-bg)} .t-open{color:var(--open);background:var(--open-bg)}
+.scroll{overflow-x:auto}
+pre#log{margin:0;max-height:320px;overflow:auto;font-family:var(--mono);font-size:.76rem;line-height:1.45;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:.6rem;white-space:pre-wrap;word-break:break-all}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.muted{color:var(--muted)}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:480px){#wave{height:440px}h1{font-size:1.25rem}.stats{grid-template-columns:repeat(3,1fr)}.stat b{font-size:.92rem}}
+.tabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;background:var(--bg);padding:8px 0;margin:-6px 0;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;border-radius:99px;padding:.42rem .95rem;font-weight:500}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.page[hidden]{display:none!important}
+.page{display:flex;flex-direction:column;gap:14px}
+#specBig{height:clamp(240px,45vh,420px)}
+#impHead,#topo{height:min(86vw,420px);max-width:520px;margin:0 auto}
+#bandCv{height:330px}
+#tf{height:clamp(260px,50vh,440px)}
+.mk{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.mk input{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:.32rem .5rem;width:9rem}
+.big{font-size:1rem;padding:.55rem 1.1rem}
+.banner{border-radius:6px;padding:.5rem .8rem;font-size:.9rem;background:var(--warn-bg);color:var(--warn);font-weight:500}
+ul.ev{margin:0;padding:0;list-style:none;font-family:var(--mono);font-size:.82rem;max-height:260px;overflow:auto}
+ul.ev li{padding:.2rem 0;border-bottom:1px solid var(--line)}
+.cbar{height:12px;border-radius:3px}
+.cbarlab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>NYCU BCI Web</h1>
+      <small>手機瀏覽器直接用藍牙連 STEEG 8 通道腦波帽。沒有腦波帽也能用「模擬資料」練習全部功能。（Cygnus 的網頁替代品，非原廠程式）</small>
+    </div>
+    <div class="actions">
+      <span id="state" class="pill" data-s="idle">未連線</span>
+      <button id="btnBle" class="primary" type="button">連線腦波帽</button>
+      <button id="btnSim" type="button">模擬資料</button>
+      <button id="btnStop" type="button" disabled>中斷</button>
+    </div>
+  </header>
+
+  <p id="bleNote" class="note" hidden></p>
+
+  <section class="stats" aria-label="連線狀態">
+    <div class="stat"><span>來源</span><b id="stSrc">—</b></div>
+    <div class="stat"><span>取樣率</span><b id="stRate">—</b></div>
+    <div class="stat"><span>掉包（樣本）</span><b id="stLost">0</b></div>
+    <div class="stat"><span>壞封包</span><b id="stBad">0</b></div>
+    <div class="stat"><span>電量（推論）</span><b id="stBat">—</b></div>
+    <div class="stat"><span>封包</span><b id="stPkt">—</b></div>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="功能">
+    <button type="button" data-tab="sig">訊號 Signals</button>
+    <button type="button" data-tab="spec">頻譜 Spectrum</button>
+    <button type="button" data-tab="imp">阻抗 Contact</button>
+    <button type="button" data-tab="band">頻帶 Band Power</button>
+    <button type="button" data-tab="topo">腦地形 Topographic</button>
+    <button type="button" data-tab="tf">時頻 Time-Freq</button>
+    <button type="button" data-tab="rec">錄製 / 事件</button>
+  </nav>
+
+  <p id="impBanner" class="banner" hidden>正在量測阻抗：電極上有約 8 Hz 的測試訊號，這段時間的波形不能拿來分析。量完請到「阻抗」頁按「停止」。</p>
+
+  <section class="page" id="pg-sig">
+    <section class="panel" aria-label="波形">
+      <div class="controls">
+        <label>濾波 <select id="mode">
+          <option value="raw">原始</option>
+          <option value="dc">去直流（5 s）</option>
+          <option value="bp" selected>1–50 Hz</option>
+        </select></label>
+        <label>陷波 Notch <select id="notch">
+          <option value="0">關</option><option value="50">50 Hz</option><option value="60" selected>60 Hz</option>
+        </select></label>
+        <label>時間 <select id="win">
+          <option value="2">2 s</option><option value="5" selected>5 s</option><option value="10">10 s</option>
+        </select></label>
+        <label>縱軸 <select id="span">
+          <option value="auto" selected>自動</option>
+          <option value="25">±25 µV</option><option value="50">±50 µV</option><option value="100">±100 µV</option>
+          <option value="200">±200 µV</option><option value="500">±500 µV</option>
+        </select></label>
+        <button id="btnPause" type="button">暫停畫面</button>
+      </div>
+      <canvas id="wave" aria-label="8 通道即時波形"></canvas>
+      <div class="mk" aria-label="事件標記">
+        <b class="muted" style="font-size:.85rem">Marker</b>
+        <button type="button" data-mk="1">1</button><button type="button" data-mk="2">2</button><button type="button" data-mk="3">3</button>
+        <button type="button" data-mk="睜眼">睜眼</button><button type="button" data-mk="閉眼">閉眼</button>
+      </div>
+    </section>
+  </section>
+
+  <section class="page" id="pg-spec" hidden>
+    <section class="panel" aria-label="頻譜">
+      <h2>頻譜 Spectrum · 最近 2 s（灰色帶 = α 8–12 Hz）</h2>
+      <canvas id="specBig" aria-label="功率頻譜"></canvas>
+      <div id="legend" class="legend"></div>
+    </section>
+    <section class="panel" aria-label="通道品質">
+      <h2>通道品質</h2>
+      <div class="scroll"><table class="q">
+        <thead><tr><th>通道</th><th style="text-align:right">RMS µV</th><th style="text-align:right" id="lfHead">60 Hz</th><th>狀態</th></tr></thead>
+        <tbody id="qbody"></tbody>
+      </table></div>
+    </section>
+  </section>
+
+  <section class="page" id="pg-imp" hidden>
+    <section class="panel" aria-label="阻抗">
+      <div class="row">
+        <button id="btnImp" type="button" class="primary big">開始量測阻抗</button>
+        <span id="impInfo" class="muted" style="font-size:.88rem">每 1.2 秒更新一次，取最近 5 次的中位數。</span>
+      </div>
+      <canvas id="impHead" aria-label="電極阻抗頭圖"></canvas>
+      <div><div class="cbar" style="background:linear-gradient(90deg,#0d57a7,#4ddfbe,#faff78,#ffa837,#68193f)"></div>
+        <div class="cbarlab"><span>0</span><span>250</span><span>500</span><span>750</span><span>1000 kΩ</span></div></div>
+      <div class="scroll"><table>
+        <thead><tr><th>通道</th><th style="text-align:right">阻抗 kΩ</th><th>狀態</th></tr></thead>
+        <tbody id="impBody"></tbody>
+      </table></div>
+      <p class="muted" style="font-size:.85rem">目標：每個電極 <b>&lt; 100 kΩ（藍色）</b>。偏高時調整海綿電極角度或加水。「未接觸」= 電極沒碰到頭皮或沒接。</p>
+    </section>
+  </section>
+
+  <section class="page" id="pg-band" hidden>
+    <section class="panel" aria-label="頻帶功率">
+      <h2>頻帶功率 Band Power · 相對比例（最近 2 s）</h2>
+      <canvas id="bandCv" aria-label="各通道頻帶功率"></canvas>
+      <div id="bandLegend" class="legend"></div>
+      <div class="scroll"><table>
+        <thead id="bandHead"></thead><tbody id="bandBody"></tbody>
+      </table></div>
+      <p class="muted" style="font-size:.85rem">δ 1–4、θ 4–8、α 8–13、β 13–30、γ 30–45 Hz。表格是絕對功率（µV²）。閉眼時 O1/O2 的 α 比例應該明顯變大。</p>
+    </section>
+  </section>
+
+  <section class="page" id="pg-topo" hidden>
+    <section class="panel" aria-label="腦地形圖">
+      <div class="controls">
+        <label>頻帶 <select id="topoBand">
+          <option value="0">δ 1–4 Hz</option><option value="1">θ 4–8 Hz</option><option value="2" selected>α 8–13 Hz</option><option value="3">β 13–30 Hz</option><option value="4">γ 30–45 Hz</option>
+        </select></label>
+        <label>數值 <select id="topoMode"><option value="rel" selected>相對比例 %</option><option value="abs">絕對 µV²</option></select></label>
+      </div>
+      <canvas id="topo" aria-label="頻帶功率腦地形圖"></canvas>
+      <div><div class="cbar" id="topoBar"></div><div class="cbarlab"><span id="topoMin">—</span><span id="topoMax">—</span></div></div>
+      <p class="muted" style="font-size:.85rem">只有 8 個電極，中間的顏色是用距離加權內插出來的，看大致分布就好。上方是鼻子（前額）。</p>
+    </section>
+  </section>
+
+  <section class="page" id="pg-tf" hidden>
+    <section class="panel" aria-label="時頻圖">
+      <div class="controls">
+        <label>通道 <select id="tfCh"></select></label>
+        <span class="muted">橫軸：最近 60 秒；縱軸：0–50 Hz；顏色：功率 dB</span>
+      </div>
+      <canvas id="tf" aria-label="時頻圖"></canvas>
+    </section>
+  </section>
+
+  <section class="page" id="pg-rec" hidden>
+    <section class="panel" aria-label="錄製">
+      <h2>錄製 Recording</h2>
+      <div class="rec">
+        <span id="recDot" class="dot"></span>
+        <span id="recTime" class="time">0:00</span>
+        <button id="btnRec" type="button" class="primary">開始錄製</button>
+        <button id="btnSave" type="button" disabled>下載 CSV</button>
+        <small id="recInfo">CSV：<code>Time(sec),Fp1,…,Pz,Event</code>，單位 µV；Event 欄是 marker。</small>
+      </div>
+    </section>
+    <section class="panel" aria-label="事件">
+      <h2>事件 Marker</h2>
+      <div class="mk">
+        <button type="button" data-mk="1">1</button><button type="button" data-mk="2">2</button><button type="button" data-mk="3">3</button>
+        <button type="button" data-mk="睜眼">睜眼</button><button type="button" data-mk="閉眼">閉眼</button>
+        <input id="mkText" type="text" placeholder="自訂名稱" maxlength="20"><button id="mkAdd" type="button">加入</button>
+      </div>
+      <ul id="evList" class="ev"></ul>
+    </section>
+  </section>
+
+  <details>
+    <summary>怎麼用（第一次看這裡）</summary>
+    <div class="prose">
+      <ol>
+        <li><b>沒有腦波帽的人：</b>打開就會自動跑「模擬資料」（Fp1/Fp2 有眨眼、O1/O2 每 8 秒切換閉眼 α 波、Pz 模擬電極沒接），每個分頁都能操作。</li>
+        <li><b>有腦波帽的人：</b>先<b>拔掉 USB dongle</b>、打開腦波帽。一頂腦波帽同一時間只能連一支手機。</li>
+        <li><b>Android</b>：用 Chrome，開啟藍牙和定位，允許 Chrome 使用「鄰近裝置」。<b>iPhone / iPad</b>：Safari 不支援藍牙網頁，請到 App Store 安裝免費的 <b>Bluefy</b> 瀏覽器，用它開這個網址。</li>
+        <li>按「連線腦波帽」，在跳出的清單選 <code>STEEG_…</code>。連上後取樣率應接近 1000 Hz。</li>
+        <li>建議順序：<b>阻抗</b>（調到 &lt; 100 kΩ）→ <b>訊號</b>（眨眼、咬牙看波形）→ <b>頻譜 / 頻帶 / 腦地形 / 時頻</b>（閉眼看 α 波）→ <b>錄製</b>（可下 marker，再下載 CSV）。</li>
+      </ol>
+      <p class="muted">資料只留在你的瀏覽器，錄製檔直接存到你的裝置，不會上傳。手機螢幕關掉時瀏覽器會暫停，錄製時請保持螢幕亮著（連線時本頁會嘗試讓螢幕保持常亮）。</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>這頁用的藍牙協定，以及每一條的來源</summary>
+    <div class="prose">
+      <p><span class="tag t-ref">REF</span> = 原廠 PC 端軟體的做法；<span class="tag t-obs">OBS</span> = 2026-10-18 用手機 nRF Connect 實測；<span class="tag t-ai">AI</span> = 推論，尚未驗證；<span class="tag t-open">OPEN</span> = 待確認。</p>
+      <ul>
+        <li><span class="tag t-obs">OBS</span> Service <code>04831523-6c9d-6ca9-5d41-03ad4fff4abb</code>；<code>1524</code> NOTIFY = 資料、<code>1525</code> READ = <code>47 47 99 F0</code>、<code>1526</code> WRITE = 指令。不需配對。</li>
+        <li><span class="tag t-obs">OBS</span> 先開 1524 的 notify，再寫入啟動指令 <code>01 08 02 01 00</code>（dongle 用的 COBS 解碼後內容）。</li>
+        <li><span class="tag t-obs">OBS</span> 一包 212 B = <code>[n=5][len=42]</code> + 5 筆紀錄；紀錄 = 序號 u32 LE、8 × int24 BE、12 B、1 B、1 B。只驗證過 1 包。</li>
+        <li><span class="tag t-ref">REF</span> µV = raw × 4 500 000 / 100 663 284（ADS1299，Vref 4.5 V，增益 12）。8 通道時 1000 Hz。</li>
+        <li><span class="tag t-ref">REF</span> 通道順序 Fp1 Fp2 T7 T8 O1 O2 Fz Pz；實體電極在 C3/C4，所以 T7→C3、T8→C4（同 Pentagram <code>config.LABEL_RENAME</code>）。</li>
+        <li><span class="tag t-ai">AI</span> 停止指令 <code>01 08 02 02 00</code>；阻抗 5/6/7 也套同樣格式。本頁「中斷」時會送停止指令。</li>
+        <li><span class="tag t-ai">AI</span> 第 40 byte 是電量 %、第 41 byte 是 event、12 B 是 IMU（目前全 0）。本頁若看到 12 B 不是 0，會寫進 log。</li>
+        <li><span class="tag t-open">OPEN</span> 每秒 200 包、42 kB/s，ATT MTU 需 ≥ 215。電腦藍牙 MTU 不夠時會出現「壞封包：封包被截斷」。</li>
+      </ul>
+      <p class="muted">品質判斷的門檻是 <span class="tag t-ai">AI</span> 預設值：飽和 = |x| ≥ 374 000 µV；平線 = 1–50 Hz RMS &lt; 0.5 µV；振幅大 = RMS &gt; 100 µV；市電多 = 市電頻率 ±2 Hz 佔 1–100 Hz 功率一半以上。CSV 的時間欄用裝置序號換算（掉包時時間會跳）。阻抗：送 AC 導聯偵測指令後，每 1.2 秒取最後 1000 筆，算 8 Hz 振幅，套原廠 PC 端軟體的校正多項式換成 kΩ，取最近 5 次中位數 <span class="tag t-ref">REF</span>；在藍牙直連下是否和原廠數值一致尚未實測 <span class="tag t-open">OPEN</span>。</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>實驗指令與 log（回報問題時把 log 複製貼上）</summary>
+    <div class="row">
+      <label class="row muted"><input id="allDev" type="checkbox"> 列出所有裝置</label>
+      <button type="button" data-cmd="5">阻抗 DC (5)</button>
+      <button type="button" data-cmd="6">阻抗 AC (6)</button>
+      <button type="button" data-cmd="7">阻抗關 (7)</button>
+      <button type="button" data-cmd="18">連線狀態 (18)</button>
+      <button type="button" data-cmd="46">機器資訊 (46)</button>
+      <button type="button" data-cmd="2">停止串流 (2)</button>
+      <button type="button" data-cmd="1">重送啟動 (1)</button>
+    </div>
+    <p class="muted" style="font-size:.85rem">這些指令在藍牙端的格式都是推論（<code>01 08 02 &lt;code&gt; 00</code>）。送出後如果收到格式不同的封包，log 會列出前 48 bytes。</p>
+    <div class="row"><button id="btnCopy" type="button">複製 log</button><span id="copyMsg" class="muted"></span></div>
+    <pre id="log"></pre>
+  </details>
+</div>
+
+<script>
+'use strict';
+// ---------- protocol (see the toggle on the page for sources) ----------
+const P = {
+  service: '04831523-6c9d-6ca9-5d41-03ad4fff4abb',
+  data:    '04831524-6c9d-6ca9-5d41-03ad4fff4abb',
+  ident:   '04831525-6c9d-6ca9-5d41-03ad4fff4abb',
+  cmd:     '04831526-6c9d-6ca9-5d41-03ad4fff4abb',
+  namePrefix: 'STEEG',
+  fs: 1000, nch: 8,
+  uvPerCount: 4500000 / 100663284,
+  deviceLabels: ['Fp1', 'Fp2', 'T7', 'T8', 'O1', 'O2', 'Fz', 'Pz'],
+  rename: { T7: 'C3', T8: 'C4' },
+};
+const LABELS = P.deviceLabels.map(l => P.rename[l] || l);
+const CMD = { start: 1, stop: 2 };
+const cmdBytes = code => new Uint8Array([0x01, 0x08, 0x02, code, 0x00]);
+const RAIL_UV = 374000;
+const BUILD = '2026-11-20.class';
+
+const $ = id => document.getElementById(id);
+const hex = b => Array.from(b, x => x.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+function pref(k, v) { try { if (v === undefined) return localStorage.getItem('nbw.' + k); localStorage.setItem('nbw.' + k, v); } catch { return null; } }
+
+// ---------- log ----------
+const logLines = [];
+const t0 = performance.now();
+let logDirty = false;
+function log(msg) {
+  logLines.push(`${((performance.now() - t0) / 1000).toFixed(3).padStart(8)}s  ${msg}`);
+  if (logLines.length > 400) logLines.splice(0, logLines.length - 400);
+  logDirty = true;
+}
+setInterval(() => { if (logDirty) { const el = $('log'); el.textContent = logLines.join('\n'); el.scrollTop = el.scrollHeight; logDirty = false; } }, 300);
+$('btnCopy').onclick = async () => {
+  const text = logLines.join('\n');
+  try { await navigator.clipboard.writeText(text); $('copyMsg').textContent = '已複製'; }
+  catch { const r = document.createRange(); r.selectNodeContents($('log')); getSelection().removeAllRanges(); getSelection().addRange(r); $('copyMsg').textContent = '請按 Ctrl+C 複製選取的文字'; }
+};
+
+// ---------- filters ----------
+class Biquad {
+  constructor(b0, b1, b2, a1, a2) { Object.assign(this, { b0, b1, b2, a1, a2 }); this.z1 = 0; this.z2 = 0; }
+  process(x) { const y = this.b0 * x + this.z1; this.z1 = this.b1 * x - this.a1 * y + this.z2; this.z2 = this.b2 * x - this.a2 * y; return y; }
+}
+function butterworth(kind, fc, fs, order = 4) {
+  const w0 = 2 * Math.PI * fc / fs, c = Math.cos(w0), s = Math.sin(w0), out = [];
+  for (let k = 0; k < order / 2; k++) {
+    const q = 1 / (2 * Math.cos(Math.PI * (2 * k + 1) / (2 * order))), alpha = s / (2 * q), a0 = 1 + alpha;
+    const b = kind === 'lowpass' ? [(1 - c) / 2, 1 - c, (1 - c) / 2] : [(1 + c) / 2, -(1 + c), (1 + c) / 2];
+    out.push(new Biquad(b[0] / a0, b[1] / a0, b[2] / a0, -2 * c / a0, (1 - alpha) / a0));
+  }
+  return out;
+}
+function notchBiquad(f0, fs, Q = 30) {
+  const w0 = 2 * Math.PI * f0 / fs, c = Math.cos(w0), alpha = Math.sin(w0) / (2 * Q), a0 = 1 + alpha;
+  return new Biquad(1 / a0, -2 * c / a0, 1 / a0, -2 * c / a0, (1 - alpha) / a0);
+}
+function makeFilter(mode, notch, fs) {
+  if (mode === 'raw') return x => x;
+  const stages = notch ? [notchBiquad(notch, fs)] : [];
+  if (mode === 'dc') {
+    const n = 5 * fs, win = new Float64Array(n); let i = 0, count = 0, sum = 0;
+    return x => {
+      if (count === n) sum -= win[i]; else count++;
+      win[i] = x; sum += x; i = (i + 1) % n;
+      let y = x - sum / count;
+      for (const s of stages) y = s.process(y);
+      return y;
+    };
+  }
+  stages.push(...butterworth('highpass', 1, fs), ...butterworth('lowpass', 50, fs));
+  let x0 = null; // removes the start-up step from a large DC offset
+  return x => { if (x0 === null) x0 = x; let y = x - x0; for (const s of stages) y = s.process(y); return y; };
+}
+
+// ---------- signal buffer ----------
+const BUF_S = 10, N = P.fs * BUF_S;
+const rawUv = Array.from({ length: P.nch }, () => new Float32Array(N));
+const disp = Array.from({ length: P.nch }, () => new Float32Array(N));
+let head = 0, total = 0, filters = [];
+function rebuildFilters() {
+  const mode = $('mode').value, notch = +$('notch').value;
+  $('notch').disabled = mode === 'raw';
+  filters = Array.from({ length: P.nch }, () => makeFilter(mode, notch, P.fs));
+  const avail = Math.min(total, N);
+  for (let j = 0; j < avail; j++) {
+    const idx = (head - avail + j + N) % N;
+    for (let k = 0; k < P.nch; k++) disp[k][idx] = filters[k](rawUv[k][idx]);
+  }
+}
+
+// ---------- stream stats ----------
+const S = { lastSeq: null, lost: 0, bad: 0, battery: null, pktLen: null, perPkt: null, count: 0, lastData: 0, rateCount: 0, rate: null, extraSeen: false, oddLogged: 0 };
+function resetStats() {
+  Object.assign(S, { lastSeq: null, lost: 0, bad: 0, battery: null, pktLen: null, perPkt: null, rateCount: 0, rate: null, lastData: performance.now(), extraSeen: false, oddLogged: 0 });
+}
+
+// Parses one notification. Header-driven so a 32-channel or differently sized record is reported, not misread.
+function parsePacket(dv) {
+  if (dv.byteLength < 2) return { error: `封包只有 ${dv.byteLength} B` };
+  const n = dv.getUint8(0), len = dv.getUint8(1), need = 2 + n * len;
+  if (n === 0 || len < 4 + 3 * P.nch) return { error: `格式不同：n=${n} len=${len}` };
+  if (dv.byteLength < need) return { error: `封包被截斷：${dv.byteLength} B，應為 ${need} B（MTU 可能不足）` };
+  const recs = [];
+  for (let i = 0; i < n; i++) {
+    const o = 2 + i * len, raw = new Int32Array(P.nch);
+    for (let k = 0; k < P.nch; k++) {
+      const p = o + 4 + 3 * k;
+      let v = (dv.getUint8(p) << 16) | (dv.getUint8(p + 1) << 8) | dv.getUint8(p + 2);
+      if (v & 0x800000) v -= 0x1000000;
+      raw[k] = v;
+    }
+    let extra = false;
+    if (len >= 42) for (let b = o + 28; b < o + 40; b++) if (dv.getUint8(b)) { extra = true; break; }
+    recs.push({ seq: dv.getUint32(o, true), raw, battery: len >= 42 ? dv.getUint8(o + 40) : null, event: len >= 42 ? dv.getUint8(o + 41) : null, extra });
+  }
+  return { recs, n, len, tail: dv.byteLength - need };
+}
+
+function handlePacket(dv) {
+  const r = parsePacket(dv);
+  S.lastData = performance.now();
+  if (r.error) {
+    S.bad++;
+    if (S.oddLogged < 20) { S.oddLogged++; log(`壞封包 ${r.error}；前 48 B: ${hex(new Uint8Array(dv.buffer, dv.byteOffset, Math.min(48, dv.byteLength)))}`); }
+    return;
+  }
+  S.pktLen = dv.byteLength; S.perPkt = r.n;
+  if (r.tail && S.oddLogged < 20) { S.oddLogged++; log(`封包尾端多 ${r.tail} B`); }
+  for (const rec of r.recs) {
+    if (S.lastSeq !== null) {
+      const gap = (rec.seq - S.lastSeq - 1) >>> 0;
+      if (gap > 0 && gap < 1e6) S.lost += gap;
+      else if (gap >= 1e6) log(`序號跳動 ${S.lastSeq} → ${rec.seq}，重新同步`);
+    }
+    S.lastSeq = rec.seq;
+    if (rec.battery !== null) S.battery = rec.battery;
+    if (rec.event && S.oddLogged < 20) { S.oddLogged++; log(`event byte = ${rec.event}（seq ${rec.seq}）`); }
+    if (rec.event && rec.event !== S.lastEvent) addMarker('dev' + rec.event);
+    S.lastEvent = rec.event;
+    if (rec.extra && !S.extraSeen) { S.extraSeen = true; log(`第 28–39 byte 出現非 0 值（seq ${rec.seq}）：可能是 IMU`); }
+    const uv = new Float32Array(P.nch);
+    for (let k = 0; k < P.nch; k++) {
+      uv[k] = rec.raw[k] * P.uvPerCount;
+      rawUv[k][head] = uv[k];
+      disp[k][head] = filters[k](uv[k]);
+    }
+    head = (head + 1) % N; total++; S.rateCount++;
+    if (rec_.on) recPush(rec.seq, uv);
+    if (IMP.on) impFeed(uv);
+  }
+}
+
+// ---------- connection state ----------
+let source = null; // 'ble' | 'sim' | null
+const STATE_TEXT = { idle: '未連線', sim: '模擬資料', connecting: '連線中…', live: '已連線', reconnecting: '重新連線…', stalled: '超過 2 秒沒有資料', error: '連線失敗' };
+function setState(s, extra = '') {
+  $('state').dataset.s = s;
+  $('state').textContent = STATE_TEXT[s] + (extra ? ' ' + extra : '');
+  $('btnStop').disabled = !(s === 'live' || s === 'sim' || s === 'reconnecting' || s === 'stalled' || s === 'connecting');
+  $('stSrc').textContent = source === 'ble' ? (ble.device?.name || 'BLE') : source === 'sim' ? '模擬' : '—';
+}
+
+// ---------- Web Bluetooth ----------
+function bleAvailability() {
+  if (!('bluetooth' in navigator)) return '這個瀏覽器沒有 Web Bluetooth。請用 Chrome 或 Edge（桌機或 Android）。';
+  if (!window.isSecureContext) return '藍牙只能在 https 或 localhost 頁面使用。';
+  const pp = document.permissionsPolicy || document.featurePolicy;
+  try { if (pp && pp.allowsFeature && !pp.allowsFeature('bluetooth')) return '這個頁面嵌在不允許藍牙的框架裡，只能看模擬資料。請直接開啟這個網址，不要透過其他網頁嵌入。'; } catch {}
+  return null;
+}
+const ble = { device: null, dataChar: null, cmdChar: null, user: false, opening: false, reconnecting: false };
+const onNotify = e => { if (source === 'ble') handlePacket(e.target.value); };
+function withTimeout(p, ms, what) {
+  let t; p.catch(() => {});
+  return Promise.race([p, new Promise((_, rej) => { t = setTimeout(() => rej(new DOMException(`${what} 超過 ${ms / 1000} s`, 'TimeoutError')), ms); })]).finally(() => clearTimeout(t));
+}
+async function sendCmd(code) {
+  if (!ble.cmdChar) { log(`沒有連線，無法送指令 ${code}`); return; }
+  const b = cmdBytes(code);
+  if (ble.cmdChar.writeValueWithResponse) await ble.cmdChar.writeValueWithResponse(b); else await ble.cmdChar.writeValue(b);
+  log(`→ 1526 ${hex(b)}`);
+}
+async function bleConnect() {
+  const why = bleAvailability();
+  if (why) { showNote(why); log(why); return; }
+  stopSim();
+  const all = $('allDev').checked;
+  const opts = all ? { acceptAllDevices: true, optionalServices: [P.service] }
+    : { filters: [{ namePrefix: P.namePrefix }, { services: [P.service] }], optionalServices: [P.service] };
+  log(`瀏覽器選擇視窗（${all ? '所有裝置' : P.namePrefix + '* 或 service 1523'}）`);
+  let dev;
+  try { dev = await navigator.bluetooth.requestDevice(opts); }
+  catch (e) {
+    log(`選擇視窗：${e.name}: ${e.message}`);
+    if (e.name === 'SecurityError') showNote('瀏覽器拒絕藍牙存取：這個頁面可能嵌在不允許藍牙的框架裡。請直接開啟這個網址。');
+    if (e.name === 'NotFoundError' && !all) log('清單裡沒有 STEEG？確認 dongle 已拔掉、頭戴已開機，或勾「列出所有裝置」再試。');
+    setState('idle'); return;
+  }
+  if (ble.device && ble.device !== dev) ble.device.removeEventListener('gattserverdisconnected', onDrop);
+  ble.device = dev; ble.user = false; source = 'ble';
+  dev.addEventListener('gattserverdisconnected', onDrop);
+  log(`選了 ${dev.name || '(無名稱)'} id=${dev.id}`);
+  try { await bleOpen(); }
+  catch (e) {
+    log(`連線失敗 ${e.name}: ${e.message}`);
+    if (e.name === 'NotFoundError') log('這個裝置沒有 service 1523，不是 STEEG 頭戴。');
+    ble.user = true; if (dev.gatt.connected) dev.gatt.disconnect();
+    source = null; setState('error');
+  }
+}
+async function bleOpen(reconnect = false) {
+  ble.opening = true;
+  setState(reconnect ? 'reconnecting' : 'connecting');
+  try {
+    const t = performance.now(), ms = () => `${Math.round(performance.now() - t)} ms`;
+    const server = await ble.device.gatt.connect();
+    log(`GATT 已連線（${ms()}）`);
+    const svc = await withTimeout(server.getPrimaryService(P.service), 10000, '讀取 service');
+    ble.dataChar = await svc.getCharacteristic(P.data);
+    ble.cmdChar = await svc.getCharacteristic(P.cmd);
+    try { const v = await (await svc.getCharacteristic(P.ident)).readValue(); log(`1525 = ${hex(new Uint8Array(v.buffer, v.byteOffset, v.byteLength))}`); }
+    catch (e) { log(`讀 1525 失敗：${e.message}`); }
+    ble.dataChar.removeEventListener('characteristicvaluechanged', onNotify);
+    ble.dataChar.addEventListener('characteristicvaluechanged', onNotify);
+    await ble.dataChar.startNotifications();
+    log(`1524 notify 已開啟（${ms()}）`);
+    resetStats();
+    await sendCmd(CMD.start);
+    setState('live');
+  } finally { ble.opening = false; }
+}
+async function bleDisconnect() {
+  ble.user = true;
+  try { await sendCmd(CMD.stop); } catch (e) { log(`停止指令失敗：${e.message}`); }
+  try { await ble.dataChar?.stopNotifications(); } catch {}
+  if (ble.device?.gatt.connected) ble.device.gatt.disconnect();
+  else { source = null; setState('idle'); }
+}
+async function onDrop() {
+  ble.dataChar = ble.cmdChar = null;
+  if (ble.opening || ble.reconnecting) return;
+  log('藍牙連線中斷');
+  if (ble.user) { source = null; if ($('state').dataset.s !== 'error') setState('idle'); return; }
+  ble.reconnecting = true;
+  for (let i = 1; i <= 10 && !ble.user; i++) {
+    setState('reconnecting', `${i}/10`);
+    await new Promise(r => setTimeout(r, 2000));
+    if (ble.user) break;
+    try { await bleOpen(true); log(`第 ${i} 次重連成功`); ble.reconnecting = false; return; }
+    catch (e) { log(`第 ${i} 次重連失敗：${e.message}`); }
+  }
+  ble.reconnecting = false;
+  source = null; setState(ble.user ? 'idle' : 'error');
+}
+
+// ---------- simulator: builds real 212-byte packets and feeds them through the same parser ----------
+const sim = { timer: 0, seq: 0, last: 0, carry: 0, t: 0, drift: new Float64Array(P.nch) };
+const OFFSETS = [-31200, -28750, -24100, -26600, -22900, -25300, -29800, 0];
+function gauss() { return (Math.random() + Math.random() + Math.random() + Math.random() - 2) * 1.73; }
+function simSample(k, t) {
+  if (k === 7) return 375000; // Pz unplugged: railed
+  sim.drift[k] = 0.9995 * sim.drift[k] + gauss() * 0.9;
+  let v = OFFSETS[k] + sim.drift[k] * 6 + gauss() * 3.5 + 7 * Math.sin(2 * Math.PI * 60 * t + k);
+  const eyesClosed = Math.floor(t / 8) % 2 === 1;
+  const alphaAmp = (k === 4 || k === 5) ? 18 : k === 6 ? 6 : 4;
+  v += (eyesClosed ? alphaAmp : alphaAmp * 0.25) * Math.sin(2 * Math.PI * 10.2 * t + k * 0.4);
+  v += 3 * Math.sin(2 * Math.PI * 21 * t + k);
+  if (k <= 1) { const ph = t % 5.3; v += 160 * Math.exp(-((ph - 0.6) ** 2) / (2 * 0.06 ** 2)); }
+  if (sim.imp) v += SIM_A[k] * Math.sin(2 * Math.PI * 8 * t);
+  return v;
+}
+function simTick() {
+  const now = performance.now();
+  sim.carry += (now - sim.last) * P.fs / 1000; sim.last = now;
+  let n = Math.floor(sim.carry / 5) * 5; sim.carry -= n;
+  if (n > 2000) n = 2000;
+  for (let p = 0; p < n / 5; p++) {
+    const buf = new Uint8Array(2 + 5 * 42), dv = new DataView(buf.buffer);
+    buf[0] = 5; buf[1] = 42;
+    for (let i = 0; i < 5; i++) {
+      const o = 2 + i * 42;
+      dv.setUint32(o, sim.seq++ >>> 0, true);
+      sim.t += 1 / P.fs;
+      for (let k = 0; k < P.nch; k++) {
+        let c = Math.round(simSample(k, sim.t) / P.uvPerCount);
+        c = Math.max(-0x800000, Math.min(0x7FFFFF, c)) & 0xFFFFFF;
+        buf[o + 4 + 3 * k] = c >> 16; buf[o + 5 + 3 * k] = (c >> 8) & 255; buf[o + 6 + 3 * k] = c & 255;
+      }
+      buf[o + 40] = 59; buf[o + 41] = 0;
+    }
+    handlePacket(dv);
+  }
+}
+function startSim() {
+  if (source === 'ble') return;
+  stopSim();
+  source = 'sim'; resetStats(); sim.last = performance.now(); sim.carry = 0;
+  sim.timer = setInterval(simTick, 40);
+  log('模擬資料開始：Fp1/Fp2 有眨眼、O1/O2 每 8 秒切換閉眼 α 波、Pz 模擬電極未接');
+  setState('sim');
+}
+function stopSim() { if (sim.timer) { clearInterval(sim.timer); sim.timer = 0; log('模擬資料停止'); } if (source === 'sim') source = null; }
+
+// ---------- recording ----------
+const rec_ = { on: false, seq: [], data: [], n: 0, start: 0, seq0: null, blob: null, name: '', ev: new Map() };
+const RCH = 65536;
+function recPush(seq, uv) {
+  const c = rec_.n % RCH;
+  if (c === 0) { rec_.seq.push(new Float64Array(RCH)); rec_.data.push(new Float32Array(RCH * P.nch)); }
+  const ci = rec_.seq.length - 1;
+  if (rec_.seq0 === null) rec_.seq0 = seq;
+  rec_.seq[ci][c] = ((seq - rec_.seq0) >>> 0);
+  rec_.data[ci].set(uv, c * P.nch);
+  rec_.n++;
+}
+function stamp(d) { const z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())} ${z(d.getHours())}.${z(d.getMinutes())}.${z(d.getSeconds())}`; }
+function recStart() {
+  Object.assign(rec_, { on: true, seq: [], data: [], n: 0, start: Date.now(), seq0: null, blob: null, name: stamp(new Date()) + '.csv', ev: new Map() });
+  $('btnRec').textContent = '停止錄製'; $('recDot').classList.add('on'); $('btnSave').disabled = true;
+  log(`開始錄製 ${rec_.name}（來源：${source === 'sim' ? '模擬' : 'BLE'}）`);
+}
+function recStop() {
+  rec_.on = false;
+  $('btnRec').textContent = '開始錄製'; $('recDot').classList.remove('on');
+  const parts = ['Time(sec),' + LABELS.join(',') + ',Event\n'];
+  for (let ci = 0; ci < rec_.seq.length; ci++) {
+    const m = Math.min(RCH, rec_.n - ci * RCH), lines = new Array(m);
+    for (let i = 0; i < m; i++) {
+      let s = (rec_.seq[ci][i] / P.fs).toFixed(3);
+      for (let k = 0; k < P.nch; k++) s += ',' + rec_.data[ci][i * P.nch + k].toFixed(4);
+      lines[i] = s + ',' + (rec_.ev.get(ci * RCH + i) || '');
+    }
+    parts.push(lines.join('\n') + '\n');
+  }
+  rec_.blob = new Blob(parts, { type: 'text/csv' });
+  const dur = (Date.now() - rec_.start) / 1000;
+  $('recInfo').textContent = `${rec_.name}：${rec_.n.toLocaleString()} 筆，${dur.toFixed(1)} s（預期約 ${Math.round(dur * P.fs).toLocaleString()} 筆），${(rec_.blob.size / 1e6).toFixed(1)} MB`;
+  $('btnSave').disabled = rec_.n === 0;
+  log(`停止錄製：${rec_.n} 筆`);
+}
+let downloadsCap;
+async function saveFile(name, blob) {
+  if (window.claude && typeof window.claude.use === 'function') {
+    if (downloadsCap === undefined) downloadsCap = await window.claude.use('downloads');
+    if (downloadsCap) {
+      try { await downloadsCap.save({ filename: name, data: blob }); log(`已下載 ${name}`); }
+      catch (e) { log(`下載沒有完成：${e.code || e.name}`); }
+      return;
+    }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  log(`已下載 ${name}`);
+}
+$('btnRec').onclick = () => (rec_.on ? recStop() : recStart());
+$('btnSave').onclick = () => rec_.blob && saveFile(rec_.name, rec_.blob);
+addEventListener('beforeunload', e => { if (rec_.on) { e.preventDefault(); e.returnValue = ''; } });
+
+// ---------- drawing ----------
+let colors = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+  colors = { ink: g('--ink'), muted: g('--muted'), grid: g('--grid'), line: g('--line'), bad: g('--bad'), accent: g('--accent'), panel: g('--panel'),
+    series: Array.from({ length: 8 }, (_, i) => g(`--s${i + 1}`)) };
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); drawAll(); });
+new MutationObserver(() => { readColors(); drawAll(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+function fit(cv) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+const niceSpan = v => { const steps = [10, 25, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 50000, 100000, 500000]; return steps.find(s => s >= v) || steps.at(-1); };
+let paused = false;
+function drawWave() {
+  const { ctx, w, h } = fit($('wave'));
+  const gutter = 70, right = 8, axisH = 18, plotW = Math.max(10, w - gutter - right), rowH = (h - axisH) / P.nch;
+  const winS = +$('win').value, W = winS * P.fs, avail = Math.min(total, N), ns = Math.min(W, avail);
+  const fixed = $('span').value === 'auto' ? null : +$('span').value;
+  ctx.font = '11px ui-monospace, "Cascadia Mono", Consolas, monospace';
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = colors.grid; ctx.fillStyle = colors.muted; ctx.textAlign = 'center';
+  for (let s = 0; s <= winS; s++) {
+    const x = gutter + plotW * s / winS;
+    ctx.beginPath(); ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, h - axisH); ctx.stroke();
+    if (winS <= 5 || s % 2 === 0) ctx.fillText(s === winS ? '0 s' : `−${winS - s}`, x, h - 5);
+  }
+  for (let k = 0; k < P.nch; k++) {
+    const top = k * rowH, mid = top + rowH / 2;
+    ctx.strokeStyle = colors.grid; ctx.beginPath(); ctx.moveTo(gutter, Math.round(top + rowH) + .5); ctx.lineTo(w - right, Math.round(top + rowH) + .5); ctx.stroke();
+    let mean = 0, railed = false;
+    const at = j => disp[k][(head - ns + j + N) % N];
+    for (let j = 0; j < ns; j++) mean += at(j);
+    mean = ns ? mean / ns : 0;
+    let peak = 0;
+    for (let j = 0; j < ns; j++) { const v = Math.abs(at(j) - mean); if (v > peak) peak = v; }
+    if (avail && Math.abs(rawUv[k][(head - 1 + N) % N]) >= RAIL_UV) railed = true;
+    const span = fixed || niceSpan(peak * 1.1);
+    const yOf = v => Math.max(top + 1, Math.min(top + rowH - 1, mid - (v - mean) / span * (rowH / 2 - 2)));
+    if (ns > 1) {
+      ctx.strokeStyle = colors.series[k]; ctx.beginPath();
+      const spp = W / plotW; let started = false;
+      for (let px = 0; px <= plotW; px++) {
+        const back = (plotW - px) * spp, j0 = Math.floor(ns - back), j1 = Math.max(j0 + 1, Math.floor(ns - back + spp));
+        if (j1 <= 0) continue;
+        let lo = Infinity, hi = -Infinity;
+        for (let j = Math.max(0, j0); j < Math.min(ns, j1); j++) { const v = at(j); if (v < lo) lo = v; if (v > hi) hi = v; }
+        if (lo === Infinity) continue;
+        const x = gutter + px;
+        if (!started) { ctx.moveTo(x, yOf(hi)); started = true; } else ctx.lineTo(x, yOf(hi));
+        if (lo !== hi) ctx.lineTo(x, yOf(lo));
+      }
+      ctx.stroke();
+    }
+    ctx.textAlign = 'left';
+    ctx.fillStyle = colors.series[k]; ctx.font = '600 13px system-ui, "Segoe UI", sans-serif';
+    ctx.fillText(LABELS[k], 8, mid - 2);
+    ctx.font = '11px ui-monospace, "Cascadia Mono", Consolas, monospace';
+    ctx.fillStyle = railed ? colors.bad : colors.muted;
+    ctx.fillText(railed ? '飽和' : `±${span >= 1000 ? span / 1000 + 'k' : span}`, 8, mid + 13);
+    ctx.textAlign = 'center';
+  }
+  const spp = W / plotW;
+  ctx.setLineDash([4, 3]); ctx.lineWidth = 1; ctx.font = '600 11px system-ui, sans-serif'; ctx.textAlign = 'left';
+  for (const m of MK) {
+    const back = total - m.at; if (back < 0 || back >= ns) continue;
+    const x = Math.round(gutter + plotW - back / spp) + .5;
+    ctx.strokeStyle = colors.bad; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h - axisH); ctx.stroke();
+    ctx.fillStyle = colors.bad; ctx.fillText(m.label, x + 3, 11);
+  }
+  ctx.setLineDash([]);
+  if (!avail) { ctx.fillStyle = colors.muted; ctx.textAlign = 'center'; ctx.font = '14px system-ui, "Microsoft JhengHei", sans-serif'; ctx.fillText('尚無資料：按「連線腦波帽」或「模擬資料」', gutter + plotW / 2, h / 2); }
+}
+
+function fft(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) { let bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit; if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; } }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) { let cr = 1, ci = 0;
+      for (let k = 0; k < len / 2; k++) { const a = i + k, b = a + len / 2, tr = re[b] * cr - im[b] * ci, ti = re[b] * ci + im[b] * cr;
+        re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti; [cr, ci] = [cr * wr - ci * wi, cr * wi + ci * wr]; } }
+  }
+}
+// PSD of the last M samples of unfiltered µV, Welch average of 50%-overlapping Hamming segments
+// (mean removed per segment), µV²/Hz. Per-segment recipe from neeg pipeline/spectrum.js.
+function psd(k, M, seg) {
+  const out = new Float64Array(seg / 2 + 1), re = new Float64Array(seg), im = new Float64Array(seg);
+  let wsum = 0; const win = new Float64Array(seg);
+  for (let j = 0; j < seg; j++) { win[j] = 0.54 - 0.46 * Math.cos(2 * Math.PI * j / (seg - 1)); wsum += win[j] * win[j]; }
+  const norm = P.fs * wsum + 1e-20; let count = 0;
+  for (let s0 = 0; s0 + seg <= M; s0 += seg / 2) {
+    let mean = 0; for (let j = 0; j < seg; j++) mean += rawUv[k][(head - M + s0 + j + N) % N]; mean /= seg;
+    for (let j = 0; j < seg; j++) { re[j] = (rawUv[k][(head - M + s0 + j + N) % N] - mean) * win[j]; im[j] = 0; }
+    fft(re, im);
+    for (let i = 0; i <= seg / 2; i++) out[i] += (re[i] * re[i] + im[i] * im[i]) / norm;
+    count++;
+  }
+  for (let i = 0; i <= seg / 2; i++) out[i] /= count;
+  return out;
+}
+let spectra = null;
+function updateSpectra() {
+  const avail = Math.min(total, N);
+  if (avail < 512) { spectra = null; return; }
+  const M = avail >= 2048 ? 2048 : avail >= 1024 ? 1024 : 512, seg = Math.min(1024, M);
+  spectra = { M, df: P.fs / seg, p: Array.from({ length: P.nch }, (_, k) => psd(k, M, seg)) };
+}
+const band = (p, df, lo, hi) => { let s = 0; for (let i = Math.ceil(lo / df); i <= Math.floor(hi / df) && i < p.length; i++) s += p[i]; return s * df; };
+function drawSpec() {
+  const { ctx, w, h } = fit($('specBig'));
+  const L = 34, R = 6, T = 6, B = 20, pw = w - L - R, ph = h - T - B, fmax = 70;
+  const xOf = f => L + pw * f / fmax;
+  ctx.font = '10px ui-monospace, "Cascadia Mono", Consolas, monospace';
+  ctx.fillStyle = colors.grid; ctx.fillRect(xOf(8), T, xOf(12) - xOf(8), ph);
+  if (!spectra) { ctx.fillStyle = colors.muted; ctx.textAlign = 'center'; ctx.fillText('等待資料', w / 2, h / 2); return; }
+  const { p, df } = spectra;
+  let top = -Infinity;
+  const db = p.map((s, k) => {
+    if (Math.abs(rawUv[k][(head - 1 + N) % N]) >= RAIL_UV) return null;
+    return Array.from(s, v => 10 * Math.log10(v + 1e-12));
+  });
+  for (const d of db) if (d) for (let i = Math.ceil(1 / df); i * df <= fmax; i++) top = Math.max(top, d[i]);
+  if (!isFinite(top)) top = 0;
+  const yMax = Math.ceil(top / 10) * 10 + 5, yMin = yMax - 65, yOf = v => T + ph * (yMax - Math.max(yMin, Math.min(yMax, v))) / (yMax - yMin);
+  ctx.strokeStyle = colors.grid; ctx.fillStyle = colors.muted; ctx.lineWidth = 1;
+  ctx.textAlign = 'right';
+  for (let v = Math.ceil(yMin / 10) * 10; v <= yMax; v += 10) { const y = Math.round(yOf(v)) + .5; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - R, y); ctx.stroke(); ctx.fillText(String(v), L - 4, y + 3); }
+  ctx.textAlign = 'center';
+  for (let f = 0; f <= fmax; f += 10) ctx.fillText(String(f), xOf(f), h - 6);
+  ctx.fillText('Hz', w - R - 8, h - 6);
+  ctx.save(); ctx.translate(9, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('dB µV²/Hz', 0, 0); ctx.restore();
+  const lfx = xOf(+$('notch').value || 60) + .5; ctx.setLineDash([3, 3]); ctx.strokeStyle = colors.muted; ctx.beginPath(); ctx.moveTo(lfx, T); ctx.lineTo(lfx, T + ph); ctx.stroke(); ctx.setLineDash([]);
+  ctx.lineWidth = 1.25;
+  db.forEach((d, k) => {
+    if (!d) return;
+    ctx.strokeStyle = colors.series[k]; ctx.beginPath();
+    for (let i = Math.ceil(1 / df); i * df <= fmax; i++) { const x = xOf(i * df), y = yOf(d[i]); i === Math.ceil(1 / df) ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+    ctx.stroke();
+  });
+}
+
+// Quality per channel from the latest spectrum (thresholds are AI defaults, listed on the page).
+function updateQuality() {
+  const rows = LABELS.map((name, k) => {
+    let rms = '—', line = '—', cls = 'check', text = '等待';
+    if (spectra) {
+      const p = spectra.p[k], df = spectra.df;
+      const railed = Math.abs(rawUv[k][(head - 1 + N) % N]) >= RAIL_UV;
+      const lf = +$('notch').value || 60, r = Math.sqrt(band(p, df, 1, 50)), share = band(p, df, lf - 2, lf + 2) / (band(p, df, 1, 100) + 1e-12);
+      rms = railed ? '—' : r.toFixed(1); line = railed ? '—' : Math.round(share * 100) + '%';
+      if (railed) { cls = 'poor'; text = '飽和'; }
+      else if (r < 0.5) { cls = 'poor'; text = '平線'; }
+      else if (r > 100) { cls = 'check'; text = '振幅大'; }
+      else if (share > 0.5) { cls = 'check'; text = '市電多'; }
+      else { cls = 'good'; text = '正常'; }
+    }
+    return `<tr><td><i style="background:var(--s${k + 1})"></i>${name}</td><td class="num">${rms}</td><td class="num">${line}</td><td><span class="chip ${cls}">${text}</span></td></tr>`;
+  });
+  $('qbody').innerHTML = rows.join('');
+}
+
+function drawAll() { drawActive(); }
+setInterval(() => { if (!paused && !document.hidden && tab === 'sig') drawWave(); }, 100);
+setInterval(() => { if (!document.hidden && !paused) { updateSpectra(); updateQuality(); if (tab === 'spec') drawSpec(); else if (tab === 'band') drawBand(); else if (tab === 'topo') drawTopo(); } }, 400);
+setInterval(() => { if (!document.hidden && !paused) { tfTick(); if (tab === 'tf') drawTF(); } }, 200);
+addEventListener('resize', drawAll);
+
+// ---------- stats ----------
+setInterval(() => {
+  S.rate = S.rateCount; S.rateCount = 0;
+  const live = source !== null;
+  $('stRate').textContent = live && S.rate !== null ? `${S.rate} Hz` : '—';
+  $('stRate').className = live && S.rate !== null && S.rate < 950 && source === 'ble' ? 'warn' : '';
+  $('stLost').textContent = S.lost.toLocaleString(); $('stLost').className = S.lost ? 'warn' : '';
+  $('stBad').textContent = S.bad.toLocaleString(); $('stBad').className = S.bad ? 'bad' : '';
+  $('stBat').textContent = S.battery === null ? '—' : `${S.battery} %`;
+  $('stPkt').textContent = S.pktLen ? `${S.pktLen} B · ${S.perPkt} 筆` : '—';
+  if (source === 'ble' && !ble.reconnecting && ble.dataChar) {
+    const stalled = performance.now() - S.lastData > 2000;
+    if (stalled && $('state').dataset.s === 'live') { setState('stalled'); log('超過 2 秒沒有資料'); }
+    if (!stalled && $('state').dataset.s === 'stalled') setState('live');
+  }
+  // Every 10 s on a live headset link, put the numbers V-01 needs into the log, so "複製 log" is the whole test.
+  if (source === 'ble' && ble.dataChar) {
+    S.sumRate = (S.sumRate || 0) + S.rate; S.ticks = (S.ticks || 0) + 1;
+    if (S.ticks === 10) {
+      log(`統計 10 s：平均 ${Math.round(S.sumRate / 10)} Hz，累計掉包 ${S.lost}、壞封包 ${S.bad}，封包 ${S.pktLen ?? '—'} B，電量 ${S.battery ?? '—'}%`);
+      S.sumRate = 0; S.ticks = 0;
+    }
+  } else { S.sumRate = 0; S.ticks = 0; }
+  if (rec_.on) { const s = Math.floor((Date.now() - rec_.start) / 1000); $('recTime').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+}, 1000);
+
+// ---------- tabs ----------
+let tab = 'sig';
+const TABS = [...document.querySelectorAll('.tabs button')];
+function showTab(t) {
+  if (!TABS.some(b => b.dataset.tab === t)) t = 'sig';
+  tab = t;
+  TABS.forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  document.querySelectorAll('.page').forEach(p => { p.hidden = p.id !== 'pg-' + t; });
+  pref('tab', t);
+  requestAnimationFrame(drawActive);
+}
+TABS.forEach(b => { b.setAttribute('role', 'tab'); b.onclick = () => showTab(b.dataset.tab); });
+function drawActive() {
+  if (tab === 'sig') drawWave();
+  else if (tab === 'spec') { updateSpectra(); drawSpec(); }
+  else if (tab === 'imp') drawImp();
+  else if (tab === 'band') { updateSpectra(); drawBand(); }
+  else if (tab === 'topo') { updateSpectra(); drawTopo(); }
+  else if (tab === 'tf') drawTF();
+}
+
+// ---------- head geometry (nose up, unit disk) ----------
+const POS = { Fp1: [-0.3, -0.86], Fp2: [0.3, -0.86], C3: [-0.52, 0], C4: [0.52, 0], O1: [-0.3, 0.86], O2: [0.3, 0.86], Fz: [0, -0.44], Pz: [0, 0.44] };
+function drawHeadOutline(ctx, cx, cy, r) {
+  ctx.strokeStyle = colors.muted; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx - r * 0.12, cy - r * 0.99); ctx.lineTo(cx, cy - r * 1.13); ctx.lineTo(cx + r * 0.12, cy - r * 0.99); ctx.stroke();
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(cx + s * r * 1.03, cy, r * 0.06, r * 0.16, 0, 0, 2 * Math.PI); ctx.stroke(); }
+}
+function hexRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+function cmap(stops, t) {
+  t = Math.max(0, Math.min(1, t)); const x = t * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(x)), f = x - i;
+  const a = stops[i], b = stops[i + 1]; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+}
+const rgbStr = c => `rgb(${c.map(Math.round).join(',')})`;
+const IMP_STOPS = ['#0d57a7', '#4ddfbe', '#faff78', '#ffa837', '#68193f'].map(hexRgb);
+const TURBO = ['#30123b', '#4686fb', '#1be5b5', '#a2fc3c', '#fbb938', '#e4460a', '#7a0403'].map(hexRgb);
+$('topoBar').style.background = `linear-gradient(90deg,${TURBO.map(rgbStr).join(',')})`;
+
+// ---------- impedance (Contact) ----------
+// AC lead-off test current on, then per channel every 1.2 s: last 1000 samples, |DFT bin 8| / 500 = amplitude µV,
+// vendor calibration polynomial -> kΩ, median of the last 5, mean >= 300000 µV -> treated as open (20000 kΩ).
+const IMP = { on: false, n: 0, buf: Array.from({ length: P.nch }, () => new Float32Array(1200)), hist: Array.from({ length: P.nch }, () => []), kohm: new Array(P.nch).fill(null), rounds: 0 };
+const COS8 = new Float64Array(1000), SIN8 = new Float64Array(1000);
+for (let n = 0; n < 1000; n++) { COS8[n] = Math.cos(2 * Math.PI * 8 * n / 1000); SIN8[n] = Math.sin(2 * Math.PI * 8 * n / 1000); }
+const impPoly = a => (5e-11 * a ** 4 - 1e-6 * a ** 3 + 0.0129 * a * a + 129.73 * a + 5520.2) * 0.001;
+// simulator: amplitude of an 8 Hz test signal that gives these impedances (null = electrode off)
+const SIM_R = [42, 58, 76, 160, 390, 880, 51, null];
+const SIM_A = SIM_R.map(R => { if (R === null) return 0; let lo = 1, hi = 5000; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (impPoly(m) < R) lo = m; else hi = m; } return lo; });
+function impFeed(uv) {
+  for (let k = 0; k < P.nch; k++) IMP.buf[k][IMP.n] = uv[k];
+  if (++IMP.n === 1200) { impCompute(); IMP.n = 0; }
+}
+function impCompute() {
+  for (let k = 0; k < P.nch; k++) {
+    const x = IMP.buf[k]; let re = 0, im = 0, sum = 0;
+    for (let n = 0; n < 1000; n++) { const v = x[200 + n]; sum += v; re += v * COS8[n]; im -= v * SIN8[n]; }
+    let ac = Math.hypot(re, im) / 500; const dc = Math.abs(sum) / 1000;
+    if (ac < 1) ac = 300000;
+    const h = IMP.hist[k]; h.push(impPoly(ac)); if (h.length > 5) h.shift();
+    const srt = [...h].sort((a, b) => a - b); let R = srt[Math.floor(srt.length / 2)];
+    if (dc >= 300000) R = 20000;
+    IMP.kohm[k] = R;
+  }
+  IMP.rounds++;
+  $('impInfo').textContent = `已更新 ${IMP.rounds} 次（每 1.2 秒一次，取最近 5 次的中位數）`;
+  renderImpTable(); if (tab === 'imp') drawImp();
+}
+function impClass(R) {
+  if (R === null) return ['check', '等待'];
+  if (R > 3000) return ['poor', '未接觸'];
+  if (R < 100) return ['good', '良好'];
+  if (R < 500) return ['check', '偏高'];
+  return ['poor', '太高'];
+}
+function renderImpTable() {
+  $('impBody').innerHTML = LABELS.map((name, k) => {
+    const R = IMP.kohm[k], [c, t] = impClass(R);
+    return `<tr><td><i style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:${R === null || R > 3000 ? 'var(--line)' : rgbStr(cmap(IMP_STOPS, R / 1000))}"></i>${name}</td><td class="num">${R === null ? '—' : R > 3000 ? 'Out of range' : Math.round(R)}</td><td><span class="chip ${c}">${t}</span></td></tr>`;
+  }).join('');
+}
+async function impStart() {
+  if (!source) { log('沒有資料來源：先連線腦波帽或開模擬資料'); return; }
+  Object.assign(IMP, { on: true, n: 0, rounds: 0, hist: Array.from({ length: P.nch }, () => []), kohm: new Array(P.nch).fill(null) });
+  if (source === 'ble') { try { await sendCmd(6); } catch (e) { log(`阻抗指令失敗：${e.message}`); } }
+  else sim.imp = true;
+  $('btnImp').textContent = '停止量測'; $('impBanner').hidden = false;
+  $('impInfo').textContent = '量測中，約 1.2 秒後出現第一筆…';
+  renderImpTable(); drawImp(); log('開始量測阻抗');
+}
+async function impStop(silent) {
+  if (!IMP.on) return;
+  IMP.on = false; sim.imp = false;
+  if (source === 'ble' && !silent) { try { await sendCmd(7); } catch (e) { log(`阻抗關閉指令失敗：${e.message}`); } }
+  $('btnImp').textContent = '開始量測阻抗'; $('impBanner').hidden = true; log('停止量測阻抗');
+}
+$('btnImp').onclick = () => (IMP.on ? impStop() : impStart());
+function drawImp() {
+  const { ctx, w, h } = fit($('impHead'));
+  const r = Math.min(w, h) * 0.38, cx = w / 2, cy = h / 2 + r * 0.06;
+  drawHeadOutline(ctx, cx, cy, r);
+  const er = Math.max(16, r * 0.15);
+  ctx.textAlign = 'center';
+  LABELS.forEach((name, k) => {
+    const [px, py] = POS[name], x = cx + px * r, y = cy + py * r, R = IMP.kohm[k];
+    ctx.beginPath(); ctx.arc(x, y, er, 0, 2 * Math.PI);
+    ctx.fillStyle = R === null || R > 3000 ? colors.grid : rgbStr(cmap(IMP_STOPS, R / 1000)); ctx.fill();
+    ctx.strokeStyle = colors.muted; ctx.lineWidth = 1; ctx.stroke();
+    const dark = R !== null && R <= 3000 && (R < 120 || R > 850);
+    ctx.fillStyle = R === null || R > 3000 ? colors.ink : dark ? '#ffffff' : '#111111';
+    ctx.font = `600 ${Math.round(er * 0.62)}px system-ui, sans-serif`; ctx.fillText(name, x, y - er * 0.08);
+    ctx.font = `${Math.round(er * 0.5)}px ui-monospace, Consolas, monospace`;
+    ctx.fillText(R === null ? '—' : R > 3000 ? 'off' : `${Math.round(R)}k`, x, y + er * 0.55);
+  });
+  if (!IMP.on && IMP.rounds === 0) { ctx.fillStyle = colors.muted; ctx.font = '14px system-ui, "Microsoft JhengHei", sans-serif'; ctx.fillText('按「開始量測阻抗」', cx, h - 8); }
+}
+
+// ---------- band power ----------
+const BANDS = [['δ', 1, 4], ['θ', 4, 8], ['α', 8, 13], ['β', 13, 30], ['γ', 30, 45]];
+const BAND_COL = ['--s8', '--s3', '--s5', '--s1', '--s4'];
+function bandPowers() {
+  if (!spectra) return null;
+  return LABELS.map((_, k) => {
+    if (Math.abs(rawUv[k][(head - 1 + N) % N]) >= RAIL_UV) return null;
+    const abs = BANDS.map(([, lo, hi]) => band(spectra.p[k], spectra.df, lo, hi));
+    const tot = abs.reduce((a, b) => a + b, 0) + 1e-12;
+    return { abs, rel: abs.map(v => v / tot) };
+  });
+}
+$('bandHead').innerHTML = '<tr><th>通道</th>' + BANDS.map(b => `<th style="text-align:right">${b[0]}</th>`).join('') + '</tr>';
+BANDS.forEach((b, i) => { const s = document.createElement('span'); s.innerHTML = `<i style="background:var(${BAND_COL[i]});height:10px"></i>`; s.append(`${b[0]} ${b[1]}–${b[2]} Hz`); $('bandLegend').append(s); });
+function drawBand() {
+  const { ctx, w, h } = fit($('bandCv'));
+  const bp = bandPowers(), cs = getComputedStyle(document.documentElement);
+  const L = 44, R = 8, T = 6, B = 18, rowH = (h - T - B) / P.nch, pw = w - L - R;
+  ctx.font = '10px ui-monospace, Consolas, monospace'; ctx.fillStyle = colors.muted; ctx.textAlign = 'center';
+  for (let p = 0; p <= 100; p += 25) { const x = L + pw * p / 100; ctx.strokeStyle = colors.grid; ctx.beginPath(); ctx.moveTo(x + .5, T); ctx.lineTo(x + .5, h - B); ctx.stroke(); ctx.fillText(p + '%', x, h - 5); }
+  LABELS.forEach((name, k) => {
+    const y = T + k * rowH + rowH * 0.18, bh = rowH * 0.64;
+    ctx.textAlign = 'left'; ctx.fillStyle = colors.series[k]; ctx.font = '600 12px system-ui, sans-serif'; ctx.fillText(name, 4, y + bh / 2 + 4);
+    if (!bp || !bp[k]) { ctx.fillStyle = colors.muted; ctx.font = '11px system-ui, "Microsoft JhengHei", sans-serif'; ctx.fillText(bp ? '飽和 / 未接' : '等待資料', L + 6, y + bh / 2 + 4); return; }
+    let x = L;
+    bp[k].rel.forEach((v, i) => {
+      const bw = pw * v; ctx.fillStyle = cs.getPropertyValue(BAND_COL[i]).trim(); ctx.fillRect(x, y, bw, bh);
+      if (bw > 26) { ctx.fillStyle = '#fff'; ctx.font = '600 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(BANDS[i][0] + Math.round(v * 100), x + bw / 2, y + bh / 2 + 4); }
+      x += bw;
+    });
+  });
+  $('bandBody').innerHTML = LABELS.map((name, k) => '<tr><td>' + name + '</td>' + BANDS.map((_, i) => `<td class="num">${bp && bp[k] ? (bp[k].abs[i] >= 100 ? Math.round(bp[k].abs[i]) : bp[k].abs[i].toFixed(1)) : '—'}</td>`).join('') + '</tr>').join('');
+}
+
+// ---------- topographic map ----------
+const TOPO_G = 96, topoOff = document.createElement('canvas'); topoOff.width = topoOff.height = TOPO_G;
+function drawTopo() {
+  const { ctx, w, h } = fit($('topo'));
+  const r = Math.min(w, h) * 0.4, cx = w / 2, cy = h / 2 + r * 0.06;
+  const bp = bandPowers(), bi = +$('topoBand').value, rel = $('topoMode').value === 'rel';
+  const pts = [];
+  if (bp) LABELS.forEach((name, k) => { if (bp[k]) pts.push([POS[name][0], POS[name][1], rel ? bp[k].rel[bi] * 100 : bp[k].abs[bi], name]); });
+  if (pts.length >= 2) {
+    let vmin = Math.min(...pts.map(p => p[2])), vmax = Math.max(...pts.map(p => p[2]));
+    if (vmax - vmin < 1e-9) vmax = vmin + 1;
+    const oc = topoOff.getContext('2d'), img = oc.createImageData(TOPO_G, TOPO_G);
+    for (let j = 0; j < TOPO_G; j++) for (let i = 0; i < TOPO_G; i++) {
+      const x = (i + 0.5) / TOPO_G * 2 - 1, y = (j + 0.5) / TOPO_G * 2 - 1, o = (j * TOPO_G + i) * 4;
+      if (x * x + y * y > 1) { img.data[o + 3] = 0; continue; }
+      let ws = 0, vs = 0;
+      for (const p of pts) { const d2 = (x - p[0]) ** 2 + (y - p[1]) ** 2 + 1e-4, wt = 1 / (d2 * d2); ws += wt; vs += wt * p[2]; }
+      const c = cmap(TURBO, (vs / ws - vmin) / (vmax - vmin));
+      img.data[o] = c[0]; img.data[o + 1] = c[1]; img.data[o + 2] = c[2]; img.data[o + 3] = 255;
+    }
+    oc.putImageData(img, 0, 0);
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.clip();
+    ctx.imageSmoothingEnabled = true; ctx.drawImage(topoOff, cx - r, cy - r, 2 * r, 2 * r); ctx.restore();
+    const fmt = v => rel ? v.toFixed(0) + '%' : (v >= 100 ? Math.round(v) : v.toFixed(1)) + ' µV²';
+    $('topoMin').textContent = fmt(vmin); $('topoMax').textContent = fmt(vmax);
+  } else { $('topoMin').textContent = '—'; $('topoMax').textContent = '—'; }
+  drawHeadOutline(ctx, cx, cy, r);
+  ctx.textAlign = 'center';
+  LABELS.forEach(name => {
+    const x = cx + POS[name][0] * r, y = cy + POS[name][1] * r, ok = pts.some(p => p[3] === name);
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, 2 * Math.PI); ctx.fillStyle = ok ? '#111' : colors.bad; ctx.fill();
+    ctx.font = '600 12px system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)';
+    const lab = ok ? name : name + ' ✕'; ctx.strokeText(lab, x, y - 9); ctx.fillStyle = '#111'; ctx.fillText(lab, x, y - 9);
+  });
+  if (!bp) { ctx.fillStyle = colors.muted; ctx.font = '14px system-ui, "Microsoft JhengHei", sans-serif'; ctx.fillText('等待資料', cx, cy); }
+}
+$('topoBand').onchange = $('topoMode').onchange = drawTopo;
+
+// ---------- time-frequency (spectrogram) ----------
+const TF = { cols: [], max: 300, ch: 4, src: null };
+LABELS.forEach((name, k) => { const o = document.createElement('option'); o.value = k; o.textContent = name; $('tfCh').append(o); });
+$('tfCh').value = TF.ch;
+$('tfCh').onchange = () => { TF.ch = +$('tfCh').value; TF.cols = []; drawTF(); };
+let tfLastTotal = 0;
+function tfTick() {
+  if (TF.src !== source) { TF.src = source; TF.cols = []; }
+  if (Math.min(total, N) < 1024 || total === tfLastTotal) return;
+  tfLastTotal = total;
+  const p = psd(TF.ch, 1024, 1024), col = new Float32Array(52);
+  for (let i = 0; i < 52; i++) col[i] = 10 * Math.log10(p[i] + 1e-12);
+  TF.cols.push(col); if (TF.cols.length > TF.max) TF.cols.shift();
+}
+const tfOff = document.createElement('canvas'); tfOff.width = 300; tfOff.height = 52;
+function drawTF() {
+  const { ctx, w, h } = fit($('tf'));
+  const L = 34, R = 8, T = 6, B = 20, pw = w - L - R, ph = h - T - B;
+  ctx.font = '10px ui-monospace, Consolas, monospace'; ctx.fillStyle = colors.muted;
+  if (!TF.cols.length) { ctx.textAlign = 'center'; ctx.font = '14px system-ui, "Microsoft JhengHei", sans-serif'; ctx.fillText('等待資料（約 1 秒）', w / 2, h / 2); return; }
+  let top = -Infinity; for (const c of TF.cols) for (let i = 1; i < 52; i++) if (c[i] > top) top = c[i];
+  const lo = top - 40, oc = tfOff.getContext('2d'), img = oc.createImageData(300, 52), off = 300 - TF.cols.length;
+  for (let x = 0; x < 300; x++) for (let i = 0; i < 52; i++) {
+    const o = ((51 - i) * 300 + x) * 4, c = TF.cols[x - off];
+    if (!c) { img.data[o + 3] = 0; continue; }
+    const rgb = cmap(TURBO, (c[i] - lo) / 40); img.data[o] = rgb[0]; img.data[o + 1] = rgb[1]; img.data[o + 2] = rgb[2]; img.data[o + 3] = 255;
+  }
+  oc.putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  // rows 0..51 = 0..~50.8 Hz; draw so that y maps 0..50 Hz
+  const fTop = 51 * P.fs / 1024;
+  ctx.drawImage(tfOff, L, T, pw, ph);
+  ctx.textAlign = 'right';
+  for (let f = 0; f <= 50; f += 10) { const y = T + ph * (1 - f / fTop); ctx.fillText(String(f), L - 4, y + 3); }
+  ctx.save(); ctx.translate(9, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillText('Hz', 0, 0); ctx.restore();
+  ctx.textAlign = 'center';
+  for (let s = 0; s <= 60; s += 10) ctx.fillText(s === 60 ? '0 s' : `−${60 - s}`, L + pw * s / 60, h - 5);
+  ctx.setLineDash([3, 3]); ctx.strokeStyle = 'rgba(255,255,255,.6)';
+  for (const f of [8, 13]) { const y = Math.round(T + ph * (1 - f / fTop)) + .5; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L + pw, y); ctx.stroke(); }
+  ctx.setLineDash([]);
+}
+
+// ---------- markers / events ----------
+const MK = [];
+function addMarker(label) {
+  label = String(label).replace(/[,\r\n]/g, ' ').trim() || 'mark';
+  const m = { at: total, label, t: new Date() };
+  MK.push(m); if (MK.length > 500) MK.shift();
+  if (rec_.on) rec_.ev.set(rec_.n, rec_.ev.has(rec_.n) ? rec_.ev.get(rec_.n) + '|' + label : label);
+  const li = document.createElement('li');
+  const z = n => String(n).padStart(2, '0');
+  li.textContent = `${z(m.t.getHours())}:${z(m.t.getMinutes())}:${z(m.t.getSeconds())}  ${label}${rec_.on ? '  （已寫入錄製）' : ''}`;
+  $('evList').prepend(li); while ($('evList').children.length > 50) $('evList').lastChild.remove();
+  log(`marker ${label}${rec_.on ? `（錄製第 ${rec_.n} 筆）` : ''}`);
+  if (tab === 'sig') drawWave();
+}
+document.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => addMarker(b.dataset.mk));
+$('mkAdd').onclick = () => { addMarker($('mkText').value); $('mkText').value = ''; };
+$('mkText').addEventListener('keydown', e => { if (e.key === 'Enter') $('mkAdd').click(); });
+addEventListener('keydown', e => { if (e.target.closest && e.target.closest('input,select,textarea')) return; if (/^[1-9]$/.test(e.key)) addMarker(e.key); });
+
+// ---------- keep the phone screen on while streaming; stop impedance when the link goes away ----------
+let wakeLock = null;
+async function wantWake(on) {
+  try {
+    if (on && !wakeLock && 'wakeLock' in navigator && document.visibilityState === 'visible') { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+    if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch {}
+}
+const _setState = setState;
+setState = function (s, extra) {
+  _setState(s, extra);
+  wantWake(s === 'live' || s === 'sim' || s === 'stalled' || s === 'reconnecting');
+  if ((s === 'idle' || s === 'error') && IMP.on) impStop(true);
+};
+document.addEventListener('visibilitychange', () => { const s = $('state').dataset.s; if (!document.hidden) wantWake(s === 'live' || s === 'sim'); });
+const _startSim = startSim;
+startSim = function () { if (IMP.on) impStop(true); _startSim(); };
+renderImpTable();
+
+// ---------- wiring ----------
+function showNote(text) { $('bleNote').textContent = text; $('bleNote').hidden = !text; }
+for (const k of ['mode', 'win', 'span']) { const v = pref(k); if (v && [...$(k).options].some(o => o.value === v)) $(k).value = v; }
+{ const v = pref('notch2'); if (v && [...$('notch').options].some(o => o.value === v)) $('notch').value = v; }
+$('mode').onchange = () => { pref('mode', $('mode').value); rebuildFilters(); drawWave(); };
+$('notch').onchange = () => { pref('notch2', $('notch').value); $('lfHead').textContent = `${+$('notch').value || 60} Hz`; rebuildFilters(); drawWave(); };
+$('win').onchange = () => { pref('win', $('win').value); drawWave(); };
+$('span').onchange = () => { pref('span', $('span').value); drawWave(); };
+$('btnPause').onclick = () => { paused = !paused; $('btnPause').textContent = paused ? '繼續畫面' : '暫停畫面'; };
+$('btnBle').onclick = bleConnect;
+$('btnSim').onclick = () => { if (source === 'ble') { log('先中斷藍牙再開模擬'); return; } startSim(); };
+$('btnStop').onclick = () => { if (source === 'ble' || ble.reconnecting) bleDisconnect(); else { stopSim(); setState('idle'); } };
+document.querySelectorAll('[data-cmd]').forEach(b => b.onclick = () => sendCmd(+b.dataset.cmd).catch(e => log(`指令失敗：${e.message}`)));
+LABELS.forEach((name, i) => { const s = document.createElement('span'); s.innerHTML = `<i style="background:var(--s${i + 1})"></i>`; s.append(name); $('legend').append(s); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) drawAll(); });
+
+rebuildFilters();
+$('lfHead').textContent = `${+$('notch').value || 60} Hz`;
+log(`NYCU-BCI Web ${BUILD}；${navigator.userAgent}`);
+const why = bleAvailability();
+if (why) { showNote(why); $('btnBle').disabled = !('bluetooth' in navigator) || !window.isSecureContext ? true : false; log(why); }
+else if (navigator.bluetooth.getAvailability) navigator.bluetooth.getAvailability().then(ok => { if (!ok) { showNote('找不到藍牙介面卡，或藍牙已關閉。'); log('getAvailability = false'); } });
+// Open in a working state: the simulator runs until a headset is connected.
+startSim();
+showTab(pref('tab') || 'sig');
+updateQuality();
+drawAll();
+</script>
+</body>
+</html>
