@@ -343,7 +343,7 @@ const LABELS = P.deviceLabels.map(l => P.rename[l] || l);
 const CMD = { start: 1, stop: 2 };
 const cmdBytes = code => new Uint8Array([0x01, 0x08, 0x02, code, 0x00]);
 const RAIL_UV = 374000;
-const BUILD = '2026-11-20.class5';
+const BUILD = '2026-11-20.class6';
 
 const $ = id => document.getElementById(id);
 const hex = b => Array.from(b, x => x.toString(16).padStart(2, '0').toUpperCase()).join(' ');
@@ -553,7 +553,8 @@ async function bleOpen(reconnect = false) {
     await ble.dataChar.startNotifications();
     log(`1524 notify 已開啟（${ms()}）`);
     resetStats();
-    await sendCmd(CMD.start);
+    if (DEBUG && $('dbgNoStart')?.checked) log('除錯：連線後不自動送「開始」');
+    else await sendCmd(CMD.start);
     setState('live');
   } finally { ble.opening = false; }
 }
@@ -1165,12 +1166,15 @@ if (DEBUG) {
     ['H  連線狀態 18', ['01 08 02 12 00']],
     ['I  機器資訊 46', ['01 08 02 2E 00']],
     ['J  重新開始 1', ['01 08 02 01 00']],
+    ['K  只送停止 2', ['01 08 02 02 00']],
+    ['L  讀回 1526', ['READ']],
   ];
   const box = document.createElement('section');
   box.className = 'panel'; box.setAttribute('aria-label', '除錯');
   box.innerHTML = `<h2>除錯：阻抗指令測試</h2>
     <p class="muted" style="font-size:.85rem">每秒用最近 1.2 秒資料檢查 8 Hz 測試訊號（不用按「開始量測阻抗」）。一次按一個，等 3 秒看 ✓ 有沒有出現，再按 G 關掉。</p>
     <div class="scroll"><table><thead><tr><th>通道</th><th style="text-align:right;text-transform:none">8 Hz µV</th><th style="text-align:right">峰比</th><th style="text-align:right">諧波比</th><th style="text-transform:none">8 Hz</th></tr></thead><tbody id="dbgTone"></tbody></table></div>
+    <label class="row muted"><input id="dbgNoStart" type="checkbox"> 連線後不自動送「開始」（要先勾，再按連線）</label>
     <div class="row" id="dbgBtns"></div>
     <div class="row"><input id="dbgHex" class="mono" style="font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:.32rem .5rem;width:13rem" placeholder="01 08 02 06 00">
       <select id="dbgMode"><option value="rsp">with response</option><option value="nrsp">without response</option></select>
@@ -1191,7 +1195,13 @@ if (DEBUG) {
   }
   async function runPreset(name, steps) {
     log(`=== 測試 ${name}`);
-    try { for (const s of steps) { if (typeof s === 'number') await new Promise(r => setTimeout(r, s)); else await writeRaw(parseHex(s), $('dbgMode').value); } }
+    try {
+      for (const s of steps) {
+        if (typeof s === 'number') await new Promise(r => setTimeout(r, s));
+        else if (s === 'READ') { if (!ble.cmdChar) { log('沒有連線'); continue; } const v = await ble.cmdChar.readValue(); log(`1526 讀回前 16 B = ${hex(new Uint8Array(v.buffer, v.byteOffset, Math.min(16, v.byteLength)))}`); }
+        else await writeRaw(parseHex(s), $('dbgMode').value);
+      }
+    }
     catch (e) { log(`送出失敗 ${e.name}: ${e.message}`); }
   }
   for (const [name, steps] of PRESETS) {
