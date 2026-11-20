@@ -343,7 +343,7 @@ const LABELS = P.deviceLabels.map(l => P.rename[l] || l);
 const CMD = { start: 1, stop: 2 };
 const cmdBytes = code => new Uint8Array([0x01, 0x08, 0x02, code, 0x00]);
 const RAIL_UV = 374000;
-const BUILD = '2026-11-20.class4';
+const BUILD = '2026-11-20.class5';
 
 const $ = id => document.getElementById(id);
 const hex = b => Array.from(b, x => x.toString(16).padStart(2, '0').toUpperCase()).join(' ');
@@ -1150,6 +1150,87 @@ setState = function (s, extra) {
 };
 document.addEventListener('visibilitychange', () => { const s = $('state').dataset.s; if (!document.hidden) wantWake(s === 'live'); });
 renderImpTable();
+
+// ---------- hidden debug panel (open the page with ?debug): try impedance command variants on the headset ----------
+const DEBUG = /[?&]debug\b/.test(location.search);
+if (DEBUG) {
+  const PRESETS = [
+    ['A  AC 6（目前用的）', ['01 08 02 06 00']],
+    ['B  AC 6，最後一位 01', ['01 08 02 06 01']],
+    ['C  dongle 原樣 7 B', ['05 01 08 02 06 01 00']],
+    ['D  停 → AC → 開', ['01 08 02 02 00', 400, '01 08 02 06 00', 400, '01 08 02 01 00']],
+    ['E  AC → 再送開始', ['01 08 02 06 00', 400, '01 08 02 01 00']],
+    ['F  DC 5', ['01 08 02 05 00']],
+    ['G  關阻抗 7', ['01 08 02 07 00']],
+    ['H  連線狀態 18', ['01 08 02 12 00']],
+    ['I  機器資訊 46', ['01 08 02 2E 00']],
+    ['J  重新開始 1', ['01 08 02 01 00']],
+  ];
+  const box = document.createElement('section');
+  box.className = 'panel'; box.setAttribute('aria-label', '除錯');
+  box.innerHTML = `<h2>除錯：阻抗指令測試</h2>
+    <p class="muted" style="font-size:.85rem">每秒用最近 1.2 秒資料檢查 8 Hz 測試訊號（不用按「開始量測阻抗」）。一次按一個，等 3 秒看 ✓ 有沒有出現，再按 G 關掉。</p>
+    <div class="scroll"><table><thead><tr><th>通道</th><th style="text-align:right;text-transform:none">8 Hz µV</th><th style="text-align:right">峰比</th><th style="text-align:right">諧波比</th><th style="text-transform:none">8 Hz</th></tr></thead><tbody id="dbgTone"></tbody></table></div>
+    <div class="row" id="dbgBtns"></div>
+    <div class="row"><input id="dbgHex" class="mono" style="font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:.32rem .5rem;width:13rem" placeholder="01 08 02 06 00">
+      <select id="dbgMode"><option value="rsp">with response</option><option value="nrsp">without response</option></select>
+      <button id="dbgSend" type="button">送出</button></div>
+    <div class="row"><button id="dbgChars" type="button">列出 characteristics</button><button id="dbgCopy" type="button">複製 log</button><span id="dbgMsg" class="muted"></span></div>`;
+  $('pg-imp').append(box);
+  const logEl = $('log');
+  logEl.style.cssText = 'margin:0;max-height:320px;overflow:auto;font-family:var(--mono);font-size:.74rem;line-height:1.4;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:.5rem;white-space:pre-wrap;word-break:break-all';
+  box.append(logEl);
+  const parseHex = s => new Uint8Array((s.match(/[0-9a-fA-F]{2}/g) || []).map(h => parseInt(h, 16)));
+  async function writeRaw(bytes, mode) {
+    if (!ble.cmdChar) { log('沒有連線，無法送出'); return; }
+    S.oddLogged = 0; // let the replies that follow be logged
+    if (mode === 'nrsp' && ble.cmdChar.writeValueWithoutResponse) await ble.cmdChar.writeValueWithoutResponse(bytes);
+    else if (ble.cmdChar.writeValueWithResponse) await ble.cmdChar.writeValueWithResponse(bytes);
+    else await ble.cmdChar.writeValue(bytes);
+    log(`→ 1526 ${hex(bytes)}（${mode === 'nrsp' ? 'without' : 'with'} response）`);
+  }
+  async function runPreset(name, steps) {
+    log(`=== 測試 ${name}`);
+    try { for (const s of steps) { if (typeof s === 'number') await new Promise(r => setTimeout(r, s)); else await writeRaw(parseHex(s), $('dbgMode').value); } }
+    catch (e) { log(`送出失敗 ${e.name}: ${e.message}`); }
+  }
+  for (const [name, steps] of PRESETS) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = name; b.onclick = () => runPreset(name, steps); $('dbgBtns').append(b);
+  }
+  $('dbgSend').onclick = () => { const b = parseHex($('dbgHex').value); if (b.length) runPreset('手動 ' + hex(b), [hex(b)]); };
+  $('dbgCopy').onclick = async () => { try { await navigator.clipboard.writeText(logLines.join('\n')); $('dbgMsg').textContent = '已複製'; } catch { $('dbgMsg').textContent = '複製失敗，請截圖'; } };
+  $('dbgChars').onclick = async () => {
+    try {
+      if (!ble.device?.gatt.connected) { log('沒有連線'); return; }
+      const svc = await ble.device.gatt.getPrimaryService(P.service);
+      for (const c of await svc.getCharacteristics()) {
+        const p = c.properties, props = ['read', 'write', 'writeWithoutResponse', 'notify', 'indicate'].filter(k => p[k]).join(',');
+        log(`char ${c.uuid.slice(4, 8)} [${props}]`);
+        if (p.read) { try { const v = await c.readValue(); log(`  讀 = ${hex(new Uint8Array(v.buffer, v.byteOffset, v.byteLength))}`); } catch (e) { log(`  讀失敗 ${e.message}`); } }
+        if ((p.notify || p.indicate) && c.uuid !== P.data) {
+          c.addEventListener('characteristicvaluechanged', e => { const v = e.target.value; log(`  ${c.uuid.slice(4, 8)} 通知 ${hex(new Uint8Array(v.buffer, v.byteOffset, Math.min(48, v.byteLength)))}`); });
+          try { await c.startNotifications(); log(`  已訂閱 ${c.uuid.slice(4, 8)}`); } catch (e) { log(`  訂閱失敗 ${e.message}`); }
+        }
+      }
+    } catch (e) { log(`列出失敗 ${e.name}: ${e.message}`); }
+  };
+  let dbgLast = '';
+  setInterval(() => {
+    if (tab !== 'imp' || Math.min(total, N) < 1200) return;
+    const x = new Float32Array(1200), rows = [];
+    for (let k = 0; k < P.nch; k++) {
+      let sum = 0;
+      for (let j = 0; j < 1200; j++) { x[j] = rawUv[k][(head - 1200 + j + N) % N]; sum += x[j]; }
+      if (Math.abs(sum / 1200) >= 300000) { rows.push(`<tr><td>${LABELS[k]}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td>飽和</td></tr>`); continue; }
+      const t = toneCheck(x);
+      rows.push(`<tr><td>${LABELS[k]}</td><td class="num">${t.amp8.toFixed(1)}</td><td class="num">${t.ratio.toFixed(1)}</td><td class="num">${t.harm.toFixed(1)}</td><td>${t.ok ? '<span class="chip good">✓ 有</span>' : '<span class="chip poor">✗ 無</span>'}</td></tr>`);
+    }
+    $('dbgTone').innerHTML = rows.join('');
+    const now = rows.map(r => r.includes('✓') ? '有' : r.includes('飽和') ? '飽' : '無').join('');
+    if (now !== dbgLast) { log(`8 Hz 狀態 ${LABELS.map((n, k) => n + '=' + now[k]).join(' ')}`); dbgLast = now; }
+  }, 1000);
+  log('除錯模式開啟');
+}
 
 // ---------- wiring ----------
 function showNote(text) { $('bleNote').textContent = text; $('bleNote').hidden = !text; }
