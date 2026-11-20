@@ -136,6 +136,8 @@ pre#log{margin:0;max-height:320px;overflow:auto;font-family:var(--mono);font-siz
 ul.ev{margin:0;padding:0;list-style:none;font-family:var(--mono);font-size:.82rem;max-height:260px;overflow:auto}
 ul.ev li{padding:.2rem 0;border-bottom:1px solid var(--line)}
 .cbar{height:12px;border-radius:3px}
+#impBody td:first-child,#pg-imp th{white-space:nowrap}
+#impBody .chip{font-size:.7rem;line-height:1.3;display:inline-block}
 .cbarlab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.72rem;color:var(--muted)}
 </style>
 </head>
@@ -144,7 +146,7 @@ ul.ev li{padding:.2rem 0;border-bottom:1px solid var(--line)}
 <aside class="sidebar" id="sidebar" aria-label="連線與功能選單">
   <div class="brand">
     <h1>NYCU BCI Web</h1>
-    <small>手機瀏覽器用藍牙直連 STEEG 8 通道腦波帽（Cygnus 的網頁替代品，非原廠程式）</small>
+    <small>手機瀏覽器用藍牙直連 NYCU-BCI（Cygnus 的網頁替代品）</small>
   </div>
   <div class="actions">
     <span id="state" class="pill" data-s="idle">未連線</span>
@@ -235,11 +237,12 @@ ul.ev li{padding:.2rem 0;border-bottom:1px solid var(--line)}
         <button id="btnImp" type="button" class="primary big">開始量測阻抗</button>
         <span id="impInfo" class="muted" style="font-size:.88rem">每 1.2 秒更新一次，取最近 5 次的中位數。</span>
       </div>
+      <p id="impWarn" class="banner" style="background:var(--bad-bg);color:var(--bad)" hidden></p>
       <canvas id="impHead" aria-label="電極阻抗頭圖"></canvas>
       <div><div class="cbar" style="background:linear-gradient(90deg,#0d57a7,#4ddfbe,#faff78,#ffa837,#68193f)"></div>
         <div class="cbarlab"><span>0</span><span>250</span><span>500</span><span>750</span><span>1000 kΩ</span></div></div>
       <div class="scroll"><table>
-        <thead><tr><th>通道</th><th style="text-align:right">阻抗 kΩ</th><th>狀態</th></tr></thead>
+        <thead><tr><th>通道</th><th style="text-align:right">阻抗 kΩ</th><th style="text-align:right;text-transform:none">8 Hz µV</th><th>狀態</th></tr></thead>
         <tbody id="impBody"></tbody>
       </table></div>
       <p class="muted" style="font-size:.85rem">目標：每個電極 <b>&lt; 100 kΩ（藍色）</b>。偏高時調整海綿電極角度或加水。「未接觸」= 電極沒碰到頭皮或沒接。</p>
@@ -340,7 +343,7 @@ const LABELS = P.deviceLabels.map(l => P.rename[l] || l);
 const CMD = { start: 1, stop: 2 };
 const cmdBytes = code => new Uint8Array([0x01, 0x08, 0x02, code, 0x00]);
 const RAIL_UV = 374000;
-const BUILD = '2026-11-20.class3';
+const BUILD = '2026-11-20.class4';
 
 const $ = id => document.getElementById(id);
 const hex = b => Array.from(b, x => x.toString(16).padStart(2, '0').toUpperCase()).join(' ');
@@ -875,10 +878,40 @@ $('topoBar').style.background = `linear-gradient(90deg,${TURBO.map(rgbStr).join(
 // ---------- impedance (Contact) ----------
 // AC lead-off test current on, then per channel every 1.2 s: last 1000 samples, |DFT bin 8| / 500 = amplitude µV,
 // vendor calibration polynomial -> kΩ, median of the last 5, mean >= 300000 µV -> treated as open (20000 kΩ).
-const IMP = { on: false, n: 0, buf: Array.from({ length: P.nch }, () => new Float32Array(1200)), hist: Array.from({ length: P.nch }, () => []), kohm: new Array(P.nch).fill(null), rounds: 0 };
+const IMP = { on: false, n: 0, buf: Array.from({ length: P.nch }, () => new Float32Array(1200)), hist: Array.from({ length: P.nch }, () => []), kohm: new Array(P.nch).fill(null), tone: new Array(P.nch).fill(null), rounds: 0 };
 const COS8 = new Float64Array(1000), SIN8 = new Float64Array(1000);
 for (let n = 0; n < 1000; n++) { COS8[n] = Math.cos(2 * Math.PI * 8 * n / 1000); SIN8[n] = Math.sin(2 * Math.PI * 8 * n / 1000); }
 const impPoly = a => (5e-11 * a ** 4 - 1e-6 * a ** 3 + 0.0129 * a * a + 129.73 * a + 5520.2) * 0.001;
+// Test-signal check (ours, not the vendor's): on the same 1000 samples with the linear trend removed,
+// (1) the 8 Hz bin must stand out from bins 3–5 and 11–14 (a 7.8 Hz tone leaks mostly into bins 6–10), and
+// (2) the square wave's 3rd harmonic at 23.4 Hz (bins 23–24) must stand out from bins 19–21 and 26–28.
+// (2) keeps an alpha rhythm that sits near 8 Hz (a sine, no 23.4 Hz component) from passing as the test signal.
+const TONE_RATIO = 5, TONE_MIN_UV = 2, HARM_RATIO = 3;
+const HARM_SIDE = [19, 20, 21, 26, 27, 28];
+const TBINS = [3, 4, 5, 8, 11, 12, 13, 14, 23, 24, ...HARM_SIDE].map(b => {
+  const c = new Float64Array(1000), s = new Float64Array(1000);
+  for (let n = 0; n < 1000; n++) { c[n] = Math.cos(2 * Math.PI * b * n / 1000); s[n] = Math.sin(2 * Math.PI * b * n / 1000); }
+  return { b, c, s };
+});
+function toneCheck(x) {
+  let sx = 0, sy = 0, sxx = 0, sxy = 0;
+  for (let n = 0; n < 1000; n++) { const v = x[200 + n]; sx += n; sy += v; sxx += n * n; sxy += n * v; }
+  const slope = (1000 * sxy - sx * sy) / (1000 * sxx - sx * sx), icpt = (sy - slope * sx) / 1000;
+  let amp8 = 0, h2 = 0; const side = [], hside = [];
+  for (const t of TBINS) {
+    let re = 0, im = 0;
+    for (let n = 0; n < 1000; n++) { const v = x[200 + n] - icpt - slope * n; re += v * t.c[n]; im -= v * t.s[n]; }
+    const a = Math.hypot(re, im) / 500;
+    if (t.b === 8) amp8 = a;
+    else if (t.b === 23 || t.b === 24) h2 += a * a;
+    else if (HARM_SIDE.includes(t.b)) hside.push(a);
+    else side.push(a);
+  }
+  side.sort((a, b) => a - b); hside.sort((a, b) => a - b);
+  const floor = (side[3] + side[4]) / 2, ratio = amp8 / (floor + 1e-9);
+  const hfloor = (hside[2] + hside[3]) / 2, harm = Math.sqrt(h2) / (hfloor + 1e-9);
+  return { amp8, ratio, harm, ok: ratio >= TONE_RATIO && amp8 >= TONE_MIN_UV && harm >= HARM_RATIO };
+}
 function impFeed(uv) {
   for (let k = 0; k < P.nch; k++) IMP.buf[k][IMP.n] = uv[k];
   if (++IMP.n === 1200) { impCompute(); IMP.n = 0; }
@@ -893,9 +926,16 @@ function impCompute() {
     const srt = [...h].sort((a, b) => a - b); let R = srt[Math.floor(srt.length / 2)];
     if (dc >= 300000) R = 20000;
     IMP.kohm[k] = R;
+    IMP.tone[k] = dc >= 300000 ? null : toneCheck(x);
   }
   IMP.rounds++;
   $('impInfo').textContent = `已更新 ${IMP.rounds} 次（每 1.2 秒一次，取最近 5 次的中位數）`;
+  const checked = IMP.tone.filter(t => t), missing = checked.filter(t => !t.ok).length;
+  $('impWarn').hidden = missing === 0;
+  $('impWarn').textContent = missing === checked.length
+    ? '沒有收到 8 Hz 測試訊號：所有通道都沒有。腦波帽可能沒有開始量測阻抗，下面的數字不代表阻抗。'
+    : `沒有收到 8 Hz 測試訊號：${missing} 個通道沒有（見表格），這些通道的數字不代表阻抗。`;
+  if (missing) log(`8 Hz 測試訊號：${LABELS.map((n, k) => IMP.tone[k] ? `${n} ${IMP.tone[k].amp8.toFixed(1)}µV×${IMP.tone[k].ratio.toFixed(1)}` : `${n} -`).join(', ')}`);
   renderImpTable(); if (tab === 'imp') drawImp();
 }
 function impClass(R) {
@@ -907,13 +947,16 @@ function impClass(R) {
 }
 function renderImpTable() {
   $('impBody').innerHTML = LABELS.map((name, k) => {
-    const R = IMP.kohm[k], [c, t] = impClass(R);
-    return `<tr><td><i style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:${R === null || R > 3000 ? 'var(--line)' : rgbStr(cmap(IMP_STOPS, R / 1000))}"></i>${name}</td><td class="num">${R === null ? '—' : R > 3000 ? 'Out of range' : Math.round(R)}</td><td><span class="chip ${c}">${t}</span></td></tr>`;
+    const R = IMP.kohm[k], tn = IMP.tone[k];
+    let [c, t] = impClass(R);
+    if (tn && !tn.ok && R !== null) { c = 'poor'; t = '沒有收到 8 Hz 測試訊號'; }
+    return `<tr><td><i style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:${R === null || R > 3000 ? 'var(--line)' : rgbStr(cmap(IMP_STOPS, R / 1000))}"></i>${name}</td><td class="num">${R === null ? '—' : R > 3000 ? 'Out of range' : Math.round(R)}</td><td class="num">${tn ? tn.amp8.toFixed(1) : '—'}</td><td><span class="chip ${c}" style="white-space:normal">${t}</span></td></tr>`;
   }).join('');
 }
 async function impStart() {
   if (!source) { log('還沒連線腦波帽'); $('impInfo').textContent = '還沒連線腦波帽：先按「連線腦波帽」。'; return; }
-  Object.assign(IMP, { on: true, n: 0, rounds: 0, hist: Array.from({ length: P.nch }, () => []), kohm: new Array(P.nch).fill(null) });
+  Object.assign(IMP, { on: true, n: 0, rounds: 0, hist: Array.from({ length: P.nch }, () => []), kohm: new Array(P.nch).fill(null), tone: new Array(P.nch).fill(null) });
+  $('impWarn').hidden = true;
   try { await sendCmd(6); } catch (e) { log(`阻抗指令失敗：${e.message}`); }
   $('btnImp').textContent = '停止量測'; $('impBanner').hidden = false;
   $('impInfo').textContent = '量測中，約 1.2 秒後出現第一筆…';
@@ -941,7 +984,9 @@ function drawImp() {
     ctx.fillStyle = R === null || R > 3000 ? colors.ink : dark ? '#ffffff' : '#111111';
     ctx.font = `600 ${Math.round(er * 0.62)}px system-ui, sans-serif`; ctx.fillText(name, x, y - er * 0.08);
     ctx.font = `${Math.round(er * 0.5)}px ui-monospace, Consolas, monospace`;
-    ctx.fillText(R === null ? '—' : R > 3000 ? 'off' : `${Math.round(R)}k`, x, y + er * 0.55);
+    const noTone = IMP.tone[k] && !IMP.tone[k].ok;
+    ctx.fillText(R === null ? '—' : R > 3000 ? 'off' : `${Math.round(R)}k${noTone ? '?' : ''}`, x, y + er * 0.55);
+    if (noTone) { ctx.setLineDash([4, 3]); ctx.strokeStyle = colors.bad; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, er + 4, 0, 2 * Math.PI); ctx.stroke(); ctx.setLineDash([]); }
   });
   if (!IMP.on && IMP.rounds === 0) { ctx.fillStyle = colors.muted; ctx.font = '14px system-ui, "Microsoft JhengHei", sans-serif'; ctx.fillText('按「開始量測阻抗」', cx, h - 8); }
 }
